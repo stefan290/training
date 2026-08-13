@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Chivo:wght@300;400;500;700;900&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet"><style>
+doc-page:not(:defined){visibility:hidden}
+body{margin:0;font-family:Chivo,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#2A44A8;text-decoration:none}a:hover{color:#1B2E7A}
+</style><script src="./doc-page.js"></script></helmet>
+
+<doc-page margin="0.8in">
+
+<div style="border-bottom:2px solid #10151A;padding-bottom:18px;margin-bottom:26px">
+<div style="font:700 10px/1 'Roboto Mono',monospace;letter-spacing:.22em;text-transform:uppercase;color:#2A44A8;margin-bottom:12px">Implementation specification · v1.0 · 13 August 2026</div>
+<h1 style="font:900 40px/1.05 Chivo,sans-serif;letter-spacing:-.03em;color:#10151A;margin:0 0 10px">Training OS</h1>
+<div style="font:300 16px/1.5 Chivo,sans-serif;color:#3A4550;max-width:34em">Developer handoff for the iPhone training application approved across design passes 01–05. This document translates the approved product into an implementation specification. It adds no product features.</div>
+</div>
+
+<div style="background:#F4F6F8;border:1px solid #D9DFE4;border-radius:6px;padding:16px 18px;margin-bottom:30px;break-inside:avoid">
+<div style="font:500 9.5px/1 'Roboto Mono',monospace;letter-spacing:.2em;text-transform:uppercase;color:#5F6B70;margin-bottom:10px">Locked decisions — do not revisit without the product owner</div>
+<div style="font:400 12.5px/1.9 'Roboto Mono',monospace;color:#10151A">
+Navigation: three tabs — Today / Plan / Progress. Programs inside Plan, Profile from the Today header.<br>
+Hierarchy: Day → Session → ordered WorkoutBlock → Movement → Prescription → Recommendation → Result.<br>
+RIR: engine owns target, user owns actual, stored per set, preselected at target.<br>
+Schedule: the engine recommends automatically; the user approves anything affecting future sessions.<br>
+Deload: program-owned week inside a mesocycle. Recovery / Transition are planner-level phases.<br>
+Scaling: remembered in the Performance Profile, offered, never assumed.<br>
+Planning: strategic beyond four weeks, tactical within. Two entry paths — guided, or program-first.<br>
+Imported programs: Strict by default; the model carries Adaptive from V1 even if unimplemented.<br>
+Universal pattern: event → engine recommendation → reason → user approval.<br>
+Tonnage: stored, never surfaced as a measure of training quality.
+</div>
+</div>
+
+<h2 style="font:700 22px/1.2 Chivo,sans-serif;letter-spacing:-.02em;color:#10151A;margin:0 0 12px;break-after:avoid">1 · Product architecture</h2>
+<p style="font:300 14.5px/1.6 Chivo,sans-serif;color:#3A4550;margin:0 0 14px">Six subsystems with one direction of flow. The user chooses the destination; the planner defines the route; programs supply methodology; the profile is permanent memory; the progression engine is the only component permitted to produce a target; execution is the only component permitted to produce a result.</p>
+<table style="width:100%;border-collapse:collapse;font:400 12.5px/1.5 Chivo,sans-serif;margin-bottom:16px">
+<thead><tr>
+<th style="text-align:left;padding:8px 10px;border-bottom:1.5px solid #10151A;font:500 9.5px/1.3 'Roboto Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#5F6B70;width:29%">Subsystem</th>
+<th style="text-align:left;padding:8px 10px;border-bottom:1.5px solid #10151A;font:500 9.5px/1.3 'Roboto Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#5F6B70">Owns</th>
+<th style="text-align:left;padding:8px 10px;border-bottom:1.5px solid #10151A;font:500 9.5px/1.3 'Roboto Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#5F6B70;width:26%">Must never</th>
+</tr></thead>
+<tbody>
+<tr><td style="padding:9px 10px;border-bottom:1px solid #E4E9ED;font-weight:700;color:#10151A">Goal &amp; Long-Term Planner</td><td style="padding:9px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">Destination, phases, priorities, frequency, program selection, interference rules</td><td style="padding:9px 10px;border-bottom:1px solid #E4E9ED;color:#5F6B70">Emit individual sets or loads</td></tr>
+<tr><td style="padding:9px 10px;border-bottom:1px solid #E4E9ED;font-weight:700;color:#10151A">Program Engine</td><td style="padding:9px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">ProgramDefinition: weeks, blocks, prescriptions, progression rules, substitutions</td><td style="padding:9px 10px;border-bottom:1px solid #E4E9ED;color:#5F6B70">Hold user performance data</td></tr>
+<tr><td style="padding:9px 10px;border-bottom:1px solid #E4E9ED;font-weight:700;color:#10151A">Performance Profile</td><td style="padding:9px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">Every set performed, canonical exercise IDs, PRs, estimates, recency confidence, scaling history, name mappings</td><td style="padding:9px 10px;border-bottom:1px solid #E4E9ED;color:#5F6B70">Be scoped to one program</td></tr>
+<tr><td style="padding:9px 10px;border-bottom:1px solid #E4E9ED;font-weight:700;color:#10151A">Progression Engine</td><td style="padding:9px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">Prescription + Profile + latest results → Recommendation + reason code</td><td style="padding:9px 10px;border-bottom:1px solid #E4E9ED;color:#5F6B70">Return a value without a reason code</td></tr>
+<tr><td style="padding:9px 10px;border-bottom:1px solid #E4E9ED;font-weight:700;color:#10151A">Execution</td><td style="padding:9px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">Session running, timers, set entry, scoring, result capture</td><td style="padding:9px 10px;border-bottom:1px solid #E4E9ED;color:#5F6B70">Require a network connection</td></tr>
+<tr><td style="padding:9px 10px;border-bottom:1px solid #E4E9ED;font-weight:700;color:#10151A">HealthKit Integration</td><td style="padding:9px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">Reads body metrics and HR; writes completed workouts</td><td style="padding:9px 10px;border-bottom:1px solid #E4E9ED;color:#5F6B70">Be the source of truth for training</td></tr>
+</tbody>
+</table>
+<p style="font:400 12.5px/1.6 'Roboto Mono',monospace;color:#5F6B70;margin:0 0 26px">Results write back to the Performance Profile permanently, and independently of the program that produced them.</p>
+
+<h2 style="font:700 22px/1.2 Chivo,sans-serif;letter-spacing:-.02em;color:#10151A;margin:0 0 12px;break-after:avoid">2 · Domain model</h2>
+<p style="font:300 14.5px/1.6 Chivo,sans-serif;color:#3A4550;margin:0 0 14px">Six concepts that must never be blurred, visually or technically.</p>
+<table style="width:100%;border-collapse:collapse;font:400 12.5px/1.5 Chivo,sans-serif;margin-bottom:20px">
+<thead><tr>
+<th style="text-align:left;padding:8px 10px;border-bottom:1.5px solid #10151A;font:500 9.5px/1.3 'Roboto Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#5F6B70;width:22%">Concept</th>
+<th style="text-align:left;padding:8px 10px;border-bottom:1.5px solid #10151A;font:500 9.5px/1.3 'Roboto Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#5F6B70">Definition</th>
+<th style="text-align:left;padding:8px 10px;border-bottom:1.5px solid #10151A;font:500 9.5px/1.3 'Roboto Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#5F6B70;width:30%">Example</th>
+</tr></thead>
+<tbody>
+<tr><td style="padding:9px 10px;border-bottom:1px solid #E4E9ED;font-weight:700;color:#2A44A8">Goal</td><td style="padding:9px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">What the user wants to achieve. One primary at a time, optional secondaries.</td><td style="padding:9px 10px;border-bottom:1px solid #E4E9ED;font:400 11.5px/1.5 'Roboto Mono',monospace;color:#5F6B70">Build muscle, lean by 31 Jul</td></tr>
+<tr><td style="padding:9px 10px;border-bottom:1px solid #E4E9ED;font-weight:700;color:#2A44A8">Phase</td><td style="padding:9px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">Which adaptation is prioritised over a period. Determines the scheduling priority rule.</td><td style="padding:9px 10px;border-bottom:1px solid #E4E9ED;font:400 11.5px/1.5 'Roboto Mono',monospace;color:#5F6B70">Muscle Gain I · Aug–Sep</td></tr>
+<tr><td style="padding:9px 10px;border-bottom:1px solid #E4E9ED;font-weight:700;color:#2A44A8">Program</td><td style="padding:9px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">The methodology producing that adaptation. Reusable across users and phases.</td><td style="padding:9px 10px;border-bottom:1px solid #E4E9ED;font:400 11.5px/1.5 'Roboto Mono',monospace;color:#5F6B70">5-Day Hypertrophy</td></tr>
+<tr><td style="padding:9px 10px;border-bottom:1px solid #E4E9ED;font-weight:700;color:#2A44A8">Module</td><td style="padding:9px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">Training layered on top of the primary program, serving a secondary goal.</td><td style="padding:9px 10px;border-bottom:1px solid #E4E9ED;font:400 11.5px/1.5 'Roboto Mono',monospace;color:#5F6B70">Aerobic Base · 2 × Zone 2</td></tr>
+<tr><td style="padding:9px 10px;border-bottom:1px solid #E4E9ED;font-weight:700;color:#2A44A8">Session</td><td style="padding:9px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">One training occasion. A Day holds zero or more.</td><td style="padding:9px 10px;border-bottom:1px solid #E4E9ED;font:400 11.5px/1.5 'Roboto Mono',monospace;color:#5F6B70">Lower A · Fri 07:00</td></tr>
+<tr><td style="padding:9px 10px;border-bottom:1px solid #E4E9ED;font-weight:700;color:#2A44A8">Workout Block</td><td style="padding:9px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">A component inside a Session with its own prescription, execution model, scoring model and result type.</td><td style="padding:9px 10px;border-bottom:1px solid #E4E9ED;font:400 11.5px/1.5 'Roboto Mono',monospace;color:#5F6B70">Strength · 4 × 5–6 @ 2 RIR</td></tr>
+</tbody>
+</table>
+
+<h3 style="font:700 16px/1.3 Chivo,sans-serif;color:#10151A;margin:0 0 10px;break-after:avoid">2.1 Entities</h3>
+<pre style="font:400 11.5px/1.75 'Roboto Mono',monospace;color:#10151A;background:#F4F6F8;border:1px solid #D9DFE4;border-radius:6px;padding:16px 18px;margin:0 0 16px;white-space:pre-wrap;break-inside:avoid">User { id, displayName, units, equipmentIncrements[], preferences }
+Goal { id, userId, primaryType, secondaryTypes[], targetDate?, createdAt, status }
+Availability { userId, trainingDaysPerWeek, minutesPerTrainingDay,
+               preferredDays[], allowsDoubleSessions, allowsOccasionalLongSession }
+Phase { id, goalId, type, orderIndex, startDate, endDate, priorityRule,
+        programInstanceId?, moduleInstanceIds[], status }
+ProgramDefinition { id, name, source, lengthWeeks, mesocycles[],
+                    progressionRules[], substitutionRules[], deloadRules[],
+                    exerciseRefs[], adherenceMode, intent, constraints[] }
+ProgramInstance { id, programDefinitionId, phaseId, userId, startDate,
+                  substitutionChoices[], startingRecommendations[], progressState }
+Mesocycle { id, orderIndex, weeks[], deloadWeekIndex? }
+SessionTemplate { id, mesocycleWeekId, name, blockTemplates[] }
+Day { date, userId, sessionIds[] }
+Session { id, userId, dayDate, scheduledTime?, sourceInstanceId, name,
+          blocks[], status, startedAt?, completedAt? }
+WorkoutBlock { id, sessionId, orderIndex, type, prescription,
+               executionModel, scoringModel, result?, status }
+Movement { blockId, orderIndex, canonicalExerciseId, prescription,
+           recommendation?, substitutionUsed?, scalingUsed? }
+SetResult { id, movementId, index, weight, reps, actualRir, targetRir,
+            completedAt, isPr, prBand? }
+BlockResult { blockId, type, payload, scoringDirection }
+CanonicalExercise { id, name, modality, equipment, movementPattern,
+                    aliases[], substitutionGroupIds[] }
+PerformanceRecord { userId, canonicalExerciseId, estimate1Rm, confidence,
+                    lastPerformedAt, bandRecords[], scalingHistory[] }
+Benchmark { id, name, scoringModel, prescription, attempts[] }
+Recommendation { targetRef, value, reasonCode, inputs{}, confidence, generatedAt }
+</pre>
+<p style="font:300 14px/1.6 Chivo,sans-serif;color:#3A4550;margin:0 0 26px"><strong>Invariant.</strong> Performance data never lives inside ProgramDefinition. A ProgramDefinition can be deleted or replaced without losing a single logged set, because SetResult references the canonical exercise, not the program.</p>
+
+<h3 style="font:700 16px/1.3 Chivo,sans-serif;color:#10151A;margin:0 0 10px;break-after:avoid">2.2 Block types</h3>
+<table style="width:100%;border-collapse:collapse;font:400 12px/1.5 Chivo,sans-serif;margin-bottom:26px">
+<thead><tr>
+<th style="text-align:left;padding:8px 10px;border-bottom:1.5px solid #10151A;font:500 9.5px/1.3 'Roboto Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#5F6B70">Type</th>
+<th style="text-align:left;padding:8px 10px;border-bottom:1.5px solid #10151A;font:500 9.5px/1.3 'Roboto Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#5F6B70">Result payload</th>
+<th style="text-align:left;padding:8px 10px;border-bottom:1.5px solid #10151A;font:500 9.5px/1.3 'Roboto Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#5F6B70;width:22%">Scoring</th>
+</tr></thead>
+<tbody>
+<tr><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;font:400 11.5px/1.5 'Roboto Mono',monospace;color:#10151A">WARMUP</td><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">duration, completed flag</td><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;font:400 11px/1.5 'Roboto Mono',monospace;color:#5F6B70">NONE</td></tr>
+<tr><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;font:400 11.5px/1.5 'Roboto Mono',monospace;color:#10151A">STRENGTH · HYPERTROPHY · ACCESSORY</td><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">SetResult[] — weight, reps, actualRir per set</td><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;font:400 11px/1.5 'Roboto Mono',monospace;color:#5F6B70">LOAD_REPS_ASC</td></tr>
+<tr><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;font:400 11.5px/1.5 'Roboto Mono',monospace;color:#10151A">STEADY_STATE</td><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">duration, avgHr?, distance?</td><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;font:400 11px/1.5 'Roboto Mono',monospace;color:#5F6B70">DURATION_AT_HR</td></tr>
+<tr><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;font:400 11.5px/1.5 'Roboto Mono',monospace;color:#10151A">INTERVALS</td><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">per-rep pace, HR, duration</td><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;font:400 11px/1.5 'Roboto Mono',monospace;color:#5F6B70">PACE_AT_HR_DESC</td></tr>
+<tr><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;font:400 11.5px/1.5 'Roboto Mono',monospace;color:#10151A">AMRAP</td><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">rounds, extraReps, cap, scalingUsed</td><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;font:400 11px/1.5 'Roboto Mono',monospace;color:#5F6B70">ROUNDS_ASC</td></tr>
+<tr><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;font:400 11.5px/1.5 'Roboto Mono',monospace;color:#10151A">EMOM</td><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">minutesCompleted, incompleteMinutes[]</td><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;font:400 11px/1.5 'Roboto Mono',monospace;color:#5F6B70">COMPLETION</td></tr>
+<tr><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;font:400 11.5px/1.5 'Roboto Mono',monospace;color:#10151A">FOR_TIME</td><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">time, cappedAt?, rxOrScaled, splits[]</td><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;font:400 11px/1.5 'Roboto Mono',monospace;color:#5F6B70">TIME_ASC (lower better)</td></tr>
+<tr><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;font:400 11.5px/1.5 'Roboto Mono',monospace;color:#10151A">COOLDOWN · MOBILITY</td><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">duration, completed flag</td><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;font:400 11px/1.5 'Roboto Mono',monospace;color:#5F6B70">NONE</td></tr>
+</tbody>
+</table>
+
+<h2 style="font:700 22px/1.2 Chivo,sans-serif;letter-spacing:-.02em;color:#10151A;margin:0 0 12px;break-after:avoid">3 · State model</h2>
+<pre style="font:400 11.5px/1.75 'Roboto Mono',monospace;color:#10151A;background:#F4F6F8;border:1px solid #D9DFE4;border-radius:6px;padding:16px 18px;margin:0 0 14px;white-space:pre-wrap;break-inside:avoid">Session   SCHEDULED → IN_PROGRESS → COMPLETED
+                    ↘ SKIPPED · MISSED (derived when the day passes)
+                    ↘ ABANDONED (started, never finished)
+Block     PENDING → ACTIVE → COMPLETED · SKIPPED
+Phase     PLANNED → ACTIVE → COMPLETED · PAUSED · ABANDONED
+Plan      DRAFT (proposal, nothing saved) → ACTIVE → SUPERSEDED
+Import    PARSING → VALIDATING → AMBIGUITY_REVIEW → CONFIRMED → COMMITTED
+                  ↘ FAILED (source unreadable, nothing written)</pre>
+<p style="font:300 14px/1.6 Chivo,sans-serif;color:#3A4550;margin:0 0 26px">MISSED is derived, never stored as an event by itself: a SCHEDULED session whose day has passed. The reflow proposal is generated on next app open, not by a background job, so the user is never told about changes made while they were away.</p>
+
+<h2 style="font:700 22px/1.2 Chivo,sans-serif;letter-spacing:-.02em;color:#10151A;margin:0 0 12px;break-after:avoid">4 · Navigation</h2>
+<p style="font:300 14.5px/1.6 Chivo,sans-serif;color:#3A4550;margin:0 0 12px">Three tabs. Programs is reached inside Plan, Profile from the avatar in the Today header. No other root destinations.</p>
+<pre style="font:400 11.5px/1.75 'Roboto Mono',monospace;color:#10151A;background:#F4F6F8;border:1px solid #D9DFE4;border-radius:6px;padding:16px 18px;margin:0 0 26px;white-space:pre-wrap;break-inside:avoid">Today      → Session detail → Block execution → Completion
+           → Recommendation explanation (sheet)
+           → Profile (header avatar) → Integrations · Settings · Advanced
+Plan       → Long-term route → Phase detail
+           → Calendar → Day detail
+           → Programs → Program detail → Import → Program selection
+           → Planning flow (Path A guided · Path B program-first)
+Progress   → Strength · Conditioning · Body
+           → Exercise detail → full set history
+           → Benchmark detail → attempt history</pre>
+
+<h2 style="font:700 22px/1.2 Chivo,sans-serif;letter-spacing:-.02em;color:#10151A;margin:0 0 12px;break-after:avoid">5 · Screen inventory</h2>
+<p style="font:300 14px/1.6 Chivo,sans-serif;color:#3A4550;margin:0 0 14px">Numbers refer to frames in the design document. Screens 18 and 20 were superseded by 23 and 24.</p>
+<table style="width:100%;border-collapse:collapse;font:400 12px/1.5 Chivo,sans-serif;margin-bottom:26px">
+<thead><tr>
+<th style="text-align:left;padding:8px 10px;border-bottom:1.5px solid #10151A;font:500 9.5px/1.3 'Roboto Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#5F6B70;width:8%">#</th>
+<th style="text-align:left;padding:8px 10px;border-bottom:1.5px solid #10151A;font:500 9.5px/1.3 'Roboto Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#5F6B70;width:32%">Screen</th>
+<th style="text-align:left;padding:8px 10px;border-bottom:1.5px solid #10151A;font:500 9.5px/1.3 'Roboto Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#5F6B70">Notes</th>
+<th style="text-align:left;padding:8px 10px;border-bottom:1.5px solid #10151A;font:500 9.5px/1.3 'Roboto Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#5F6B70;width:12%">Scope</th>
+</tr></thead>
+<tbody>
+<tr><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;font:400 11px/1.4 'Roboto Mono',monospace;color:#5F6B70">01, 06</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;color:#10151A">Today — one session, two sessions</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">Simple when one; time-grouped hierarchy when several</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;font:400 11px/1.4 'Roboto Mono',monospace;color:#2A44A8">V1</td></tr>
+<tr><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;font:400 11px/1.4 'Roboto Mono',monospace;color:#5F6B70">02</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;color:#10151A">Plan — long-term route</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">Strategic spine, current phase expanded</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;font:400 11px/1.4 'Roboto Mono',monospace;color:#2A44A8">V1</td></tr>
+<tr><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;font:400 11px/1.4 'Roboto Mono',monospace;color:#5F6B70">03, 07</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;color:#10151A">Strength execution · RIR logging</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">Steppers, target-preselected RIR chips, Why sheet</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;font:400 11px/1.4 'Roboto Mono',monospace;color:#2A44A8">V1</td></tr>
+<tr><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;font:400 11px/1.4 'Roboto Mono',monospace;color:#5F6B70">13, 14, 11</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;color:#10151A">AMRAP · EMOM · For Time</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">Large clocks, minimal interaction, audio and haptic cues</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;font:400 11px/1.4 'Roboto Mono',monospace;color:#2A44A8">V1</td></tr>
+<tr><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;font:400 11px/1.4 'Roboto Mono',monospace;color:#5F6B70">12</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;color:#10151A">Completion — what changes next time</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">PR moment, per-exercise reason codes, no tonnage</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;font:400 11px/1.4 'Roboto Mono',monospace;color:#2A44A8">V1</td></tr>
+<tr><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;font:400 11px/1.4 'Roboto Mono',monospace;color:#5F6B70">05, 15, 16</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;color:#10151A">Progress · exercise detail · benchmark detail</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">Rep-band records, scoring direction stated, Rx separated</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;font:400 11px/1.4 'Roboto Mono',monospace;color:#2A44A8">V1</td></tr>
+<tr><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;font:400 11px/1.4 'Roboto Mono',monospace;color:#5F6B70">08, 09</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;color:#10151A">Calendar · missed-session approval</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">Drag to move; reflow always asks</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;font:400 11px/1.4 'Roboto Mono',monospace;color:#2A44A8">V1</td></tr>
+<tr><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;font:400 11px/1.4 'Roboto Mono',monospace;color:#5F6B70">17, 23, 19, 24, 21</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;color:#10151A">Path A — goal, availability, route, program, first week</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">Recommendation-first; nothing saved until accepted</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;font:400 11px/1.4 'Roboto Mono',monospace;color:#2A44A8">V1</td></tr>
+<tr><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;font:400 11px/1.4 'Roboto Mono',monospace;color:#5F6B70">22, 25, 30, 31</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;color:#10151A">Path B — entry, program-first, identity, adherence</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">Import review surfaces; Strict default</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;font:400 11px/1.4 'Roboto Mono',monospace;color:#2A44A8">V1</td></tr>
+<tr><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;font:400 11px/1.4 'Roboto Mono',monospace;color:#5F6B70">26, 32</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;color:#10151A">Pause · return with engine output</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">Inputs and reason code visible</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;font:400 11px/1.4 'Roboto Mono',monospace;color:#2A44A8">V1</td></tr>
+<tr><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;font:400 11px/1.4 'Roboto Mono',monospace;color:#5F6B70">27, 28</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;color:#10151A">Apple Health · Profile and Settings</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">Per-type toggles, stated fallbacks, advanced overrides</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;font:400 11px/1.4 'Roboto Mono',monospace;color:#2A44A8">V1</td></tr>
+<tr><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;font:400 11px/1.4 'Roboto Mono',monospace;color:#5F6B70">29</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;color:#10151A">Light mode</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">Same structure and hierarchy; token swap only</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;font:400 11px/1.4 'Roboto Mono',monospace;color:#2A44A8">V1</td></tr>
+</tbody>
+</table>
+
+<h2 style="font:700 22px/1.2 Chivo,sans-serif;letter-spacing:-.02em;color:#10151A;margin:0 0 12px;break-after:avoid">6 · Interaction specifications</h2>
+<div style="display:flex;flex-direction:column;gap:12px;margin-bottom:26px">
+<div style="border-left:3px solid #2A44A8;padding:2px 0 2px 14px;break-inside:avoid"><div style="font:700 15px/1.3 Chivo,sans-serif;color:#10151A;margin-bottom:5px">Set logging</div><div style="font:300 13.5px/1.6 Chivo,sans-serif;color:#3A4550">Weight and reps use ± steppers at the user's equipment increment. RIR arrives preselected at the prescribed target; confirming logs the set in one tap. Tapping a different RIR chip is the only extra interaction, and actualRir is persisted per set regardless. Long-press a value for keypad entry. Rest timer starts on log, runs in the background, and fires a local notification.</div></div>
+<div style="border-left:3px solid #2A44A8;padding:2px 0 2px 14px;break-inside:avoid"><div style="font:700 15px/1.3 Chivo,sans-serif;color:#10151A;margin-bottom:5px">AMRAP</div><div style="font:300 13.5px/1.6 Chivo,sans-serif;color:#3A4550">Countdown clock plus one full-width round target occupying the remaining height; a single tap anywhere on it increments rounds. Undo is a small secondary control. Extra reps are requested once, after time expires, never during the effort. Final score is rounds + extraReps.</div></div>
+<div style="border-left:3px solid #2A44A8;padding:2px 0 2px 14px;break-inside:avoid"><div style="font:700 15px/1.3 Chivo,sans-serif;color:#10151A;margin-bottom:5px">EMOM</div><div style="font:300 13.5px/1.6 Chivo,sans-serif;color:#3A4550">Dominant per-minute countdown. The movement advances automatically; NEXT is always visible. A three-second pre-cue and a minute-change cue fire as tone plus haptic, so the screen need not be watched. Marking a minute incomplete is optional and reversible. No interaction is required to complete the block.</div></div>
+<div style="border-left:3px solid #2A44A8;padding:2px 0 2px 14px;break-inside:avoid"><div style="font:700 15px/1.3 Chivo,sans-serif;color:#10151A;margin-bottom:5px">For Time</div><div style="font:300 13.5px/1.6 Chivo,sans-serif;color:#3A4550">Elapsed clock with optional splits. Round checkboxes are large targets. Passing the cap turns the clock amber and records cappedAt without stopping the timer. Scaling choice is shown before the first rep and recorded with the result.</div></div>
+<div style="border-left:3px solid #2A44A8;padding:2px 0 2px 14px;break-inside:avoid"><div style="font:700 15px/1.3 Chivo,sans-serif;color:#10151A;margin-bottom:5px">Recommendation explanation</div><div style="font:300 13.5px/1.6 Chivo,sans-serif;color:#3A4550">Any recommended value is tappable and opens a sheet stating the reason in plain language, then the reason code, prescription, previous performance, increment used and confidence with its age. Every engine output must be explainable this way; a recommendation without inputs to display is a bug.</div></div>
+<div style="border-left:3px solid #2A44A8;padding:2px 0 2px 14px;break-inside:avoid"><div style="font:700 15px/1.3 Chivo,sans-serif;color:#10151A;margin-bottom:5px">Approval sheets</div><div style="font:300 13.5px/1.6 Chivo,sans-serif;color:#3A4550">Reflow, re-entry and plan proposals share one pattern: what happened, the recommendation as concrete before-and-after, the reason code, two or three alternatives, then Accept and a dismissal that changes nothing. Nothing is written on dismissal.</div></div>
+</div>
+
+<h2 style="font:700 22px/1.2 Chivo,sans-serif;letter-spacing:-.02em;color:#10151A;margin:0 0 12px;break-after:avoid">7 · Progression engine contract</h2>
+<pre style="font:400 11.5px/1.75 'Roboto Mono',monospace;color:#10151A;background:#F4F6F8;border:1px solid #D9DFE4;border-radius:6px;padding:16px 18px;margin:0 0 14px;white-space:pre-wrap;break-inside:avoid">recommend(input) → Recommendation
+
+input:  { prescription, progressionRule, performanceRecord,
+          recentResults[], equipmentIncrement, adherenceMode }
+output: { value, reasonCode, inputs{}, confidence }</pre>
+<p style="font:300 14px/1.6 Chivo,sans-serif;color:#3A4550;margin:0 0 12px">Pure, deterministic and side-effect free. Same inputs must always yield the same output — this is what makes the Why sheet trustworthy and the engine testable. No AI in V1. Rules live in configuration, not in view code.</p>
+<table style="width:100%;border-collapse:collapse;font:400 12px/1.5 Chivo,sans-serif;margin-bottom:26px">
+<thead><tr>
+<th style="text-align:left;padding:8px 10px;border-bottom:1.5px solid #10151A;font:500 9.5px/1.3 'Roboto Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#5F6B70;width:38%">Reason code</th>
+<th style="text-align:left;padding:8px 10px;border-bottom:1.5px solid #10151A;font:500 9.5px/1.3 'Roboto Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#5F6B70">Condition</th>
+</tr></thead>
+<tbody>
+<tr><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;font:400 11.5px/1.5 'Roboto Mono',monospace;color:#10151A">LOAD_INCREASE</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">Top of rep range hit on every set at or above target RIR</td></tr>
+<tr><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;font:400 11.5px/1.5 'Roboto Mono',monospace;color:#10151A">REP_INCREASE</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">In range but below the top; load holds, reps advance</td></tr>
+<tr><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;font:400 11.5px/1.5 'Roboto Mono',monospace;color:#10151A">DOUBLE_PROGRESSION_INCOMPLETE</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">Some sets reached the top, others did not</td></tr>
+<tr><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;font:400 11.5px/1.5 'Roboto Mono',monospace;color:#10151A">HOLD</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">Repeat the same prescription; a set fell below range</td></tr>
+<tr><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;font:400 11.5px/1.5 'Roboto Mono',monospace;color:#10151A">LOAD_DECREASE</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">Repeated failure to reach the bottom of the range</td></tr>
+<tr><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;font:400 11.5px/1.5 'Roboto Mono',monospace;color:#10151A">DELOAD_PRESCRIBED</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">Program-owned deload week is active</td></tr>
+<tr><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;font:400 11.5px/1.5 'Roboto Mono',monospace;color:#10151A">PERCENTAGE_OF_ESTIMATE</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">Program prescribes a percentage; value derived from e1RM</td></tr>
+<tr><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;font:400 11.5px/1.5 'Roboto Mono',monospace;color:#10151A">CALIBRATION_REQUIRED</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">No usable history; open with a calibration set, not a guess</td></tr>
+<tr><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;font:400 11.5px/1.5 'Roboto Mono',monospace;color:#10151A">RECENCY_DECAY</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">History exists but is old; confidence reduced, never deleted</td></tr>
+<tr><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;font:400 11.5px/1.5 'Roboto Mono',monospace;color:#10151A">SUBSTITUTION_ESTIMATE</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">Value inferred from a related movement in the same group</td></tr>
+</tbody>
+</table>
+
+<h2 style="font:700 22px/1.2 Chivo,sans-serif;letter-spacing:-.02em;color:#10151A;margin:0 0 12px;break-after:avoid">8 · Planning engine contracts</h2>
+<pre style="font:400 11.5px/1.75 'Roboto Mono',monospace;color:#10151A;background:#F4F6F8;border:1px solid #D9DFE4;border-radius:6px;padding:16px 18px;margin:0 0 14px;white-space:pre-wrap;break-inside:avoid">proposePlan(goal, availability, profile)          → PlanProposal   [PLAN_FROM_GOAL]
+proposePhaseForProgram(programDef, goal, avail)   → PlanProposal   [PHASE_FROM_PROGRAM]
+recommendProgram(phase, availability, profile)    → ProgramRecommendation
+fitCapacity(availability, requiredSessions)       → CapacityFit    [CAPACITY_FIT]
+materialiseTacticalWeeks(phase, fromDate, weeks)  → Session[]
+proposeReflow(missedSession, phase, availability) → ReflowProposal [MISSED_SESSION_REFLOW]
+proposeReturn(absence, profile, phase, program)   → ReturnProposal
+</pre>
+<p style="font:300 14px/1.6 Chivo,sans-serif;color:#3A4550;margin:0 0 12px">Every proposal is a DRAFT value object. Nothing is persisted until the user accepts. <code style="font:400 12.5px/1 'Roboto Mono',monospace">materialiseTacticalWeeks</code> is the only function that creates Sessions, and it runs for the four-week horizon only — configurable, defaulting to 4.</p>
+<p style="font:300 14px/1.6 Chivo,sans-serif;color:#3A4550;margin:0 0 12px"><strong>Capacity.</strong> Availability describes opportunities — training days per week, minutes per day, whether doubles are acceptable, whether an occasional longer session is possible. The planner derives how many Sessions fit. Seven sessions across five training days is a valid fit when doubles are allowed.</p>
+<p style="font:300 14px/1.6 Chivo,sans-serif;color:#3A4550;margin:0 0 12px"><strong>Priority.</strong> Derived from the active Phase type: Muscle Gain and Strength phases give strength priority; endurance phases give the endurance modality priority; Functional Fitness gives mixed-modal priority. It is never presented as a question during planning. A manual override exists under Profile → Advanced.</p>
+<p style="font:300 14px/1.6 Chivo,sans-serif;color:#3A4550;margin:0 0 26px"><strong>Re-entry.</strong> <code style="font:400 12.5px/1 'Roboto Mono',monospace">proposeReturn</code> considers time away, modality, Performance Profile confidence, prior training history, program rules, and optionally user-reported readiness. It returns one of CONTINUE, RETURN_REDUCED_LOAD, RETURN_REDUCED_VOLUME, RETURN_REDUCED_LOAD_AND_VOLUME. V1 uses conservative deterministic thresholds held in configuration and displayed in the approval sheet. No specific figure — including the 90%-load example in the designs — is product logic.</p>
+
+<h2 style="font:700 22px/1.2 Chivo,sans-serif;letter-spacing:-.02em;color:#10151A;margin:0 0 12px;break-after:avoid">9 · Program import architecture</h2>
+<pre style="font:400 11.5px/1.75 'Roboto Mono',monospace;color:#10151A;background:#F4F6F8;border:1px solid #D9DFE4;border-radius:6px;padding:16px 18px;margin:0 0 14px;white-space:pre-wrap;break-inside:avoid">Source file → Parser → Intermediate Program Representation → Validation
+           → Ambiguity Review → Canonical Program Model → Program Engine</pre>
+<p style="font:300 14px/1.6 Chivo,sans-serif;color:#3A4550;margin:0 0 12px"><strong>Hard rule.</strong> Interpreted or AI-assisted content is never written directly into the Canonical Program Model. Every path to the canonical model passes through Validation and, where confidence is insufficient, Ambiguity Review.</p>
+<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px">
+<div style="border-left:3px solid #2A44A8;padding:2px 0 2px 14px;break-inside:avoid"><div style="font:700 14.5px/1.3 Chivo,sans-serif;color:#10151A;margin-bottom:4px">Source file</div><div style="font:300 13.5px/1.6 Chivo,sans-serif;color:#3A4550">Stored verbatim and immutable. Re-import must be possible after a parser improvement without asking the user for the file again.</div></div>
+<div style="border-left:3px solid #2A44A8;padding:2px 0 2px 14px;break-inside:avoid"><div style="font:700 14.5px/1.3 Chivo,sans-serif;color:#10151A;margin-bottom:4px">Intermediate Program Representation</div><div style="font:300 13.5px/1.6 Chivo,sans-serif;color:#3A4550">Every node carries a SourceRef — sheet, cell or range, plus the original formula text. Every canonical prescription must be traceable back to the cell that produced it, and that trace is retained after commit.</div></div>
+<div style="border-left:3px solid #2A44A8;padding:2px 0 2px 14px;break-inside:avoid"><div style="font:700 14.5px/1.3 Chivo,sans-serif;color:#10151A;margin-bottom:4px">Validation</div><div style="font:300 13.5px/1.6 Chivo,sans-serif;color:#3A4550">Schema conformance, plausible ranges, referential integrity, week and block completeness, exercise resolution. Produces errors that block commit and warnings that do not.</div></div>
+<div style="border-left:3px solid #2A44A8;padding:2px 0 2px 14px;break-inside:avoid"><div style="font:700 14.5px/1.3 Chivo,sans-serif;color:#10151A;margin-bottom:4px">Ambiguity Review</div><div style="font:300 13.5px/1.6 Chivo,sans-serif;color:#3A4550">Anything below the confidence threshold is presented for confirmation with its source location shown. Guessing is prohibited. The user can defer an ambiguity; the affected prescription then falls back to a stated default and remains flagged.</div></div>
+<div style="border-left:3px solid #2A44A8;padding:2px 0 2px 14px;break-inside:avoid"><div style="font:700 14.5px/1.3 Chivo,sans-serif;color:#10151A;margin-bottom:4px">Canonical Program Model</div><div style="font:300 13.5px/1.6 Chivo,sans-serif;color:#3A4550">A ProgramDefinition of structured rules. Percentages, rep ranges, RIR and RPE targets, progression conditions, deload logic and substitution options survive as executable rules — never flattened into static workouts. The Progression Engine executes the methodology; it does not replay the spreadsheet.</div></div>
+</div>
+<p style="font:300 14px/1.6 Chivo,sans-serif;color:#3A4550;margin:0 0 26px"><strong>Adherence mode.</strong> <code style="font:400 12.5px/1 'Roboto Mono',monospace">adherenceMode: STRICT | ADAPTIVE</code> on ProgramDefinition, with STRICT the default. STRICT follows the imported methodology exactly unless the user explicitly changes it. ADAPTIVE preserves intent, progression model and stated constraints while permitting a declared set of planner adjustments. V1 implements STRICT; the model, the migration path and the UI copy must accommodate ADAPTIVE without a schema change. Immutability is a default, not an architectural assumption.</p>
+
+<h2 style="font:700 22px/1.2 Chivo,sans-serif;letter-spacing:-.02em;color:#10151A;margin:0 0 12px;break-after:avoid">10 · Canonical exercise model</h2>
+<pre style="font:400 11.5px/1.75 'Roboto Mono',monospace;color:#10151A;background:#F4F6F8;border:1px solid #D9DFE4;border-radius:6px;padding:16px 18px;margin:0 0 14px;white-space:pre-wrap;break-inside:avoid">source name → proposed canonical exercise ID → confidence → user confirmation
+                                                        → mapping remembered</pre>
+<p style="font:300 14px/1.6 Chivo,sans-serif;color:#3A4550;margin:0 0 12px">“DB Incline”, “Incline DB Press” and “Incline Dumbbell Press” all resolve to one canonical exercise, so one history serves them all. Resolution runs alias table first, then normalised string match, then movement-pattern heuristics. High confidence resolves silently; anything below the threshold goes to Ambiguity Review with the source cell shown and the option to create a new canonical exercise instead.</p>
+<p style="font:300 14px/1.6 Chivo,sans-serif;color:#3A4550;margin:0 0 26px">Confirmed mappings are stored against the user's profile and applied to future imports automatically. A canonical exercise carries modality, equipment, movement pattern and substitution groups; substitution groups are what make SUBSTITUTION_ESTIMATE possible. All performance data references canonical IDs only — never source strings.</p>
+
+<h2 style="font:700 22px/1.2 Chivo,sans-serif;letter-spacing:-.02em;color:#10151A;margin:0 0 12px;break-after:avoid">11 · HealthKit boundaries</h2>
+<table style="width:100%;border-collapse:collapse;font:400 12px/1.5 Chivo,sans-serif;margin-bottom:14px">
+<thead><tr>
+<th style="text-align:left;padding:8px 10px;border-bottom:1.5px solid #10151A;font:500 9.5px/1.3 'Roboto Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#5F6B70;width:34%">Data</th>
+<th style="text-align:left;padding:8px 10px;border-bottom:1.5px solid #10151A;font:500 9.5px/1.3 'Roboto Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#5F6B70;width:16%">Direction</th>
+<th style="text-align:left;padding:8px 10px;border-bottom:1.5px solid #10151A;font:500 9.5px/1.3 'Roboto Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#5F6B70">Fallback when denied</th>
+</tr></thead>
+<tbody>
+<tr><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;color:#10151A">Body weight</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;font:400 11px/1.4 'Roboto Mono',monospace;color:#5F6B70">read</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">Manual entry on Progress</td></tr>
+<tr><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;color:#10151A">Heart rate, resting HR</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;font:400 11px/1.4 'Roboto Mono',monospace;color:#5F6B70">read</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">Zone targets shown as perceived effort</td></tr>
+<tr><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;color:#10151A">Distance, active energy</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;font:400 11px/1.4 'Roboto Mono',monospace;color:#5F6B70">read</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">Manual entry per conditioning block</td></tr>
+<tr><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;color:#10151A">VO2max</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;font:400 11px/1.4 'Roboto Mono',monospace;color:#5F6B70">read</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">Metric hidden entirely</td></tr>
+<tr><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;color:#10151A">Completed workouts</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;font:400 11px/1.4 'Roboto Mono',monospace;color:#5F6B70">write</td><td style="padding:7px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">No export; nothing else affected</td></tr>
+</tbody>
+</table>
+<p style="font:300 14px/1.6 Chivo,sans-serif;color:#3A4550;margin:0 0 26px">Permissions are requested per type, in context, at the moment the data would first be useful — never as an onboarding wall. Programs, sets, reps, weight, RIR, PRs, progression, phases and planning are owned by this app's store in all cases. No session, block or recommendation may be blocked by a missing Health permission.</p>
+
+<h2 style="font:700 22px/1.2 Chivo,sans-serif;letter-spacing:-.02em;color:#10151A;margin:0 0 12px;break-after:avoid">12 · Offline-first architecture and persistence</h2>
+<p style="font:300 14px/1.6 Chivo,sans-serif;color:#3A4550;margin:0 0 12px">The local store is authoritative. Execution — timers, set entry, scoring, block completion, session completion — must work with no network, and progression recommendations for materialised sessions must be computed locally. Sync is a background reconciliation, never a precondition.</p>
+<pre style="font:400 11.5px/1.75 'Roboto Mono',monospace;color:#10151A;background:#F4F6F8;border:1px solid #D9DFE4;border-radius:6px;padding:16px 18px;margin:0 0 14px;white-space:pre-wrap;break-inside:avoid">Local store   SwiftData / Core Data — full domain model
+Write path    optimistic local write → outbox entry → sync → ack
+Conflicts     SetResult and BlockResult are append-only, last-writer-wins
+              per record; plans and phases resolve server-authoritative
+              after a user-visible notice
+Timers        wall-clock anchored (startedAt + offset), never tick counts,
+              so backgrounding, lock and app kill cannot drift the score
+Recovery      an interrupted Session resumes at its last completed block;
+              in-flight set entry is restored from local draft state
+Retention     source import files and IPRs retained for re-import;
+              nothing in the Performance Profile is ever hard-deleted</pre>
+<p style="font:300 14px/1.6 Chivo,sans-serif;color:#3A4550;margin:0 0 26px">Multi-user on one device is supported by scoping every query to userId; there is no shared performance state.</p>
+
+<h2 style="font:700 22px/1.2 Chivo,sans-serif;letter-spacing:-.02em;color:#10151A;margin:0 0 12px;break-after:avoid">13 · Reason-code taxonomy</h2>
+<p style="font:300 14px/1.6 Chivo,sans-serif;color:#3A4550;margin:0 0 12px">Every engine output carries a code. Codes are stable identifiers, are never shown as the only explanation, and always appear alongside plain-language copy. Grouped by prefix:</p>
+<pre style="font:400 11.5px/1.8 'Roboto Mono',monospace;color:#10151A;background:#F4F6F8;border:1px solid #D9DFE4;border-radius:6px;padding:16px 18px;margin:0 0 14px;white-space:pre-wrap;break-inside:avoid">Progression   LOAD_INCREASE · REP_INCREASE · HOLD · LOAD_DECREASE
+              DOUBLE_PROGRESSION_INCOMPLETE · DELOAD_PRESCRIBED
+              PERCENTAGE_OF_ESTIMATE · CALIBRATION_REQUIRED
+              RECENCY_DECAY · SUBSTITUTION_ESTIMATE
+Planning      PLAN_FROM_GOAL · PHASE_FROM_PROGRAM · CAPACITY_FIT
+              INTERFERENCE_CONFLICT · MISSED_SESSION_REFLOW
+              PHASE_SHIFTED · WEEK_VOLUME_PRESERVED
+Re-entry      CONTINUE · RETURN_REDUCED_LOAD · RETURN_REDUCED_VOLUME
+              RETURN_REDUCED_LOAD_AND_VOLUME
+Import        SOURCE_UNREADABLE · SCHEMA_INVALID · RANGE_IMPLAUSIBLE
+              FORMULA_UNRESOLVED · EXERCISE_UNRESOLVED
+              EXERCISE_AMBIGUOUS · MULTIPLE_MOVEMENTS_IN_CELL
+              DEFERRED_WITH_DEFAULT</pre>
+<p style="font:300 14px/1.6 Chivo,sans-serif;color:#3A4550;margin:0 0 26px">Codes are additive. New codes may be added; existing ones must not be renamed or repurposed, because stored recommendations reference them historically.</p>
+
+<h2 style="font:700 22px/1.2 Chivo,sans-serif;letter-spacing:-.02em;color:#10151A;margin:0 0 12px;break-after:avoid">14 · Error and ambiguity states</h2>
+<table style="width:100%;border-collapse:collapse;font:400 12px/1.5 Chivo,sans-serif;margin-bottom:26px">
+<thead><tr>
+<th style="text-align:left;padding:8px 10px;border-bottom:1.5px solid #10151A;font:500 9.5px/1.3 'Roboto Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#5F6B70;width:34%">Situation</th>
+<th style="text-align:left;padding:8px 10px;border-bottom:1.5px solid #10151A;font:500 9.5px/1.3 'Roboto Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#5F6B70">Behaviour</th>
+</tr></thead>
+<tbody>
+<tr><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;color:#10151A">No history for an exercise</td><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">CALIBRATION_REQUIRED — open with a calibration set. Never invent a load.</td></tr>
+<tr><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;color:#10151A">Stale history</td><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">RECENCY_DECAY — confidence lowered and labelled; data retained.</td></tr>
+<tr><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;color:#10151A">Unreadable formula</td><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">FORMULA_UNRESOLVED — flagged with its cell, blocks commit until confirmed or deferred.</td></tr>
+<tr><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;color:#10151A">Two movements in one cell</td><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">MULTIPLE_MOVEMENTS_IN_CELL — user splits or picks one.</td></tr>
+<tr><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;color:#10151A">Ambiguity deferred</td><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">DEFERRED_WITH_DEFAULT — stated default applied, flag persists on the prescription.</td></tr>
+<tr><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;color:#10151A">Session interrupted</td><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">Resume at the last completed block; drafts restored; nothing silently discarded.</td></tr>
+<tr><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;color:#10151A">Capacity cannot fit the goal</td><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">Planner states the shortfall and offers a longer timeline or reduced scope. It does not silently drop sessions.</td></tr>
+<tr><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;color:#10151A">Sync conflict on a plan</td><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">User is told what changed before it is applied.</td></tr>
+</tbody>
+</table>
+
+<h2 style="font:700 22px/1.2 Chivo,sans-serif;letter-spacing:-.02em;color:#10151A;margin:0 0 12px;break-after:avoid">15 · Accessibility requirements</h2>
+<div style="font:300 14px/1.75 Chivo,sans-serif;color:#3A4550;margin-bottom:26px">
+Dynamic Type supported through the largest accessibility sizes; timer and set-entry layouts must reflow rather than clip or truncate. Minimum hit target 44 × 44 pt — the AMRAP round target and EMOM controls are far larger by design. Contrast at least 4.5:1 for body text and 3:1 for large text in both dark and light modes. Every interactive element carries an accessibility label and a value where it has one; steppers expose increment and decrement actions. Timer state changes are announced, and interval cues are delivered as sound and haptic as well as visually, so no cue is visual-only. VoiceOver order follows visual order. Reduce Motion removes the pulse and transitions without removing information. Colour is never the sole carrier of meaning: PRs, off-target RIR and missed days all carry text or shape as well.
+</div>
+
+<h2 style="font:700 22px/1.2 Chivo,sans-serif;letter-spacing:-.02em;color:#10151A;margin:0 0 12px;break-after:avoid">16 · Test strategy</h2>
+<div style="font:300 14px/1.75 Chivo,sans-serif;color:#3A4550;margin-bottom:26px">
+<strong>Engine unit tests</strong> are the priority. The Progression Engine is pure, so every reason code gets a table-driven case, including boundaries: exactly at the top of the range, mixed sets, a single below-range set, stale history at the decay threshold, missing history, and percentage prescriptions against a fresh estimate. Same inputs must always produce the same output and reason code.<br><br>
+<strong>Planning tests</strong> cover capacity fitting (7 sessions into 5 days with doubles allowed and disallowed), interference rules, reflow options preserving weekly volume, phase shifting against a fixed target date, and the four re-entry outcomes at their threshold boundaries.<br><br>
+<strong>Import tests</strong> run a corpus of real spreadsheets as golden files: parser output, IPR with SourceRefs intact, validation results, and the exact set of ambiguities raised. A regression here is a silent data-integrity failure, so the corpus must include known-bad files that must fail rather than guess.<br><br>
+<strong>Execution tests</strong> cover timer accuracy across backgrounding, lock and app kill; block state transitions; offline logging with later sync; and interrupted-session recovery.<br><br>
+<strong>UI tests</strong> cover the five journeys end to end, plus Dynamic Type at the largest size and VoiceOver traversal on Today, set logging, AMRAP and the approval sheets.
+</div>
+
+<h2 style="font:700 22px/1.2 Chivo,sans-serif;letter-spacing:-.02em;color:#10151A;margin:0 0 12px;break-after:avoid">17 · Phased implementation plan</h2>
+<table style="width:100%;border-collapse:collapse;font:400 12px/1.5 Chivo,sans-serif;margin-bottom:14px">
+<thead><tr>
+<th style="text-align:left;padding:8px 10px;border-bottom:1.5px solid #10151A;font:500 9.5px/1.3 'Roboto Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#5F6B70;width:14%">Stage</th>
+<th style="text-align:left;padding:8px 10px;border-bottom:1.5px solid #10151A;font:500 9.5px/1.3 'Roboto Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#5F6B70">Scope</th>
+</tr></thead>
+<tbody>
+<tr><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;font-weight:700;color:#10151A">1</td><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">Domain model, local store, canonical exercise library, Performance Profile. No UI beyond a debug harness.</td></tr>
+<tr><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;font-weight:700;color:#10151A">2</td><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">Progression Engine with the full progression reason-code set and its test table.</td></tr>
+<tr><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;font-weight:700;color:#10151A">3</td><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">Execution: Today, session detail, strength block, set logging with preselected RIR, Why sheet, completion with what-changes-next-time.</td></tr>
+<tr><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;font-weight:700;color:#10151A">4</td><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">Conditioning and functional blocks: steady state, intervals, AMRAP, EMOM, For Time, with audio and haptic cues.</td></tr>
+<tr><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;font-weight:700;color:#10151A">5</td><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">Planning: goal, availability, plan proposal, program recommendation, tactical materialisation, Plan tab and calendar.</td></tr>
+<tr><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;font-weight:700;color:#10151A">6</td><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">Reflow and re-entry approval flows. Progress tab, exercise and benchmark detail.</td></tr>
+<tr><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;font-weight:700;color:#10151A">7</td><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">Import pipeline end to end, Path B, exercise identity confirmation, Strict adherence.</td></tr>
+<tr><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;font-weight:700;color:#10151A">8</td><td style="padding:8px 10px;border-bottom:1px solid #E4E9ED;color:#3A4550">HealthKit, Profile and Settings, light mode, accessibility pass, sync.</td></tr>
+</tbody>
+</table>
+
+<h3 style="font:700 16px/1.3 Chivo,sans-serif;color:#10151A;margin:0 0 10px;break-after:avoid">17.1 V1 versus later</h3>
+<div style="display:flex;gap:14px;margin-bottom:20px;break-inside:avoid">
+<div style="flex:1;border:1px solid #B9C6D2;border-radius:6px;padding:14px 16px">
+<div style="font:500 9.5px/1 'Roboto Mono',monospace;letter-spacing:.18em;text-transform:uppercase;color:#2A44A8;margin-bottom:10px">In V1</div>
+<div style="font:300 13px/1.7 Chivo,sans-serif;color:#3A4550">Three-tab navigation · Day/Session/Block execution for all six block types · per-set actual RIR · deterministic Progression Engine with full reason codes · both planning paths · capacity fitting · phase-derived priority · four-week tactical horizon · reflow and re-entry approval · calendar · Progress with exercise and benchmark detail · import pipeline with ambiguity review and exercise identity · STRICT adherence · HealthKit per-type · offline execution · light mode · accessibility</div>
+</div>
+<div style="flex:1;border:1px solid #D9DFE4;border-radius:6px;padding:14px 16px">
+<div style="font:500 9.5px/1 'Roboto Mono',monospace;letter-spacing:.18em;text-transform:uppercase;color:#5F6B70;margin-bottom:10px">Later</div>
+<div style="font:300 13px/1.7 Chivo,sans-serif;color:#3A4550">ADAPTIVE adherence and permitted planner adjustments · readiness input to re-entry · automatic scaling-progression prompts (“you've handled knee raises comfortably four times”) · auto-approval preference for low-impact moves · program sharing and a public library · Watch app · richer conditioning analytics including VO2max trends · coach or multi-athlete views · any AI-assisted interpretation, and only ever behind the existing validation pipeline</div>
+</div>
+</div>
+<p style="font:400 12.5px/1.6 'Roboto Mono',monospace;color:#5F6B70;margin:0 0 26px">The data model must accommodate every “later” item without a schema migration. Nothing in this list is a new feature; each was raised and deferred during design.</p>
+
+<h2 style="font:700 22px/1.2 Chivo,sans-serif;letter-spacing:-.02em;color:#10151A;margin:0 0 12px;break-after:avoid">18 · Design source</h2>
+<p style="font:300 14px/1.6 Chivo,sans-serif;color:#3A4550;margin:0 0 12px">Screens live in <a href="Training OS.dc.html">Training OS</a>, newest pass at the top: pass 05 (import pipeline, adherence, re-entry, journeys), pass 04 (two planning paths, revised availability, recommendation-first programs, pause, Health, settings, light mode), pass 03 (timer rebuilds, exercise and benchmark detail, goal-to-plan flow), pass 02 (two-session Today, RIR logging, calendar, reflow, EMOM, For Time, completion), pass 01 (architecture, navigation options, workout model, five core surfaces). Screens 18 and 20 are superseded.</p>
+<p style="font:300 14px/1.6 Chivo,sans-serif;color:#3A4550;margin:0 0 12px"><strong>Visual system.</strong> Chivo for interface type, Roboto Mono for numbers, codes and metadata. Dark mode ground #0E1214, surfaces #12181B and #161C20, primary #7C9CFF, positive #6FD79E, attention #E8B457, body text #B4BDB9, secondary #8A9490. Light mode swaps to ground #F2F4F3, surface #FFFFFF, primary #3A5BD9, text #10151A, secondary #5F6B70. Numerals are tabular wherever they change in place.</p>
+<p style="font:300 14px/1.6 Chivo,sans-serif;color:#3A4550;margin:0">Any question this document does not answer is a product question, not an implementation choice. Raise it rather than deciding it.</p>
+
+</doc-page>
+</x-dc>
+</body>
+</html>
