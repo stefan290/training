@@ -16,8 +16,34 @@ struct Power: Codable, Equatable, Comparable {
     static func < (lhs: Power, rhs: Power) -> Bool { lhs.watts < rhs.watts }
 }
 
-typealias PaceRange = ClosedRange<Pace>
-typealias PowerRange = ClosedRange<Power>
+/// A closed interval, stored as two named bounds rather than the standard
+/// library's `ClosedRange<Bound>`. SwiftData's schema inference cannot
+/// persist a `ClosedRange` nested inside a Codable enum's associated
+/// value — at save time it tries to KVC-decompose the boxed Swift value
+/// via `lowerBound`/`upperBound`, which isn't KVC-compliant, and crashes
+/// (`valueForUndefinedKey: lowerBound`). Found by
+/// `ModalityPersistenceRoundTripTests.testSteadyStatePrescriptionSurvivesRoundTrip`/
+/// `.testIntervalPrescriptionAndResultWithRepsSurviveRoundTrip` during the
+/// first Xcode verification pass of Stage 3C — every `IntensityTarget`
+/// case that used to hold a `ClosedRange` now holds a `BoundedRange`
+/// instead.
+struct BoundedRange<Bound: Codable & Equatable & Comparable>: Codable, Equatable {
+    var lower: Bound
+    var upper: Bound
+
+    init(lower: Bound, upper: Bound) {
+        self.lower = lower
+        self.upper = upper
+    }
+
+    init(_ range: ClosedRange<Bound>) {
+        self.lower = range.lowerBound
+        self.upper = range.upperBound
+    }
+}
+
+typealias PaceRange = BoundedRange<Pace>
+typealias PowerRange = BoundedRange<Power>
 
 /// Coarse, numbered training zones — deliberately just a number, per
 /// British Cycling's own usage (`PROGRAMMING_SOURCES.md` §2): the same
@@ -54,20 +80,20 @@ enum IntensityTarget: Codable, Equatable {
     /// `.heartRateZone` because the source study specifies a percentage
     /// directly, not a zone number, and translating it into "zone" would
     /// be an uncited interpretation.
-    case heartRatePercent(ClosedRange<Double>)
+    case heartRatePercent(BoundedRange<Double>)
     case pace(PaceRange)
     case powerZone(PowerZone)
     case powerRange(PowerRange)
-    case rpe(ClosedRange<Int>)
+    case rpe(BoundedRange<Int>)
     /// Cycling cadence, revolutions per minute.
-    case cadence(ClosedRange<Int>)
+    case cadence(BoundedRange<Int>)
     /// Rowing/SkiErg stroke rate, strokes per minute — the case the
     /// cross-modality proof in `ENDURANCE_PROGRAMMING_MODEL.md` §4 found
     /// missing from the Stage 3B draft.
-    case strokeRate(ClosedRange<Int>)
+    case strokeRate(BoundedRange<Int>)
     /// A percentage of a named reference metric (e.g. 88-93% of FTP) —
     /// the metric is a closed, typed set, never a free-text label.
-    case percentOfReference(ClosedRange<Double>, metric: ReferenceMetric)
+    case percentOfReference(BoundedRange<Double>, metric: ReferenceMetric)
 }
 
 enum ReferenceMetric: String, Codable, CaseIterable {

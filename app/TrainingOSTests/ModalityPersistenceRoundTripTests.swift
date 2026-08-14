@@ -32,7 +32,7 @@ final class ModalityPersistenceRoundTripTests: XCTestCase {
             durationSeconds: 2700,
             distanceMeters: 22000,
             primaryIntensity: .heartRateZone(.two),
-            secondaryIntensity: .cadence(85...95)
+            secondaryIntensity: .cadence(BoundedRange(85...95))
         )
         context.insert(prescription)
         block.attachSteadyStatePrescription(prescription)
@@ -44,7 +44,7 @@ final class ModalityPersistenceRoundTripTests: XCTestCase {
         XCTAssertEqual(reloaded.activityType, .cycling)
         XCTAssertEqual(reloaded.durationSeconds, 2700)
         XCTAssertEqual(reloaded.primaryIntensity, .heartRateZone(.two))
-        XCTAssertEqual(reloaded.secondaryIntensity, .cadence(85...95))
+        XCTAssertEqual(reloaded.secondaryIntensity, .cadence(BoundedRange(85...95)))
         XCTAssertNotNil(reloaded.workoutBlock)
         XCTAssertEqual(reloaded.workoutBlock?.id, block.id)
     }
@@ -57,9 +57,9 @@ final class ModalityPersistenceRoundTripTests: XCTestCase {
             activityType: .rowing,
             intervalCount: 4,
             workDurationSeconds: 240,
-            workIntensity: .strokeRate(28...32),
+            workIntensity: .strokeRate(BoundedRange(28...32)),
             recoveryDurationSeconds: 180,
-            recoveryIntensity: .heartRatePercent(0.70...0.70)
+            recoveryIntensity: .heartRatePercent(BoundedRange(0.70...0.70))
         )
         context.insert(prescription)
         block.attachIntervalPrescription(prescription)
@@ -201,5 +201,47 @@ final class ModalityPersistenceRoundTripTests: XCTestCase {
         XCTAssertNil(general.performanceContext)
         XCTAssertEqual(fiveK.performanceContext, "5K")
         // Stage 3C §21: "5K" is never the same identity as generic Running.
+    }
+
+    func testWorkoutBlockTrainingStressProfileSurvivesRoundTrip() throws {
+        let blockID = UUID()
+        let block = WorkoutBlock(
+            id: blockID,
+            type: .steadyState,
+            trainingStressProfile: TrainingStressProfile(
+                overallIntensity: .moderate,
+                systemicDemand: .high,
+                lowerBodyLoad: .high,
+                upperBodyLoad: .none,
+                impactLoading: .low,
+                metabolicDemand: .high,
+                durationClassification: .long,
+                modality: .running,
+                recoveryDemand: .moderate
+            )
+        )
+        context.insert(block)
+        try context.save()
+
+        let reloaded = try XCTUnwrap(
+            freshContext().fetch(FetchDescriptor<WorkoutBlock>(predicate: #Predicate { $0.id == blockID })).first
+        )
+        let profile = try XCTUnwrap(reloaded.trainingStressProfile)
+        XCTAssertEqual(profile.overallIntensity, .moderate)
+        XCTAssertEqual(profile.systemicDemand, .high)
+        XCTAssertEqual(profile.lowerBodyLoad, .high)
+        XCTAssertEqual(profile.upperBodyLoad, .none)
+        XCTAssertEqual(profile.impactLoading, .low)
+        XCTAssertEqual(profile.metabolicDemand, .high)
+        XCTAssertEqual(profile.durationClassification, .long)
+        XCTAssertEqual(profile.modality, .running)
+        XCTAssertEqual(profile.recoveryDemand, .moderate)
+        // No existing test exercised this before the first Xcode
+        // verification pass of Stage 3C; added specifically because
+        // IntensityTarget's ClosedRange round-trip crash (see
+        // BoundedRange's doc comment) showed a plain-looking Codable
+        // value type stored on an @Model can still break SwiftData at
+        // save time — TrainingStressProfile only holds simple enums, so
+        // this confirms it doesn't share that failure mode.
     }
 }

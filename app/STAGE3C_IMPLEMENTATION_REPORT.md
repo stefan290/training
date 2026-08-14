@@ -245,3 +245,70 @@ same reasoning `PRESCRIPTION_RESULT_MODEL_REVIEW.md` §6 already noted).
    new UI content — there is none, by design, per §6 above).
 6. Report back exactly what broke, if anything, the same way every prior
    phase has — this is the loop, not a one-shot expectation.
+
+## 9. Local Xcode verification results (first real build)
+
+Run against commit `48e60a2` (this pass, unmodified) plus the fix commit
+on top. Xcode 26.6 (build 17F113), iOS 26.5 SDK, iPhone 17 simulator.
+
+**Build:** clean build of the `TrainingOS` scheme succeeded with zero
+errors on the first attempt — no compile errors this time (contrast
+Stage 2's `@MainActor` finding).
+
+**Tests, first run:** 2 of 61 failed — both in `ModalityPersistenceRoundTripTests`:
+`testSteadyStatePrescriptionSurvivesRoundTrip` and
+`testIntervalPrescriptionAndResultWithRepsSurviveRoundTrip`. Crash
+message: `[<__SwiftValue> valueForUndefinedKey:]: this class is not key
+value coding-compliant for the key lowerBound`.
+
+**Root cause:** `IntensityTarget`'s range-carrying cases
+(`.heartRatePercent`, `.pace`, `.rpe`, `.cadence`, `.strokeRate`,
+`.percentOfReference`) held a standard-library `ClosedRange<Bound>`.
+SwiftData's schema inference cannot persist a `ClosedRange` nested inside
+a Codable enum's associated value — at save time it tries to
+KVC-decompose the boxed Swift value via `lowerBound`/`upperBound`, which
+isn't KVC-compliant on a bridged `__SwiftValue`, and crashes. This is the
+same *class* of finding as Stage 2's undeclared-inverse crash: a SwiftData
+behavior that a careful static read could not have predicted without a
+compiler and a real save cycle.
+
+**Fix:** added `BoundedRange<Bound>` (`IntensityTarget.swift`) — a plain
+Codable struct with named `lower`/`upper` stored properties and a
+`ClosedRange`-compatible initializer — and replaced every `ClosedRange`
+associated value in `IntensityTarget` with it. Updated the ~11 test
+call-sites that constructed cases with range literals (`.rpe(3...5)` →
+`.rpe(BoundedRange(3...5))`); no test's asserted values or semantics
+changed, only the literal syntax. Also added
+`testWorkoutBlockTrainingStressProfileSurvivesRoundTrip` (not previously
+covered by any test) specifically to confirm `TrainingStressProfile` —
+which looked structurally similar (a Codable value type on an `@Model`)
+but contains only simple enums, no ranges — does *not* share this failure
+mode. It doesn't; it round-trips cleanly.
+
+**Tests, final run:** 62/62 pass (39 pre-existing + 22 Stage 3C + the one
+new `TrainingStressProfile` test added during this verification pass).
+All 14 architecture-proof scenarios (§27) pass. All persistence round-trip
+tests, including the new `BoundedRange` one, pass.
+
+**Simulator:** launched on iPhone 17 (iOS 26.5) with no crash. Today, Plan
+and Progress all render the existing seeded dataset exactly as before
+Stage 3C (confirmed via screenshot for Today/Plan, confirmed manually by
+the product owner for Progress): Today shows "Lower A" (07:00) and
+"Evening Zone 2" (18:00); Plan shows Goal "muscle Gain" and both Phases
+(COMPLETED "5-Day Hypertrophy" / ACTIVE "3-Day Full Body"); Progress shows
+Fran with 0 sets logged and PR 245 — the pre-existing Stage 1-2
+`ExercisePrescription`-based Fran representation (`SeedScenarios.swift`'s
+`elapsedSeconds: 245`), not the new `BenchmarkDefinition` path, per §7's
+first open question below. No schema-migration crash, no regression.
+
+### Known-risk disposition (§7 revisited)
+
+| Risk | Disposition | Why |
+|---|---|---|
+| Two parallel Fran representations | **SAFE TO DEFER** | Confirmed directly in the simulator: the old, seeded path renders correctly and is unaffected by the new `BenchmarkDefinition` path, which only the new tests exercise. Consolidating which one is canonical is a product decision (which Fran is "real"?), not a correctness bug — nothing is broken today. |
+| Redundant `ExercisePrescription.repsPerRound`/`.targetDurationSeconds` | **SAFE TO DEFER** | Confirmed unused-but-harmless: no test or seed path reads them inconsistently with the new typed prescriptions, and removing them was explicitly out of the brief's scope (`ExercisePrescription` must stay untouched). A cleanup, not a defect. |
+| Remaining uninversed Exercise references (`ExercisePrescription.exercise`, `ExercisePerformanceProfile.exercise`, `Recommendation.exercisePrescription`, `FunctionalFitnessMovement.exercise`, `FunctionalFitnessPerformedMovement.performedExercise`) | **SAFE TO DEFER, but flagged** | Genuinely the same *class* of bug Stage 2 found and fixed (undeclared inverse → validation crash on delete) — but it only fires if something deletes a canonical `Exercise` while other rows reference it, and no such delete path exists anywhere in the app yet. Building that safeguard now would be adding scope (an Exercise-deletion feature that doesn't exist) rather than fixing a live bug. Revisit the moment Exercise deletion/re-import is actually built — same fix shape as `ProgramInstance.programDefinition`/`PersonalRecord.sourceWorkoutResult` (add a named, inversed collection on `Exercise`). |
+| `BenchmarkDefinition` curation uncertainty | **SAFE TO DEFER** | Pure product/process decision (curated list vs. user-authored), not a technical question — the persisted shape already supports either. Nothing in the code depends on resolving it. |
+
+None of the four warranted an automatic refactor; none were touched
+beyond what's recorded above.

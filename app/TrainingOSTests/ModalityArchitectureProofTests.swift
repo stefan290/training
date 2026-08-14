@@ -124,9 +124,9 @@ final class ModalityArchitectureProofTests: XCTestCase {
             activityType: .running,
             intervalCount: 8,
             workDurationSeconds: 60,
-            workIntensity: .rpe(3...5),
+            workIntensity: .rpe(BoundedRange(3...5)),
             recoveryDurationSeconds: 90,
-            recoveryIntensity: .rpe(1...2) // walking effort
+            recoveryIntensity: .rpe(BoundedRange(1...2)) // walking effort
         )
         context.insert(intervalPrescription)
         mainBlock.attachIntervalPrescription(intervalPrescription)
@@ -153,9 +153,9 @@ final class ModalityArchitectureProofTests: XCTestCase {
             activityType: .running,
             intervalCount: 5,
             workDistanceMeters: 1000,
-            workIntensity: .pace(Pace(secondsPerKilometer: 270)...Pace(secondsPerKilometer: 280)),
+            workIntensity: .pace(BoundedRange(Pace(secondsPerKilometer: 270)...Pace(secondsPerKilometer: 280))),
             recoveryDurationSeconds: 120,
-            recoveryIntensity: .rpe(1...2)
+            recoveryIntensity: .rpe(BoundedRange(1...2))
         )
         context.insert(prescription)
         block.attachIntervalPrescription(prescription)
@@ -178,7 +178,7 @@ final class ModalityArchitectureProofTests: XCTestCase {
             workDurationSeconds: 240,
             workIntensity: workTarget,
             recoveryDurationSeconds: 180,
-            recoveryIntensity: .heartRatePercent(0.70...0.70)
+            recoveryIntensity: .heartRatePercent(BoundedRange(0.70...0.70))
         )
         context.insert(prescription)
         block.attachIntervalPrescription(prescription)
@@ -186,7 +186,7 @@ final class ModalityArchitectureProofTests: XCTestCase {
     }
 
     func test4x4VO2Running() throws {
-        let block = makeVO2FourByFour(activityType: .running, workTarget: .heartRatePercent(0.90...0.95))
+        let block = makeVO2FourByFour(activityType: .running, workTarget: .heartRatePercent(BoundedRange(0.90...0.95)))
         guard case .intervals(let prescription) = try XCTUnwrap(block.blockPrescription) else {
             return XCTFail("expected .intervals")
         }
@@ -205,12 +205,12 @@ final class ModalityArchitectureProofTests: XCTestCase {
     }
 
     func test4x4VO2Rowing() throws {
-        let block = makeVO2FourByFour(activityType: .rowing, workTarget: .strokeRate(28...32))
+        let block = makeVO2FourByFour(activityType: .rowing, workTarget: .strokeRate(BoundedRange(28...32)))
         guard case .intervals(let prescription) = try XCTUnwrap(block.blockPrescription) else {
             return XCTFail("expected .intervals")
         }
         XCTAssertEqual(prescription.activityType, .rowing)
-        XCTAssertEqual(prescription.workIntensity, .strokeRate(28...32))
+        XCTAssertEqual(prescription.workIntensity, .strokeRate(BoundedRange(28...32)))
         // Same IntervalPrescription type as running/cycling above — only
         // `activityType` and the IntensityTarget case differ, proving the
         // modality-independent abstraction from ENDURANCE_PROGRAMMING_MODEL.md §4.
