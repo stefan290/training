@@ -1,8 +1,23 @@
 # Programming System Model
 
 Proposed architecture for representing training methodologies generically,
-based on `PROGRAM_LOGIC_SPEC.md` and `PROGRAM_FAMILY_MATRIX.md`. This is a
-specification, not an implementation — nothing here is built yet (Stage 4).
+based on `PROGRAM_LOGIC_SPEC.md` and `PROGRAM_FAMILY_MATRIX.md`. This
+remains a specification for the concrete `ProgrammingSystem` engines
+themselves — nothing in `HypertrophyProgrammingSystem`/
+`PowerliftingProgrammingSystem`/etc. is built yet (Stage 4).
+
+**Stage 3C implementation note:** three of this document's proposals now
+have real, implemented supporting types in the domain model, ahead of any
+concrete engine — see `STAGE3C_IMPLEMENTATION_REPORT.md` for the full
+detail. §5.1's `TrainingPhase` primary/secondary composition is
+implemented (`TrainingPhase.primaryInstance`/`.secondaryInstances`,
+`ProgramInstance.priority`). The generic `BlockPrescription`/`BlockResult`
+carrier types this document's §3 rule vocabulary would eventually populate
+are implemented (`PRESCRIPTION_RESULT_MODEL_REVIEW.md`'s design, built).
+§5.2's structural `pairedSlotReference` is **not** implemented by Stage
+3C — it remains exactly the proposal below, unaffected; it belongs to
+Stage 4's concrete engine work, not to Stage 3C's cross-modality domain
+generalization.
 
 ## 1. Where this sits relative to what already exists
 
@@ -240,6 +255,15 @@ ProgramJourney {
   Hypertrophy only) as a standalone program, exactly as `V1_PROGRAM_LIBRARY.md`
   ships it. `ProgramJourney` is an optional, additional way to present
   several phases as one recommended path.
+
+**Implemented (Stage 3C), separately from sequencing:** a `TrainingPhase`
+can compose one primary `ProgramInstance` with zero or more secondary
+Modules — `ProgramInstance.priority: GoalPriority` plus
+`TrainingPhase.primaryInstance`/`.secondaryInstances`. This is a different
+axis from the sequencing discussed above (sequencing is *across* phases,
+via `TrainingPlan.orderedPhases`; primary/secondary composition is
+*within* one phase) — both were found necessary by Stage 3B's validation,
+and only the within-phase one required an actual schema change.
 
 **This sequencing is a TrainingOS product interpretation of the phase
 naming and ordering ("Mesocycle 1/2/3" reads as an obvious sequence to a

@@ -102,6 +102,58 @@ against:
   yet. Same latent risk as above if that ever changes; flagged as a
   follow-up, not solved here.
 
+## Stage 3C additions
+
+Every relationship introduced by the typed `BlockPrescription`/
+`BlockResult`/`PerformanceProfile`-sibling generalization
+(`STAGE3C_IMPLEMENTATION_REPORT.md`). Same categories, same convention as
+above — this section is additive, nothing above it changed.
+
+### Performance-critical
+
+| Parent | Child | Relationship | Delete rule | Expected behaviour | Why |
+|---|---|---|---|---|---|
+| `WorkoutBlock` | `SteadyStateResult` | `steadyStateResult: SteadyStateResult?` | `.nullify` | Deleting the block leaves the result in place; `result.workoutBlock` becomes `nil`. | **Deliberately not the same rule as the legacy `WorkoutBlock.result` (`.cascade`).** This result has a permanent home (`ActivityPerformanceProfile`); cascading it with a session-context block would violate CLAUDE.md rule 1 for every non-strength result. |
+| `WorkoutBlock` | `IntervalResult` | `intervalResult: IntervalResult?` | `.nullify` | Same reasoning as above. | Same reasoning as above. |
+| `WorkoutBlock` | `FunctionalFitnessResult` | `functionalFitnessResult: FunctionalFitnessResult?` | `.nullify` | Same reasoning as above. | Same reasoning as above — this is also what makes benchmark history survive a program change. |
+| `ActivityPerformanceProfile` | `SteadyStateResult` | `steadyStateResults: [SteadyStateResult]` | `.cascade` | Only fires if the whole `ActivityPerformanceProfile` is deleted. | Mirrors `ExercisePerformanceProfile.setResults` exactly — the one legitimate cascade over this permanent record, effectively account-deletion-only in practice. |
+| `ActivityPerformanceProfile` | `IntervalResult` | `intervalResults: [IntervalResult]` | `.cascade` | Same as above. | Same as above. |
+| `ActivityPerformanceProfile` | `PersonalRecord` | `personalRecords: [PersonalRecord]` | `.cascade` | Same as above. | Mirrors `ExercisePerformanceProfile.personalRecords`. |
+| `BenchmarkPerformanceProfile` | `FunctionalFitnessResult` | `results: [FunctionalFitnessResult]` | `.cascade` | Same as above. | Mirrors `ExercisePerformanceProfile.setResults`. |
+| `BenchmarkPerformanceProfile` | `PersonalRecord` | `personalRecords: [PersonalRecord]` | `.cascade` | Same as above. | Mirrors `ExercisePerformanceProfile.personalRecords`. |
+| `PerformanceProfile` | `ActivityPerformanceProfile` | `activityProfiles: [ActivityPerformanceProfile]` | `.cascade` | Deleting the account deletes every activity profile. | Mirrors `PerformanceProfile.exerciseProfiles`. |
+| `PerformanceProfile` | `BenchmarkPerformanceProfile` | `benchmarkProfiles: [BenchmarkPerformanceProfile]` | `.cascade` | Deleting the account deletes every benchmark profile. | Mirrors `PerformanceProfile.exerciseProfiles`. |
+| `BenchmarkDefinition` | `FunctionalFitnessResult` | `results: [FunctionalFitnessResult]` | `.nullify` | Deleting a benchmark's *definition* (a methodology-like edit) leaves every historical attempt in place; `result.benchmark` becomes `nil`. | Mirrors `ProgramDefinition.instances` — editing/removing a methodology must never delete the performance history it produced. |
+| `FunctionalFitnessResult` | `PersonalRecord` | `personalRecord: PersonalRecord?` | `.nullify` | Mirrors `WorkoutResult.personalRecord`/`SetResult.personalRecord` exactly. | Same reasoning, same required-inverse mechanics. |
+| `FunctionalFitnessMovement` | `FunctionalFitnessPerformedMovement` | `performedAttempts: [FunctionalFitnessPerformedMovement]` | `.nullify` | Deleting the prescribed movement (e.g. its block/session is deleted) leaves the performed record in place, with `prescribedMovement` becoming `nil`; the performed data itself (`performedExercise`/`performedReps`/etc.) is unaffected, since it's copied onto the performed row directly. | Mirrors the SetResult/PersonalRecord "copy the value, keep the pointer as traceability only" pattern. |
+
+### Structural (sub-detail of one permanent/structural record)
+
+| Parent | Child | Relationship | Delete rule | Expected behaviour | Why |
+|---|---|---|---|---|---|
+| `WorkoutBlock` | `SteadyStatePrescription` | `steadyStatePrescription: SteadyStatePrescription?` | `.cascade` | Deleting a block deletes its typed prescription. | Structure, no performance data — mirrors `WorkoutBlock.exercisePrescriptions`. |
+| `WorkoutBlock` | `IntervalPrescription` | `intervalPrescription: IntervalPrescription?` | `.cascade` | Same as above. | Same as above. |
+| `WorkoutBlock` | `FunctionalFitnessPrescription` | `functionalFitnessPrescription: FunctionalFitnessPrescription?` | `.cascade` | Same as above. | Same as above. |
+| `FunctionalFitnessPrescription` | `FunctionalFitnessMovement` | `movements: [FunctionalFitnessMovement]` | `.cascade` | Deleting a prescription deletes its movement list. | Movements are pure prescription structure — the *performed* record (`FunctionalFitnessPerformedMovement`) lives elsewhere and survives independently (see above). |
+| `IntervalResult` | `IntervalRepResult` | `repResults: [IntervalRepResult]` | `.cascade` | Deleting the whole permanent result deletes its per-interval detail rows. | A rep result has no independent meaning outside the session result it belongs to — this cascade is scoped to *this* result's own children, not to any upstream program/block deletion (which is `.nullify`, above). |
+| `FunctionalFitnessResult` | `FunctionalFitnessPerformedMovement` | `performedMovements: [FunctionalFitnessPerformedMovement]` | `.cascade` | Same reasoning as `IntervalResult.repResults`. | Same reasoning. |
+
+### One-directional references (declared purely for delete-rule safety)
+
+- `BenchmarkDefinition.performanceProfiles: [BenchmarkPerformanceProfile]`
+  (`.nullify`, inverse `\BenchmarkPerformanceProfile.benchmark`) — nothing
+  in application code reads this; it exists only so
+  `BenchmarkPerformanceProfile.benchmark` nullifies cleanly on delete
+  instead of throwing, exactly the `ProgramDefinition.instances` fix from
+  Stage 2, applied proactively here rather than discovered by a failing
+  build.
+- `FunctionalFitnessMovement.exercise`, `FunctionalFitnessPerformedMovement.performedExercise`
+  remain plain, un-inversed references to `Exercise` — the same accepted,
+  documented latent risk as `ExercisePrescription.exercise` above (nothing
+  in this app deletes a canonical `Exercise` out from under active data
+  yet). Not a new risk category; two more instances of an existing,
+  already-flagged one.
+
 ## Summary: what survives what
 
 - Deleting a **ProgramDefinition**: its TrainingWeeks go with it (they hold
@@ -110,14 +162,23 @@ against:
   is untouched.
 - Deleting a **ProgramInstance**: its Sessions survive with
   `programInstance == nil`; everything under those Sessions is untouched.
-- Deleting a **Session**: its Blocks and their WorkoutResults are deleted;
-  any SetResults logged under it survive with `exercisePrescription == nil`
-  (their permanent home is `ExercisePerformanceProfile`, unaffected); any
-  PersonalRecord already derived from a since-deleted WorkoutResult
-  survives with `sourceWorkoutResult == nil`.
+- Deleting a **Session**: its Blocks are deleted; the legacy `WorkoutResult`
+  goes with them (unchanged, Stage 1-2 behaviour), but the Stage 3C typed
+  `SteadyStateResult`/`IntervalResult`/`FunctionalFitnessResult` survive
+  with `workoutBlock == nil` — this asymmetry is deliberate, not an
+  oversight, see the Stage 3C table above. Any SetResults logged under it
+  survive with `exercisePrescription == nil` (their permanent home is
+  `ExercisePerformanceProfile`, unaffected); any PersonalRecord already
+  derived from a since-deleted WorkoutResult/typed result survives with
+  its source pointer set to `nil`.
 - Deleting a **PersonalRecord** directly: removes only that record. Does
-  not touch its source SetResult/WorkoutResult, the ExercisePerformanceProfile
-  it belonged to, or any other PersonalRecord.
+  not touch its source SetResult/WorkoutResult/FunctionalFitnessResult,
+  the ExercisePerformanceProfile/ActivityPerformanceProfile/
+  BenchmarkPerformanceProfile it belonged to, or any other PersonalRecord.
+- Deleting a **BenchmarkDefinition**: its historical `FunctionalFitnessResult`
+  attempts survive with `benchmark == nil`, same reasoning as deleting a
+  ProgramDefinition.
 - Deleting the **PerformanceProfile** (i.e. the account): everything under
-  it is deleted. This is the only case where performance history is
-  supposed to disappear.
+  it is deleted, across all three profile types
+  (Exercise/Activity/Benchmark). This is the only case where performance
+  history is supposed to disappear.

@@ -31,6 +31,19 @@ enum PersistenceController {
         ExercisePerformanceProfile.self,
         PersonalRecord.self,
         Recommendation.self,
+        // Stage 3C additions — see STAGE3C_IMPLEMENTATION_REPORT.md.
+        SteadyStatePrescription.self,
+        IntervalPrescription.self,
+        SteadyStateResult.self,
+        IntervalResult.self,
+        IntervalRepResult.self,
+        FunctionalFitnessMovement.self,
+        FunctionalFitnessPrescription.self,
+        FunctionalFitnessPerformedMovement.self,
+        FunctionalFitnessResult.self,
+        BenchmarkDefinition.self,
+        ActivityPerformanceProfile.self,
+        BenchmarkPerformanceProfile.self,
     ])
 
     /// The app's on-disk, offline-first store. Local storage is

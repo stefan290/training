@@ -64,6 +64,19 @@ enum TrainingPriority: String, Codable, CaseIterable {
     case mixedModal
 }
 
+/// Stage 3C addition: which `ProgramInstance` wins scheduling conflicts
+/// within a `TrainingPhase` that composes a primary system with zero or
+/// more secondary Modules (`ENDURANCE_PROGRAMMING_MODEL.md`/
+/// `CONCURRENT_SCHEDULER_MODEL.md`'s `GoalPriority`, implemented here on
+/// `ProgramInstance` itself rather than a new wrapper entity). This is
+/// composition/priority metadata only — `TrainingPhase` still performs no
+/// scheduling logic itself; a future `ConcurrentScheduler` reads this to
+/// decide placement.
+enum GoalPriority: String, Codable, CaseIterable {
+    case primary
+    case secondary
+}
+
 // MARK: - Program
 
 enum ProgramSource: String, Codable, CaseIterable {
@@ -121,6 +134,17 @@ enum WorkoutBlockType: String, Codable, CaseIterable {
     case forTime
     case cooldown
     case mobility
+    /// Stage 3C addition: the generic Functional Fitness block type,
+    /// backed by `FunctionalFitnessPrescription`/`FunctionalFitnessResult`
+    /// (`WorkoutFormat` inside the prescription carries the specific
+    /// format — AMRAP/EMOM/For Time/Rounds For Time/Chipper/Ladder/Max
+    /// Load/Max Reps/Intervals). `.amrap`/`.emom`/`.forTime` above remain
+    /// exactly as they were for the legacy `ExercisePrescription`/
+    /// `WorkoutResult`-backed path (Stage 1-2 seed scenarios); new
+    /// Functional Fitness blocks use `.functionalFitness` instead of
+    /// adding more granular cases here, since the format detail now has a
+    /// proper typed home. See `STAGE3C_IMPLEMENTATION_REPORT.md`.
+    case functionalFitness
 }
 
 enum BlockStatus: String, Codable, CaseIterable {

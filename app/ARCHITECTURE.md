@@ -95,6 +95,19 @@ the owning model — `Day.addSession(_:)`, `Session.addBlock(_:)`,
 `ProgramInstance.addSession(_:)`, `User.attachProfile(_:)` /
 `.attachPerformanceProfile(_:)` / `.addGoal(_:)`, `Exercise.addAlias(_:)`.
 
+Stage 3C's new relationships follow the identical convention:
+`WorkoutBlock.attachSteadyStatePrescription(_:)` / `.attachIntervalPrescription(_:)`
+/ `.attachFunctionalFitnessPrescription(_:)` / `.attachSteadyStateResult(_:)`
+/ `.attachIntervalResult(_:)` / `.attachFunctionalFitnessResult(_:)`,
+`IntervalResult.addRepResult(_:)`, `FunctionalFitnessPrescription.addMovement(_:)`,
+`FunctionalFitnessResult.addPerformedMovement(_:)`,
+`ActivityPerformanceProfile.addSteadyStateResult(_:)` / `.addIntervalResult(_:)`
+/ `.addPersonalRecord(_:)`, `BenchmarkPerformanceProfile.addResult(_:)` /
+`.addPersonalRecord(_:)`, `PerformanceProfile.addActivityProfile(_:)` /
+`.addBenchmarkProfile(_:)`, `TrainingPhase.addProgramInstance(_:)` (unchanged
+signature; priority is set on the `ProgramInstance` itself before or after
+calling it).
+
 **Application code must never set both sides of a relationship manually**
 (e.g. `block.session = session` *and* `session.blocks.append(block)`).
 Each `addX` method mutates exactly one stored property; SwiftData
@@ -207,6 +220,105 @@ this pass. It only produces `CALIBRATION_REQUIRED`, `LOAD_INCREASE`,
 `ProgressionReasonCode` (so Recommendations that reference them later don't
 need a schema change) but are not yet reachable from any engine.
 
+## Stage 3C: generalized domain types across modalities
+
+Stage 3B validated that Aerobic/Running/Interval/Functional-Fitness/
+Concurrent-scheduling modalities need a generalized domain model; Stage 3C
+implements the three changes that validation found necessary *before* any
+concrete training engine gets built, plus their minimum supporting types.
+Full rationale is in `STAGE3B_ARCHITECTURE_DECISIONS.md`; this section
+documents what actually exists in code now, and full implementation
+detail (migration impact, persistence decisions, tests) is
+`STAGE3C_IMPLEMENTATION_REPORT.md`.
+
+### Typed `BlockPrescription`/`BlockResult`
+
+`WorkoutBlock` gained three new, additive, cascading prescription
+relationships (`steadyStatePrescription`, `intervalPrescription`,
+`functionalFitnessPrescription` — `Domain/Entities/`) and three new,
+additive, **nullifying** result relationships (`steadyStateResult`,
+`intervalResult`, `functionalFitnessResult`). `ExercisePrescription` and
+`WorkoutResult` are completely unchanged. `WorkoutBlock.blockPrescription`/
+`.blockResult` are computed properties that synthesize a
+`BlockPrescription`/`BlockResult` enum (`Domain/ValueTypes/`) from
+whichever typed relationship is actually populated — this is the "cleaner
+boundary between persisted entities and domain value types" pattern:
+persistence stores typed relationships per block type; application/engine
+code reasons about one typed enum.
+
+**The new result relationships are `.nullify`, not `.cascade`** — this is
+the one place in this generalization where getting the delete rule wrong
+would have silently reintroduced a permanence bug. See
+`DELETE_RULE_MATRIX.md` and the doc comment on `WorkoutBlock.steadyStateResult`.
+
+### `IntensityTarget` design (Stage 3C §6, documented here as required)
+
+Stage 3B found intensity targets (HR zone, pace, power, RPE, cadence,
+stroke rate, percent-of-reference) to be an open, growing set — a real
+cross-modality proof surfaced a missing case (rowing's stroke rate) during
+validation itself. The chosen design (`Domain/ValueTypes/IntensityTarget.swift`)
+is a single `Codable`, `Equatable` enum with one case per target *kind*,
+each carrying a small, named, unit-specific value type (`Pace`, `Power`,
+`HeartRateZone`, `PowerZone`, or a plain `ClosedRange<Int/Double>` for
+RPE/cadence/stroke-rate/percentages) — never a raw `Double` and never a
+generic metrics dictionary. Adding a new case (the next modality's native
+unit) is additive and safe: nothing in the codebase exhaustively switches
+over `IntensityTarget` without a fallback, so a new case never breaks an
+existing `switch`. This is the same reasoning that already governs
+`ProgressionReasonCode` ("codes are additive: never rename or repurpose
+one") and `WorkoutBlockType`, applied to a target-value type instead of an
+identifier enum.
+
+### `TrainingStressProfile`
+
+A coarse, deterministic, hand-seeded classification (`overallIntensity`,
+`systemicDemand`, `lowerBodyLoad`, `upperBodyLoad`, `impactLoading`,
+`metabolicDemand`, `durationClassification`, `modality`, `recoveryDemand`
+— all small closed enums, never a computed score) stored as an optional
+attribute on `WorkoutBlock`. No automatic estimation exists or is planned
+for this pass — every value in every test/seed scenario that sets one is
+hand-authored. Exists solely so a future `ConcurrentScheduler` has a
+uniform vocabulary to read regardless of which `ProgrammingSystem`
+produced a block.
+
+### `TrainingPhase`/`ProgramInstance` composition (the "ProgramJourney" generalization)
+
+The phase-*sequencing* concept explored in Stage 3B docs needed no new
+entity — `TrainingPlan.orderedPhases` already provides it. The one real
+schema change Stage 3B's validation found necessary was **within** a
+single phase: a `TrainingPhase` can now compose a primary system with zero
+or more secondary Modules. This is `ProgramInstance.priority: GoalPriority`
+(`.primary`/`.secondary`, defaulting to `.primary` so every pre-existing
+call site is unaffected) plus two computed properties on `TrainingPhase`
+(`primaryInstance`, `secondaryInstances`). No `HybridProgramDefinition` or
+other special-case type was introduced; `TrainingPhase` still performs no
+scheduling logic itself.
+
+### Progression/decision-engine boundary
+
+`Engines/BlockProgressionEngine.swift` generalizes `ProgressionEngine`'s
+shape (current state + history → recommendation + reason code) to carry
+`BlockPrescription`/`BlockResult` instead of strength-only types.
+`DoubleProgressionEngine` itself is untouched; `StrengthBlockProgressionEngine`
+is a thin adapter proving the generalized contract is satisfiable by the
+existing logic without rewriting it. Functional Fitness's "next workout"
+is not a parametric adjustment of the current one — Stage 3B's own
+finding — so it gets a deliberately separate, higher-level contract,
+`Engines/ProgrammingDecisionEngine.swift` (no concrete conformer in this
+pass; the boundary is settled, the generator is not built).
+
+### New `PerformanceProfile` siblings
+
+`ActivityPerformanceProfile` (indexed by `ActivityType` + an optional
+`performanceContext` string, e.g. "5K" vs. general Running) and
+`BenchmarkPerformanceProfile` (indexed by a new `BenchmarkDefinition`
+catalog entity, structurally identical to `Exercise`'s canonical-ID
+pattern) are new siblings of `ExercisePerformanceProfile`, which is
+completely unchanged. Both are permanent and program-independent in
+exactly the same way, enforced by the same relationship shape
+(`PersonalRecord` gained two more optional parent fields, mirroring its
+existing three-parent `SetResult`-adjacent shape).
+
 ## Known gaps and deliberate simplifications
 
 These are places the domain model or code takes a simplified shape on
@@ -218,19 +330,30 @@ purpose, called out here so they're a decision record, not a surprise:
   but never evaluated for a PR (`scoringDirection: .none`) because a
   correct comparison needs to normalize against heart rate, which is out
   of scope for this pass.
-- **WorkoutResult is one flexible model with optional fields per block
-  type**, not a subclass per type. SwiftData has no first-class
-  polymorphism and the per-type field set is small; revisit if it grows.
-- **Block-level parameters (time caps, EMOM interval length) are flat
-  optional fields on WorkoutBlock**, not a nested value type, for the same
-  reason.
-- **Fran (and benchmarks generally) are modelled as a canonical Exercise**,
-  not a dedicated `Benchmark` entity — there was no `Benchmark` type in the
-  Stage 2 entity list. Its rep scheme is simplified to one `repsPerRound`
-  figure per movement rather than the real 21-15-9 descending ladder.
+- **`WorkoutResult` is still one flexible model with optional fields per
+  block type, for the Stage 1-2 `.amrap`/`.emom`/`.forTime`/`.steadyState`/
+  `.intervals` scenarios that already shipped.** This is the gap Stage 3C
+  actually revisited — see "Typed BlockPrescription/BlockResult" below —
+  but the fix is additive (new sibling types for new blocks), not a
+  rewrite of `WorkoutResult` or the scenarios already built on it.
+- **Block-level parameters (time caps, EMOM interval length) are still
+  flat optional fields on `WorkoutBlock`** for that same legacy path.
+  `SteadyStatePrescription`/`IntervalPrescription`/
+  `FunctionalFitnessPrescription` are the typed alternative for new blocks
+  — again additive, not a replacement of the existing fields.
+- **Fran (and benchmarks generally) are still modelled as a canonical
+  Exercise in the Stage 1-2 seed scenario** (`SeedScenarios.forTimeBenchmarkSession`)
+  — left exactly as it was. A real `BenchmarkDefinition` entity now exists
+  (Stage 3C) and is used by the new architecture-proof/round-trip tests,
+  but the existing scenario was not migrated to it; see
+  `STAGE3C_IMPLEMENTATION_REPORT.md` for why both are left in place rather
+  than consolidated in this pass.
 - **Ad hoc AMRAP/EMOM blocks don't carry a PersonalRecord.** Only a named,
-  repeatable benchmark (Fran) has a stable identity to compare against;
-  a one-off 12-minute AMRAP has nothing to be a "record" relative to yet.
+  repeatable benchmark has a stable identity to compare against; a one-off
+  12-minute AMRAP has nothing to be a "record" relative to yet. This is
+  unchanged by Stage 3C's `BenchmarkDefinition` addition — a generated
+  Functional Fitness workout is still not automatically a tracked
+  benchmark (see "Typed BlockPrescription/BlockResult" below).
 - **ViewModels fetch-all-and-filter in Swift** rather than using SwiftData
   `#Predicate` queries, to avoid depending on predicate-macro behavior with
   custom `Codable` enums that couldn't be verified against a real Xcode
@@ -242,14 +365,17 @@ purpose, called out here so they're a decision record, not a surprise:
 - **Light-mode `positive`/`attention` colors are assumed equal to dark
   mode.** The handoff's visual system section only restates
   ground/surface/primary/text/secondary for light mode.
-- **This project has still not been compiled.** Both the foundation pass
-  and this validation pass were authored without access to Xcode or a
-  Swift toolchain (Linux-only environment; SwiftData itself doesn't exist
-  outside Apple platforms, so no amount of local tooling would have let
-  this compile here regardless). Everything in this pass — the
-  relationship refactor, the delete rules, the new tests — was reviewed as
-  carefully as static reading allows: every `addX` call site was
-  cross-checked against its definition, every relationship's inverse was
-  traced by hand, and the project file was re-parsed and inspected after
-  generation. None of that is a substitute for a real build. See
-  `LOCAL_XCODE_VERIFICATION.md` for exact steps and what "green" means.
+- **This sandbox has no Xcode/Swift toolchain and never will** (Linux-only
+  environment; SwiftData doesn't exist outside Apple platforms). Every
+  pass authored here — including Stage 3C's domain generalization — is
+  written and statically self-reviewed without a compiler: every `addX`/
+  `attachX` call site cross-checked against its definition, every
+  relationship's inverse traced by hand, the project file re-parsed and
+  every file reference verified to resolve on disk after each
+  regeneration. **The project itself has been compiled and tested for
+  real**, though — via the product owner's local Mac, running a local
+  Claude Code session against this same repository, per
+  `LOCAL_XCODE_VERIFICATION.md`. That local loop is how every Swift change
+  in this repository is actually verified; treat any change landed here
+  without a corresponding local build/test report as unverified until one
+  arrives, not as "probably fine because it was reviewed carefully."

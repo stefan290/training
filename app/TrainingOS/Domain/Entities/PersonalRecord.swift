@@ -5,10 +5,18 @@ import SwiftData
 /// copied at creation time so the record stands on its own even if its
 /// source SetResult/WorkoutResult is later edited — only the source links
 /// are traceability, never a dependency for correctness.
+///
+/// `activityPerformanceProfile`/`benchmarkPerformanceProfile` are Stage 3C
+/// additions, siblings of `exercisePerformanceProfile` — exactly one of
+/// the three is set on any given record, mirroring how `SetResult` has
+/// three independent parent relationships and only the relevant ones are
+/// ever populated for a given result.
 @Model
 final class PersonalRecord {
     @Attribute(.unique) var id: UUID
     var exercisePerformanceProfile: ExercisePerformanceProfile?
+    var activityPerformanceProfile: ActivityPerformanceProfile?
+    var benchmarkPerformanceProfile: BenchmarkPerformanceProfile?
 
     var value: Double
     /// e.g. "1RM", "5RM", "8-12", or nil for a time/rounds-based record.
@@ -18,10 +26,11 @@ final class PersonalRecord {
     var achievedAt: Date
 
     /// The delete rule lives on `SetResult.personalRecord` /
-    /// `WorkoutResult.personalRecord` (see DELETE_RULE_MATRIX.md) — these
-    /// are plain inverse properties.
+    /// `WorkoutResult.personalRecord` / `FunctionalFitnessResult.personalRecord`
+    /// (see DELETE_RULE_MATRIX.md) — these are plain inverse properties.
     var sourceSetResult: SetResult?
     var sourceWorkoutResult: WorkoutResult?
+    var sourceFunctionalFitnessResult: FunctionalFitnessResult?
 
     init(
         id: UUID = UUID(),

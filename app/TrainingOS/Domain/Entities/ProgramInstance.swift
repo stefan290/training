@@ -18,6 +18,13 @@ final class ProgramInstance {
     var startDate: Date
     var adherenceModeOverride: AdherenceMode?
     var status: PhaseStatus
+    /// Stage 3C addition: which system wins scheduling conflicts within
+    /// its Phase — defaults to `.primary` so every pre-existing call site
+    /// (Stage 1-2 seed data, all current tests) is unaffected. Set
+    /// `.secondary` explicitly when attaching a Module alongside a
+    /// primary instance — see `TrainingPhase.primaryInstance`/
+    /// `.secondaryInstances` below.
+    var priority: GoalPriority
 
     @Relationship(deleteRule: .nullify, inverse: \Session.programInstance)
     var sessions: [Session] = []
@@ -27,13 +34,15 @@ final class ProgramInstance {
         ownerUserID: UUID,
         startDate: Date = Date(),
         adherenceModeOverride: AdherenceMode? = nil,
-        status: PhaseStatus = .active
+        status: PhaseStatus = .active,
+        priority: GoalPriority = .primary
     ) {
         self.id = id
         self.ownerUserID = ownerUserID
         self.startDate = startDate
         self.adherenceModeOverride = adherenceModeOverride
         self.status = status
+        self.priority = priority
     }
 
     /// The only way application code should attach a Session to a

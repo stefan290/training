@@ -21,6 +21,12 @@ final class Session {
     var status: SessionStatus
     var startedAt: Date?
     var completedAt: Date?
+    /// Stage 3C addition (`SessionRole.swift`): programming semantics
+    /// (Easy/Tempo/Interval/etc.), orthogonal to which `ProgrammingSystem`
+    /// produced this Session's blocks and orthogonal to `modality` above
+    /// (the pre-existing UI grouping tag). `nil` is the common case for
+    /// every Session that existed before this pass.
+    var role: SessionRole?
 
     @Relationship(deleteRule: .cascade, inverse: \WorkoutBlock.session)
     var blocks: [WorkoutBlock] = []
@@ -30,7 +36,8 @@ final class Session {
         scheduledTime: Date? = nil,
         name: String,
         modality: TrainingModality,
-        status: SessionStatus = .scheduled
+        status: SessionStatus = .scheduled,
+        role: SessionRole? = nil
     ) {
         self.id = id
         self.sortIndex = 0
@@ -38,6 +45,7 @@ final class Session {
         self.name = name
         self.modality = modality
         self.status = status
+        self.role = role
     }
 
     /// The only way application code should attach a WorkoutBlock to a

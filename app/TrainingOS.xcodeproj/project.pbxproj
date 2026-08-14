@@ -7,386 +7,464 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		026249F78BA3FB558A44A437 /* DomainModelScenarioTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9D942DA834B4DBF2B29E815 /* DomainModelScenarioTests.swift */; };
-		154D444194FD87D87C51AE2E /* ExercisePerformanceProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DEB484F86903D19EF5EE3A1 /* ExercisePerformanceProfile.swift */; };
-		15C34FAE988AC886CE32B556 /* TrainingOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0ECE4ED38B8BB5D487926AE2 /* TrainingOSApp.swift */; };
-		19564717B078ADEF7C9B3DBA /* README.swift in Sources */ = {isa = PBXBuildFile; fileRef = F57E4BE7B19DB8066F238EAF /* README.swift */; };
-		1A1D408293D161A258FD95B2 /* RecordSetResultUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADE74EB1AA70E773434FD7AE /* RecordSetResultUseCase.swift */; };
-		265942CB91408A5FC1431A7C /* PlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FD448339AD7743C6E96C5E8 /* PlanView.swift */; };
-		2A0B46528B97BFD96382189C /* DeleteRuleMatrixTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDED4D97B6DCEDFC548CFA0F /* DeleteRuleMatrixTests.swift */; };
-		2AE7446E8A74C71285070957 /* ExerciseCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = F06C4A8EB70BD939F88E40F0 /* ExerciseCatalog.swift */; };
-		2F4E4A568F4646C7DBFA3283 /* WorkoutBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC96486DA9896260DC3A6B03 /* WorkoutBlock.swift */; };
-		3556469B84F6CA401093BD7E /* PerformanceProfileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55DA4631A6FAA9AD32E226D5 /* PerformanceProfileStore.swift */; };
-		36304ABB8AD6372A4B32A404 /* PerformanceProfileContinuityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67A94EB082BEEB5364382007 /* PerformanceProfileContinuityTests.swift */; };
-		366443E5BD8999C8E78E0652 /* Day.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DDA45118C25D6BE76988880 /* Day.swift */; };
-		39524618A01A1DB585AC1742 /* PersonalRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = F70B46E9AB8CC9CF1BA4A8F3 /* PersonalRecord.swift */; };
-		3C4C42BEB1C79AB8690D8B49 /* SetPrescription.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99D74BC7A58F6C8626BC0729 /* SetPrescription.swift */; };
-		3CCE48928EE09D9EB5DFFF3A /* ProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A9E4143B632AF906A87ABB3 /* ProgressView.swift */; };
-		41944FBF8F5D7CCAB219705C /* ExercisePrescription.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CA24116A734F020DC833E51 /* ExercisePrescription.swift */; };
-		42AF49CBB4EE9C12D68A4AE3 /* DoubleProgressionEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F84640CCABE624D401BCE49B /* DoubleProgressionEngineTests.swift */; };
-		45D64C7E9DADC2C80E025C64 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6FFF44B994BD998E21FDA2B1 /* Assets.xcassets */; };
-		4F7941B8BE6A451F5C0DDCDD /* Goal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 628449A59C09C8F04912540C /* Goal.swift */; };
-		52184A07B208D7A28490CBC1 /* RootTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BA1427DA0609DC116808540 /* RootTabView.swift */; };
-		5A7146D9B5BF1CC1E9412C4C /* ScoringEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86D3417CB5AF4594F4ABD961 /* ScoringEngine.swift */; };
-		686149BC8F6B565266AA1FD3 /* TrainingPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 564741819A9BC4BB6B55966D /* TrainingPlan.swift */; };
-		6DD6470FBDAB99117E6A361B /* ProgramDefinition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46D64E949638A868A703AD10 /* ProgramDefinition.swift */; };
-		79924882A28404C1BF408077 /* TrainingWeek.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67AD4467B8B43750EB806902 /* TrainingWeek.swift */; };
-		81184E0E92B768DE3A108950 /* PlanViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01384BEE8C06AB6AF0FD4C91 /* PlanViewModel.swift */; };
-		833740FE9296ED25B5A080C1 /* Recommendation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A914820BEE6C27927E7EC5B /* Recommendation.swift */; };
-		86A54A6AAAA0F70E174E137C /* PerformanceProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 563A48A4BF8EE6E706C7573F /* PerformanceProfile.swift */; };
-		8A1B49BF80F22EBA4D6A7A7D /* ExerciseAlias.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0F84DFD9FD440940FC214C7 /* ExerciseAlias.swift */; };
-		8A5B4D17874ACE3DD0C64C64 /* TrainingPhase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F8E4FC0837A908866A5600D /* TrainingPhase.swift */; };
-		9885484D83C8AC798FD22E4F /* RelationshipOwnershipTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5CA481F87C9ED38C25B3099 /* RelationshipOwnershipTests.swift */; };
-		98B34629849826709043794A /* ProgramInstance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A614E96810AF5695FFB2959 /* ProgramInstance.swift */; };
-		9AC746B1A8964441D92DCB96 /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F494283AF1486C79968302B /* UserProfile.swift */; };
-		9ACB409BBBCAAC0881382041 /* SeedScenarios.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7344E69A1D7073EB3F00E86 /* SeedScenarios.swift */; };
-		A0E64E92B88A49379ADD7DB3 /* Exercise.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DBA416DB9163241C8904958 /* Exercise.swift */; };
-		A1DD417290C274A1FA53C21E /* PersistenceRoundTripTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 402B41029D672B0A24A13EE9 /* PersistenceRoundTripTests.swift */; };
-		A5DE443B9820016F7B25503F /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6984363BAB3C25F821C4A68 /* Theme.swift */; };
-		AA53455B97702276246502BD /* ProgressViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33BA4F0A8058D84B94D9C93E /* ProgressViewModel.swift */; };
-		B492470A82C704361DFD83D9 /* DoubleProgressionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BDC45519916B152815768FA /* DoubleProgressionEngine.swift */; };
-		B814434288F5F24C68B84D7E /* PersistenceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AEB4E9B9245FE322277D6DE /* PersistenceController.swift */; };
-		B8E64EC380D37CC3C6CA2B0F /* WorkoutResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECCC40E4A327796A7834F6BF /* WorkoutResult.swift */; };
-		BEC248D98E1EACD486A5E0A6 /* Enums.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8027414FAF70D2174E5C77C4 /* Enums.swift */; };
-		CFBC43BDBB86765CE0876E76 /* ScoringEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76B44D0B853C5E3B6EA76F9E /* ScoringEngineTests.swift */; };
-		D43B488AADE01550F3871640 /* RecordWorkoutResultUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = F05042E6BB8806D380AB1FEA /* RecordWorkoutResultUseCase.swift */; };
-		D4D74B3EB2DFC1C3AEC60580 /* Session.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55294CB586C0774DCEE014DE /* Session.swift */; };
-		D7DF49389681F3AC9A616EB3 /* ProgressionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC82472CB82A7B5F173E2B3E /* ProgressionEngine.swift */; };
-		DAA74118BCD45CB03110C22A /* SeedDataProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3393410798D83BA9A1A3C6B2 /* SeedDataProvider.swift */; };
-		E10A4DC4B15C67A4525EC555 /* TodayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63D243BDABFE7155E54C4700 /* TodayView.swift */; };
-		EB7343F88B7CD1686ED4BFDA /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7314521A9B89EAE46D6793A /* User.swift */; };
-		F073438A89CC5C7DDE434375 /* TodayViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94AC491AB3B2B5127C417389 /* TodayViewModel.swift */; };
-		FF804079BD522BED37199376 /* SetResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = D68D4140A10109FC098C5519 /* SetResult.swift */; };
+		04A94B17A480B29986E2096C /* PerformanceProfileContinuityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F444039B561ED322D50F077 /* PerformanceProfileContinuityTests.swift */; };
+		0A39407AAB8E500DCA5A5C1F /* SteadyStatePrescription.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7234BF3BAE23694A6FAE5F6 /* SteadyStatePrescription.swift */; };
+		0BF241918A38BC0D404CE558 /* BenchmarkDefinition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40954AFEBB023B609343A10D /* BenchmarkDefinition.swift */; };
+		165842D2A2FE5C291D6AA431 /* ProgramDefinition.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7E74926ABDD6C8E79E85D8F /* ProgramDefinition.swift */; };
+		184A43448A3535A19258B9D4 /* ScoringEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA9540D3938B5FCBDB7E46EF /* ScoringEngineTests.swift */; };
+		19A84DD2B076029285474FCD /* PlanViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 338F413189BA70F30B6518DE /* PlanViewModel.swift */; };
+		1EB640A1AF129B7A2BD34E7D /* FunctionalFitnessResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21AA4C0C9052D7770FEB104C /* FunctionalFitnessResult.swift */; };
+		1EB7495791753B1CA69AFC21 /* ExercisePrescription.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD8F48DE83B5042E1CF35A00 /* ExercisePrescription.swift */; };
+		2F2B496199DF8687BAE97ACB /* Exercise.swift in Sources */ = {isa = PBXBuildFile; fileRef = A84043D297D699E9B910A0A6 /* Exercise.swift */; };
+		30B5470C92004F59610077E8 /* SeedScenarios.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE6C49BCB88C87109C9B228E /* SeedScenarios.swift */; };
+		32844A0BBFF65B175D6B5667 /* TrainingWeek.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0AE4E068ED033C4367CFEBF /* TrainingWeek.swift */; };
+		339A4559B435C92D4D149029 /* IntensityTarget.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA4742E084A9E98BCA463313 /* IntensityTarget.swift */; };
+		355E4F519569B26DB7E6814D /* RootTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E0E4261BBC7588AA3AB4DF4 /* RootTabView.swift */; };
+		3945470DA47F6C1BF78FC3E3 /* TrainingPhase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02EB4A188AEAD116A06FB831 /* TrainingPhase.swift */; };
+		3ABB45E5B9BF8A53C5E0C37B /* SetResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29274932924C1ADD6FDF7699 /* SetResult.swift */; };
+		3D7248C398566C80F74071DE /* PersistenceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D642401D83068E564FDA98F1 /* PersistenceController.swift */; };
+		3E58401BA3A1F7F028B7D178 /* FunctionalFitnessMovement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E324E3DA961C03C4EA43C8D /* FunctionalFitnessMovement.swift */; };
+		3EA9470999B41918A3A61BCC /* TodayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C44F4924AB846F0DEA427DB8 /* TodayView.swift */; };
+		40FF4EC2955E9A470AFFA219 /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49DE4515B6FEC3892FBABD84 /* UserProfile.swift */; };
+		43EB4EC5B4032403D398B8AC /* BlockProgressionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D2F47A2B1091593A97276F5 /* BlockProgressionEngine.swift */; };
+		47264E36BFF303191C40D96C /* ExercisePerformanceProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95C24FF9B12AC7E08690FE82 /* ExercisePerformanceProfile.swift */; };
+		4A6242F1A3BF38EB6EF078B7 /* IntervalRepResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFCB4C9C8478C1027CF73484 /* IntervalRepResult.swift */; };
+		4A864F528D892B3E07C72AFA /* ProgramInstance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64E1458F8E3D57EF0174737D /* ProgramInstance.swift */; };
+		4EF54AB8BE5B08F45556B0D8 /* Recommendation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A28E41A1923F2FF34CD718B2 /* Recommendation.swift */; };
+		4FD142CFAAE75B36545E608A /* BlockResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 116242DBB985C05A0FC01D5C /* BlockResult.swift */; };
+		53D249389AB99EBAFE5F4B39 /* ProgressionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2854E9EBCF284C72C646DC3 /* ProgressionEngine.swift */; };
+		56844F228BAB2BA7554BD3A5 /* Stimulus.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDDB4778B269ACE9CD1F3D67 /* Stimulus.swift */; };
+		58B94642AFA6B9CA8EB0488F /* ActivityPerformanceProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E494099B766FA9E34D6E4E1 /* ActivityPerformanceProfile.swift */; };
+		5CE441BFB8A5B65A6E17C631 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 60F44B7DA153CF555A4121AB /* Assets.xcassets */; };
+		5E0E4473A9E8F4F75E2DE70B /* ActivityType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 229840AD8B4272104FB835B6 /* ActivityType.swift */; };
+		5F77423B8A2C82B332817161 /* TrainingStressProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = F511401680AF0947E5D92884 /* TrainingStressProfile.swift */; };
+		60D94A2FB2144ADC9A40BC23 /* PersistenceRoundTripTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84E8450DB6F0A3A61A467281 /* PersistenceRoundTripTests.swift */; };
+		6E9447FE913CA6497CB837D1 /* IntervalPrescription.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08AE48DC9FD887472E7FA4BD /* IntervalPrescription.swift */; };
+		6E944A5AAE11C32004A17E54 /* PersonalRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E4C4FD6B699AD7F0CF2AB3D /* PersonalRecord.swift */; };
+		71F7400B8026DD2FE41CCE96 /* Goal.swift in Sources */ = {isa = PBXBuildFile; fileRef = B875478EA0A0B59BC2ADD02C /* Goal.swift */; };
+		72F44ABD965B7257258B34D2 /* BlockPrescription.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60554B31BA8A4E000BEC1DA5 /* BlockPrescription.swift */; };
+		773843A880E71B2AFC873FAA /* BenchmarkPerformanceProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F344A7DB046AFD9EC8F21A6 /* BenchmarkPerformanceProfile.swift */; };
+		7F61431D9F8A3FD958404965 /* DeleteRuleMatrixTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99B64954891D896FCB33CBF7 /* DeleteRuleMatrixTests.swift */; };
+		8065461BBFD9E8025953E9B6 /* FunctionalFitnessPerformedMovement.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE38406ABAD897021211F96A /* FunctionalFitnessPerformedMovement.swift */; };
+		80FA480A920FA7F622E1BFD0 /* ExerciseAlias.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6004497ACD94340AB54512F /* ExerciseAlias.swift */; };
+		83FD45AE9DCD0EC793A1FE5C /* ProgressViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 961E416D9AE157977247CA3E /* ProgressViewModel.swift */; };
+		88774AFF86A381ADA85131A1 /* WorkoutResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DEC4916B274A1AB731CD90B /* WorkoutResult.swift */; };
+		8B004ECAA561825F7872990B /* Enums.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1CD4DB298B10069A672E1CE /* Enums.swift */; };
+		8BA34A6E91DB5DC1662834BD /* SetPrescription.swift in Sources */ = {isa = PBXBuildFile; fileRef = F377483DB325CB8E61B20CCF /* SetPrescription.swift */; };
+		8DFA473DBEDD70041FD4B451 /* ScoringEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37CC4963A0824B2C495890C3 /* ScoringEngine.swift */; };
+		91744E5DA4D8FC8A3CE5FA55 /* SessionRole.swift in Sources */ = {isa = PBXBuildFile; fileRef = 778C4B008E55FFE4765AE125 /* SessionRole.swift */; };
+		9405419080E2025EA44AB6A4 /* PerformanceProfileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 259B4ED3927612FE1B99A0FA /* PerformanceProfileStore.swift */; };
+		98CF477988DFF7C4D9410442 /* TrainingPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87F049ADBD18C07002453277 /* TrainingPlan.swift */; };
+		9DCC451295B6625D4873AE4E /* RelationshipOwnershipTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2734FD3AD8468E604ACA2F2 /* RelationshipOwnershipTests.swift */; };
+		A0D345BBAAD869A8008AC2F9 /* FunctionalFitnessPrescription.swift in Sources */ = {isa = PBXBuildFile; fileRef = 395D436583402C054135DA6D /* FunctionalFitnessPrescription.swift */; };
+		A56D416099BC45F36505580F /* RecordWorkoutResultUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 997847CA96D0A5455620B7F0 /* RecordWorkoutResultUseCase.swift */; };
+		A61D4731973942F72EC9F56E /* WorkoutFormat.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE384D888B58F59FF03553CA /* WorkoutFormat.swift */; };
+		A631440989AEE70522DBC5D1 /* ModalityArchitectureProofTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4AE4B56A7EEF86366B4702E /* ModalityArchitectureProofTests.swift */; };
+		A83D4ABD937090B2899BA12D /* ModalityContinuityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4E841F08066E82A874C3FB1 /* ModalityContinuityTests.swift */; };
+		AEC84ED1B6068F6702CC0EDE /* ScoreTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E845128E2D643364319166 /* ScoreTypes.swift */; };
+		B6D54E9A81CD9A6CAE70C838 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53484F589FD15FDA6F0485E3 /* Theme.swift */; };
+		B8C24931BBFCEEF452E84C0E /* Day.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80CF49528A06C5309907B942 /* Day.swift */; };
+		BC954381882996F2E7176E7E /* PerformanceProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9B34CC8A8AECF7AFE6EF20B /* PerformanceProfile.swift */; };
+		BF384E4EBC21DE0698934299 /* DoubleProgressionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C74461AA0E1D6FDDC442680 /* DoubleProgressionEngine.swift */; };
+		C1094D1684704135A0056249 /* SeedDataProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 961D418E8A3F58DE37C29D67 /* SeedDataProvider.swift */; };
+		C4124A9BABBE0095D5AF640E /* SteadyStateResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0C640FB894DE1E8D17183AB /* SteadyStateResult.swift */; };
+		C6654285BE5C49C320C03953 /* WorkoutBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7B64E2D860E385FC7EDCB1B /* WorkoutBlock.swift */; };
+		C941457B8BEE324C10EF160C /* DomainModelScenarioTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 781B494FA06A7F0745ACDE8B /* DomainModelScenarioTests.swift */; };
+		D15D4F99B3BFBF42D95513FD /* RecordSetResultUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = B48F4B12981F158C3F1B7430 /* RecordSetResultUseCase.swift */; };
+		D67044B6B56E08A489CE0BCB /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19E46C6A95AC6EE65B67E22 /* User.swift */; };
+		DE8D463FB5BF210E912DD5D8 /* ProgrammingDecisionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3634F918ED73F0BED77FB65 /* ProgrammingDecisionEngine.swift */; };
+		E8BC41AAB80633416FED8810 /* ProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 166947E68E27B7CBE236C27B /* ProgressView.swift */; };
+		E94F45CDA1EEED4F2F4D862F /* TrainingOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 528841C8B1BA640B0D7CFF1F /* TrainingOSApp.swift */; };
+		EC6443C8B5DB5D5BFA5F86FB /* IntervalResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6B94AD3B2CD768C43207DAC /* IntervalResult.swift */; };
+		ECE5493A8061650BE4F259FD /* Session.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03294116BD89A6D5E88A078D /* Session.swift */; };
+		EDFD47BBA6784A010E995E7C /* PlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59034661A6D460A8E0CA0710 /* PlanView.swift */; };
+		F2104C698605C0A1991E3260 /* ExerciseCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 822A4709B48D41F2F190CB89 /* ExerciseCatalog.swift */; };
+		F722416DAB84DBA157BBCF2F /* ModalityPersistenceRoundTripTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B341C8944D07EB6D80553D /* ModalityPersistenceRoundTripTests.swift */; };
+		FA334A52AA8CE4F7E4B15A91 /* TodayViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCFA48EE8EA729613F37D526 /* TodayViewModel.swift */; };
+		FCBC427FB00343F9541CD582 /* DoubleProgressionEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CD74FA199A710C3A9EB5F56 /* DoubleProgressionEngineTests.swift */; };
+		FFDD40D1BA4DFEA6FEB100AA /* README.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F1744B883949ADE23CF9801 /* README.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		A1AE40FAA954C9122721ED5C /* PBXContainerItemProxy */ = {
+		889941FDAD03DFD7995FD2CE /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = D3B3434C96A7E8F831D71BD7 /* Project object */;
+			containerPortal = F84A416680319AD985CBC164 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 5C83497D906518FBFBA0078F;
+			remoteGlobalIDString = 7C2D4C53B8590E02F61E83F0;
 			remoteInfo = TrainingOS;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		01384BEE8C06AB6AF0FD4C91 /* PlanViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PlanViewModel.swift; path = PlanViewModel.swift; sourceTree = "<group>"; };
-		0BDC45519916B152815768FA /* DoubleProgressionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DoubleProgressionEngine.swift; path = DoubleProgressionEngine.swift; sourceTree = "<group>"; };
-		0ECE4ED38B8BB5D487926AE2 /* TrainingOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TrainingOSApp.swift; path = TrainingOSApp.swift; sourceTree = "<group>"; };
-		10384933A92AB76C3DBADFFB /* TrainingOSTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TrainingOSTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		1A9E4143B632AF906A87ABB3 /* ProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ProgressView.swift; path = ProgressView.swift; sourceTree = "<group>"; };
-		1AEB4E9B9245FE322277D6DE /* PersistenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PersistenceController.swift; path = PersistenceController.swift; sourceTree = "<group>"; };
-		1DBA416DB9163241C8904958 /* Exercise.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Exercise.swift; path = Exercise.swift; sourceTree = "<group>"; };
-		1DDA45118C25D6BE76988880 /* Day.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Day.swift; path = Day.swift; sourceTree = "<group>"; };
-		2DEB484F86903D19EF5EE3A1 /* ExercisePerformanceProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExercisePerformanceProfile.swift; path = ExercisePerformanceProfile.swift; sourceTree = "<group>"; };
-		3393410798D83BA9A1A3C6B2 /* SeedDataProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SeedDataProvider.swift; path = SeedDataProvider.swift; sourceTree = "<group>"; };
-		33BA4F0A8058D84B94D9C93E /* ProgressViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ProgressViewModel.swift; path = ProgressViewModel.swift; sourceTree = "<group>"; };
-		3A614E96810AF5695FFB2959 /* ProgramInstance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ProgramInstance.swift; path = ProgramInstance.swift; sourceTree = "<group>"; };
-		3CA24116A734F020DC833E51 /* ExercisePrescription.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExercisePrescription.swift; path = ExercisePrescription.swift; sourceTree = "<group>"; };
-		402B41029D672B0A24A13EE9 /* PersistenceRoundTripTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PersistenceRoundTripTests.swift; path = PersistenceRoundTripTests.swift; sourceTree = "<group>"; };
-		46D64E949638A868A703AD10 /* ProgramDefinition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ProgramDefinition.swift; path = ProgramDefinition.swift; sourceTree = "<group>"; };
-		4A914820BEE6C27927E7EC5B /* Recommendation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Recommendation.swift; path = Recommendation.swift; sourceTree = "<group>"; };
-		4F704C488C2613914192FD91 /* TrainingOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TrainingOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		55294CB586C0774DCEE014DE /* Session.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Session.swift; path = Session.swift; sourceTree = "<group>"; };
-		55DA4631A6FAA9AD32E226D5 /* PerformanceProfileStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PerformanceProfileStore.swift; path = PerformanceProfileStore.swift; sourceTree = "<group>"; };
-		563A48A4BF8EE6E706C7573F /* PerformanceProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PerformanceProfile.swift; path = PerformanceProfile.swift; sourceTree = "<group>"; };
-		564741819A9BC4BB6B55966D /* TrainingPlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TrainingPlan.swift; path = TrainingPlan.swift; sourceTree = "<group>"; };
-		628449A59C09C8F04912540C /* Goal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Goal.swift; path = Goal.swift; sourceTree = "<group>"; };
-		63D243BDABFE7155E54C4700 /* TodayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TodayView.swift; path = TodayView.swift; sourceTree = "<group>"; };
-		67A94EB082BEEB5364382007 /* PerformanceProfileContinuityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PerformanceProfileContinuityTests.swift; path = PerformanceProfileContinuityTests.swift; sourceTree = "<group>"; };
-		67AD4467B8B43750EB806902 /* TrainingWeek.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TrainingWeek.swift; path = TrainingWeek.swift; sourceTree = "<group>"; };
-		6FFF44B994BD998E21FDA2B1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = Assets.xcassets; sourceTree = "<group>"; };
-		76B44D0B853C5E3B6EA76F9E /* ScoringEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScoringEngineTests.swift; path = ScoringEngineTests.swift; sourceTree = "<group>"; };
-		7BA1427DA0609DC116808540 /* RootTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RootTabView.swift; path = RootTabView.swift; sourceTree = "<group>"; };
-		7F8E4FC0837A908866A5600D /* TrainingPhase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TrainingPhase.swift; path = TrainingPhase.swift; sourceTree = "<group>"; };
-		8027414FAF70D2174E5C77C4 /* Enums.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Enums.swift; path = Enums.swift; sourceTree = "<group>"; };
-		86D3417CB5AF4594F4ABD961 /* ScoringEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScoringEngine.swift; path = ScoringEngine.swift; sourceTree = "<group>"; };
-		8FD448339AD7743C6E96C5E8 /* PlanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PlanView.swift; path = PlanView.swift; sourceTree = "<group>"; };
-		94AC491AB3B2B5127C417389 /* TodayViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TodayViewModel.swift; path = TodayViewModel.swift; sourceTree = "<group>"; };
-		99D74BC7A58F6C8626BC0729 /* SetPrescription.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SetPrescription.swift; path = SetPrescription.swift; sourceTree = "<group>"; };
-		9F494283AF1486C79968302B /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = UserProfile.swift; path = UserProfile.swift; sourceTree = "<group>"; };
-		ADE74EB1AA70E773434FD7AE /* RecordSetResultUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RecordSetResultUseCase.swift; path = RecordSetResultUseCase.swift; sourceTree = "<group>"; };
-		BC96486DA9896260DC3A6B03 /* WorkoutBlock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WorkoutBlock.swift; path = WorkoutBlock.swift; sourceTree = "<group>"; };
-		C0F84DFD9FD440940FC214C7 /* ExerciseAlias.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExerciseAlias.swift; path = ExerciseAlias.swift; sourceTree = "<group>"; };
-		D68D4140A10109FC098C5519 /* SetResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SetResult.swift; path = SetResult.swift; sourceTree = "<group>"; };
-		D7314521A9B89EAE46D6793A /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = User.swift; path = User.swift; sourceTree = "<group>"; };
-		D7344E69A1D7073EB3F00E86 /* SeedScenarios.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SeedScenarios.swift; path = SeedScenarios.swift; sourceTree = "<group>"; };
-		D9D942DA834B4DBF2B29E815 /* DomainModelScenarioTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DomainModelScenarioTests.swift; path = DomainModelScenarioTests.swift; sourceTree = "<group>"; };
-		DC82472CB82A7B5F173E2B3E /* ProgressionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ProgressionEngine.swift; path = ProgressionEngine.swift; sourceTree = "<group>"; };
-		DDED4D97B6DCEDFC548CFA0F /* DeleteRuleMatrixTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DeleteRuleMatrixTests.swift; path = DeleteRuleMatrixTests.swift; sourceTree = "<group>"; };
-		E5CA481F87C9ED38C25B3099 /* RelationshipOwnershipTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RelationshipOwnershipTests.swift; path = RelationshipOwnershipTests.swift; sourceTree = "<group>"; };
-		ECCC40E4A327796A7834F6BF /* WorkoutResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WorkoutResult.swift; path = WorkoutResult.swift; sourceTree = "<group>"; };
-		F05042E6BB8806D380AB1FEA /* RecordWorkoutResultUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RecordWorkoutResultUseCase.swift; path = RecordWorkoutResultUseCase.swift; sourceTree = "<group>"; };
-		F06C4A8EB70BD939F88E40F0 /* ExerciseCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExerciseCatalog.swift; path = ExerciseCatalog.swift; sourceTree = "<group>"; };
-		F57E4BE7B19DB8066F238EAF /* README.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = README.swift; path = README.swift; sourceTree = "<group>"; };
-		F6984363BAB3C25F821C4A68 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Theme.swift; path = Theme.swift; sourceTree = "<group>"; };
-		F70B46E9AB8CC9CF1BA4A8F3 /* PersonalRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PersonalRecord.swift; path = PersonalRecord.swift; sourceTree = "<group>"; };
-		F84640CCABE624D401BCE49B /* DoubleProgressionEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DoubleProgressionEngineTests.swift; path = DoubleProgressionEngineTests.swift; sourceTree = "<group>"; };
+		02EB4A188AEAD116A06FB831 /* TrainingPhase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TrainingPhase.swift; path = TrainingPhase.swift; sourceTree = "<group>"; };
+		03294116BD89A6D5E88A078D /* Session.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Session.swift; path = Session.swift; sourceTree = "<group>"; };
+		08AE48DC9FD887472E7FA4BD /* IntervalPrescription.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = IntervalPrescription.swift; path = IntervalPrescription.swift; sourceTree = "<group>"; };
+		116242DBB985C05A0FC01D5C /* BlockResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = BlockResult.swift; path = BlockResult.swift; sourceTree = "<group>"; };
+		166947E68E27B7CBE236C27B /* ProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ProgressView.swift; path = ProgressView.swift; sourceTree = "<group>"; };
+		1CD74FA199A710C3A9EB5F56 /* DoubleProgressionEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DoubleProgressionEngineTests.swift; path = DoubleProgressionEngineTests.swift; sourceTree = "<group>"; };
+		1E0E4261BBC7588AA3AB4DF4 /* RootTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RootTabView.swift; path = RootTabView.swift; sourceTree = "<group>"; };
+		1E494099B766FA9E34D6E4E1 /* ActivityPerformanceProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ActivityPerformanceProfile.swift; path = ActivityPerformanceProfile.swift; sourceTree = "<group>"; };
+		1F344A7DB046AFD9EC8F21A6 /* BenchmarkPerformanceProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = BenchmarkPerformanceProfile.swift; path = BenchmarkPerformanceProfile.swift; sourceTree = "<group>"; };
+		1F444039B561ED322D50F077 /* PerformanceProfileContinuityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PerformanceProfileContinuityTests.swift; path = PerformanceProfileContinuityTests.swift; sourceTree = "<group>"; };
+		21AA4C0C9052D7770FEB104C /* FunctionalFitnessResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FunctionalFitnessResult.swift; path = FunctionalFitnessResult.swift; sourceTree = "<group>"; };
+		229840AD8B4272104FB835B6 /* ActivityType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ActivityType.swift; path = ActivityType.swift; sourceTree = "<group>"; };
+		259B4ED3927612FE1B99A0FA /* PerformanceProfileStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PerformanceProfileStore.swift; path = PerformanceProfileStore.swift; sourceTree = "<group>"; };
+		26AB4BA09CD878E75E25EFCA /* TrainingOSTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TrainingOSTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		29274932924C1ADD6FDF7699 /* SetResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SetResult.swift; path = SetResult.swift; sourceTree = "<group>"; };
+		2C74461AA0E1D6FDDC442680 /* DoubleProgressionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DoubleProgressionEngine.swift; path = DoubleProgressionEngine.swift; sourceTree = "<group>"; };
+		338F413189BA70F30B6518DE /* PlanViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PlanViewModel.swift; path = PlanViewModel.swift; sourceTree = "<group>"; };
+		37CC4963A0824B2C495890C3 /* ScoringEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScoringEngine.swift; path = ScoringEngine.swift; sourceTree = "<group>"; };
+		395D436583402C054135DA6D /* FunctionalFitnessPrescription.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FunctionalFitnessPrescription.swift; path = FunctionalFitnessPrescription.swift; sourceTree = "<group>"; };
+		3D2F47A2B1091593A97276F5 /* BlockProgressionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = BlockProgressionEngine.swift; path = BlockProgressionEngine.swift; sourceTree = "<group>"; };
+		40954AFEBB023B609343A10D /* BenchmarkDefinition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = BenchmarkDefinition.swift; path = BenchmarkDefinition.swift; sourceTree = "<group>"; };
+		49DE4515B6FEC3892FBABD84 /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = UserProfile.swift; path = UserProfile.swift; sourceTree = "<group>"; };
+		4E4C4FD6B699AD7F0CF2AB3D /* PersonalRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PersonalRecord.swift; path = PersonalRecord.swift; sourceTree = "<group>"; };
+		4F1744B883949ADE23CF9801 /* README.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = README.swift; path = README.swift; sourceTree = "<group>"; };
+		528841C8B1BA640B0D7CFF1F /* TrainingOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TrainingOSApp.swift; path = TrainingOSApp.swift; sourceTree = "<group>"; };
+		53484F589FD15FDA6F0485E3 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Theme.swift; path = Theme.swift; sourceTree = "<group>"; };
+		59034661A6D460A8E0CA0710 /* PlanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PlanView.swift; path = PlanView.swift; sourceTree = "<group>"; };
+		60554B31BA8A4E000BEC1DA5 /* BlockPrescription.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = BlockPrescription.swift; path = BlockPrescription.swift; sourceTree = "<group>"; };
+		60F44B7DA153CF555A4121AB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = Assets.xcassets; sourceTree = "<group>"; };
+		64E1458F8E3D57EF0174737D /* ProgramInstance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ProgramInstance.swift; path = ProgramInstance.swift; sourceTree = "<group>"; };
+		74B341C8944D07EB6D80553D /* ModalityPersistenceRoundTripTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ModalityPersistenceRoundTripTests.swift; path = ModalityPersistenceRoundTripTests.swift; sourceTree = "<group>"; };
+		778C4B008E55FFE4765AE125 /* SessionRole.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SessionRole.swift; path = SessionRole.swift; sourceTree = "<group>"; };
+		781B494FA06A7F0745ACDE8B /* DomainModelScenarioTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DomainModelScenarioTests.swift; path = DomainModelScenarioTests.swift; sourceTree = "<group>"; };
+		80CF49528A06C5309907B942 /* Day.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Day.swift; path = Day.swift; sourceTree = "<group>"; };
+		822A4709B48D41F2F190CB89 /* ExerciseCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExerciseCatalog.swift; path = ExerciseCatalog.swift; sourceTree = "<group>"; };
+		84E8450DB6F0A3A61A467281 /* PersistenceRoundTripTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PersistenceRoundTripTests.swift; path = PersistenceRoundTripTests.swift; sourceTree = "<group>"; };
+		87F049ADBD18C07002453277 /* TrainingPlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TrainingPlan.swift; path = TrainingPlan.swift; sourceTree = "<group>"; };
+		8E324E3DA961C03C4EA43C8D /* FunctionalFitnessMovement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FunctionalFitnessMovement.swift; path = FunctionalFitnessMovement.swift; sourceTree = "<group>"; };
+		95C24FF9B12AC7E08690FE82 /* ExercisePerformanceProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExercisePerformanceProfile.swift; path = ExercisePerformanceProfile.swift; sourceTree = "<group>"; };
+		961D418E8A3F58DE37C29D67 /* SeedDataProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SeedDataProvider.swift; path = SeedDataProvider.swift; sourceTree = "<group>"; };
+		961E416D9AE157977247CA3E /* ProgressViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ProgressViewModel.swift; path = ProgressViewModel.swift; sourceTree = "<group>"; };
+		997847CA96D0A5455620B7F0 /* RecordWorkoutResultUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RecordWorkoutResultUseCase.swift; path = RecordWorkoutResultUseCase.swift; sourceTree = "<group>"; };
+		99B64954891D896FCB33CBF7 /* DeleteRuleMatrixTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DeleteRuleMatrixTests.swift; path = DeleteRuleMatrixTests.swift; sourceTree = "<group>"; };
+		9DEC4916B274A1AB731CD90B /* WorkoutResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WorkoutResult.swift; path = WorkoutResult.swift; sourceTree = "<group>"; };
+		9F35404FABA750EB84C56742 /* TrainingOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TrainingOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A19E46C6A95AC6EE65B67E22 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = User.swift; path = User.swift; sourceTree = "<group>"; };
+		A28E41A1923F2FF34CD718B2 /* Recommendation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Recommendation.swift; path = Recommendation.swift; sourceTree = "<group>"; };
+		A84043D297D699E9B910A0A6 /* Exercise.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Exercise.swift; path = Exercise.swift; sourceTree = "<group>"; };
+		AE384D888B58F59FF03553CA /* WorkoutFormat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WorkoutFormat.swift; path = WorkoutFormat.swift; sourceTree = "<group>"; };
+		B0C640FB894DE1E8D17183AB /* SteadyStateResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SteadyStateResult.swift; path = SteadyStateResult.swift; sourceTree = "<group>"; };
+		B3634F918ED73F0BED77FB65 /* ProgrammingDecisionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ProgrammingDecisionEngine.swift; path = ProgrammingDecisionEngine.swift; sourceTree = "<group>"; };
+		B48F4B12981F158C3F1B7430 /* RecordSetResultUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RecordSetResultUseCase.swift; path = RecordSetResultUseCase.swift; sourceTree = "<group>"; };
+		B875478EA0A0B59BC2ADD02C /* Goal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Goal.swift; path = Goal.swift; sourceTree = "<group>"; };
+		BCFA48EE8EA729613F37D526 /* TodayViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TodayViewModel.swift; path = TodayViewModel.swift; sourceTree = "<group>"; };
+		BDDB4778B269ACE9CD1F3D67 /* Stimulus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Stimulus.swift; path = Stimulus.swift; sourceTree = "<group>"; };
+		BE38406ABAD897021211F96A /* FunctionalFitnessPerformedMovement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FunctionalFitnessPerformedMovement.swift; path = FunctionalFitnessPerformedMovement.swift; sourceTree = "<group>"; };
+		BE6C49BCB88C87109C9B228E /* SeedScenarios.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SeedScenarios.swift; path = SeedScenarios.swift; sourceTree = "<group>"; };
+		C2734FD3AD8468E604ACA2F2 /* RelationshipOwnershipTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RelationshipOwnershipTests.swift; path = RelationshipOwnershipTests.swift; sourceTree = "<group>"; };
+		C44F4924AB846F0DEA427DB8 /* TodayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TodayView.swift; path = TodayView.swift; sourceTree = "<group>"; };
+		C7B64E2D860E385FC7EDCB1B /* WorkoutBlock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WorkoutBlock.swift; path = WorkoutBlock.swift; sourceTree = "<group>"; };
+		C8E845128E2D643364319166 /* ScoreTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScoreTypes.swift; path = ScoreTypes.swift; sourceTree = "<group>"; };
+		CA4742E084A9E98BCA463313 /* IntensityTarget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = IntensityTarget.swift; path = IntensityTarget.swift; sourceTree = "<group>"; };
+		D642401D83068E564FDA98F1 /* PersistenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PersistenceController.swift; path = PersistenceController.swift; sourceTree = "<group>"; };
+		D7E74926ABDD6C8E79E85D8F /* ProgramDefinition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ProgramDefinition.swift; path = ProgramDefinition.swift; sourceTree = "<group>"; };
+		D9B34CC8A8AECF7AFE6EF20B /* PerformanceProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PerformanceProfile.swift; path = PerformanceProfile.swift; sourceTree = "<group>"; };
+		DA9540D3938B5FCBDB7E46EF /* ScoringEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScoringEngineTests.swift; path = ScoringEngineTests.swift; sourceTree = "<group>"; };
+		DFCB4C9C8478C1027CF73484 /* IntervalRepResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = IntervalRepResult.swift; path = IntervalRepResult.swift; sourceTree = "<group>"; };
+		E0AE4E068ED033C4367CFEBF /* TrainingWeek.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TrainingWeek.swift; path = TrainingWeek.swift; sourceTree = "<group>"; };
+		E1CD4DB298B10069A672E1CE /* Enums.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Enums.swift; path = Enums.swift; sourceTree = "<group>"; };
+		E2854E9EBCF284C72C646DC3 /* ProgressionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ProgressionEngine.swift; path = ProgressionEngine.swift; sourceTree = "<group>"; };
+		E6004497ACD94340AB54512F /* ExerciseAlias.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExerciseAlias.swift; path = ExerciseAlias.swift; sourceTree = "<group>"; };
+		E6B94AD3B2CD768C43207DAC /* IntervalResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = IntervalResult.swift; path = IntervalResult.swift; sourceTree = "<group>"; };
+		F377483DB325CB8E61B20CCF /* SetPrescription.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SetPrescription.swift; path = SetPrescription.swift; sourceTree = "<group>"; };
+		F4AE4B56A7EEF86366B4702E /* ModalityArchitectureProofTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ModalityArchitectureProofTests.swift; path = ModalityArchitectureProofTests.swift; sourceTree = "<group>"; };
+		F4E841F08066E82A874C3FB1 /* ModalityContinuityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ModalityContinuityTests.swift; path = ModalityContinuityTests.swift; sourceTree = "<group>"; };
+		F511401680AF0947E5D92884 /* TrainingStressProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TrainingStressProfile.swift; path = TrainingStressProfile.swift; sourceTree = "<group>"; };
+		F7234BF3BAE23694A6FAE5F6 /* SteadyStatePrescription.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SteadyStatePrescription.swift; path = SteadyStatePrescription.swift; sourceTree = "<group>"; };
+		FD8F48DE83B5042E1CF35A00 /* ExercisePrescription.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExercisePrescription.swift; path = ExercisePrescription.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
-		07DA44F2BD4BA945FC4984EB /* Persistence */ = {
+		058B419AB21B304909F81CB9 /* Integrations */ = {
 			isa = PBXGroup;
 			children = (
-				1AEB4E9B9245FE322277D6DE /* PersistenceController.swift */,
-			);
-			name = Persistence;
-			path = Persistence;
-			sourceTree = "<group>";
-		};
-		154C4F1684C9F741935CDC89 /* Theme */ = {
-			isa = PBXGroup;
-			children = (
-				F6984363BAB3C25F821C4A68 /* Theme.swift */,
-			);
-			name = Theme;
-			path = Theme;
-			sourceTree = "<group>";
-		};
-		1994491A911DEFEF120C1287 /* Integrations */ = {
-			isa = PBXGroup;
-			children = (
-				F57E4BE7B19DB8066F238EAF /* README.swift */,
+				4F1744B883949ADE23CF9801 /* README.swift */,
 			);
 			name = Integrations;
 			path = Integrations;
 			sourceTree = "<group>";
 		};
-		1B5B4B44BAB1FDC49E31C04F /* Application */ = {
+		108D4878BBAB39B20C5F3E1B /* Entities */ = {
 			isa = PBXGroup;
 			children = (
-				D4954FC8937591E23C03CB68 /* ViewModels */,
-				BC13427F8071F5D1DEC43818 /* UseCases */,
-				60A0443781E54A957401ABBD /* Seed */,
-			);
-			name = Application;
-			path = Application;
-			sourceTree = "<group>";
-		};
-		34164D34A81CFF1469AEC5B9 /* UI */ = {
-			isa = PBXGroup;
-			children = (
-				B8D54847AD6B3DC5E4EECC8A /* Today */,
-				FA19483A95876E78921023C2 /* Plan */,
-				154C4F1684C9F741935CDC89 /* Theme */,
-				7BA1427DA0609DC116808540 /* RootTabView.swift */,
-				B0CD425CBFC380052D2CC46D /* Progress */,
-			);
-			name = UI;
-			path = UI;
-			sourceTree = "<group>";
-		};
-		4C3248D2B49DB9BB86676694 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				4F704C488C2613914192FD91 /* TrainingOS.app */,
-				10384933A92AB76C3DBADFFB /* TrainingOSTests.xctest */,
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		5D6445D6ACF0B97FE37422F1 /* App */ = {
-			isa = PBXGroup;
-			children = (
-				0ECE4ED38B8BB5D487926AE2 /* TrainingOSApp.swift */,
-			);
-			name = App;
-			path = App;
-			sourceTree = "<group>";
-		};
-		60A0443781E54A957401ABBD /* Seed */ = {
-			isa = PBXGroup;
-			children = (
-				F06C4A8EB70BD939F88E40F0 /* ExerciseCatalog.swift */,
-				D7344E69A1D7073EB3F00E86 /* SeedScenarios.swift */,
-				3393410798D83BA9A1A3C6B2 /* SeedDataProvider.swift */,
-			);
-			name = Seed;
-			path = Seed;
-			sourceTree = "<group>";
-		};
-		8A7E41F8B6902B72394EDC1B /* ValueTypes */ = {
-			isa = PBXGroup;
-			children = (
-				8027414FAF70D2174E5C77C4 /* Enums.swift */,
-			);
-			name = ValueTypes;
-			path = ValueTypes;
-			sourceTree = "<group>";
-		};
-		94584B4FB0E027F966E3CBAC /* Resources */ = {
-			isa = PBXGroup;
-			children = (
-				6FFF44B994BD998E21FDA2B1 /* Assets.xcassets */,
-			);
-			name = Resources;
-			path = Resources;
-			sourceTree = "<group>";
-		};
-		98AD424AB3B0130CAC9C01E3 /* TrainingOSTests */ = {
-			isa = PBXGroup;
-			children = (
-				D9D942DA834B4DBF2B29E815 /* DomainModelScenarioTests.swift */,
-				76B44D0B853C5E3B6EA76F9E /* ScoringEngineTests.swift */,
-				F84640CCABE624D401BCE49B /* DoubleProgressionEngineTests.swift */,
-				402B41029D672B0A24A13EE9 /* PersistenceRoundTripTests.swift */,
-				DDED4D97B6DCEDFC548CFA0F /* DeleteRuleMatrixTests.swift */,
-				67A94EB082BEEB5364382007 /* PerformanceProfileContinuityTests.swift */,
-				E5CA481F87C9ED38C25B3099 /* RelationshipOwnershipTests.swift */,
-			);
-			name = TrainingOSTests;
-			path = TrainingOSTests;
-			sourceTree = "<group>";
-		};
-		B0CD425CBFC380052D2CC46D /* Progress */ = {
-			isa = PBXGroup;
-			children = (
-				1A9E4143B632AF906A87ABB3 /* ProgressView.swift */,
-			);
-			name = Progress;
-			path = Progress;
-			sourceTree = "<group>";
-		};
-		B4214C84A1EE46366030AB3D /* Domain */ = {
-			isa = PBXGroup;
-			children = (
-				DD4E4815AAC5756EC34F8EEF /* Entities */,
-				8A7E41F8B6902B72394EDC1B /* ValueTypes */,
-			);
-			name = Domain;
-			path = Domain;
-			sourceTree = "<group>";
-		};
-		B8D54847AD6B3DC5E4EECC8A /* Today */ = {
-			isa = PBXGroup;
-			children = (
-				63D243BDABFE7155E54C4700 /* TodayView.swift */,
-			);
-			name = Today;
-			path = Today;
-			sourceTree = "<group>";
-		};
-		BC13427F8071F5D1DEC43818 /* UseCases */ = {
-			isa = PBXGroup;
-			children = (
-				ADE74EB1AA70E773434FD7AE /* RecordSetResultUseCase.swift */,
-				55DA4631A6FAA9AD32E226D5 /* PerformanceProfileStore.swift */,
-				F05042E6BB8806D380AB1FEA /* RecordWorkoutResultUseCase.swift */,
-			);
-			name = UseCases;
-			path = UseCases;
-			sourceTree = "<group>";
-		};
-		D40C4C25934001EAFF8A9833 /* Engines */ = {
-			isa = PBXGroup;
-			children = (
-				86D3417CB5AF4594F4ABD961 /* ScoringEngine.swift */,
-				0BDC45519916B152815768FA /* DoubleProgressionEngine.swift */,
-				DC82472CB82A7B5F173E2B3E /* ProgressionEngine.swift */,
-			);
-			name = Engines;
-			path = Engines;
-			sourceTree = "<group>";
-		};
-		D4954FC8937591E23C03CB68 /* ViewModels */ = {
-			isa = PBXGroup;
-			children = (
-				01384BEE8C06AB6AF0FD4C91 /* PlanViewModel.swift */,
-				94AC491AB3B2B5127C417389 /* TodayViewModel.swift */,
-				33BA4F0A8058D84B94D9C93E /* ProgressViewModel.swift */,
-			);
-			name = ViewModels;
-			path = ViewModels;
-			sourceTree = "<group>";
-		};
-		D7A74A2A9F7956ACD62287AE /* TrainingOS */ = {
-			isa = PBXGroup;
-			children = (
-				34164D34A81CFF1469AEC5B9 /* UI */,
-				B4214C84A1EE46366030AB3D /* Domain */,
-				1994491A911DEFEF120C1287 /* Integrations */,
-				5D6445D6ACF0B97FE37422F1 /* App */,
-				94584B4FB0E027F966E3CBAC /* Resources */,
-				D40C4C25934001EAFF8A9833 /* Engines */,
-				07DA44F2BD4BA945FC4984EB /* Persistence */,
-				1B5B4B44BAB1FDC49E31C04F /* Application */,
-			);
-			name = TrainingOS;
-			path = TrainingOS;
-			sourceTree = "<group>";
-		};
-		DD4E4815AAC5756EC34F8EEF /* Entities */ = {
-			isa = PBXGroup;
-			children = (
-				4A914820BEE6C27927E7EC5B /* Recommendation.swift */,
-				1DBA416DB9163241C8904958 /* Exercise.swift */,
-				628449A59C09C8F04912540C /* Goal.swift */,
-				9F494283AF1486C79968302B /* UserProfile.swift */,
-				7F8E4FC0837A908866A5600D /* TrainingPhase.swift */,
-				D7314521A9B89EAE46D6793A /* User.swift */,
-				46D64E949638A868A703AD10 /* ProgramDefinition.swift */,
-				C0F84DFD9FD440940FC214C7 /* ExerciseAlias.swift */,
-				563A48A4BF8EE6E706C7573F /* PerformanceProfile.swift */,
-				564741819A9BC4BB6B55966D /* TrainingPlan.swift */,
-				BC96486DA9896260DC3A6B03 /* WorkoutBlock.swift */,
-				F70B46E9AB8CC9CF1BA4A8F3 /* PersonalRecord.swift */,
-				ECCC40E4A327796A7834F6BF /* WorkoutResult.swift */,
-				55294CB586C0774DCEE014DE /* Session.swift */,
-				67AD4467B8B43750EB806902 /* TrainingWeek.swift */,
-				1DDA45118C25D6BE76988880 /* Day.swift */,
-				D68D4140A10109FC098C5519 /* SetResult.swift */,
-				99D74BC7A58F6C8626BC0729 /* SetPrescription.swift */,
-				2DEB484F86903D19EF5EE3A1 /* ExercisePerformanceProfile.swift */,
-				3CA24116A734F020DC833E51 /* ExercisePrescription.swift */,
-				3A614E96810AF5695FFB2959 /* ProgramInstance.swift */,
+				F7234BF3BAE23694A6FAE5F6 /* SteadyStatePrescription.swift */,
+				DFCB4C9C8478C1027CF73484 /* IntervalRepResult.swift */,
+				1F344A7DB046AFD9EC8F21A6 /* BenchmarkPerformanceProfile.swift */,
+				21AA4C0C9052D7770FEB104C /* FunctionalFitnessResult.swift */,
+				A28E41A1923F2FF34CD718B2 /* Recommendation.swift */,
+				E6B94AD3B2CD768C43207DAC /* IntervalResult.swift */,
+				08AE48DC9FD887472E7FA4BD /* IntervalPrescription.swift */,
+				A84043D297D699E9B910A0A6 /* Exercise.swift */,
+				B875478EA0A0B59BC2ADD02C /* Goal.swift */,
+				49DE4515B6FEC3892FBABD84 /* UserProfile.swift */,
+				02EB4A188AEAD116A06FB831 /* TrainingPhase.swift */,
+				A19E46C6A95AC6EE65B67E22 /* User.swift */,
+				1E494099B766FA9E34D6E4E1 /* ActivityPerformanceProfile.swift */,
+				395D436583402C054135DA6D /* FunctionalFitnessPrescription.swift */,
+				D7E74926ABDD6C8E79E85D8F /* ProgramDefinition.swift */,
+				40954AFEBB023B609343A10D /* BenchmarkDefinition.swift */,
+				E6004497ACD94340AB54512F /* ExerciseAlias.swift */,
+				D9B34CC8A8AECF7AFE6EF20B /* PerformanceProfile.swift */,
+				87F049ADBD18C07002453277 /* TrainingPlan.swift */,
+				C7B64E2D860E385FC7EDCB1B /* WorkoutBlock.swift */,
+				4E4C4FD6B699AD7F0CF2AB3D /* PersonalRecord.swift */,
+				9DEC4916B274A1AB731CD90B /* WorkoutResult.swift */,
+				B0C640FB894DE1E8D17183AB /* SteadyStateResult.swift */,
+				03294116BD89A6D5E88A078D /* Session.swift */,
+				BE38406ABAD897021211F96A /* FunctionalFitnessPerformedMovement.swift */,
+				E0AE4E068ED033C4367CFEBF /* TrainingWeek.swift */,
+				80CF49528A06C5309907B942 /* Day.swift */,
+				29274932924C1ADD6FDF7699 /* SetResult.swift */,
+				F377483DB325CB8E61B20CCF /* SetPrescription.swift */,
+				95C24FF9B12AC7E08690FE82 /* ExercisePerformanceProfile.swift */,
+				FD8F48DE83B5042E1CF35A00 /* ExercisePrescription.swift */,
+				64E1458F8E3D57EF0174737D /* ProgramInstance.swift */,
+				8E324E3DA961C03C4EA43C8D /* FunctionalFitnessMovement.swift */,
 			);
 			name = Entities;
 			path = Entities;
 			sourceTree = "<group>";
 		};
-		F74D4ABC8E44603FB05C34FF = {
+		1DFB44B8B24EF785C556E036 /* Application */ = {
 			isa = PBXGroup;
 			children = (
-				4C3248D2B49DB9BB86676694 /* Products */,
-				D7A74A2A9F7956ACD62287AE /* TrainingOS */,
-				98AD424AB3B0130CAC9C01E3 /* TrainingOSTests */,
+				6B354B0A966CCDC516F13571 /* ViewModels */,
+				C19A44D2934869410AA4DBAE /* UseCases */,
+				F87E4B09AE2DC18324B7C04B /* Seed */,
 			);
+			name = Application;
+			path = Application;
 			sourceTree = "<group>";
 		};
-		FA19483A95876E78921023C2 /* Plan */ = {
+		47CC497CAD504A89E5977996 /* ValueTypes */ = {
 			isa = PBXGroup;
 			children = (
-				8FD448339AD7743C6E96C5E8 /* PlanView.swift */,
+				E1CD4DB298B10069A672E1CE /* Enums.swift */,
+				BDDB4778B269ACE9CD1F3D67 /* Stimulus.swift */,
+				C8E845128E2D643364319166 /* ScoreTypes.swift */,
+				778C4B008E55FFE4765AE125 /* SessionRole.swift */,
+				229840AD8B4272104FB835B6 /* ActivityType.swift */,
+				AE384D888B58F59FF03553CA /* WorkoutFormat.swift */,
+				60554B31BA8A4E000BEC1DA5 /* BlockPrescription.swift */,
+				F511401680AF0947E5D92884 /* TrainingStressProfile.swift */,
+				116242DBB985C05A0FC01D5C /* BlockResult.swift */,
+				CA4742E084A9E98BCA463313 /* IntensityTarget.swift */,
+			);
+			name = ValueTypes;
+			path = ValueTypes;
+			sourceTree = "<group>";
+		};
+		5A324017ACD6E23E92845627 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				60F44B7DA153CF555A4121AB /* Assets.xcassets */,
+			);
+			name = Resources;
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		67514E2AA52510E69ABA0BE7 /* Engines */ = {
+			isa = PBXGroup;
+			children = (
+				3D2F47A2B1091593A97276F5 /* BlockProgressionEngine.swift */,
+				B3634F918ED73F0BED77FB65 /* ProgrammingDecisionEngine.swift */,
+				37CC4963A0824B2C495890C3 /* ScoringEngine.swift */,
+				2C74461AA0E1D6FDDC442680 /* DoubleProgressionEngine.swift */,
+				E2854E9EBCF284C72C646DC3 /* ProgressionEngine.swift */,
+			);
+			name = Engines;
+			path = Engines;
+			sourceTree = "<group>";
+		};
+		6B354B0A966CCDC516F13571 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				338F413189BA70F30B6518DE /* PlanViewModel.swift */,
+				BCFA48EE8EA729613F37D526 /* TodayViewModel.swift */,
+				961E416D9AE157977247CA3E /* ProgressViewModel.swift */,
+			);
+			name = ViewModels;
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		7996489BBEB9374F383CCC7A /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				B82844E7880F0D30DFF66BF7 /* Today */,
+				CD8A4E95A00B2E72F8060F42 /* Plan */,
+				EDDA4A4DB5BBB8DA48D8DB39 /* Theme */,
+				1E0E4261BBC7588AA3AB4DF4 /* RootTabView.swift */,
+				94F0479F98879F84EF94495D /* Progress */,
+			);
+			name = UI;
+			path = UI;
+			sourceTree = "<group>";
+		};
+		8E7940549FFDED4300523E26 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				528841C8B1BA640B0D7CFF1F /* TrainingOSApp.swift */,
+			);
+			name = App;
+			path = App;
+			sourceTree = "<group>";
+		};
+		929F46B1BCC1EA4FC6F6AF06 /* Domain */ = {
+			isa = PBXGroup;
+			children = (
+				108D4878BBAB39B20C5F3E1B /* Entities */,
+				47CC497CAD504A89E5977996 /* ValueTypes */,
+			);
+			name = Domain;
+			path = Domain;
+			sourceTree = "<group>";
+		};
+		94F0479F98879F84EF94495D /* Progress */ = {
+			isa = PBXGroup;
+			children = (
+				166947E68E27B7CBE236C27B /* ProgressView.swift */,
+			);
+			name = Progress;
+			path = Progress;
+			sourceTree = "<group>";
+		};
+		B82844E7880F0D30DFF66BF7 /* Today */ = {
+			isa = PBXGroup;
+			children = (
+				C44F4924AB846F0DEA427DB8 /* TodayView.swift */,
+			);
+			name = Today;
+			path = Today;
+			sourceTree = "<group>";
+		};
+		B8374A8087A267A90351D16B /* TrainingOSTests */ = {
+			isa = PBXGroup;
+			children = (
+				781B494FA06A7F0745ACDE8B /* DomainModelScenarioTests.swift */,
+				DA9540D3938B5FCBDB7E46EF /* ScoringEngineTests.swift */,
+				F4AE4B56A7EEF86366B4702E /* ModalityArchitectureProofTests.swift */,
+				1CD74FA199A710C3A9EB5F56 /* DoubleProgressionEngineTests.swift */,
+				84E8450DB6F0A3A61A467281 /* PersistenceRoundTripTests.swift */,
+				99B64954891D896FCB33CBF7 /* DeleteRuleMatrixTests.swift */,
+				1F444039B561ED322D50F077 /* PerformanceProfileContinuityTests.swift */,
+				F4E841F08066E82A874C3FB1 /* ModalityContinuityTests.swift */,
+				74B341C8944D07EB6D80553D /* ModalityPersistenceRoundTripTests.swift */,
+				C2734FD3AD8468E604ACA2F2 /* RelationshipOwnershipTests.swift */,
+			);
+			name = TrainingOSTests;
+			path = TrainingOSTests;
+			sourceTree = "<group>";
+		};
+		C19A44D2934869410AA4DBAE /* UseCases */ = {
+			isa = PBXGroup;
+			children = (
+				B48F4B12981F158C3F1B7430 /* RecordSetResultUseCase.swift */,
+				259B4ED3927612FE1B99A0FA /* PerformanceProfileStore.swift */,
+				997847CA96D0A5455620B7F0 /* RecordWorkoutResultUseCase.swift */,
+			);
+			name = UseCases;
+			path = UseCases;
+			sourceTree = "<group>";
+		};
+		CD8A4E95A00B2E72F8060F42 /* Plan */ = {
+			isa = PBXGroup;
+			children = (
+				59034661A6D460A8E0CA0710 /* PlanView.swift */,
 			);
 			name = Plan;
 			path = Plan;
 			sourceTree = "<group>";
 		};
+		D172483695E8BA16BCD6669C /* Persistence */ = {
+			isa = PBXGroup;
+			children = (
+				D642401D83068E564FDA98F1 /* PersistenceController.swift */,
+			);
+			name = Persistence;
+			path = Persistence;
+			sourceTree = "<group>";
+		};
+		DC1347A3B0C4E5AC419AF254 /* TrainingOS */ = {
+			isa = PBXGroup;
+			children = (
+				7996489BBEB9374F383CCC7A /* UI */,
+				929F46B1BCC1EA4FC6F6AF06 /* Domain */,
+				058B419AB21B304909F81CB9 /* Integrations */,
+				8E7940549FFDED4300523E26 /* App */,
+				5A324017ACD6E23E92845627 /* Resources */,
+				67514E2AA52510E69ABA0BE7 /* Engines */,
+				D172483695E8BA16BCD6669C /* Persistence */,
+				1DFB44B8B24EF785C556E036 /* Application */,
+			);
+			name = TrainingOS;
+			path = TrainingOS;
+			sourceTree = "<group>";
+		};
+		E1AA40729681854660B825BD = {
+			isa = PBXGroup;
+			children = (
+				EACA4B0F8F400DF04F01E912 /* Products */,
+				DC1347A3B0C4E5AC419AF254 /* TrainingOS */,
+				B8374A8087A267A90351D16B /* TrainingOSTests */,
+			);
+			sourceTree = "<group>";
+		};
+		EACA4B0F8F400DF04F01E912 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				9F35404FABA750EB84C56742 /* TrainingOS.app */,
+				26AB4BA09CD878E75E25EFCA /* TrainingOSTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		EDDA4A4DB5BBB8DA48D8DB39 /* Theme */ = {
+			isa = PBXGroup;
+			children = (
+				53484F589FD15FDA6F0485E3 /* Theme.swift */,
+			);
+			name = Theme;
+			path = Theme;
+			sourceTree = "<group>";
+		};
+		F87E4B09AE2DC18324B7C04B /* Seed */ = {
+			isa = PBXGroup;
+			children = (
+				822A4709B48D41F2F190CB89 /* ExerciseCatalog.swift */,
+				BE6C49BCB88C87109C9B228E /* SeedScenarios.swift */,
+				961D418E8A3F58DE37C29D67 /* SeedDataProvider.swift */,
+			);
+			name = Seed;
+			path = Seed;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		0FDA46828D6F8B64DADCC64F /* TrainingOSTests */ = {
+		38574B88B8D5D98F67E2478E /* TrainingOSTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 3BF64599ACD63617C83B25E1 /* Build configuration list for PBXNativeTarget "TrainingOSTests" */;
+			buildConfigurationList = 176D43E9A356D44F5564C933 /* Build configuration list for PBXNativeTarget "TrainingOSTests" */;
 			buildPhases = (
-				D3954ED19474980A8DBDBD94 /* Sources */,
+				00934F31BFF78860B1F3FE8D /* Sources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				10D145B38E2AE0E86C04633F /* PBXTargetDependency */,
+				821D4E72A55083FF79663DB4 /* PBXTargetDependency */,
 			);
 			name = TrainingOSTests;
 			productName = TrainingOSTests;
-			productReference = 10384933A92AB76C3DBADFFB /* TrainingOSTests.xctest */;
+			productReference = 26AB4BA09CD878E75E25EFCA /* TrainingOSTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		5C83497D906518FBFBA0078F /* TrainingOS */ = {
+		7C2D4C53B8590E02F61E83F0 /* TrainingOS */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 58234AA7BC07F28C8D940D5C /* Build configuration list for PBXNativeTarget "TrainingOS" */;
+			buildConfigurationList = D70E4307BA14C8FBD1127D25 /* Build configuration list for PBXNativeTarget "TrainingOS" */;
 			buildPhases = (
-				8D0E4A0288A5DD31F0A68459 /* Sources */,
-				F468491DA864BAECAA049024 /* Resources */,
+				3F3842498A5E50998F029A54 /* Sources */,
+				F9974CDAB181145806851624 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -394,29 +472,29 @@
 			);
 			name = TrainingOS;
 			productName = TrainingOS;
-			productReference = 4F704C488C2613914192FD91 /* TrainingOS.app */;
+			productReference = 9F35404FABA750EB84C56742 /* TrainingOS.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		D3B3434C96A7E8F831D71BD7 /* Project object */ = {
+		F84A416680319AD985CBC164 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastSwiftUpdateCheck = 1600;
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
-					0FDA46828D6F8B64DADCC64F = {
+					38574B88B8D5D98F67E2478E = {
 						CreatedOnToolsVersion = 16.0;
-						TestTargetID = 5C83497D906518FBFBA0078F;
+						TestTargetID = 7C2D4C53B8590E02F61E83F0;
 					};
-					5C83497D906518FBFBA0078F = {
+					7C2D4C53B8590E02F61E83F0 = {
 						CreatedOnToolsVersion = 16.0;
 					};
 				};
 			};
-			buildConfigurationList = 36FD4132968F565EB0F61DF5 /* Build configuration list for PBXProject "TrainingOS" */;
+			buildConfigurationList = EE2E42E7B5F6BC1672E4159B /* Build configuration list for PBXProject "TrainingOS" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -424,104 +502,256 @@
 				en,
 				Base,
 			);
-			mainGroup = F74D4ABC8E44603FB05C34FF;
-			productRefGroup = 4C3248D2B49DB9BB86676694 /* Products */;
+			mainGroup = E1AA40729681854660B825BD;
+			productRefGroup = EACA4B0F8F400DF04F01E912 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				5C83497D906518FBFBA0078F /* TrainingOS */,
-				0FDA46828D6F8B64DADCC64F /* TrainingOSTests */,
+				7C2D4C53B8590E02F61E83F0 /* TrainingOS */,
+				38574B88B8D5D98F67E2478E /* TrainingOSTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		F468491DA864BAECAA049024 /* Resources */ = {
+		F9974CDAB181145806851624 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				45D64C7E9DADC2C80E025C64 /* Assets.xcassets in Resources */,
+				5CE441BFB8A5B65A6E17C631 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		8D0E4A0288A5DD31F0A68459 /* Sources */ = {
+		00934F31BFF78860B1F3FE8D /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E10A4DC4B15C67A4525EC555 /* TodayView.swift in Sources */,
-				265942CB91408A5FC1431A7C /* PlanView.swift in Sources */,
-				A5DE443B9820016F7B25503F /* Theme.swift in Sources */,
-				52184A07B208D7A28490CBC1 /* RootTabView.swift in Sources */,
-				3CCE48928EE09D9EB5DFFF3A /* ProgressView.swift in Sources */,
-				833740FE9296ED25B5A080C1 /* Recommendation.swift in Sources */,
-				A0E64E92B88A49379ADD7DB3 /* Exercise.swift in Sources */,
-				4F7941B8BE6A451F5C0DDCDD /* Goal.swift in Sources */,
-				9AC746B1A8964441D92DCB96 /* UserProfile.swift in Sources */,
-				8A5B4D17874ACE3DD0C64C64 /* TrainingPhase.swift in Sources */,
-				EB7343F88B7CD1686ED4BFDA /* User.swift in Sources */,
-				6DD6470FBDAB99117E6A361B /* ProgramDefinition.swift in Sources */,
-				8A1B49BF80F22EBA4D6A7A7D /* ExerciseAlias.swift in Sources */,
-				86A54A6AAAA0F70E174E137C /* PerformanceProfile.swift in Sources */,
-				686149BC8F6B565266AA1FD3 /* TrainingPlan.swift in Sources */,
-				2F4E4A568F4646C7DBFA3283 /* WorkoutBlock.swift in Sources */,
-				39524618A01A1DB585AC1742 /* PersonalRecord.swift in Sources */,
-				B8E64EC380D37CC3C6CA2B0F /* WorkoutResult.swift in Sources */,
-				D4D74B3EB2DFC1C3AEC60580 /* Session.swift in Sources */,
-				79924882A28404C1BF408077 /* TrainingWeek.swift in Sources */,
-				366443E5BD8999C8E78E0652 /* Day.swift in Sources */,
-				FF804079BD522BED37199376 /* SetResult.swift in Sources */,
-				3C4C42BEB1C79AB8690D8B49 /* SetPrescription.swift in Sources */,
-				154D444194FD87D87C51AE2E /* ExercisePerformanceProfile.swift in Sources */,
-				41944FBF8F5D7CCAB219705C /* ExercisePrescription.swift in Sources */,
-				98B34629849826709043794A /* ProgramInstance.swift in Sources */,
-				BEC248D98E1EACD486A5E0A6 /* Enums.swift in Sources */,
-				19564717B078ADEF7C9B3DBA /* README.swift in Sources */,
-				15C34FAE988AC886CE32B556 /* TrainingOSApp.swift in Sources */,
-				5A7146D9B5BF1CC1E9412C4C /* ScoringEngine.swift in Sources */,
-				B492470A82C704361DFD83D9 /* DoubleProgressionEngine.swift in Sources */,
-				D7DF49389681F3AC9A616EB3 /* ProgressionEngine.swift in Sources */,
-				B814434288F5F24C68B84D7E /* PersistenceController.swift in Sources */,
-				81184E0E92B768DE3A108950 /* PlanViewModel.swift in Sources */,
-				F073438A89CC5C7DDE434375 /* TodayViewModel.swift in Sources */,
-				AA53455B97702276246502BD /* ProgressViewModel.swift in Sources */,
-				1A1D408293D161A258FD95B2 /* RecordSetResultUseCase.swift in Sources */,
-				3556469B84F6CA401093BD7E /* PerformanceProfileStore.swift in Sources */,
-				D43B488AADE01550F3871640 /* RecordWorkoutResultUseCase.swift in Sources */,
-				2AE7446E8A74C71285070957 /* ExerciseCatalog.swift in Sources */,
-				9ACB409BBBCAAC0881382041 /* SeedScenarios.swift in Sources */,
-				DAA74118BCD45CB03110C22A /* SeedDataProvider.swift in Sources */,
+				C941457B8BEE324C10EF160C /* DomainModelScenarioTests.swift in Sources */,
+				184A43448A3535A19258B9D4 /* ScoringEngineTests.swift in Sources */,
+				A631440989AEE70522DBC5D1 /* ModalityArchitectureProofTests.swift in Sources */,
+				FCBC427FB00343F9541CD582 /* DoubleProgressionEngineTests.swift in Sources */,
+				60D94A2FB2144ADC9A40BC23 /* PersistenceRoundTripTests.swift in Sources */,
+				7F61431D9F8A3FD958404965 /* DeleteRuleMatrixTests.swift in Sources */,
+				04A94B17A480B29986E2096C /* PerformanceProfileContinuityTests.swift in Sources */,
+				A83D4ABD937090B2899BA12D /* ModalityContinuityTests.swift in Sources */,
+				F722416DAB84DBA157BBCF2F /* ModalityPersistenceRoundTripTests.swift in Sources */,
+				9DCC451295B6625D4873AE4E /* RelationshipOwnershipTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		D3954ED19474980A8DBDBD94 /* Sources */ = {
+		3F3842498A5E50998F029A54 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				026249F78BA3FB558A44A437 /* DomainModelScenarioTests.swift in Sources */,
-				CFBC43BDBB86765CE0876E76 /* ScoringEngineTests.swift in Sources */,
-				42AF49CBB4EE9C12D68A4AE3 /* DoubleProgressionEngineTests.swift in Sources */,
-				A1DD417290C274A1FA53C21E /* PersistenceRoundTripTests.swift in Sources */,
-				2A0B46528B97BFD96382189C /* DeleteRuleMatrixTests.swift in Sources */,
-				36304ABB8AD6372A4B32A404 /* PerformanceProfileContinuityTests.swift in Sources */,
-				9885484D83C8AC798FD22E4F /* RelationshipOwnershipTests.swift in Sources */,
+				3EA9470999B41918A3A61BCC /* TodayView.swift in Sources */,
+				EDFD47BBA6784A010E995E7C /* PlanView.swift in Sources */,
+				B6D54E9A81CD9A6CAE70C838 /* Theme.swift in Sources */,
+				355E4F519569B26DB7E6814D /* RootTabView.swift in Sources */,
+				E8BC41AAB80633416FED8810 /* ProgressView.swift in Sources */,
+				0A39407AAB8E500DCA5A5C1F /* SteadyStatePrescription.swift in Sources */,
+				4A6242F1A3BF38EB6EF078B7 /* IntervalRepResult.swift in Sources */,
+				773843A880E71B2AFC873FAA /* BenchmarkPerformanceProfile.swift in Sources */,
+				1EB640A1AF129B7A2BD34E7D /* FunctionalFitnessResult.swift in Sources */,
+				4EF54AB8BE5B08F45556B0D8 /* Recommendation.swift in Sources */,
+				EC6443C8B5DB5D5BFA5F86FB /* IntervalResult.swift in Sources */,
+				6E9447FE913CA6497CB837D1 /* IntervalPrescription.swift in Sources */,
+				2F2B496199DF8687BAE97ACB /* Exercise.swift in Sources */,
+				71F7400B8026DD2FE41CCE96 /* Goal.swift in Sources */,
+				40FF4EC2955E9A470AFFA219 /* UserProfile.swift in Sources */,
+				3945470DA47F6C1BF78FC3E3 /* TrainingPhase.swift in Sources */,
+				D67044B6B56E08A489CE0BCB /* User.swift in Sources */,
+				58B94642AFA6B9CA8EB0488F /* ActivityPerformanceProfile.swift in Sources */,
+				A0D345BBAAD869A8008AC2F9 /* FunctionalFitnessPrescription.swift in Sources */,
+				165842D2A2FE5C291D6AA431 /* ProgramDefinition.swift in Sources */,
+				0BF241918A38BC0D404CE558 /* BenchmarkDefinition.swift in Sources */,
+				80FA480A920FA7F622E1BFD0 /* ExerciseAlias.swift in Sources */,
+				BC954381882996F2E7176E7E /* PerformanceProfile.swift in Sources */,
+				98CF477988DFF7C4D9410442 /* TrainingPlan.swift in Sources */,
+				C6654285BE5C49C320C03953 /* WorkoutBlock.swift in Sources */,
+				6E944A5AAE11C32004A17E54 /* PersonalRecord.swift in Sources */,
+				88774AFF86A381ADA85131A1 /* WorkoutResult.swift in Sources */,
+				C4124A9BABBE0095D5AF640E /* SteadyStateResult.swift in Sources */,
+				ECE5493A8061650BE4F259FD /* Session.swift in Sources */,
+				8065461BBFD9E8025953E9B6 /* FunctionalFitnessPerformedMovement.swift in Sources */,
+				32844A0BBFF65B175D6B5667 /* TrainingWeek.swift in Sources */,
+				B8C24931BBFCEEF452E84C0E /* Day.swift in Sources */,
+				3ABB45E5B9BF8A53C5E0C37B /* SetResult.swift in Sources */,
+				8BA34A6E91DB5DC1662834BD /* SetPrescription.swift in Sources */,
+				47264E36BFF303191C40D96C /* ExercisePerformanceProfile.swift in Sources */,
+				1EB7495791753B1CA69AFC21 /* ExercisePrescription.swift in Sources */,
+				4A864F528D892B3E07C72AFA /* ProgramInstance.swift in Sources */,
+				3E58401BA3A1F7F028B7D178 /* FunctionalFitnessMovement.swift in Sources */,
+				8B004ECAA561825F7872990B /* Enums.swift in Sources */,
+				56844F228BAB2BA7554BD3A5 /* Stimulus.swift in Sources */,
+				AEC84ED1B6068F6702CC0EDE /* ScoreTypes.swift in Sources */,
+				91744E5DA4D8FC8A3CE5FA55 /* SessionRole.swift in Sources */,
+				5E0E4473A9E8F4F75E2DE70B /* ActivityType.swift in Sources */,
+				A61D4731973942F72EC9F56E /* WorkoutFormat.swift in Sources */,
+				72F44ABD965B7257258B34D2 /* BlockPrescription.swift in Sources */,
+				5F77423B8A2C82B332817161 /* TrainingStressProfile.swift in Sources */,
+				4FD142CFAAE75B36545E608A /* BlockResult.swift in Sources */,
+				339A4559B435C92D4D149029 /* IntensityTarget.swift in Sources */,
+				FFDD40D1BA4DFEA6FEB100AA /* README.swift in Sources */,
+				E94F45CDA1EEED4F2F4D862F /* TrainingOSApp.swift in Sources */,
+				43EB4EC5B4032403D398B8AC /* BlockProgressionEngine.swift in Sources */,
+				DE8D463FB5BF210E912DD5D8 /* ProgrammingDecisionEngine.swift in Sources */,
+				8DFA473DBEDD70041FD4B451 /* ScoringEngine.swift in Sources */,
+				BF384E4EBC21DE0698934299 /* DoubleProgressionEngine.swift in Sources */,
+				53D249389AB99EBAFE5F4B39 /* ProgressionEngine.swift in Sources */,
+				3D7248C398566C80F74071DE /* PersistenceController.swift in Sources */,
+				19A84DD2B076029285474FCD /* PlanViewModel.swift in Sources */,
+				FA334A52AA8CE4F7E4B15A91 /* TodayViewModel.swift in Sources */,
+				83FD45AE9DCD0EC793A1FE5C /* ProgressViewModel.swift in Sources */,
+				D15D4F99B3BFBF42D95513FD /* RecordSetResultUseCase.swift in Sources */,
+				9405419080E2025EA44AB6A4 /* PerformanceProfileStore.swift in Sources */,
+				A56D416099BC45F36505580F /* RecordWorkoutResultUseCase.swift in Sources */,
+				F2104C698605C0A1991E3260 /* ExerciseCatalog.swift in Sources */,
+				30B5470C92004F59610077E8 /* SeedScenarios.swift in Sources */,
+				C1094D1684704135A0056249 /* SeedDataProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		10D145B38E2AE0E86C04633F /* PBXTargetDependency */ = {
+		821D4E72A55083FF79663DB4 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 5C83497D906518FBFBA0078F /* TrainingOS */;
-			targetProxy = A1AE40FAA954C9122721ED5C /* PBXContainerItemProxy */;
+			target = 7C2D4C53B8590E02F61E83F0 /* TrainingOS */;
+			targetProxy = 889941FDAD03DFD7995FD2CE /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		19F84139B61D86AAC3D68E4E /* Debug */ = {
+		06FC419FAFD1A0B27D3778CF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(SRCROOT)/TrainingOS/Resources",
+					"$(inherited)",
+				);
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LIBRARY_SEARCH_PATHS = (
+					"$(SRCROOT)/TrainingOS/UI/Today",
+					"$(SRCROOT)/TrainingOS/UI/Plan",
+					"$(SRCROOT)/TrainingOS/UI/Theme",
+					"$(SRCROOT)/TrainingOS/UI",
+					"$(SRCROOT)/TrainingOS/UI/Progress",
+					"$(SRCROOT)/TrainingOS/Domain/Entities",
+					"$(SRCROOT)/TrainingOS/Domain/ValueTypes",
+					"$(SRCROOT)/TrainingOS/Integrations",
+					"$(SRCROOT)/TrainingOS/App",
+					"$(SRCROOT)/TrainingOS/Engines",
+					"$(SRCROOT)/TrainingOS/Persistence",
+					"$(SRCROOT)/TrainingOS/Application/ViewModels",
+					"$(SRCROOT)/TrainingOS/Application/UseCases",
+					"$(SRCROOT)/TrainingOS/Application/Seed",
+					"$(SRCROOT)/TrainingOSTests",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.macadegolf.trainingos.TrainingOSTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TrainingOS.app/TrainingOS";
+			};
+			name = Release;
+		};
+		11284987A7E37F3F0E909E26 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				ENABLE_PREVIEWS = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(SRCROOT)/TrainingOS/Resources",
+					"$(inherited)",
+				);
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Training OS";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(SRCROOT)/TrainingOS/UI/Today",
+					"$(SRCROOT)/TrainingOS/UI/Plan",
+					"$(SRCROOT)/TrainingOS/UI/Theme",
+					"$(SRCROOT)/TrainingOS/UI",
+					"$(SRCROOT)/TrainingOS/UI/Progress",
+					"$(SRCROOT)/TrainingOS/Domain/Entities",
+					"$(SRCROOT)/TrainingOS/Domain/ValueTypes",
+					"$(SRCROOT)/TrainingOS/Integrations",
+					"$(SRCROOT)/TrainingOS/App",
+					"$(SRCROOT)/TrainingOS/Engines",
+					"$(SRCROOT)/TrainingOS/Persistence",
+					"$(SRCROOT)/TrainingOS/Application/ViewModels",
+					"$(SRCROOT)/TrainingOS/Application/UseCases",
+					"$(SRCROOT)/TrainingOS/Application/Seed",
+					"$(SRCROOT)/TrainingOSTests",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.macadegolf.trainingos;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		192B4155A868AFCDDFC566DC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(SRCROOT)/TrainingOS/Resources",
+					"$(inherited)",
+				);
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LIBRARY_SEARCH_PATHS = (
+					"$(SRCROOT)/TrainingOS/UI/Today",
+					"$(SRCROOT)/TrainingOS/UI/Plan",
+					"$(SRCROOT)/TrainingOS/UI/Theme",
+					"$(SRCROOT)/TrainingOS/UI",
+					"$(SRCROOT)/TrainingOS/UI/Progress",
+					"$(SRCROOT)/TrainingOS/Domain/Entities",
+					"$(SRCROOT)/TrainingOS/Domain/ValueTypes",
+					"$(SRCROOT)/TrainingOS/Integrations",
+					"$(SRCROOT)/TrainingOS/App",
+					"$(SRCROOT)/TrainingOS/Engines",
+					"$(SRCROOT)/TrainingOS/Persistence",
+					"$(SRCROOT)/TrainingOS/Application/ViewModels",
+					"$(SRCROOT)/TrainingOS/Application/UseCases",
+					"$(SRCROOT)/TrainingOS/Application/Seed",
+					"$(SRCROOT)/TrainingOSTests",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.macadegolf.trainingos.TrainingOSTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TrainingOS.app/TrainingOS";
+			};
+			name = Debug;
+		};
+		8DE94C328A8F70C3B31D383D /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -567,7 +797,55 @@
 			};
 			name = Debug;
 		};
-		4AA04BB59D2DB510806E88D1 /* Release */ = {
+		97F8486BA304C4C3DF344D6E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				ENABLE_PREVIEWS = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(SRCROOT)/TrainingOS/Resources",
+					"$(inherited)",
+				);
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Training OS";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(SRCROOT)/TrainingOS/UI/Today",
+					"$(SRCROOT)/TrainingOS/UI/Plan",
+					"$(SRCROOT)/TrainingOS/UI/Theme",
+					"$(SRCROOT)/TrainingOS/UI",
+					"$(SRCROOT)/TrainingOS/UI/Progress",
+					"$(SRCROOT)/TrainingOS/Domain/Entities",
+					"$(SRCROOT)/TrainingOS/Domain/ValueTypes",
+					"$(SRCROOT)/TrainingOS/Integrations",
+					"$(SRCROOT)/TrainingOS/App",
+					"$(SRCROOT)/TrainingOS/Engines",
+					"$(SRCROOT)/TrainingOS/Persistence",
+					"$(SRCROOT)/TrainingOS/Application/ViewModels",
+					"$(SRCROOT)/TrainingOS/Application/UseCases",
+					"$(SRCROOT)/TrainingOS/Application/Seed",
+					"$(SRCROOT)/TrainingOSTests",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.macadegolf.trainingos;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		E5034B33962C173604499C83 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -606,211 +884,37 @@
 			};
 			name = Release;
 		};
-		761B4879917461729838E61D /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "";
-				ENABLE_PREVIEWS = YES;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(SRCROOT)/TrainingOS/Resources",
-					"$(inherited)",
-				);
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Training OS";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				LIBRARY_SEARCH_PATHS = (
-					"$(SRCROOT)/TrainingOS/UI/Today",
-					"$(SRCROOT)/TrainingOS/UI/Plan",
-					"$(SRCROOT)/TrainingOS/UI/Theme",
-					"$(SRCROOT)/TrainingOS/UI",
-					"$(SRCROOT)/TrainingOS/UI/Progress",
-					"$(SRCROOT)/TrainingOS/Domain/Entities",
-					"$(SRCROOT)/TrainingOS/Domain/ValueTypes",
-					"$(SRCROOT)/TrainingOS/Integrations",
-					"$(SRCROOT)/TrainingOS/App",
-					"$(SRCROOT)/TrainingOS/Engines",
-					"$(SRCROOT)/TrainingOS/Persistence",
-					"$(SRCROOT)/TrainingOS/Application/ViewModels",
-					"$(SRCROOT)/TrainingOS/Application/UseCases",
-					"$(SRCROOT)/TrainingOS/Application/Seed",
-					"$(SRCROOT)/TrainingOSTests",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.macadegolf.trainingos;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
-			};
-			name = Debug;
-		};
-		771B46409EAB091F71549917 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(SRCROOT)/TrainingOS/Resources",
-					"$(inherited)",
-				);
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				LIBRARY_SEARCH_PATHS = (
-					"$(SRCROOT)/TrainingOS/UI/Today",
-					"$(SRCROOT)/TrainingOS/UI/Plan",
-					"$(SRCROOT)/TrainingOS/UI/Theme",
-					"$(SRCROOT)/TrainingOS/UI",
-					"$(SRCROOT)/TrainingOS/UI/Progress",
-					"$(SRCROOT)/TrainingOS/Domain/Entities",
-					"$(SRCROOT)/TrainingOS/Domain/ValueTypes",
-					"$(SRCROOT)/TrainingOS/Integrations",
-					"$(SRCROOT)/TrainingOS/App",
-					"$(SRCROOT)/TrainingOS/Engines",
-					"$(SRCROOT)/TrainingOS/Persistence",
-					"$(SRCROOT)/TrainingOS/Application/ViewModels",
-					"$(SRCROOT)/TrainingOS/Application/UseCases",
-					"$(SRCROOT)/TrainingOS/Application/Seed",
-					"$(SRCROOT)/TrainingOSTests",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.macadegolf.trainingos.TrainingOSTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TrainingOS.app/TrainingOS";
-			};
-			name = Debug;
-		};
-		CC734FB1AEAF0142507754C4 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(SRCROOT)/TrainingOS/Resources",
-					"$(inherited)",
-				);
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				LIBRARY_SEARCH_PATHS = (
-					"$(SRCROOT)/TrainingOS/UI/Today",
-					"$(SRCROOT)/TrainingOS/UI/Plan",
-					"$(SRCROOT)/TrainingOS/UI/Theme",
-					"$(SRCROOT)/TrainingOS/UI",
-					"$(SRCROOT)/TrainingOS/UI/Progress",
-					"$(SRCROOT)/TrainingOS/Domain/Entities",
-					"$(SRCROOT)/TrainingOS/Domain/ValueTypes",
-					"$(SRCROOT)/TrainingOS/Integrations",
-					"$(SRCROOT)/TrainingOS/App",
-					"$(SRCROOT)/TrainingOS/Engines",
-					"$(SRCROOT)/TrainingOS/Persistence",
-					"$(SRCROOT)/TrainingOS/Application/ViewModels",
-					"$(SRCROOT)/TrainingOS/Application/UseCases",
-					"$(SRCROOT)/TrainingOS/Application/Seed",
-					"$(SRCROOT)/TrainingOSTests",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.macadegolf.trainingos.TrainingOSTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TrainingOS.app/TrainingOS";
-			};
-			name = Release;
-		};
-		F0244A78BA6C196AA04A1464 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "";
-				ENABLE_PREVIEWS = YES;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(SRCROOT)/TrainingOS/Resources",
-					"$(inherited)",
-				);
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Training OS";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				LIBRARY_SEARCH_PATHS = (
-					"$(SRCROOT)/TrainingOS/UI/Today",
-					"$(SRCROOT)/TrainingOS/UI/Plan",
-					"$(SRCROOT)/TrainingOS/UI/Theme",
-					"$(SRCROOT)/TrainingOS/UI",
-					"$(SRCROOT)/TrainingOS/UI/Progress",
-					"$(SRCROOT)/TrainingOS/Domain/Entities",
-					"$(SRCROOT)/TrainingOS/Domain/ValueTypes",
-					"$(SRCROOT)/TrainingOS/Integrations",
-					"$(SRCROOT)/TrainingOS/App",
-					"$(SRCROOT)/TrainingOS/Engines",
-					"$(SRCROOT)/TrainingOS/Persistence",
-					"$(SRCROOT)/TrainingOS/Application/ViewModels",
-					"$(SRCROOT)/TrainingOS/Application/UseCases",
-					"$(SRCROOT)/TrainingOS/Application/Seed",
-					"$(SRCROOT)/TrainingOSTests",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.macadegolf.trainingos;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		36FD4132968F565EB0F61DF5 /* Build configuration list for PBXProject "TrainingOS" */ = {
+		176D43E9A356D44F5564C933 /* Build configuration list for PBXNativeTarget "TrainingOSTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				19F84139B61D86AAC3D68E4E /* Debug */,
-				4AA04BB59D2DB510806E88D1 /* Release */,
+				192B4155A868AFCDDFC566DC /* Debug */,
+				06FC419FAFD1A0B27D3778CF /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		3BF64599ACD63617C83B25E1 /* Build configuration list for PBXNativeTarget "TrainingOSTests" */ = {
+		D70E4307BA14C8FBD1127D25 /* Build configuration list for PBXNativeTarget "TrainingOS" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				771B46409EAB091F71549917 /* Debug */,
-				CC734FB1AEAF0142507754C4 /* Release */,
+				11284987A7E37F3F0E909E26 /* Debug */,
+				97F8486BA304C4C3DF344D6E /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		58234AA7BC07F28C8D940D5C /* Build configuration list for PBXNativeTarget "TrainingOS" */ = {
+		EE2E42E7B5F6BC1672E4159B /* Build configuration list for PBXProject "TrainingOS" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				761B4879917461729838E61D /* Debug */,
-				F0244A78BA6C196AA04A1464 /* Release */,
+				8DE94C328A8F70C3B31D383D /* Debug */,
+				E5034B33962C173604499C83 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
-	rootObject = D3B3434C96A7E8F831D71BD7 /* Project object */;
+	rootObject = F84A416680319AD985CBC164 /* Project object */;
 }
