@@ -70,58 +70,58 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		01384BEE8C06AB6AF0FD4C91 /* PlanViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PlanViewModel.swift; path = TrainingOS/Application/ViewModels/PlanViewModel.swift; sourceTree = "<group>"; };
-		0BDC45519916B152815768FA /* DoubleProgressionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DoubleProgressionEngine.swift; path = TrainingOS/Engines/DoubleProgressionEngine.swift; sourceTree = "<group>"; };
-		0ECE4ED38B8BB5D487926AE2 /* TrainingOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TrainingOSApp.swift; path = TrainingOS/App/TrainingOSApp.swift; sourceTree = "<group>"; };
+		01384BEE8C06AB6AF0FD4C91 /* PlanViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PlanViewModel.swift; path = PlanViewModel.swift; sourceTree = "<group>"; };
+		0BDC45519916B152815768FA /* DoubleProgressionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DoubleProgressionEngine.swift; path = DoubleProgressionEngine.swift; sourceTree = "<group>"; };
+		0ECE4ED38B8BB5D487926AE2 /* TrainingOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TrainingOSApp.swift; path = TrainingOSApp.swift; sourceTree = "<group>"; };
 		10384933A92AB76C3DBADFFB /* TrainingOSTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TrainingOSTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		1A9E4143B632AF906A87ABB3 /* ProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ProgressView.swift; path = TrainingOS/UI/Progress/ProgressView.swift; sourceTree = "<group>"; };
-		1AEB4E9B9245FE322277D6DE /* PersistenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PersistenceController.swift; path = TrainingOS/Persistence/PersistenceController.swift; sourceTree = "<group>"; };
-		1DBA416DB9163241C8904958 /* Exercise.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Exercise.swift; path = TrainingOS/Domain/Entities/Exercise.swift; sourceTree = "<group>"; };
-		1DDA45118C25D6BE76988880 /* Day.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Day.swift; path = TrainingOS/Domain/Entities/Day.swift; sourceTree = "<group>"; };
-		2DEB484F86903D19EF5EE3A1 /* ExercisePerformanceProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExercisePerformanceProfile.swift; path = TrainingOS/Domain/Entities/ExercisePerformanceProfile.swift; sourceTree = "<group>"; };
-		3393410798D83BA9A1A3C6B2 /* SeedDataProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SeedDataProvider.swift; path = TrainingOS/Application/Seed/SeedDataProvider.swift; sourceTree = "<group>"; };
-		33BA4F0A8058D84B94D9C93E /* ProgressViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ProgressViewModel.swift; path = TrainingOS/Application/ViewModels/ProgressViewModel.swift; sourceTree = "<group>"; };
-		3A614E96810AF5695FFB2959 /* ProgramInstance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ProgramInstance.swift; path = TrainingOS/Domain/Entities/ProgramInstance.swift; sourceTree = "<group>"; };
-		3CA24116A734F020DC833E51 /* ExercisePrescription.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExercisePrescription.swift; path = TrainingOS/Domain/Entities/ExercisePrescription.swift; sourceTree = "<group>"; };
-		402B41029D672B0A24A13EE9 /* PersistenceRoundTripTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PersistenceRoundTripTests.swift; path = TrainingOSTests/PersistenceRoundTripTests.swift; sourceTree = "<group>"; };
-		46D64E949638A868A703AD10 /* ProgramDefinition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ProgramDefinition.swift; path = TrainingOS/Domain/Entities/ProgramDefinition.swift; sourceTree = "<group>"; };
-		4A914820BEE6C27927E7EC5B /* Recommendation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Recommendation.swift; path = TrainingOS/Domain/Entities/Recommendation.swift; sourceTree = "<group>"; };
+		1A9E4143B632AF906A87ABB3 /* ProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ProgressView.swift; path = ProgressView.swift; sourceTree = "<group>"; };
+		1AEB4E9B9245FE322277D6DE /* PersistenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PersistenceController.swift; path = PersistenceController.swift; sourceTree = "<group>"; };
+		1DBA416DB9163241C8904958 /* Exercise.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Exercise.swift; path = Exercise.swift; sourceTree = "<group>"; };
+		1DDA45118C25D6BE76988880 /* Day.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Day.swift; path = Day.swift; sourceTree = "<group>"; };
+		2DEB484F86903D19EF5EE3A1 /* ExercisePerformanceProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExercisePerformanceProfile.swift; path = ExercisePerformanceProfile.swift; sourceTree = "<group>"; };
+		3393410798D83BA9A1A3C6B2 /* SeedDataProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SeedDataProvider.swift; path = SeedDataProvider.swift; sourceTree = "<group>"; };
+		33BA4F0A8058D84B94D9C93E /* ProgressViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ProgressViewModel.swift; path = ProgressViewModel.swift; sourceTree = "<group>"; };
+		3A614E96810AF5695FFB2959 /* ProgramInstance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ProgramInstance.swift; path = ProgramInstance.swift; sourceTree = "<group>"; };
+		3CA24116A734F020DC833E51 /* ExercisePrescription.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExercisePrescription.swift; path = ExercisePrescription.swift; sourceTree = "<group>"; };
+		402B41029D672B0A24A13EE9 /* PersistenceRoundTripTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PersistenceRoundTripTests.swift; path = PersistenceRoundTripTests.swift; sourceTree = "<group>"; };
+		46D64E949638A868A703AD10 /* ProgramDefinition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ProgramDefinition.swift; path = ProgramDefinition.swift; sourceTree = "<group>"; };
+		4A914820BEE6C27927E7EC5B /* Recommendation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Recommendation.swift; path = Recommendation.swift; sourceTree = "<group>"; };
 		4F704C488C2613914192FD91 /* TrainingOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TrainingOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		55294CB586C0774DCEE014DE /* Session.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Session.swift; path = TrainingOS/Domain/Entities/Session.swift; sourceTree = "<group>"; };
-		55DA4631A6FAA9AD32E226D5 /* PerformanceProfileStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PerformanceProfileStore.swift; path = TrainingOS/Application/UseCases/PerformanceProfileStore.swift; sourceTree = "<group>"; };
-		563A48A4BF8EE6E706C7573F /* PerformanceProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PerformanceProfile.swift; path = TrainingOS/Domain/Entities/PerformanceProfile.swift; sourceTree = "<group>"; };
-		564741819A9BC4BB6B55966D /* TrainingPlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TrainingPlan.swift; path = TrainingOS/Domain/Entities/TrainingPlan.swift; sourceTree = "<group>"; };
-		628449A59C09C8F04912540C /* Goal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Goal.swift; path = TrainingOS/Domain/Entities/Goal.swift; sourceTree = "<group>"; };
-		63D243BDABFE7155E54C4700 /* TodayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TodayView.swift; path = TrainingOS/UI/Today/TodayView.swift; sourceTree = "<group>"; };
-		67A94EB082BEEB5364382007 /* PerformanceProfileContinuityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PerformanceProfileContinuityTests.swift; path = TrainingOSTests/PerformanceProfileContinuityTests.swift; sourceTree = "<group>"; };
-		67AD4467B8B43750EB806902 /* TrainingWeek.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TrainingWeek.swift; path = TrainingOS/Domain/Entities/TrainingWeek.swift; sourceTree = "<group>"; };
-		6FFF44B994BD998E21FDA2B1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = TrainingOS/Resources/Assets.xcassets; sourceTree = "<group>"; };
-		76B44D0B853C5E3B6EA76F9E /* ScoringEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScoringEngineTests.swift; path = TrainingOSTests/ScoringEngineTests.swift; sourceTree = "<group>"; };
-		7BA1427DA0609DC116808540 /* RootTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RootTabView.swift; path = TrainingOS/UI/RootTabView.swift; sourceTree = "<group>"; };
-		7F8E4FC0837A908866A5600D /* TrainingPhase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TrainingPhase.swift; path = TrainingOS/Domain/Entities/TrainingPhase.swift; sourceTree = "<group>"; };
-		8027414FAF70D2174E5C77C4 /* Enums.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Enums.swift; path = TrainingOS/Domain/ValueTypes/Enums.swift; sourceTree = "<group>"; };
-		86D3417CB5AF4594F4ABD961 /* ScoringEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScoringEngine.swift; path = TrainingOS/Engines/ScoringEngine.swift; sourceTree = "<group>"; };
-		8FD448339AD7743C6E96C5E8 /* PlanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PlanView.swift; path = TrainingOS/UI/Plan/PlanView.swift; sourceTree = "<group>"; };
-		94AC491AB3B2B5127C417389 /* TodayViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TodayViewModel.swift; path = TrainingOS/Application/ViewModels/TodayViewModel.swift; sourceTree = "<group>"; };
-		99D74BC7A58F6C8626BC0729 /* SetPrescription.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SetPrescription.swift; path = TrainingOS/Domain/Entities/SetPrescription.swift; sourceTree = "<group>"; };
-		9F494283AF1486C79968302B /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = UserProfile.swift; path = TrainingOS/Domain/Entities/UserProfile.swift; sourceTree = "<group>"; };
-		ADE74EB1AA70E773434FD7AE /* RecordSetResultUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RecordSetResultUseCase.swift; path = TrainingOS/Application/UseCases/RecordSetResultUseCase.swift; sourceTree = "<group>"; };
-		BC96486DA9896260DC3A6B03 /* WorkoutBlock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WorkoutBlock.swift; path = TrainingOS/Domain/Entities/WorkoutBlock.swift; sourceTree = "<group>"; };
-		C0F84DFD9FD440940FC214C7 /* ExerciseAlias.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExerciseAlias.swift; path = TrainingOS/Domain/Entities/ExerciseAlias.swift; sourceTree = "<group>"; };
-		D68D4140A10109FC098C5519 /* SetResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SetResult.swift; path = TrainingOS/Domain/Entities/SetResult.swift; sourceTree = "<group>"; };
-		D7314521A9B89EAE46D6793A /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = User.swift; path = TrainingOS/Domain/Entities/User.swift; sourceTree = "<group>"; };
-		D7344E69A1D7073EB3F00E86 /* SeedScenarios.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SeedScenarios.swift; path = TrainingOS/Application/Seed/SeedScenarios.swift; sourceTree = "<group>"; };
-		D9D942DA834B4DBF2B29E815 /* DomainModelScenarioTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DomainModelScenarioTests.swift; path = TrainingOSTests/DomainModelScenarioTests.swift; sourceTree = "<group>"; };
-		DC82472CB82A7B5F173E2B3E /* ProgressionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ProgressionEngine.swift; path = TrainingOS/Engines/ProgressionEngine.swift; sourceTree = "<group>"; };
-		DDED4D97B6DCEDFC548CFA0F /* DeleteRuleMatrixTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DeleteRuleMatrixTests.swift; path = TrainingOSTests/DeleteRuleMatrixTests.swift; sourceTree = "<group>"; };
-		E5CA481F87C9ED38C25B3099 /* RelationshipOwnershipTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RelationshipOwnershipTests.swift; path = TrainingOSTests/RelationshipOwnershipTests.swift; sourceTree = "<group>"; };
-		ECCC40E4A327796A7834F6BF /* WorkoutResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WorkoutResult.swift; path = TrainingOS/Domain/Entities/WorkoutResult.swift; sourceTree = "<group>"; };
-		F05042E6BB8806D380AB1FEA /* RecordWorkoutResultUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RecordWorkoutResultUseCase.swift; path = TrainingOS/Application/UseCases/RecordWorkoutResultUseCase.swift; sourceTree = "<group>"; };
-		F06C4A8EB70BD939F88E40F0 /* ExerciseCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExerciseCatalog.swift; path = TrainingOS/Application/Seed/ExerciseCatalog.swift; sourceTree = "<group>"; };
-		F57E4BE7B19DB8066F238EAF /* README.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = README.swift; path = TrainingOS/Integrations/README.swift; sourceTree = "<group>"; };
-		F6984363BAB3C25F821C4A68 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Theme.swift; path = TrainingOS/UI/Theme/Theme.swift; sourceTree = "<group>"; };
-		F70B46E9AB8CC9CF1BA4A8F3 /* PersonalRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PersonalRecord.swift; path = TrainingOS/Domain/Entities/PersonalRecord.swift; sourceTree = "<group>"; };
-		F84640CCABE624D401BCE49B /* DoubleProgressionEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DoubleProgressionEngineTests.swift; path = TrainingOSTests/DoubleProgressionEngineTests.swift; sourceTree = "<group>"; };
+		55294CB586C0774DCEE014DE /* Session.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Session.swift; path = Session.swift; sourceTree = "<group>"; };
+		55DA4631A6FAA9AD32E226D5 /* PerformanceProfileStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PerformanceProfileStore.swift; path = PerformanceProfileStore.swift; sourceTree = "<group>"; };
+		563A48A4BF8EE6E706C7573F /* PerformanceProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PerformanceProfile.swift; path = PerformanceProfile.swift; sourceTree = "<group>"; };
+		564741819A9BC4BB6B55966D /* TrainingPlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TrainingPlan.swift; path = TrainingPlan.swift; sourceTree = "<group>"; };
+		628449A59C09C8F04912540C /* Goal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Goal.swift; path = Goal.swift; sourceTree = "<group>"; };
+		63D243BDABFE7155E54C4700 /* TodayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TodayView.swift; path = TodayView.swift; sourceTree = "<group>"; };
+		67A94EB082BEEB5364382007 /* PerformanceProfileContinuityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PerformanceProfileContinuityTests.swift; path = PerformanceProfileContinuityTests.swift; sourceTree = "<group>"; };
+		67AD4467B8B43750EB806902 /* TrainingWeek.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TrainingWeek.swift; path = TrainingWeek.swift; sourceTree = "<group>"; };
+		6FFF44B994BD998E21FDA2B1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = Assets.xcassets; sourceTree = "<group>"; };
+		76B44D0B853C5E3B6EA76F9E /* ScoringEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScoringEngineTests.swift; path = ScoringEngineTests.swift; sourceTree = "<group>"; };
+		7BA1427DA0609DC116808540 /* RootTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RootTabView.swift; path = RootTabView.swift; sourceTree = "<group>"; };
+		7F8E4FC0837A908866A5600D /* TrainingPhase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TrainingPhase.swift; path = TrainingPhase.swift; sourceTree = "<group>"; };
+		8027414FAF70D2174E5C77C4 /* Enums.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Enums.swift; path = Enums.swift; sourceTree = "<group>"; };
+		86D3417CB5AF4594F4ABD961 /* ScoringEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScoringEngine.swift; path = ScoringEngine.swift; sourceTree = "<group>"; };
+		8FD448339AD7743C6E96C5E8 /* PlanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PlanView.swift; path = PlanView.swift; sourceTree = "<group>"; };
+		94AC491AB3B2B5127C417389 /* TodayViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TodayViewModel.swift; path = TodayViewModel.swift; sourceTree = "<group>"; };
+		99D74BC7A58F6C8626BC0729 /* SetPrescription.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SetPrescription.swift; path = SetPrescription.swift; sourceTree = "<group>"; };
+		9F494283AF1486C79968302B /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = UserProfile.swift; path = UserProfile.swift; sourceTree = "<group>"; };
+		ADE74EB1AA70E773434FD7AE /* RecordSetResultUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RecordSetResultUseCase.swift; path = RecordSetResultUseCase.swift; sourceTree = "<group>"; };
+		BC96486DA9896260DC3A6B03 /* WorkoutBlock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WorkoutBlock.swift; path = WorkoutBlock.swift; sourceTree = "<group>"; };
+		C0F84DFD9FD440940FC214C7 /* ExerciseAlias.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExerciseAlias.swift; path = ExerciseAlias.swift; sourceTree = "<group>"; };
+		D68D4140A10109FC098C5519 /* SetResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SetResult.swift; path = SetResult.swift; sourceTree = "<group>"; };
+		D7314521A9B89EAE46D6793A /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = User.swift; path = User.swift; sourceTree = "<group>"; };
+		D7344E69A1D7073EB3F00E86 /* SeedScenarios.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SeedScenarios.swift; path = SeedScenarios.swift; sourceTree = "<group>"; };
+		D9D942DA834B4DBF2B29E815 /* DomainModelScenarioTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DomainModelScenarioTests.swift; path = DomainModelScenarioTests.swift; sourceTree = "<group>"; };
+		DC82472CB82A7B5F173E2B3E /* ProgressionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ProgressionEngine.swift; path = ProgressionEngine.swift; sourceTree = "<group>"; };
+		DDED4D97B6DCEDFC548CFA0F /* DeleteRuleMatrixTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DeleteRuleMatrixTests.swift; path = DeleteRuleMatrixTests.swift; sourceTree = "<group>"; };
+		E5CA481F87C9ED38C25B3099 /* RelationshipOwnershipTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RelationshipOwnershipTests.swift; path = RelationshipOwnershipTests.swift; sourceTree = "<group>"; };
+		ECCC40E4A327796A7834F6BF /* WorkoutResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WorkoutResult.swift; path = WorkoutResult.swift; sourceTree = "<group>"; };
+		F05042E6BB8806D380AB1FEA /* RecordWorkoutResultUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RecordWorkoutResultUseCase.swift; path = RecordWorkoutResultUseCase.swift; sourceTree = "<group>"; };
+		F06C4A8EB70BD939F88E40F0 /* ExerciseCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExerciseCatalog.swift; path = ExerciseCatalog.swift; sourceTree = "<group>"; };
+		F57E4BE7B19DB8066F238EAF /* README.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = README.swift; path = README.swift; sourceTree = "<group>"; };
+		F6984363BAB3C25F821C4A68 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Theme.swift; path = Theme.swift; sourceTree = "<group>"; };
+		F70B46E9AB8CC9CF1BA4A8F3 /* PersonalRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PersonalRecord.swift; path = PersonalRecord.swift; sourceTree = "<group>"; };
+		F84640CCABE624D401BCE49B /* DoubleProgressionEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DoubleProgressionEngineTests.swift; path = DoubleProgressionEngineTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -131,7 +131,7 @@
 				1AEB4E9B9245FE322277D6DE /* PersistenceController.swift */,
 			);
 			name = Persistence;
-			path = TrainingOS/Persistence;
+			path = Persistence;
 			sourceTree = "<group>";
 		};
 		154C4F1684C9F741935CDC89 /* Theme */ = {
@@ -140,7 +140,7 @@
 				F6984363BAB3C25F821C4A68 /* Theme.swift */,
 			);
 			name = Theme;
-			path = TrainingOS/UI/Theme;
+			path = Theme;
 			sourceTree = "<group>";
 		};
 		1994491A911DEFEF120C1287 /* Integrations */ = {
@@ -149,7 +149,7 @@
 				F57E4BE7B19DB8066F238EAF /* README.swift */,
 			);
 			name = Integrations;
-			path = TrainingOS/Integrations;
+			path = Integrations;
 			sourceTree = "<group>";
 		};
 		1B5B4B44BAB1FDC49E31C04F /* Application */ = {
@@ -160,7 +160,7 @@
 				60A0443781E54A957401ABBD /* Seed */,
 			);
 			name = Application;
-			path = TrainingOS/Application;
+			path = Application;
 			sourceTree = "<group>";
 		};
 		34164D34A81CFF1469AEC5B9 /* UI */ = {
@@ -173,7 +173,7 @@
 				B0CD425CBFC380052D2CC46D /* Progress */,
 			);
 			name = UI;
-			path = TrainingOS/UI;
+			path = UI;
 			sourceTree = "<group>";
 		};
 		4C3248D2B49DB9BB86676694 /* Products */ = {
@@ -191,7 +191,7 @@
 				0ECE4ED38B8BB5D487926AE2 /* TrainingOSApp.swift */,
 			);
 			name = App;
-			path = TrainingOS/App;
+			path = App;
 			sourceTree = "<group>";
 		};
 		60A0443781E54A957401ABBD /* Seed */ = {
@@ -202,7 +202,7 @@
 				3393410798D83BA9A1A3C6B2 /* SeedDataProvider.swift */,
 			);
 			name = Seed;
-			path = TrainingOS/Application/Seed;
+			path = Seed;
 			sourceTree = "<group>";
 		};
 		8A7E41F8B6902B72394EDC1B /* ValueTypes */ = {
@@ -211,7 +211,7 @@
 				8027414FAF70D2174E5C77C4 /* Enums.swift */,
 			);
 			name = ValueTypes;
-			path = TrainingOS/Domain/ValueTypes;
+			path = ValueTypes;
 			sourceTree = "<group>";
 		};
 		94584B4FB0E027F966E3CBAC /* Resources */ = {
@@ -220,7 +220,7 @@
 				6FFF44B994BD998E21FDA2B1 /* Assets.xcassets */,
 			);
 			name = Resources;
-			path = TrainingOS/Resources;
+			path = Resources;
 			sourceTree = "<group>";
 		};
 		98AD424AB3B0130CAC9C01E3 /* TrainingOSTests */ = {
@@ -244,7 +244,7 @@
 				1A9E4143B632AF906A87ABB3 /* ProgressView.swift */,
 			);
 			name = Progress;
-			path = TrainingOS/UI/Progress;
+			path = Progress;
 			sourceTree = "<group>";
 		};
 		B4214C84A1EE46366030AB3D /* Domain */ = {
@@ -254,7 +254,7 @@
 				8A7E41F8B6902B72394EDC1B /* ValueTypes */,
 			);
 			name = Domain;
-			path = TrainingOS/Domain;
+			path = Domain;
 			sourceTree = "<group>";
 		};
 		B8D54847AD6B3DC5E4EECC8A /* Today */ = {
@@ -263,7 +263,7 @@
 				63D243BDABFE7155E54C4700 /* TodayView.swift */,
 			);
 			name = Today;
-			path = TrainingOS/UI/Today;
+			path = Today;
 			sourceTree = "<group>";
 		};
 		BC13427F8071F5D1DEC43818 /* UseCases */ = {
@@ -274,7 +274,7 @@
 				F05042E6BB8806D380AB1FEA /* RecordWorkoutResultUseCase.swift */,
 			);
 			name = UseCases;
-			path = TrainingOS/Application/UseCases;
+			path = UseCases;
 			sourceTree = "<group>";
 		};
 		D40C4C25934001EAFF8A9833 /* Engines */ = {
@@ -285,7 +285,7 @@
 				DC82472CB82A7B5F173E2B3E /* ProgressionEngine.swift */,
 			);
 			name = Engines;
-			path = TrainingOS/Engines;
+			path = Engines;
 			sourceTree = "<group>";
 		};
 		D4954FC8937591E23C03CB68 /* ViewModels */ = {
@@ -296,7 +296,7 @@
 				33BA4F0A8058D84B94D9C93E /* ProgressViewModel.swift */,
 			);
 			name = ViewModels;
-			path = TrainingOS/Application/ViewModels;
+			path = ViewModels;
 			sourceTree = "<group>";
 		};
 		D7A74A2A9F7956ACD62287AE /* TrainingOS */ = {
@@ -341,7 +341,7 @@
 				3A614E96810AF5695FFB2959 /* ProgramInstance.swift */,
 			);
 			name = Entities;
-			path = TrainingOS/Domain/Entities;
+			path = Entities;
 			sourceTree = "<group>";
 		};
 		F74D4ABC8E44603FB05C34FF = {
@@ -359,7 +359,7 @@
 				8FD448339AD7743C6E96C5E8 /* PlanView.swift */,
 			);
 			name = Plan;
-			path = TrainingOS/UI/Plan;
+			path = Plan;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
