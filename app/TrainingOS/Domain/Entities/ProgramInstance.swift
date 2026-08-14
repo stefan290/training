@@ -9,6 +9,9 @@ import SwiftData
 @Model
 final class ProgramInstance {
     @Attribute(.unique) var id: UUID
+    /// The delete rule that matters lives on `ProgramDefinition.instances`
+    /// (see DELETE_RULE_MATRIX.md) — this side is a plain inverse property,
+    /// same pattern as `TrainingWeek.programDefinition`.
     var programDefinition: ProgramDefinition?
     var phase: TrainingPhase?
     var ownerUserID: UUID

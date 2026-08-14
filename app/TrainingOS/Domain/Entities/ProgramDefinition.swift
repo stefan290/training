@@ -25,6 +25,18 @@ final class ProgramDefinition {
     @Relationship(deleteRule: .cascade, inverse: \TrainingWeek.programDefinition)
     var weeks: [TrainingWeek] = []
 
+    /// Nullify, not cascade: a ProgramInstance (and everything under it —
+    /// Sessions, SetResults, PersonalRecords) must survive the deletion of
+    /// the ProgramDefinition it was built from. `inverse:` is required here
+    /// even though nothing reads this array — SwiftData needs a declared
+    /// inverse on both sides of a relationship to run the delete rule
+    /// correctly; without it, deleting a ProgramDefinition referenced by an
+    /// active ProgramInstance produced a Core Data validation error instead
+    /// of a clean nullify (caught by
+    /// `DeleteRuleMatrixTests.testDeletingProgramDefinitionPreservesPerformanceHistory`).
+    @Relationship(deleteRule: .nullify, inverse: \ProgramInstance.programDefinition)
+    var instances: [ProgramInstance] = []
+
     init(
         id: UUID = UUID(),
         name: String,

@@ -6,6 +6,7 @@ import SwiftData
 /// CLAUDE.md and DELETE_RULE_MATRIX.md say it does: every `addX`/`attachX`
 /// method mutates exactly one side of a relationship, and SwiftData is
 /// trusted to maintain the inverse — never assumed to, always checked.
+@MainActor
 final class RelationshipOwnershipTests: XCTestCase {
     func testAddingOneBlockProducesExactlyOneRelationshipEntryBothWays() {
         let container = PersistenceController.makeInMemoryContainer()

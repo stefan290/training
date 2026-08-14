@@ -8,6 +8,7 @@ import SwiftData
 /// the way the real app would after a cold start. Complements
 /// RelationshipOwnershipTests (which isolates one relationship at a time)
 /// with a single realistic, whole-graph check.
+@MainActor
 final class PersistenceRoundTripTests: XCTestCase {
     func testFullSeededGraphSurvivesSaveAndRefetch() throws {
         let container = PersistenceController.makeInMemoryContainer()

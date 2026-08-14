@@ -12,6 +12,17 @@ final class SetResult {
     var exercisePrescription: ExercisePrescription?
     var exercisePerformanceProfile: ExercisePerformanceProfile?
 
+    /// Nullify, not cascade: a PersonalRecord must survive the deletion of
+    /// the SetResult that produced it (see `PersonalRecord.sourceSetResult`
+    /// and DELETE_RULE_MATRIX.md). `inverse:` is required even though
+    /// nothing reads this property — an un-inversed to-one reference to
+    /// this type produced a Core Data validation error on delete instead of
+    /// a clean nullify (caught by
+    /// `DeleteRuleMatrixTests.testDeletingWorkoutResultPreservesItsPersonalRecord`'s
+    /// WorkoutResult counterpart).
+    @Relationship(deleteRule: .nullify, inverse: \PersonalRecord.sourceSetResult)
+    var personalRecord: PersonalRecord?
+
     var setIndex: Int
     var weight: Double
     var reps: Int

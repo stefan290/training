@@ -60,23 +60,45 @@ have no independent meaning.
 
 ## One-directional references (no declared inverse, no dual-mutation risk)
 
-These are plain optional properties with no `@Relationship` inverse
-declared on the other side, so SwiftData has nothing to keep in sync and
-there's no cascade/nullify question — deleting the referenced object just
-leaves a dangling `nil` the next time it's read (default `.nullify`
-behaviour for an unannotated to-one relationship):
+These are plain optional properties with no matching `@Relationship`
+declared on the other side, so application code has nothing to keep in
+sync on the referencing side and there's no dual-mutation risk. **Update
+from the first Xcode verification pass:** a to-one `@Model` property with
+*no* declared inverse anywhere in the schema does not safely default to a
+clean `.nullify` at runtime on this SwiftData version — deleting the
+referenced object produced a Core Data validation error (a still-required
+attribute left `nil` on a phantom, never-saved object of the deleted
+type) instead of a quiet nullify.
 
+The working fix is *not* to annotate the referencing property itself —
+that alone did nothing, because the delete rule that actually runs lives
+on whichever side's relationship declaration pairs the two properties as
+inverses of each other. Instead, each affected type now gets an
+`@Relationship(deleteRule: .nullify, inverse: \Referencer.property)`
+array/property declared on the **referenced** side, mirroring the
+`ProgramDefinition.weeks` / `TrainingWeek.programDefinition` pattern used
+everywhere else in this file. Nothing reads these new properties — they
+exist purely so SwiftData has a real inverse to run the delete rule
+against:
+
+- `ProgramDefinition.instances: [ProgramInstance]` (`.nullify`, inverse
+  `\ProgramInstance.programDefinition`) — exercised by
+  `DeleteRuleMatrixTests.testDeletingProgramDefinitionPreservesPerformanceHistory`,
+  which deletes a ProgramDefinition out from under an active
+  ProgramInstance. No longer an unexercised follow-up.
+- `WorkoutResult.personalRecord: PersonalRecord?` (`.nullify`, inverse
+  `\PersonalRecord.sourceWorkoutResult`) and `SetResult.personalRecord:
+  PersonalRecord?` (`.nullify`, inverse `\PersonalRecord.sourceSetResult`)
+  — exercised by
+  `DeleteRuleMatrixTests.testDeletingWorkoutResultPreservesItsPersonalRecord`.
 - `ExercisePerformanceProfile.exercise`, `ExercisePrescription.exercise`
-  (which canonical Exercise, informational)
-- `ProgramInstance.programDefinition` (which methodology was used; a
-  ProgramInstance has no reason to survive its ProgramDefinition, but
-  nothing in this pass deletes ProgramDefinitions out from under active
-  instances, so this is unexercised — flagged as a follow-up, not solved
-  here)
-- `Recommendation.exercisePrescription` (which movement this
-  recommendation was about)
-- `PersonalRecord.sourceSetResult`, `PersonalRecord.sourceWorkoutResult`
-  (traceability only, covered above)
+  (which canonical Exercise, informational) and
+  `Recommendation.exercisePrescription` (which movement this
+  recommendation was about) remain plain, un-inversed references —
+  untouched by this pass since nothing deletes a canonical Exercise or an
+  ExercisePrescription's owning Recommendation out from under active data
+  yet. Same latent risk as above if that ever changes; flagged as a
+  follow-up, not solved here.
 
 ## Summary: what survives what
 

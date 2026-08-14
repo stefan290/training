@@ -15,6 +15,16 @@ final class WorkoutResult {
     var resultContext: ResultContext
     var completedAt: Date
 
+    /// Nullify, not cascade: a PersonalRecord must survive the deletion of
+    /// the WorkoutResult that produced it (see
+    /// `PersonalRecord.sourceWorkoutResult` and DELETE_RULE_MATRIX.md).
+    /// `inverse:` is required even though nothing reads this property — an
+    /// un-inversed to-one reference to this type produced a Core Data
+    /// validation error on delete instead of a clean nullify (caught by
+    /// `DeleteRuleMatrixTests.testDeletingWorkoutResultPreservesItsPersonalRecord`).
+    @Relationship(deleteRule: .nullify, inverse: \PersonalRecord.sourceWorkoutResult)
+    var personalRecord: PersonalRecord?
+
     // WARMUP / COOLDOWN / MOBILITY
     var durationSeconds: Int?
     var completedFlag: Bool?

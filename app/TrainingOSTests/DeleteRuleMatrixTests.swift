@@ -8,6 +8,7 @@ import SwiftData
 /// exhaustive delete-rule check: every entity that could plausibly cascade
 /// into permanent history, deleted directly, with an explicit assertion
 /// that history survives.
+@MainActor
 final class DeleteRuleMatrixTests: XCTestCase {
     private func session(named name: String, in context: ModelContext) throws -> Session {
         let all = try context.fetch(FetchDescriptor<Session>())
@@ -71,6 +72,24 @@ final class DeleteRuleMatrixTests: XCTestCase {
         let blockIDs = pushDay.blocks.map(\.id)
         XCTAssertFalse(blockIDs.isEmpty)
 
+        // Bench Press history spans both "Push Day" and the unrelated
+        // "Full Body A" continuity session (see
+        // PerformanceProfileContinuityTests and
+        // testCrossProgramBenchPressHistoryRemainsAvailable) — only the
+        // SetResults actually logged under Push Day's Bench Press movement
+        // should lose their exercisePrescription; the rest (Full Body A's
+        // Bench Press sets, and Push Day's own accessory-movement sets,
+        // which belong to a different ExercisePerformanceProfile entirely)
+        // legitimately keep theirs.
+        let benchSetResultIDsBefore = Set(benchProfile.setResults.map(\.id))
+        let pushDaySetResultIDs = Set(
+            pushDay.blocks
+                .flatMap(\.exercisePrescriptions)
+                .flatMap(\.loggedSetResults)
+                .map(\.id)
+        ).intersection(benchSetResultIDsBefore)
+        XCTAssertFalse(pushDaySetResultIDs.isEmpty)
+
         context.delete(pushDay)
         try context.save()
 
@@ -86,7 +105,9 @@ final class DeleteRuleMatrixTests: XCTestCase {
         let profiles = try context.fetch(FetchDescriptor<ExercisePerformanceProfile>())
         let survivingProfile = try XCTUnwrap(profiles.first { $0.id == benchProfile.id })
         XCTAssertEqual(survivingProfile.setResults.count, countBefore, "Deleting a Session must never delete the SetResults logged during it.")
-        XCTAssertTrue(survivingProfile.setResults.allSatisfy { $0.exercisePrescription == nil }, "Surviving results should have lost their session context, not their identity.")
+        let formerlyPushDayResults = survivingProfile.setResults.filter { pushDaySetResultIDs.contains($0.id) }
+        XCTAssertEqual(formerlyPushDayResults.count, pushDaySetResultIDs.count)
+        XCTAssertTrue(formerlyPushDayResults.allSatisfy { $0.exercisePrescription == nil }, "Surviving results should have lost their session context, not their identity.")
     }
 
     func testDeletingWorkoutResultPreservesItsPersonalRecord() throws {

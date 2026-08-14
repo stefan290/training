@@ -6,6 +6,7 @@ import SwiftData
 /// permanent and belongs to the ExercisePerformanceProfile, never to a
 /// ProgramDefinition or ProgramInstance. Ending a program, starting a new
 /// one, or even deleting the old program outright must never touch it.
+@MainActor
 final class PerformanceProfileContinuityTests: XCTestCase {
     func testBenchPressHistorySurvivesProgramTransition() throws {
         let container = PersistenceController.makeInMemoryContainer()

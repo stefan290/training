@@ -17,6 +17,9 @@ final class PersonalRecord {
     var context: ResultContext
     var achievedAt: Date
 
+    /// The delete rule lives on `SetResult.personalRecord` /
+    /// `WorkoutResult.personalRecord` (see DELETE_RULE_MATRIX.md) — these
+    /// are plain inverse properties.
     var sourceSetResult: SetResult?
     var sourceWorkoutResult: WorkoutResult?
 

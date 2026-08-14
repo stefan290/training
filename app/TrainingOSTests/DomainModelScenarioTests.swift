@@ -5,6 +5,7 @@ import SwiftData
 /// Proves the domain model can represent all eight required scenarios
 /// through the same seeded dataset the app itself uses, without any
 /// special-case branching per scenario in the model layer.
+@MainActor
 final class DomainModelScenarioTests: XCTestCase {
     var container: ModelContainer!
     var context: ModelContext!
