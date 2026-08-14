@@ -31,6 +31,25 @@ which may match, generalize, or deliberately diverge from the source).
 
 ---
 
+## Resolution status — A1–A6 (product-owner decisions received)
+
+All six MUST-RESOLVE items have been decided. Each section below is
+updated in place with a **DECISION (resolved)** block; the original
+analysis, options, and initial recommendation are left intact underneath
+so the reasoning trail stays visible, including where the final decision
+modified rather than simply accepted the original recommendation.
+
+| Item | Decision | Modifies original recommendation? |
+|---|---|---|
+| A1 — Mesocycle sequencing | Sequential `ProgramJourney`; phases stay rule-local; sequencing is a product interpretation, not a proven spreadsheet dependency; standalone phase use still permitted | **Yes** — original recommendation was independent programs + suggested-order copy only |
+| A2 — Missing superset-partner deload row | Option A (omit), represented as explicit `DeloadExerciseAction.omit` on the confirmed prescription, not a generic blank-cell rule | No — matches original recommendation, adds representation requirement |
+| A3 — Deload rep rounding direction | Round down (floor); e.g. `7 × 0.5 = 3.5 → 3` | No — matches original recommendation exactly |
+| A4 — Deload weight/rep asymmetry | Preserve source behavior via `SourceCompatibleDeloadStrategy`, per family; explicitly not promoted to a universal `TrainingOSDeloadStrategy` | Partially — trusts the spreadsheet as recommended, adds the two-layer architectural split |
+| A5 — `linkedResultReference` / slot-reference translation | Hybrid accepted: structural authoring-time reference (`pairedSlot`); movement/muscle metadata kept separate, never used for dependency resolution | No — matches original recommendation exactly |
+| A6 — Dual-tagged exercise categories | Do not defer: real multi-target `ExerciseSlot.allowedTargets`, no special-case entity | **Yes** — original recommendation was to defer via hardcoding one exercise per slot for V1 |
+
+---
+
 ## Section A — Must resolve before implementation
 
 ### A1. Mesocycle sequencing (Family A)
@@ -80,6 +99,22 @@ which may match, generalize, or deliberately diverge from the source).
   fixture depends on cross-mesocycle sequencing, so either implementation
   choice is regression-neutral.
 
+**DECISION (resolved):** Modifies the original recommendation. TrainingOS
+supports the three phases as a sequence — Basic Hypertrophy → Metabolite
+Focus → Resensitization — modeled as a `ProgramJourney` wrapping three
+ordinary `ProgramDefinition` phases (`PROGRAMMING_SYSTEM_MODEL.md` §5.1),
+rather than as three unrelated programs. **SOURCE-DERIVED BEHAVIOR:**
+each phase's `ProgressionRule`s remain fully phase-local — no spreadsheet
+cross-phase formula is invented; none exists to represent.
+**TRAININGOS-DESIGNED BEHAVIOR:** the sequence itself, and the mechanism
+for starting the next phase (a `PerformanceProfile`-based recommendation,
+or a calibration flow when history is insufficient) — both are product
+decisions layered on top of the source, not derived from it. A phase
+remains independently usable without the journey wrapper. This is
+explicitly documented as a TrainingOS product interpretation of the
+phase naming/order, not a proven spreadsheet dependency — see
+`PROGRAM_LOGIC_SPEC.md` §2.2 and `V1_PROGRAM_LIBRARY.md` §3.
+
 ### A2. Superset partner's missing deload-week row (Family A, Mesocycle 2)
 
 - **Question/ambiguity:** Is the superset partner exercise skipped
@@ -117,6 +152,18 @@ which may match, generalize, or deliberately diverge from the source).
   exercises this cell (no real number to check against either way) — this
   choice cannot be regression-tested against source, only sanity-checked
   by product review.
+
+**DECISION (resolved):** Option A confirmed — omit the superset partner
+during deload week. **SOURCE-DERIVED BEHAVIOR:** the blank cell, confirmed
+in every occurrence, with no partial data suggesting a computed rule.
+**TRAININGOS-DESIGNED BEHAVIOR:** represented semantically as
+`DeloadExerciseAction.omit`, set explicitly on this one confirmed
+prescription — **not** implemented as a generic "blank spreadsheet cell
+means omit" inference rule that could misfire elsewhere in the source set.
+See `PROGRAMMING_SYSTEM_MODEL.md` §3.2 for the parameter and
+`PROGRAM_REGRESSION_TEST_PLAN.md` §9.2 for the fixture (including the
+negative-case fixture confirming the pair's *primary* exercise is
+unaffected).
 
 ### A3. Deload rep-fraction rounding direction (all families)
 
@@ -158,6 +205,16 @@ which may match, generalize, or deliberately diverge from the source).
   computed by the source itself) — this decision is untestable against
   source data by construction; only forward-looking unit tests can cover
   it.
+
+**DECISION (resolved):** Round down (floor), exactly as recommended.
+**SOURCE-DERIVED BEHAVIOR:** none — no workbook ever computes this number.
+**TRAININGOS-DESIGNED BEHAVIOR:** `deloadRepInstruction.roundingDirection
+= .down` universally, across all three families. Worked example: Week-1
+reps `7` × fraction `1/2` = `3.5` → **TrainingOS prescription: 3 reps**.
+Made deterministic and fixtured at `PROGRAM_REGRESSION_TEST_PLAN.md` §9.1
+(three cases: a genuine round-down, a case that would coincidentally
+match round-to-nearest to rule that out as the actual mechanism, and an
+exact whole-number case as a no-op sanity check).
 
 ### A4. Deload weight/rep asymmetry per family, including a documented-vs-actual conflict (Families A, B, C)
 
@@ -210,6 +267,23 @@ which may match, generalize, or deliberately diverge from the source).
   the spreadsheet's literal `0.7`/`0.5` constants) — an evaluator that
   instead implemented the PDF's claimed uniform rule would fail that
   fixture.
+
+**DECISION (resolved):** Preserve source behavior, but do not promote it
+to universal TrainingOS methodology — this is a refinement, not a
+rejection, of the original "trust the spreadsheet" recommendation.
+**SOURCE-DERIVED BEHAVIOR:** each family's exact, literal asymmetry
+(Family A's `ceil(dayCount/2)` boundary; Family B's Mon/Tue `0.7`/"2/3" vs.
+Thu/Fri `0.5`/"1/2"; Family C's Mon/Tue unchanged/"1/2" vs. Wed–Fri
+`×0.5`), trusting the spreadsheet over the PDF wherever they conflict.
+**TRAININGOS-DESIGNED BEHAVIOR:** two conceptual layers behind one shared
+`DeloadStrategy` interface — `SourceCompatibleDeloadStrategy` (one
+parameterization per family, used by every source-derived
+`ProgramDefinition` and validated by regression fixtures) and
+`TrainingOSDeloadStrategy` (reserved, undefined, for
+`ProgramGenerator`-authored programs with no source workbook behind them
+— that methodology is a separate decision for when native generation is
+built). One protocol, two strategies — no engine duplication. See
+`PROGRAMMING_SYSTEM_MODEL.md` §6.1.
 
 ### A5. `linkedResultReference` / paired-slot translation (all families)
 
@@ -264,6 +338,18 @@ which may match, generalize, or deliberately diverge from the source).
   slot is resolvable; the evaluator can't pass any of them without some
   working implementation of this reference.
 
+**DECISION (resolved):** Hybrid recommendation accepted, exactly as
+proposed. **SOURCE-DERIVED BEHAVIOR:** none — no source file resolves a
+pairing dynamically; every pairing was hand-wired at authoring time.
+**TRAININGOS-DESIGNED BEHAVIOR:** a structural authoring-time reference
+(`ExercisePrescription.pairedSlot`) is the actual runtime dependency
+mechanism. Movement-pattern and muscle-group metadata remain available on
+the Exercise Library for substitutions, exercise discovery, the
+`ProgramGenerator`, related-exercise performance estimates, and
+analytics — but are never consulted to resolve a dependency link at
+runtime; that resolution is always the stored structural pointer, decided
+once. See `PROGRAMMING_SYSTEM_MODEL.md` §5.2.
+
 ### A6. Dual-tagged exercise categories (Family A)
 
 - **Question/ambiguity:** Categories like "Chest Isolation or Triceps" and
@@ -309,6 +395,23 @@ which may match, generalize, or deliberately diverge from the source).
 - **Regression compatibility:** No — no fixture in
   `PROGRAM_REGRESSION_TEST_PLAN.md` depends on category-level target
   resolution; only pre-picked exercises are ever asserted against.
+
+**DECISION (resolved):** Overrides the original recommendation — do
+**not** defer the schema question. **SOURCE-DERIVED BEHAVIOR:** the
+dropdown offers both muscle groups together; the source never
+disambiguates at the category level, only implicitly via whichever
+exercise gets picked. **TRAININGOS-DESIGNED BEHAVIOR:** `ExerciseSlot`
+carries a real `allowedTargets: [MuscleGroup]` list (one entry for an
+ordinary slot, two for a dual-tagged one); choosing a concrete exercise
+sets `resolvedTarget` from whichever allowed target it satisfies, but
+`allowedTargets` itself is preserved on the slot even after resolution —
+the original program intent (this slot was always meant to be flexible)
+survives, rather than being discarded to avoid a schema decision. No new
+special-case entity — this is a field addition to the existing
+`ExerciseSlot` shape. V1's shipped configurations may still pre-select or
+recommend one exercise per dual-tagged slot for convenience; that's a
+UI/generator convenience layered on top of the schema, not a narrowing of
+it. See `PROGRAM_GENERATOR_SPEC.md` §4, §4.1.
 
 ---
 
@@ -629,15 +732,17 @@ shape three times because it showed up in three files):
 | `rmBasedWeekOneLoad`, `fixedMultiplierOfWeekOne` | **Parameterized shared rule** | Identical shape and, for the multiplier table, identical *values* across all three families — this is the clearest case of one real shared rule, not three coincidentally similar ones. |
 | `autoregulatedSetCount` core mechanism (baseline + prior rating) | **Parameterized shared rule** | Same formula shape everywhere; only baseline values and pairing targets differ, which are exactly what parameters are for. |
 | `autoregulatedSetCount`'s Week-4 behavior (B3, B4) | **Family-specific exception** | Confirmed to differ in *shape*, not just value, between Family B and Family C (§B3/B4 above) — must not be inferred by analogy; each family's exact behavior ships as its own parameter setting, proven by its own regression fixture. |
-| `deloadWeightBySchedulePosition` | **Family-specific exception** | Every family's day-boundary split is a different shape (A: `ceil(dayCount/2)`; B: fixed Mon/Tue-vs-Thu/Fri; C: fixed Mon/Tue-vs-Wed/Thu/Fri) — same rule *type*, but no shared default value is safe to assume for a new family. |
-| `deloadRepInstruction` | **Deferred rule** (pending A3) | Cannot ship a computed value until the rounding-direction decision in A3 is made; until then this stays a stored fraction + text, not a number. |
+| `deloadWeightBySchedulePosition` | **Family-specific exception**, via `SourceCompatibleDeloadStrategy` (A4, resolved) | Every family's day-boundary split is a different shape (A: `ceil(dayCount/2)`; B: fixed Mon/Tue-vs-Thu/Fri; C: fixed Mon/Tue-vs-Wed/Thu/Fri) — same rule *type*, but no shared default value is safe to assume for a new family. Not promoted to `TrainingOSDeloadStrategy`, which stays a separate, deferred rule. |
+| `deloadRepInstruction` | **TrainingOS-normalized rule** (A3, resolved: always round down) | No longer deferred — `roundingDirection = .down` applies uniformly across all three families, independent of any per-family parameter. |
+| `DeloadExerciseAction.omit` (A2, resolved) | **Family-specific exception** | Set explicitly per-slot from confirmed evidence (Family A Mesocycle 2's superset partner only) — not a generalized "blank cell" inference rule. |
 | Rounding increment (`2.5`/`5`) read from source | **TrainingOS-normalized rule** (already decided) | Never inherited literally — always resolved through the user's own `EquipmentProfile`, per `METRIC_LOAD_MODEL.md`; this is C2's conclusion restated as policy. |
 | Legs-only Heavy exception (B2) | **Exact source emulation**, exposed as an opt-in override | Ships exactly as sourced for the one confirmed file; not generalized to other splits by default. |
 | Family C's dead rating-input columns (C3) | **TrainingOS-normalized rule** | Modeled with the rule type that matches actual behavior (`fixedSetSchedule`), not the rule type the spreadsheet's visual layout suggests. |
 | Novice-specific behavior | **TrainingOS-normalized rule (i.e., don't implement one)** | No `ProgrammingSystem` parameter added; `experienceLevel` stays non-engine-facing per C1. |
-| `linkedResultReference` slot-pairing mechanism | **Parameterized shared rule**, resolved via an authoring-time structural reference (A5, option 3) | Same resolution mechanism across every family's pairings — what differs per program is *which* slots are paired, which is exactly a `ProgramDefinition`-level configuration choice, not a new rule type. |
-| Mesocycle sequencing (A1) | **Deferred rule** for any cross-phase engine logic; each phase ships as an **independent, parameterized** `ProgramDefinition` in the meantime | No engine work is blocked, but no sequencing feature should be built until A1 is answered. |
+| `linkedResultReference` slot-pairing mechanism | **Parameterized shared rule**, resolved via an authoring-time structural reference (A5, resolved) | Same resolution mechanism across every family's pairings — what differs per program is *which* slots are paired, which is exactly a `ProgramDefinition`-level configuration choice, not a new rule type. |
+| Mesocycle sequencing (A1, resolved) | **TrainingOS-designed rule** — sequential `ProgramJourney`, phase-local spreadsheet rules unchanged | Each phase still ships as an independent, parameterized `ProgramDefinition`; `ProgramJourney` is an additive ordering layer, not new per-phase engine logic. See `PROGRAMMING_SYSTEM_MODEL.md` §5.1. |
 | Endurance/functional-fitness mechanics | **Deferred rule** | No source material exists yet (D2); not a Stage 4 concern at all. |
+| Dual-tagged exercise categories (A6, resolved) | **TrainingOS-designed rule** — real multi-target `ExerciseSlot.allowedTargets`, no special-case entity | Schema resolved now rather than deferred; V1's pre-built configurations may still pre-select one exercise per slot as a UI/generator convenience without narrowing what the schema records. |
 
 ---
 

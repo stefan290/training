@@ -104,7 +104,8 @@ Agents A1, A2, A3, A4, A5.
 for every exercise regardless of compound vs. isolation: Week1=`3/fail`,
 Week2=`3/fail`, Week3=`2/fail`, Week4=`1/fail`, deload=`1/2 reps of Week 1`
 (text instruction, not a computed number — the app must compute this
-itself; see `OPEN_PROGRAMMING_QUESTIONS.md` §5). "X/fail" is RP's own
+itself; see `OPEN_PROGRAMMING_QUESTIONS.md` §5, **resolved as
+STAGE3_DECISION_MEMO.md A3: round down/floor**). "X/fail" is RP's own
 notation, undefined within any of the 11 sheets, interpreted as "stop X
 reps short of technical failure."
 
@@ -131,8 +132,11 @@ The split boundary tracks `ceil(dayCount / 2)` (e.g. 4-day: Days 1–2 full,
 3–4 half; 6-day: Days 1–3 full, 4–6 half). No comment or label in any file
 explains this. **Source:** `AH11: '=J11'` (full) vs. `AH30:
 '=MROUND((J30*0.5),2.5)'` (half), confirmed by Agents A1, A2, A4, A5.
+**Resolved (`STAGE3_DECISION_MEMO.md` A4):** reproduced exactly as sourced
+via `SourceCompatibleDeloadStrategy` for Family-A-derived
+`ProgramDefinition`s; not promoted to a general TrainingOS deload rule.
 
-### 2.2 Mesocycle sequencing — unresolved
+### 2.2 Mesocycle sequencing — source fact unchanged, architecture resolved
 
 "Mesocycle 1/2/3" strongly implies a sequence, but **no formula or
 in-workbook text proves it**. Each mesocycle's 10RM input is blank and
@@ -140,7 +144,16 @@ independent; nothing carries load, exercise selection, or rating history
 from one phase to the next. This is consistent with either (a) three
 sequential blocks a user runs back-to-back, retesting or re-estimating
 10RM at the start of each, or (b) three independent, optionally-standalone
-templates. See `OPEN_PROGRAMMING_QUESTIONS.md` §2.
+templates. This factual finding is unchanged — no cross-sheet formula
+exists in the source, full stop.
+
+**Resolved at the architecture level (`STAGE3_DECISION_MEMO.md` A1):**
+TrainingOS models the three phases as a sequential *product-level*
+journey (Basic Hypertrophy → Metabolite Focus → Resensitization) despite
+this absence of proof — that sequencing is an explicit TrainingOS product
+interpretation of the phase naming/order, not a claim that the source
+spreadsheets supply a cross-phase formula. See `PROGRAMMING_SYSTEM_MODEL.md`
+§5.1 for the resulting model.
 
 Phase differences (once inside a phase, everything else about the engine
 is identical):
@@ -163,8 +176,12 @@ Flagged for product-owner confirmation in `OPEN_PROGRAMMING_QUESTIONS.md` §3.
 The superset mechanic (Metabolite Focus only): one exercise pair per
 training day, second ("partner") exercise's future sets are driven by the
 *primary* exercise's rating, not its own, and the partner has no deload-week
-row at all (blank, meaning: unresolved whether it's skipped entirely during
-deload — see `OPEN_PROGRAMMING_QUESTIONS.md` §4).
+row at all (blank in every occurrence — see `OPEN_PROGRAMMING_QUESTIONS.md`
+§4). **Resolved (`STAGE3_DECISION_MEMO.md` A2):** the partner exercise is
+omitted during deload week, represented as an explicit
+`DeloadExerciseAction.omit` value on that specific prescription — a named,
+Family-A/Mesocycle-2-scoped rule, not a generic "blank source cell means
+omit" inference applied elsewhere. See `PROGRAMMING_SYSTEM_MODEL.md` §3.
 
 ### 2.3 Splits (which muscles, which exercises)
 
@@ -293,8 +310,13 @@ half-of-week, with **no shared logic between them**:
   This directly contradicts the RP HowTo PDF's claim of a uniform "2/3 of
   week 1" deload rule (the PDF's own worked example, 7/5/4→4/3/2, matches
   2/3 — but that's only true for the Monday/Tuesday half of the week in
-  the actual spreadsheet). **Flagged, not resolved — see
-  `OPEN_PROGRAMMING_QUESTIONS.md` §8.**
+  the actual spreadsheet). See `OPEN_PROGRAMMING_QUESTIONS.md` §8.
+  **Resolved (`STAGE3_DECISION_MEMO.md` A4):** the spreadsheet, not the
+  PDF, is authoritative — this exact 0.7/0.5 weight split and 2/3/1/2 rep
+  split is reproduced verbatim by `SourceCompatibleDeloadStrategy` for
+  Family B. This is a source-fidelity decision only; it is explicitly
+  **not** promoted to a universal TrainingOS deload rule — see
+  `PROGRAMMING_SYSTEM_MODEL.md` §6.1.
 
 **Rule ID: FAMILY_B_BODYWEIGHT** — pure user instruction (sheet b: "add
 your bodyweight to moves that involve it... when looking at the workout,
@@ -348,7 +370,9 @@ exactly).
 *halved* side), which argues against a simple "keep the big lifts heavy"
 theory. Reps: literal "1/2 reps of Week 1" text for every row except
 Friday's backoff exercise, which is the sole exception at "Same reps as
-Week 1" (no reduction).
+Week 1" (no reduction). **Resolved (`STAGE3_DECISION_MEMO.md` A4):**
+reproduced exactly as sourced via `SourceCompatibleDeloadStrategy`, not
+generalized to other families or to natively-generated programs.
 
 **Rounding:** `MROUND(x, 5)` everywhere.
 
@@ -428,9 +452,15 @@ Every single family — A, B, and C — has a confirmed, undocumented
 asymmetry in its deload week (some days get a real weight reduction,
 others don't; reps are always instructed as text rather than computed).
 This is the single largest concentration of ambiguity in the whole source
-set and needs explicit product-owner rulings before `ProgramEngine` can
-implement deload deterministically — consolidated in
-`OPEN_PROGRAMMING_QUESTIONS.md` §8.
+set — consolidated in `OPEN_PROGRAMMING_QUESTIONS.md` §8. **Resolved
+(`STAGE3_DECISION_MEMO.md` A4):** each family's asymmetry is reproduced
+exactly as sourced, per family, via `SourceCompatibleDeloadStrategy` — the
+product-owner ruling was to trust the spreadsheet in every case, but
+explicitly *not* to treat any of these three shapes as TrainingOS's
+general deload methodology for natively-generated programs (that is
+`TrainingOSDeloadStrategy`, intentionally undefined until the Generator is
+built). Rep-rounding for all three families is `STAGE3_DECISION_MEMO.md`
+A3 (round down), documented at each family's rep-goal rule above.
 
 ### 6.4 The `-1/0/1` rating scale's wording differs by goal, not by chance
 

@@ -70,12 +70,44 @@ express every mechanic found in the source material:
 |---|---|---|
 | `rmBasedWeekOneLoad` | `rmType` (5RM/8RM/10RM/etc.), `factor`, `roundingIncrement` | Family A Week 1 (`10RM×0.85`), Family B/C Week 1 (`RM×0.95` or `×0.7`/`×0.85` backoff) |
 | `fixedMultiplierOfWeekOne` | `weekMultipliers: [Double]` (one per week, keyed to the Week-1 cell, not compounding) | The `×1.05/1.075/1.1` pattern, identical shape across every family |
-| `autoregulatedSetCount` | `baselineSets`, `pairedSlotReference`, `ratingScale` | Family A/B/C's `sets = priorSets + pairedRating` |
-| `fixedSetSchedule` | `setsByWeek: [Int]` | Family B's non-autoregulated 8RM accessories; Family C's dead-rating-input rows |
+| `autoregulatedSetCount` | `baselineSets`, `pairedSlotReference`, `ratingScale`, `applyRatingOnFinalWeek: Bool` (**resolved**, `STAGE3_DECISION_MEMO.md` B3/B4 — `false` for Family B's Thu/Fri rows and Family C's Thu/Fri rows, `true` elsewhere; the two families' Week-4 behaviors are different *shapes*, not the same parameter — see §3.1), `freezeAfterWeek: Int?` (Family C only) | Family A/B/C's `sets = priorSets + pairedRating` |
+| `fixedSetSchedule` | `setsByWeek: [Int]` | Family B's non-autoregulated 8RM accessories; Family C's dead-rating-input rows (**resolved** to this rule type rather than a dead `autoregulatedSetCount`, `STAGE3_DECISION_MEMO.md` C3) |
 | `repGoalSchedule` | `targetsByWeek: [RepGoal]` (a rep count, an RIR-style "X/fail," or a fixed text like "Triples") | Every family's Week1–4 rep-goal row |
-| `deloadWeightBySchedulePosition` | `positions: [ScheduleSlot: Factor]` | The full-weight/half-weight day-boundary split found in every family |
-| `deloadRepInstruction` | `fraction` (e.g. 1/2, 2/3), `roundingDirection` | The always-text, never-computed deload rep rule |
+| `deloadWeightBySchedulePosition` | `positions: [ScheduleSlot: Factor]`, `exerciseAction: DeloadExerciseAction` (**new**, see §3.2) | The full-weight/half-weight day-boundary split found in every family |
+| `deloadRepInstruction` | `fraction` (e.g. 1/2, 2/3), `roundingDirection` (**resolved**, `STAGE3_DECISION_MEMO.md` A3: always `.down`), `exerciseAction: DeloadExerciseAction` | The always-text, never-computed deload rep rule |
 | `linkedResultReference` | `sourceSlotReference`, `fractionOfSourceResult` | Family C's Friday backoff exercise ("1/2 Monday's" actual logged reps) |
+
+### 3.1 Week-4 autoregulation is not one shared shape (resolved)
+
+`STAGE3_DECISION_MEMO.md` B3 and B4 confirmed two families have *different*
+Week-4 quirks, not the same one: Family B's Thu/Fri rows drop the rating
+addition term entirely (Week 4 = Week 3, computed *without* re-adding a
+rating); Family C's Thu/Fri rows freeze the *value* itself (Week 4 copies
+Week 3's already-computed number, ignoring any Week-4 rating input even if
+one is supplied). Both are reproduced exactly via `autoregulatedSetCount`
+parameters (`applyRatingOnFinalWeek` for B, `freezeAfterWeek` for C) —
+**an evaluator must not infer one family's Week-4 behavior from the
+other's**, per the decision memo's explicit warning.
+
+### 3.2 `DeloadExerciseAction` (resolved, `STAGE3_DECISION_MEMO.md` A2)
+
+```
+enum DeloadExerciseAction {
+    case standard   // follow this rule's normal deload weight/rep computation
+    case omit       // this exercise has no prescription during deload week
+}
+```
+
+Added to `deloadWeightBySchedulePosition` and `deloadRepInstruction` as an
+explicit per-slot parameter, defaulting to `.standard`. Its only confirmed
+`.omit` usage today is Family A Mesocycle 2's superset partner exercise
+(`PROGRAM_LOGIC_SPEC.md` §2.2) — a blank source cell in that specific,
+confirmed case, set explicitly on that prescription's `ProgressionRule`
+parameters. **This is deliberately not a generic rule** ("a blank deload
+cell always means omit") — no other blank deload cell anywhere in the
+source set is interpreted this way unless it has its own confirmed
+citation; `DeloadExerciseAction.omit` is set per-slot, from evidence, not
+inferred from cell emptiness in general.
 
 Every one of these is a **pure data description** — no code branches on
 "which program is this." The `ProgressionEngine` layer adds one evaluator
@@ -85,11 +117,22 @@ must understand the meaning of the rule, not the spreadsheet coordinates"
 (handoff rule 3) means concretely.
 
 `pairedSlotReference` / `sourceSlotReference` need to name a slot
-declaratively (e.g. "the other slot in this same day sharing category X,"
-or "the slot most recently completed before this one") rather than a
-literal cell address — this is the translation step from "M35" to a
-domain-level reference, and it's where a chunk of the remaining
-implementation risk lives (see `OPEN_PROGRAMMING_QUESTIONS.md` §10).
+declaratively rather than a literal cell address — this is the
+translation step from "M35" to a domain-level reference. **Resolved**
+(`STAGE3_DECISION_MEMO.md` A5): this is a **structural, authoring-time
+reference** — a stable pointer from one `ExercisePrescription` to
+another, set when the `ProgramDefinition` is built and never re-resolved
+dynamically. No source file ever resolves a pairing at runtime by
+searching training history ("the most recently completed session of this
+pattern") — every pairing found in this analysis was fixed by whoever
+built the workbook, so the domain model matches that shape rather than
+inventing a lookup the source never needed. Movement-pattern and
+muscle-group metadata stay on the `Exercise`/`ExerciseCategory` schema for
+other explicit uses — substitutions, exercise discovery, the
+`ProgramGenerator`, related-exercise performance estimates, analytics —
+but are never consulted to *resolve* a `pairedSlotReference` at runtime;
+that resolution is always the stored structural pointer. See §5.2 for the
+resulting schema addition.
 
 ## 4. `ProgrammingSystem` — named bundles, not new entity types
 
@@ -148,6 +191,87 @@ nothing here weakens it:
   `Session`s, substitution choices, starting recommendations, progression
   state. Reads `ProgramDefinition`'s rules but writes nothing back into it.
 
+### 5.1 Program journeys — phase sequencing is a TrainingOS-level concept (resolved)
+
+`STAGE3_DECISION_MEMO.md` A1 modified the original recommendation: Family
+A's three phases (Basic Hypertrophy → Metabolite Focus → Resensitization)
+are modeled as a sequential journey, not three unrelated programs. This
+section states plainly what is and isn't being claimed by that decision,
+because it's easy to misread as "the source proves a sequence" — **it
+does not; nothing here changes that fact.**
+
+**What stays exactly as sourced (phase-local):** each phase is still its
+own self-contained rule set — its own `rmBasedWeekOneLoad` factor, its own
+`fixedMultiplierOfWeekOne` table, its own `autoregulatedSetCount`
+baselines and pairings. No `ProgressionRule` reads across phases. No new
+rule type computes "next phase's Week-1 load from this phase's Week-4
+result" as a spreadsheet formula, because no such formula exists to
+represent.
+
+**What is new, and is a TrainingOS product decision, not a source
+finding:**
+
+```
+ProgramJourney {
+    name: String                          // e.g. "RP General Hypertrophy — Full Body"
+    phases: [ProgramDefinition]            // ordered; each phase is a normal,
+                                            // independently-valid ProgramDefinition
+    transitionTrigger: .userInitiated      // V1: the user explicitly starts the next
+                                            // phase; no fixed-duration auto-advance
+}
+```
+
+- `ProgramJourney` is a thin ordering wrapper around ordinary
+  `ProgramDefinition`s — it introduces no new rule types and no change to
+  how any individual phase computes its own prescriptions.
+- **Transitioning to the next phase never invents a cross-phase load
+  formula.** The new phase's Week-1 RM is not derived by a spreadsheet-style
+  calculation from the prior phase — it comes from either (a) a starting
+  recommendation the engine proposes using the user's `PerformanceProfile`
+  (their actual logged history on the relevant exercises, already an
+  existing Stage 1–2 entity), or (b) a calibration flow (e.g. a
+  recommended-RM test) when history is insufficient to propose one
+  confidently. Both are ordinary uses of already-existing
+  `Recommendation`/`PerformanceProfile` machinery, not a new per-phase
+  formula.
+- **A phase remains independently usable.** `ProgramDefinition` doesn't
+  require a `ProgramJourney` to exist or be instantiated — nothing here
+  removes the ability to start "4-Day Full Body Hypertrophy" (Basic
+  Hypertrophy only) as a standalone program, exactly as `V1_PROGRAM_LIBRARY.md`
+  ships it. `ProgramJourney` is an optional, additional way to present
+  several phases as one recommended path.
+
+**This sequencing is a TrainingOS product interpretation of the phase
+naming and ordering ("Mesocycle 1/2/3" reads as an obvious sequence to a
+human), not a claim backed by a spreadsheet formula dependency.** Anyone
+extending this model should not add a rule type or persisted field that
+would only make sense if the source data proved sequencing — it doesn't,
+and this document takes care not to imply otherwise.
+
+### 5.2 Structural slot references (resolved, `STAGE3_DECISION_MEMO.md` A5)
+
+The `pairedSlotReference`/`sourceSlotReference` mechanism from §3 needs a
+concrete home in the schema. Resolved as a direct, optional self-reference
+on `ExercisePrescription`, set once at `ProgramDefinition` authoring time:
+
+```
+ExercisePrescription {
+    // ...existing fields from Stage 1–2...
+    pairedSlot: ExercisePrescription?   // the slot this prescription's
+                                         // ProgressionRule reads from, if any
+                                         // (e.g. Front Squat's prescription
+                                         // -> pairedSlot = High Bar Squat's
+                                         // prescription, within the same
+                                         // ProgramDefinition)
+}
+```
+
+This is a schema addition beyond what Stage 1–2 specified, but it's a
+single optional field on an existing entity — not a new entity type, and
+not a runtime resolution algorithm. `autoregulatedSetCount` and
+`linkedResultReference` rules read `pairedSlot` directly rather than
+searching `ProgramInstance` history by movement pattern.
+
 ## 6. Strict vs. Adaptive readiness
 
 Per the existing `AdherenceMode` enum (`strict` | `adaptive`, already on
@@ -162,6 +286,48 @@ rules are already data (not code), an adaptive layer can be added later as
 a policy that edits `ProgressionRule` parameters on a `ProgramInstance`'s
 copy of the structure, without a schema migration. Not implemented in this
 pass — flagged here only to confirm the data model doesn't block it.
+
+### 6.1 Deload strategy: source-compatible vs. TrainingOS-native (resolved, `STAGE3_DECISION_MEMO.md` A4)
+
+Every family's deload behavior (`PROGRAM_LOGIC_SPEC.md` §2.1, §3, §4) is
+preserved exactly as sourced — but the decision memo was explicit that
+this preservation must **not** be read as "this is what TrainingOS thinks
+deload should be." Two conceptual layers, one shared interface, so the
+engine isn't duplicated for this distinction:
+
+```
+protocol DeloadStrategy {
+    func weightFactor(for position: ScheduleSlot) -> Double
+    func repInstruction(for position: ScheduleSlot) -> RepFraction
+    func exerciseAction(for slot: ExercisePrescription) -> DeloadExerciseAction
+}
+
+struct SourceCompatibleDeloadStrategy: DeloadStrategy {
+    // one instance per family, parameterized exactly from PROGRAM_LOGIC_SPEC.md:
+    // Family A: ceil(dayCount/2)-boundary split, full vs. 0.5x
+    // Family B: Mon/Tue 0.7 & "2/3 of Week1", Thu/Fri 0.5 & "1/2 of Week1"
+    // Family C: Mon/Tue unchanged & "1/2 of Week1", Wed-Fri 0.5x
+    //           (Friday backoff exercise: "Same reps as Week 1")
+}
+
+// TrainingOSDeloadStrategy: DeloadStrategy — intentionally NOT defined yet.
+// Reserved for ProgramGenerator-authored (non-source-derived) programs.
+// What TrainingOS's own deload methodology should be is a separate product
+// decision, deferred to when native program generation is actually built
+// (PROGRAM_GENERATOR_SPEC.md) — not implied by, or defaulted from, any of
+// the three source families' asymmetric patterns above.
+```
+
+- Every source-derived `ProgramDefinition` in `V1_PROGRAM_LIBRARY.md`
+  (all 8 configurations, since all 8 come from real workbooks) uses
+  `SourceCompatibleDeloadStrategy` — this is what
+  `PROGRAM_REGRESSION_TEST_PLAN.md`'s deload fixtures validate.
+  `ProgramGenerator`-authored programs (Stage 4+, no source workbook
+  behind them) would use `TrainingOSDeloadStrategy` once it exists.
+- The two-layer split costs one protocol and one additional
+  not-yet-implemented conforming type — not a second `ProgrammingSystem`,
+  not a second `ProgressionEngine`, and not a fork of any of the rule
+  evaluators from §3.
 
 ## 7. Architectural proof — no special-case entity types required
 
@@ -189,9 +355,13 @@ rejected for lack of evidence (`PROGRAM_FAMILY_MATRIX.md` §2).
 
 - Exercise-slot architecture (slots vs. hardcoded exercises) — see
   `PROGRAM_GENERATOR_SPEC.md` §4, which covers this in the generation
-  context; the canonical-exercise mapping itself is `PROGRAM_LOGIC_SPEC.md`-
-  adjacent but detailed in `OPEN_PROGRAMMING_QUESTIONS.md` §10 since several
-  mappings are genuinely uncertain.
+  context. The two schema-level ambiguities this used to flag as
+  unresolved are now decided: slot-to-slot dependency resolution is §5.2
+  above (`STAGE3_DECISION_MEMO.md` A5), and dual-tagged category targets
+  are `ExerciseSlot.allowedTargets` (`STAGE3_DECISION_MEMO.md` A6,
+  `PROGRAM_GENERATOR_SPEC.md` §4.1). What's still deferred is only
+  *which* candidate exercise a generator should default to per slot — a
+  product-taste decision, not a schema question.
 - Actually implementing any `ProgressionRule` evaluator in
   `Engines/` — that's Stage 4, gated on this document's review.
 - Endurance/functional-fitness `ProgrammingSystem`s — no source material

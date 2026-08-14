@@ -222,17 +222,41 @@ No fixture in any family required a rule type, a branch, or a special case
 absent from the other two families — confirming the vocabulary in
 `PROGRAMMING_SYSTEM_MODEL.md` §3 is sufficient, not aspirational.
 
+**All `deloadWeightBySchedulePosition` fixtures in this table validate
+`SourceCompatibleDeloadStrategy` specifically** (`STAGE3_DECISION_MEMO.md`
+A4, `PROGRAMMING_SYSTEM_MODEL.md` §6.1) — they prove each family's
+spreadsheet is reproduced faithfully, not that TrainingOS has adopted any
+of these three asymmetric patterns as its own general deload methodology.
+`TrainingOSDeloadStrategy` (for `ProgramGenerator`-authored, non-source
+programs) has no fixtures here and isn't expected to until it's designed.
+
+Every `autoregulatedSetCount` fixture above also implicitly exercises the
+resolved structural `pairedSlot` reference (`STAGE3_DECISION_MEMO.md` A5,
+`PROGRAMMING_SYSTEM_MODEL.md` §5.2) — Front Squat's fixture (§3.2) reads
+`pairedSlot` = High Bar Squat's prescription, not a runtime history query,
+and the same applies to every other cross-exercise pairing fixtured in
+this document.
+
 ## 7. Explicitly not covered by this fixture set
 
-- **Deload rep counts.** Every family expresses these as literal text
-  ("1/2 reps of Week 1," "2/3 reps of Week 1"), never a computed cell —
-  there is no source cached value to regress against until
-  `OPEN_PROGRAMMING_QUESTIONS.md` §5 gets a product ruling on how
-  TrainingOS computes an actual rep target from that text.
-- **Mesocycle-to-mesocycle chaining** (Family A) — no fixture is possible
-  because no formula reads across sheets (`PROGRAM_LOGIC_SPEC.md` §2.2);
-  nothing to regress against until `OPEN_PROGRAMMING_QUESTIONS.md` §2 is
-  resolved.
+- **Deload rep counts as a source-verifiable number.** Every family
+  expresses these as literal text ("1/2 reps of Week 1," "2/3 reps of Week
+  1"), never a computed cell — there is no source cached value to check a
+  fixture's expected number *against*, regardless of rounding direction.
+  The rounding-direction question itself is now resolved (round down,
+  `STAGE3_DECISION_MEMO.md` A3) and fixtured in §9.1 below — what remains
+  uncovered is source *verification* of the resulting number, which no
+  workbook can ever supply, not the rounding rule itself.
+- **Mesocycle-to-mesocycle chaining as a spreadsheet formula** — still
+  correctly uncovered, because no formula reads across sheets
+  (`PROGRAM_LOGIC_SPEC.md` §2.2) and that finding is unchanged. TrainingOS
+  now sequences phases as a product-level `ProgramJourney`
+  (`STAGE3_DECISION_MEMO.md` A1, `PROGRAMMING_SYSTEM_MODEL.md` §5.1), but
+  that sequencing is explicitly not a spreadsheet rule, so there is
+  nothing for a *regression* fixture (which validates spreadsheet-rule
+  fidelity) to check here — phase-transition behavior would need a
+  product-acceptance test, not a regression fixture, if one is ever
+  written.
 - **Novice-specific behavior** — no fixture, because no distinct behavior
   was found to exist (`PROGRAM_FAMILY_MATRIX.md` §2).
 - **Unit conversion correctness** — covered separately by
@@ -252,16 +276,69 @@ struct RegressionFixture {
     let ruleType: ProgressionRuleType
     let parameters: [String: Double]      // e.g. factor, roundingUnit, multipliers
     let inputs: [String: Double]          // e.g. rm, baselineSets, priorRating
-    let expected: Double
+    let expected: Double?                 // the computed number, when the rule
+                                           // produces one (nil for §9.2's omit case)
+    let expectedAction: DeloadExerciseAction?  // .omit / .standard, when the rule's
+                                                // output is an action rather than a
+                                                // number (STAGE3_DECISION_MEMO.md A2)
     let provenance: Provenance            // .sourced(file:, sheet:, cell:) | .constructed(reason:)
 }
 ```
 
 A single parametrized test function iterates every fixture in this
 document (grouped by family, per §6's table) and asserts
-`evaluator.evaluate(rule, inputs) == expected`. `provenance` is asserted to
-be present and correctly tagged on every fixture as part of the test
-itself — a SOURCED fixture whose `file`/`sheet`/`cell` fields are empty, or
-a CONSTRUCTED fixture missing its `reason`, should fail the harness, not
-just the documentation review. Not implemented in this pass — this section
-exists so Stage 4 has an agreed target shape rather than an open question.
+`evaluator.evaluate(rule, inputs) == expected` (or `== expectedAction` for
+the §9.2 case). `provenance` is asserted to be present and correctly
+tagged on every fixture as part of the test itself — a SOURCED fixture
+whose `file`/`sheet`/`cell` fields are empty, or a CONSTRUCTED fixture
+missing its `reason`, should fail the harness, not just the documentation
+review. Not implemented in this pass — this section exists so Stage 4 has
+an agreed target shape rather than an open question.
+
+## 9. Resolved-decision fixtures (A2, A3)
+
+Two of the six `STAGE3_DECISION_MEMO.md` MUST-RESOLVE decisions add
+fixture-able behavior that didn't exist when §§1–8 were written (both were
+previously listed in §7 as uncovered). Both are **TrainingOS-designed
+behavior**, not source-verified numbers — no workbook computes either of
+these, so there is no SOURCED variant; every fixture below is CONSTRUCTED,
+tagged with the decision that specifies it rather than a workbook
+citation.
+
+### 9.1 Deload rep rounding — round down (`STAGE3_DECISION_MEMO.md` A3)
+
+| Input | Value |
+|---|---|
+| Week-1 reps | 7 |
+| Deload fraction | 1/2 (`deloadRepInstruction.fraction`) |
+| Raw fractional result | `7 × 0.5 = 3.5` |
+| `roundingDirection` | `.down` |
+| **Expected TrainingOS prescription** | **3 reps** |
+
+A second case to confirm the direction matters (not just that rounding
+happens at all): Week-1 reps = 5, fraction = 2/3 → raw = `3.333...` →
+**expected: 3 reps** (round-to-nearest would also give 3 here by
+coincidence; a third case closes that gap). Week-1 reps = 8, fraction =
+1/2 → raw = `4.0` → **expected: 4 reps** (exact, no rounding needed — a
+sanity check that whole-number cases aren't accidentally perturbed).
+Applies uniformly to Families A, B, and C — this is a TrainingOS-wide
+rule, not a per-family parameter.
+
+### 9.2 Superset-partner deload omission (`STAGE3_DECISION_MEMO.md` A2)
+
+| Input | Value |
+|---|---|
+| Family / phase | A, Mesocycle 2 ("Metabolite Focus") |
+| Slot | The superset partner exercise in any Metabolite Focus day-pair |
+| Source cell | Blank (confirmed in every occurrence, `PROGRAM_LOGIC_SPEC.md` §2.2) |
+| `exerciseAction` parameter | `DeloadExerciseAction.omit` |
+| **Expected evaluator output** | **No prescription for this slot during deload week** — `expected: nil`, `expectedAction: .omit` |
+
+**Negative case, to guard against over-generalization:** the *primary*
+exercise in the same superset pair, same day, same deload week, has
+`exerciseAction: .standard` and must still produce a normal computed
+deload weight/rep pair via `SourceCompatibleDeloadStrategy` — a fixture
+asserting the pair's primary slot is unaffected by the partner's `.omit`
+setting. This guards against an evaluator implementation that
+accidentally omits the whole day-pair instead of just the one confirmed
+slot.

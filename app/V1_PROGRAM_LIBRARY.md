@@ -70,14 +70,32 @@ predicts, applied one level down (configurations within a system, not new
 systems). No row required inventing a rule the source material doesn't
 already contain.
 
-All 6 Hypertrophy configurations ship as **Mesocycle 1 ("Basic
-Hypertrophy") only** — mesocycle sequencing is unresolved
-(`OPEN_PROGRAMMING_QUESTIONS.md` §2, `STAGE3_DECISION_MEMO.md` A1), so no
-configuration here builds a sequencing/gating behavior that isn't proven.
-Shipping Mesocycle 2/3 as additional named configurations later (e.g.
-"4-Day Full Body Hypertrophy — Metabolite Focus") is a small, zero-new-
-engine follow-on once A1 has an answer — noted as available, not decided
-here.
+**Revised per `STAGE3_DECISION_MEMO.md` A1 (resolved):** each of the 6
+Hypertrophy configurations ships as a `ProgramJourney`
+(`PROGRAMMING_SYSTEM_MODEL.md` §5.1) of all three phases in sequence —
+Basic Hypertrophy → Metabolite Focus → Resensitization — sourced from that
+same workbook's three mesocycle sheets, at the same `{dayCount, split}`
+throughout. This supersedes the original recommendation (single-phase
+only); it does not require new source material, since every Family A
+workbook already contains all three phases internally, one per sheet.
+
+Two things this does **not** mean, restated from A1's resolution:
+
+- **The sequence is a TrainingOS product interpretation, not a proven
+  spreadsheet dependency.** Nothing in any workbook links the phases by
+  formula; each phase's rules stay phase-local exactly as sourced
+  (`PROGRAM_LOGIC_SPEC.md` §2.2). `ProgramJourney` is an ordering wrapper
+  the product owner chose to build on top of that naming/ordering, not a
+  claim that the source data demanded it.
+- **Every phase remains independently startable.** A user (or a future
+  configuration) can start "4-Day Full Body Hypertrophy — Basic
+  Hypertrophy" alone without the journey wrapper; `ProgramJourney` is
+  additive, not a new requirement for using any phase.
+
+Transitioning between phases uses the user's `PerformanceProfile` to
+propose a starting point for the next phase's Week-1 RM, or a calibration
+flow when history is insufficient — never a source-derived cross-phase
+formula, because none exists (`PROGRAMMING_SYSTEM_MODEL.md` §5.1).
 
 ## 4. Everything else: generator parameters or regression-only, not shipped
 
@@ -96,9 +114,10 @@ here.
   file best demonstrates a mechanic V1 needs to prove works" or "which
   gap in day-count/split coverage a real user would notice missing," not
   "which file is the best program" — outside this analysis's scope.
-- **Not a decision about Mesocycle sequencing.** Restated from §3 above —
-  every Hypertrophy configuration ships single-phase until
-  `OPEN_PROGRAMMING_QUESTIONS.md` §2 is resolved.
+- **Mesocycle sequencing is now resolved, restated from §3 above.** Every
+  Hypertrophy configuration ships as a full 3-phase `ProgramJourney`, with
+  each phase's rules staying phase-local and every phase independently
+  startable (`STAGE3_DECISION_MEMO.md` A1).
 - **Not a claim that 8 is a ceiling.** More configurations remain
   available for free from the same two systems' parameter space (§4);
   8 is what this pass recommends shipping now, not a hard limit.

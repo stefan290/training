@@ -91,10 +91,16 @@ directly rather than re-derive it:
 ```
 ExerciseSlot {
     category: ExerciseCategory        // e.g. "Incline Push", "Quads", "Push Move 1"
-    primaryTarget: MuscleGroup
+    allowedTargets: [MuscleGroup]     // resolved, STAGE3_DECISION_MEMO.md A6 — one
+                                       // entry for an ordinary slot, two for a
+                                       // dual-tagged slot (§4.1); never collapsed
+                                       // to a single MuscleGroup before resolution
     candidates: [Exercise]            // canonical exercises tagged for this category
     allowsCustomEntry: Bool           // the "Other ___" escape hatch
     resolvedExercise: Exercise?       // set once the slot is resolved (§4.1)
+    resolvedTarget: MuscleGroup?      // set alongside resolvedExercise — which
+                                       // member of allowedTargets this specific
+                                       // exercise choice actually satisfies
 }
 ```
 
@@ -125,14 +131,25 @@ found in the source data:
   heuristic → user confirmation if still uncertain), because it's
   unconstrained user input, not a picklist value.
 
-**One genuine ambiguity found and not resolved here:** the Hypertrophy
-family's dual-tagged categories (e.g. "Chest Isolation or Triceps," "Rear
-or Side Delts" — `PROGRAM_LOGIC_SPEC.md` §2.1) let the *same slot* resolve
-to either of two different target muscles depending on user choice. It's
-unclear whether this should be one `ExerciseCategory` with two valid
-`primaryTarget` values (selected at resolution time) or two separate
-categories that happen to share a row in the source layout. Product
-decision needed — see `OPEN_PROGRAMMING_QUESTIONS.md` §12.
+**Dual-tagged categories — resolved (`STAGE3_DECISION_MEMO.md` A6):** the
+Hypertrophy family's dual-tagged categories (e.g. "Chest Isolation or
+Triceps," "Rear or Side Delts" — `PROGRAM_LOGIC_SPEC.md` §2.1) let the
+*same slot* resolve to either of two different target muscles depending on
+user choice. The product decision was explicit: **do not** avoid this by
+hardcoding one exercise per slot to sidestep the schema question, and
+**do not** invent a special-case entity for it either. `ExerciseSlot`
+carries `allowedTargets: [MuscleGroup]` (§4 above) — one `ExerciseCategory`
+with a real list of valid targets, not a forced single value, and not two
+categories artificially split apart. Selecting a concrete `Exercise` for
+the slot resolves `resolvedTarget` from whichever of `allowedTargets` that
+exercise actually satisfies — the *slot* keeps recording that it allowed
+either, even after one is chosen, so the original program intent (this
+slot was always meant to be flexible) survives resolution rather than
+being discarded. **V1's shipped configurations may still default or
+recommend one specific exercise per dual-tagged slot for convenience**
+(`V1_PROGRAM_LIBRARY.md` configuration #4, "5-Day Upper/Arms Focus" —
+exercises this exact case) — that's a UI/generator convenience, not a
+narrowing of what the domain model actually represents.
 
 ## 5. Explicit non-goals for this document
 

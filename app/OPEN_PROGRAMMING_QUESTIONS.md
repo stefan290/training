@@ -25,6 +25,13 @@ documentation.
 
 ## 2. Mesocycle sequencing is unproven
 
+**RESOLVED at the architecture level — `STAGE3_DECISION_MEMO.md` A1.**
+The source finding below is unchanged (no formula proves sequencing); the
+product decision was to model the three phases as a sequential
+`ProgramJourney` anyway, as an explicit product interpretation of the
+naming/order rather than a claim about the source data. See
+`PROGRAMMING_SYSTEM_MODEL.md` §5.1.
+
 Referenced from: `PROGRAM_LOGIC_SPEC.md` §2.2, `PROGRAMMING_SYSTEM_MODEL.md` §4.
 
 Family A's three sheets are named "Mesocycle 1/2/3," strongly implying a
@@ -56,6 +63,13 @@ on the name alone.
 
 ## 4. The Metabolite-Focus superset partner has no deload row
 
+**RESOLVED — `STAGE3_DECISION_MEMO.md` A2.** Decision: Option A — the
+partner exercise is omitted during deload week, represented as an
+explicit `DeloadExerciseAction.omit` on that specific, confirmed
+prescription (not a generic "blank source cell means omit" rule). See
+`PROGRAMMING_SYSTEM_MODEL.md` §3.2 and `PROGRAM_REGRESSION_TEST_PLAN.md`
+§9.2.
+
 Referenced from: `PROGRAM_LOGIC_SPEC.md` §2.2.
 
 Mesocycle 2's superset partner exercise (the exercise whose sets are
@@ -67,6 +81,12 @@ the same rule as every other row. **Needed to resolve:** a product-owner
 ruling on deload behavior for superset partners specifically.
 
 ## 5. Deload rep counts are text instructions, not computed values
+
+**RESOLVED — `STAGE3_DECISION_MEMO.md` A3.** Decision: round down
+(floor). Example: Week-1 reps 7 × deload fraction 1/2 = 3.5 →
+**TrainingOS prescription: 3 reps**. See
+`PROGRAMMING_SYSTEM_MODEL.md` §3 (`deloadRepInstruction.roundingDirection`)
+and `PROGRAM_REGRESSION_TEST_PLAN.md` §9.1 for the fixtured cases.
 
 Referenced from: `PROGRAM_LOGIC_SPEC.md` §2.1 (`FAMILY_A_REP_GOAL_SCHEDULE`),
 `PROGRAM_REGRESSION_TEST_PLAN.md` §7.
@@ -116,6 +136,13 @@ implement a distinct novice ruleset.
 
 ## 8. Deload weight/rep asymmetry contradicts Family B/C's own documentation
 
+**RESOLVED — `STAGE3_DECISION_MEMO.md` A4.** Decision: trust the
+spreadsheet over the PDF wherever they conflict, for every family — but
+preserve this only as `SourceCompatibleDeloadStrategy` for source-derived
+`ProgramDefinition`s, explicitly *not* as TrainingOS's own general deload
+methodology (`TrainingOSDeloadStrategy`, intentionally left undefined
+until the Generator is built). See `PROGRAMMING_SYSTEM_MODEL.md` §6.1.
+
 Referenced from: `PROGRAM_LOGIC_SPEC.md` §3 (`FAMILY_B_DELOAD`), §4
 (`FAMILY_C_DELOAD`), §6.3.
 
@@ -151,6 +178,13 @@ any endurance/functional-fitness `ProgressionRule` types get defined.
 
 ## 10. Slot-reference translation (cell address → domain reference) risk
 
+**RESOLVED — `STAGE3_DECISION_MEMO.md` A5.** Decision: a structural,
+authoring-time reference (`ExercisePrescription.pairedSlot`), not a
+runtime history query. Movement-pattern/muscle-group metadata stays
+available separately for substitutions, discovery, the Generator, and
+analytics, but never determines this dependency link at runtime. See
+`PROGRAMMING_SYSTEM_MODEL.md` §5.2.
+
 Referenced from: `PROGRAMMING_SYSTEM_MODEL.md` §3, §8.
 
 `autoregulatedSetCount` and `linkedResultReference` both need to name a
@@ -183,6 +217,14 @@ product/UX decision, not a data question — `EquipmentProfile`'s design
 that wouldn't require a schema change either way.
 
 ## 12. Dual-tagged exercise categories
+
+**RESOLVED — `STAGE3_DECISION_MEMO.md` A6.** Decision: do not defer.
+`ExerciseSlot` carries a real `allowedTargets: [MuscleGroup]` list; no new
+special-case entity. Once a concrete exercise is chosen, `resolvedTarget`
+records which allowed target it satisfies. V1's shipped configurations may
+still pre-select one exercise per slot for convenience, but the schema
+itself preserves the slot's original multi-target intent. See
+`PROGRAM_GENERATOR_SPEC.md` §4.
 
 Referenced from: `PROGRAM_GENERATOR_SPEC.md` §4.1.
 
