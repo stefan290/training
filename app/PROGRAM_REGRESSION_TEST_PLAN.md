@@ -342,3 +342,27 @@ asserting the pair's primary slot is unaffected by the partner's `.omit`
 setting. This guards against an evaluator implementation that
 accidentally omits the whole day-pair instead of just the one confirmed
 slot.
+
+## Stage 4A implementation update
+
+Every fixture above is now implemented as a table-driven XCTest in
+`HypertrophyProgressionEngineTests.swift` and passes on the real Xcode
+toolchain — see `STAGE4_IMPLEMENTATION_REPORT.md` §6 for the mapping from
+each fixture to its test method. This pass's own exhaustive repository
+search confirmed **no real Family A/B/C source workbook exists anywhere
+in this repository** (no spreadsheet/PDF files, no workbook references
+outside the already-analyzed markdown docs) — every fixture implemented
+so far is CONSTRUCTED per this plan's own labeling convention, and the
+`provenance: ProgramProvenance` field this plan's labeling convention
+maps onto is now a real, persisted (not just test-side) property on
+`ProgramDefinition` (`.constructed(reason:)`/`.sourced(file:sheet:cell:)`),
+so a generated program's provenance is inspectable in the running app,
+not just in test fixtures.
+
+One test-only refinement found during implementation, not a change to
+any formula: `deloadRepInstruction`'s fraction (§9.1's 2/3 example) is a
+configurable `StrengthProgressionRules.deloadRepFraction` field, not a
+hardcoded 0.5 — Family A's own data always sets it to 0.5, but the plan's
+own 2/3 fixture (chosen specifically to rule out a round-to-nearest
+coincidence) only makes sense if the rule itself can express a fraction
+other than one-half.

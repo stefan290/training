@@ -58,6 +58,21 @@ have no independent meaning.
 | `ExercisePrescription` | `SetPrescription` | `setPrescriptions: [SetPrescription]` | `.cascade` | Deleting a movement deletes its target sets. | Targets are pure prescription structure with no independent meaning once their movement is gone — the *results* against them survive via the `.nullify` row above. |
 | `Exercise` | `ExerciseAlias` | `aliases: [ExerciseAlias]` | `.cascade` | Deleting a canonical Exercise deletes its known aliases. | An alias only means something relative to the exercise it resolves to. |
 
+### Stage 4: template graph (structural, cascades like the rows above)
+
+Pure methodology structure — see `ARCHITECTURE.md`'s "Template graph vs.
+execution graph" section for why this is a separate tree from
+`ProgramDefinition -> TrainingWeek` (which stays exactly as it was
+through Stage 3) and from the execution rows above.
+
+| Parent | Child | Relationship | Delete rule | Expected behaviour | Why |
+|---|---|---|---|---|---|
+| `ProgramDefinition` | `TemplateSession` | `templateSessions: [TemplateSession]` | `.cascade` | Deleting a ProgramDefinition deletes its recurring weekly session structure. | A TemplateSession has no independent meaning outside its program. |
+| `TemplateSession` | `WorkoutBlockTemplate` | `blockTemplates: [WorkoutBlockTemplate]` | `.cascade` | Deleting a session template deletes its block templates. | Same reasoning as `Session -> WorkoutBlock` above, one level up. |
+| `WorkoutBlockTemplate` | `PrescriptionTemplate` | `prescriptionTemplates: [PrescriptionTemplate]` | `.cascade` | Deleting a block template deletes its slot templates. | Same reasoning as `WorkoutBlock -> ExercisePrescription` above. |
+| `PrescriptionTemplate` | `ExerciseSlot` | `exerciseSlot: ExerciseSlot?` | `.cascade` | Deleting a slot template deletes its `ExerciseSlot`. | An `ExerciseSlot` has no independent meaning outside its template. |
+| `PrescriptionTemplate` | `PrescriptionTemplate` (self) | `referencedAsPairedSlotBy: [PrescriptionTemplate]` (declared on the referenced side; the meaningful pointer, `pairedSlot: PrescriptionTemplate?`, is a plain property on the referencing side) | `.nullify` | Deleting a `PrescriptionTemplate` that another slot's `pairedSlot`/`linkedResultReference` points to nullifies the pointer; the referencing slot survives. | Same shape as `ProgramDefinition.instances`/`PersonalRecord.sourceWorkoutResult` below — an un-inversed to-one self-reference crashed instead of nullifying cleanly on delete (Stage 2's original finding, confirmed to still apply to self-referential relationships in Stage 4A's own tests: `TemplateGraphPersistenceTests.testDeletingPairedSlotNullifiesRatherThanCrashing`). `referencedAsPairedSlotBy` is never read by application code — it exists purely to give SwiftData a real inverse. |
+
 ## One-directional references
 
 These were originally modelled as plain optional properties with no

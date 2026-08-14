@@ -393,3 +393,34 @@ rejected for lack of evidence (`PROGRAM_FAMILY_MATRIX.md` §2).
   need is worth noting now: they'd need new `ProgressionRule` types (pace
   zones, round/time-based scoring) but the same `ProgrammingSystem` →
   `ProgramDefinition` → `ProgramInstance` skeleton.
+
+## Stage 4A implementation update
+
+`HypertrophyProgrammingSystem` is now built and Xcode-validated — see
+`STAGE4_IMPLEMENTATION_REPORT.md` for the full account, and
+`ARCHITECTURE.md`'s "Template graph vs. execution graph" section for the
+schema this document's `ProgramDefinition -> TrainingWeek ->
+ExercisePrescription[] (each carrying a ProgressionRule) ->
+SetPrescription[]` diagram resolves to concretely.
+
+Two corrections worth recording here specifically, since they revise this
+document's own assumptions rather than just adding new code:
+
+1. **`ProgressionRule` is not one polymorphic type carried directly by a
+   persisted entity.** `LoadRule`/`SetCountRule` (this pass's concrete
+   rule types) are never stored directly, nor nested inside a wrapping
+   struct field — both shapes crashed SwiftData's Codable-enum
+   persistence in ways this document had no way to anticipate without a
+   compiler. `PrescriptionTemplate` stores a manually flattened tagged
+   union instead (a plain discriminator enum + one field per case's
+   parameter), with computed properties presenting the same
+   `StrengthProgressionRules` bundle to calling code. See
+   `STAGE4_IMPLEMENTATION_REPORT.md` §4 for the full diagnostic trail.
+2. **This document's diagram implied one `ExercisePrescription`-shaped
+   template hangs directly off `TrainingWeek`.** The actual shape is
+   `ProgramDefinition -> TemplateSession -> WorkoutBlockTemplate ->
+   PrescriptionTemplate -> ExerciseSlot`, attached to `ProgramDefinition`
+   directly, not per-`TrainingWeek` — because a `PrescriptionTemplate`'s
+   rule *already* carries the whole mesocycle's week-by-week progression
+   as arrays, so one recurring weekly structure is correct, not one copy
+   per week.

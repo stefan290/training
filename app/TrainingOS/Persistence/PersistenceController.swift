@@ -44,6 +44,12 @@ enum PersistenceController {
         BenchmarkDefinition.self,
         ActivityPerformanceProfile.self,
         BenchmarkPerformanceProfile.self,
+        // Stage 4 additions — the persisted template graph. See
+        // ARCHITECTURE.md's "template graph vs execution graph" section.
+        TemplateSession.self,
+        WorkoutBlockTemplate.self,
+        PrescriptionTemplate.self,
+        ExerciseSlot.self,
     ])
 
     /// The app's on-disk, offline-first store. Local storage is

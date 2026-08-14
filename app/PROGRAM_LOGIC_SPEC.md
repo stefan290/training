@@ -473,3 +473,24 @@ but manageable" / "very tough, barely got them"). The underlying mechanic
 label text and which specific rows it's wired to differ. TrainingOS's
 reason-code layer should keep the mechanic generic and let the *rating
 prompt copy* vary per programming system.
+
+## Stage 4A implementation update
+
+`HypertrophyProgressionEngine`/`SourceCompatibleDeloadStrategy` now
+implement every rule type listed at the top of this document for Family
+A, Xcode-validated against the exact numeric fixtures in
+`PROGRAM_REGRESSION_TEST_PLAN.md` — see `STAGE4_IMPLEMENTATION_REPORT.md`
+§6-7 for the full account. Two findings worth recording here:
+
+- **`rmBasedWeekOneLoad` and `fixedMultiplierOfWeekOne` are implemented
+  as one combined rule (`LoadRule.rmBased`), not two separate ones.**
+  Every Family A fixture pairs a Week-1 factor with the identical
+  3-multiplier later-week schedule; a single rule parameterized by both
+  is the correct generalization of that data, not two rules that must
+  always be composed together by a caller.
+- **A rule type this document doesn't list, found during implementation:
+  deload-week sets are a hardcoded constant (2), never autoregulated,
+  regardless of the slot's normal `setCountRule`.** Implemented as
+  `SourceCompatibleDeloadStrategy.resolveDeloadSetCount`, tested against
+  both a `.fixed` and an `.autoregulated` slot to confirm neither's
+  normal rule leaks through during deload.

@@ -113,3 +113,18 @@ citations).
 | Factors a scheduler should model: endurance modality, frequency, session duration, same-session sequencing/stacking, inter-session recovery time, which adaptation is prioritized, training status | TRAININGOS INTERPRETATION | The literature identifies these as *moderators* worth modeling; the decision to expose them as literal `ConcurrentScheduler` input fields (`CONCURRENT_SCHEDULER_MODEL.md` §2) is our structured translation of that finding into architecture, not a claim the papers specify software inputs. |
 | `ConcurrentScheduler` does not use a fixed rule like "cardio kills gains" | TRAININGOS-DESIGNED (directly motivated by the source's own conditional framing) | The decision to avoid a single universal rule is explicitly supported by both papers' own context-dependent conclusions — this is the one TRAININGOS-DESIGNED item in this document that a source most directly argues *for*, even though the specific scheduler mechanism is still ours. |
 | Any specific numeric scheduling rule (e.g. "always separate sessions by exactly N hours," "always sequence strength before cardio") | Explicitly **not** produced by this analysis | Per the brief's own instruction: do not turn individual study findings into rigid universal scheduling laws. `CONCURRENT_SCHEDULER_MODEL.md` models these as *inputs the scheduler weighs*, not fixed rules it obeys unconditionally. |
+
+## Stage 4A note
+
+Hypertrophy (Family A) has no web-sourced material to log here — its
+source is spreadsheet-cell formulas, cited via `PROGRAM_LOGIC_SPEC.md`'s
+own file/sheet/cell citation format, not the SOURCE-DERIVED/TRAININGOS
+INTERPRETATION/TRAININGOS-DESIGNED classification this document uses for
+web research. Stage 4A's own research confirmed **no real Family A source
+workbook exists anywhere in this repository** — every regression fixture
+is CONSTRUCTED (RM=100) per `PROGRAM_REGRESSION_TEST_PLAN.md`'s labeling
+convention, not sourced from a live spreadsheet. See
+`STAGE4_IMPLEMENTATION_REPORT.md` §6. Stage 4C (SteadyStateProgrammingSystem)
+is the next system expected to actually add entries to this document,
+per the kickoff's own instruction to verify external protocol sources
+directly before hardcoding numbers.

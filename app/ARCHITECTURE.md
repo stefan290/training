@@ -379,3 +379,49 @@ purpose, called out here so they're a decision record, not a surprise:
   in this repository is actually verified; treat any change landed here
   without a corresponding local build/test report as unverified until one
   arrives, not as "probably fine because it was reviewed carefully."
+  **Stage 4 onward is the exception**: it is implemented, built and
+  tested directly against the real Xcode toolchain and SwiftData runtime,
+  in the same local session that runs the app — not statically authored
+  and verified later. See `STAGE4_IMPLEMENTATION_REPORT.md`.
+
+## Template graph vs. execution graph (Stage 4)
+
+A generated `ProgramDefinition` (e.g. `HypertrophyProgramGenerator`'s
+output) has two distinct, non-overlapping graphs hanging off it, and code
+must never conflate them:
+
+- **Template graph** — the reusable methodology, generated once and
+  treated as frozen: `ProgramDefinition -> TemplateSession ->
+  WorkoutBlockTemplate -> PrescriptionTemplate -> ExerciseSlot`. Carries
+  rule *parameters* only ("4x5-6 @ 2 RIR, load rule = X"), never a
+  resolved number. `TemplateSession` attaches directly to
+  `ProgramDefinition`, not to an individual `TrainingWeek` — the
+  week-by-week progression already lives on `PrescriptionTemplate`'s rule
+  arrays (`RMBasedLoad.laterWeekMultipliers`,
+  `StrengthProgressionRules.repGoalSchedule`), and deload behavior is a
+  rule (`deloadWeightAction`/`deloadRepAction`) keyed off
+  `TrainingWeek.isDeload`, not a separately-templated week. Duplicating
+  the session/block/prescription graph once per week would be redundant
+  with that design — this was corrected during Stage 4A's own
+  implementation before any generator code shipped against the wrong
+  shape (see `STAGE4_IMPLEMENTATION_REPORT.md` §1). `TrainingWeek` itself
+  is unchanged since Stage 1-2: a pure week marker
+  (`sortIndex`/`isDeload`), never a content container.
+- **Execution graph** — one user's dated reality, materialized from the
+  template on demand: `ProgramInstance -> Day -> Session -> WorkoutBlock
+  -> ExercisePrescription -> SetPrescription`. Carries resolved numbers
+  ("92.5 kg for Stefan"), computed by a pure rule engine
+  (`HypertrophyProgressionEngine`/`SourceCompatibleDeloadStrategy`) from
+  the template's rules plus runtime inputs the template cannot know
+  (a tested RM, an `EquipmentProfile`, a live autoregulation rating).
+  Materialization is inherently incremental, one week at a time — later
+  weeks need the *actual* outcome of the previous week as input, which
+  doesn't exist until a user has actually trained it
+  (`HypertrophyMaterializer`'s own scope note).
+
+A `ProgramDefinition`'s template graph, once any `ProgramInstance`
+references it, is treated as frozen by convention: if generator logic
+changes, it produces a new `ProgramDefinition`/`generatorVersion`, never
+mutates an existing one in place (`ProgramDefinition.generatorVersion`'s
+doc comment) — an old configuration must never silently start producing a
+different program structure underneath an already-running instance.
