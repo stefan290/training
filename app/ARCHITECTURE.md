@@ -102,11 +102,24 @@ maintains the declared inverse. `RelationshipOwnershipTests.swift` checks
 this holds — including through a save + fresh-`ModelContext` refetch, not
 just in-memory — for every relationship that has one of these methods.
 
-A few relationships are plain one-directional references with no declared
-inverse (`ExercisePrescription.exercise`, `PersonalRecord.sourceSetResult`/
-`.sourceWorkoutResult`, `ProgramInstance.programDefinition`,
-`Recommendation.exercisePrescription`). These have nothing to keep in sync,
-so a direct assignment is correct there, not an exception to the rule.
+A few relationships are plain properties with no `@Relationship` annotation
+on the *referencing* side (`ExercisePrescription.exercise`,
+`PersonalRecord.sourceSetResult`/`.sourceWorkoutResult`,
+`ProgramInstance.programDefinition`, `Recommendation.exercisePrescription`).
+Application code still only ever sets one side for these — a direct
+assignment is correct there, not an exception to the rule. But the first
+Xcode verification pass found that two of them (`sourceSetResult`/
+`sourceWorkoutResult` and `programDefinition`) needed a declared inverse
+*somewhere* anyway — a plain to-one reference to a `@Model` type with no
+inverse anywhere in the schema doesn't nullify cleanly on delete, it throws
+a Core Data validation error. The inverse now lives on the referenced side
+(`SetResult.personalRecord`/`WorkoutResult.personalRecord`,
+`ProgramDefinition.instances`) purely so the delete rule has something to
+run against; nothing reads those properties. See DELETE_RULE_MATRIX.md for
+the full picture — `ExercisePrescription.exercise` and
+`Recommendation.exercisePrescription` remain genuinely inverse-free
+because nothing in this pass deletes a canonical Exercise or a
+Recommendation's target out from under active data yet.
 
 ## Ordering strategy
 

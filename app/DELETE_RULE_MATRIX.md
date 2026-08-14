@@ -28,7 +28,7 @@ These are the ones the invariant above is actually about.
 | `ExercisePerformanceProfile` | `PersonalRecord` | `personalRecords: [PersonalRecord]` | `.cascade` | Same as above — only cascades if the ExercisePerformanceProfile itself is deleted. | A PersonalRecord's home is the same permanent record its source SetResult/WorkoutResult belongs to; if that record's history is gone, the PR summarising it should go too. |
 | `PerformanceProfile` | `ExercisePerformanceProfile` | `exerciseProfiles: [ExercisePerformanceProfile]` | `.cascade` | Deleting the PerformanceProfile deletes every ExercisePerformanceProfile (and transitively, every SetResult/PersonalRecord) inside it. | Intentional: this is account deletion, the one case where all training history legitimately goes away together. |
 | `User` | `PerformanceProfile` | `performanceProfile: PerformanceProfile?` | `.cascade` | Deleting the User deletes their PerformanceProfile (and transitively everything above). | Same as above — this is the root of the "delete my account" cascade, not something that fires incidentally. |
-| n/a | `PersonalRecord.sourceSetResult` / `.sourceWorkoutResult` | plain optional reference, no inverse declared | default (`.nullify`) | Deleting the source SetResult/WorkoutResult nullifies these traceability pointers; the PersonalRecord itself is untouched. | `PersonalRecord` stores its `value`/`repBand`/`achievedAt`/etc. redundantly at creation time specifically so it never depends on its source surviving. See `DeleteRuleMatrixTests.testDeletingWorkoutResultPreservesItsPersonalRecord`. |
+| `SetResult` / `WorkoutResult` | `PersonalRecord` | `personalRecord: PersonalRecord?` (declared on the SetResult/WorkoutResult side; see the "One-directional references" section for why) | `.nullify` | Deleting the source SetResult/WorkoutResult nullifies `PersonalRecord.sourceSetResult`/`.sourceWorkoutResult`; the PersonalRecord itself is untouched. | `PersonalRecord` stores its `value`/`repBand`/`achievedAt`/etc. redundantly at creation time specifically so it never depends on its source surviving. See `DeleteRuleMatrixTests.testDeletingWorkoutResultPreservesItsPersonalRecord`. |
 
 **Consequence, stated explicitly:** deleting a `ProgramDefinition` also
 deletes its `TrainingWeek`s (`.cascade`, see below) — but a
@@ -58,11 +58,13 @@ have no independent meaning.
 | `ExercisePrescription` | `SetPrescription` | `setPrescriptions: [SetPrescription]` | `.cascade` | Deleting a movement deletes its target sets. | Targets are pure prescription structure with no independent meaning once their movement is gone — the *results* against them survive via the `.nullify` row above. |
 | `Exercise` | `ExerciseAlias` | `aliases: [ExerciseAlias]` | `.cascade` | Deleting a canonical Exercise deletes its known aliases. | An alias only means something relative to the exercise it resolves to. |
 
-## One-directional references (no declared inverse, no dual-mutation risk)
+## One-directional references
 
-These are plain optional properties with no matching `@Relationship`
-declared on the other side, so application code has nothing to keep in
-sync on the referencing side and there's no dual-mutation risk. **Update
+These were originally modelled as plain optional properties with no
+matching `@Relationship` on either side. Two of the three groups below
+turned out to need a declared inverse anyway — not for application code
+(which still only ever touches one side, so there's no dual-mutation
+risk), but because SwiftData's delete-rule machinery requires one. **Update
 from the first Xcode verification pass:** a to-one `@Model` property with
 *no* declared inverse anywhere in the schema does not safely default to a
 clean `.nullify` at runtime on this SwiftData version — deleting the
