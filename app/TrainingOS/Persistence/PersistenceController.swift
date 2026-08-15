@@ -60,6 +60,9 @@ enum PersistenceController {
         // Stage 4E additions.
         FunctionalFitnessPrescriptionTemplate.self,
         FunctionalFitnessMovementSlotTemplate.self,
+        // Stage 4F additions — see CONCURRENT_SCHEDULER.md/TRAINING_MIX.md.
+        TrainingMix.self,
+        TrainingMixComponent.self,
     ])
 
     /// The app's on-disk, offline-first store. Local storage is

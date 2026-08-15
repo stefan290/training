@@ -44,6 +44,14 @@ final class TrainingPhase {
     @Relationship(deleteRule: .nullify, inverse: \ProgramInstance.phase)
     var programInstances: [ProgramInstance] = []
 
+    /// Stage 4F addition: this Phase's `TrainingMix`es (recommended
+    /// and/or selected) — cascade, not nullify, since a `TrainingMix` is
+    /// pure planning/preference metadata scoped to this phase, not
+    /// performance history (mirrors `ProgramInstance.slotSelectionOverrides`'
+    /// identical cascade reasoning).
+    @Relationship(deleteRule: .cascade, inverse: \TrainingMix.phase)
+    var trainingMixes: [TrainingMix] = []
+
     init(
         id: UUID = UUID(),
         type: PhaseType,
@@ -85,5 +93,26 @@ final class TrainingPhase {
     /// primary Hypertrophy instance.
     var secondaryInstances: [ProgramInstance] {
         programInstances.filter { $0.priority == .secondary }
+    }
+
+    /// The only way application code should attach a `TrainingMix`.
+    /// Mutates exactly one side (this array); SwiftData maintains
+    /// `mix.phase` from the declared inverse.
+    func addTrainingMix(_ mix: TrainingMix) {
+        trainingMixes.append(mix)
+    }
+
+    /// The currently active `.selected` mix, if the phase has one — the
+    /// mix `ConcurrentScheduler` should actually schedule (§7/§36: a
+    /// selected mix always wins over the recommendation).
+    var selectedTrainingMix: TrainingMix? {
+        trainingMixes.first { $0.kind == .selected }
+    }
+
+    /// The system's `.recommended` mix, if one has been generated —
+    /// informational/comparison only; never scheduled directly when a
+    /// `.selected` mix exists.
+    var recommendedTrainingMix: TrainingMix? {
+        trainingMixes.first { $0.kind == .recommended }
     }
 }

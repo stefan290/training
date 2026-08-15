@@ -18,6 +18,15 @@
 		20803FB2B57D4D0D888779F5 /* FunctionalFitnessDecisionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = B90DBE6F609F4D92BD8373EE /* FunctionalFitnessDecisionEngine.swift */; };
 		79A5340F324C40E0938EFDDB /* FunctionalFitnessExposureHistoryBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E3006DAAE16451D879A5ABC /* FunctionalFitnessExposureHistoryBuilder.swift */; };
 		6EDCA72839E44950802812B6 /* FunctionalFitnessMovementSlotTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2677A31E672F4132BD46B5BD /* FunctionalFitnessMovementSlotTemplate.swift */; };
+		21CF46B5A6324EA79743B36D /* TrainingMix.swift in Sources */ = {isa = PBXBuildFile; fileRef = 260533F7AFDE4C7E97841F8E /* TrainingMix.swift */; };
+		C00BBCB002554BD09C6BDCAA /* TrainingMixComponent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29759397E5FA46FFB6EEE8F2 /* TrainingMixComponent.swift */; };
+		57633DEFF47B4812B8941428 /* TrainingMixTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C5B28D676A342FA9EBF0C73 /* TrainingMixTypes.swift */; };
+		786A79F5672247338B162F58 /* SchedulingTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96493FA13905453CA63B421E /* SchedulingTypes.swift */; };
+		E32EACFD9BB94ECA8D99F009 /* ScheduleProposal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 355714B9D5E943ED9888B1F0 /* ScheduleProposal.swift */; };
+		789BD6A2DEEE4C13927618F4 /* ConcurrentScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7B9D3E52DD8412196EB2936 /* ConcurrentScheduler.swift */; };
+		AC6C3F9B25E24B65B8145B20 /* SessionStressComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FA2F295772A423E90CF7617 /* SessionStressComposer.swift */; };
+		CABB6C33693841428AAEC3CD /* GoalAlignmentEvaluator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D2112E204C14D75B19DE189 /* GoalAlignmentEvaluator.swift */; };
+		062378EBFB5E4A7581EC4416 /* AcceptScheduleProposalUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = D60B555E4695443AAD252362 /* AcceptScheduleProposalUseCase.swift */; };
 		26F87CC4F24A45B98A58F63E /* FunctionalFitnessPrescriptionTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 253E7874D0184492AA2C16FA /* FunctionalFitnessPrescriptionTemplate.swift */; };
 		A6FE2F4D911949888CF3AD50 /* IntervalPrescriptionTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A5E6E7EC9C54EA5BA38CBD9 /* IntervalPrescriptionTemplate.swift */; };
 		CFD32AD4E5B74872AA5DB721 /* IntervalConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0487F3B15F3F4F1BB8E61A49 /* IntervalConfiguration.swift */; };
@@ -67,6 +76,8 @@
 		BF2D794F7F0D4CBC898B6FDF /* SteadyStateProgramGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 788AC1711F2142B7AA4C232A /* SteadyStateProgramGeneratorTests.swift */; };
 		C9599AAE01BA4251ABF5FB03 /* ActivityPerformanceProfileIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3D9A752F4704351BF2B938A /* ActivityPerformanceProfileIntegrationTests.swift */; };
 		93DBDDE990D7493BB62556A8 /* SubstitutionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4A29A55AE204FBD816B3439 /* SubstitutionTests.swift */; };
+		7C0D299D329D40CCAB0A4F79 /* ConcurrentSchedulerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36CF9C5B45754F948C1DA590 /* ConcurrentSchedulerTests.swift */; };
+		9C0AAC2CD4D14B26B0410D66 /* TrainingMixPersistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 877C7DE504C647E188C8B2A2 /* TrainingMixPersistenceTests.swift */; };
 		F9854D9FE44B4972B386FC58 /* StrengthProgressionEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50A2E014698D42C98D0E8C46 /* StrengthProgressionEngineTests.swift */; };
 		03E2E049ED5C4033BC3C024F /* StrengthMaterializerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DDC684586414034BADEBF89 /* StrengthMaterializerTests.swift */; };
 		57B8B94029E54B4FAEAE2F43 /* HypertrophyProgramJourneyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CB61E7290264147A90E7DB6 /* HypertrophyProgramJourneyTests.swift */; };
@@ -182,6 +193,15 @@
 		B90DBE6F609F4D92BD8373EE /* FunctionalFitnessDecisionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FunctionalFitnessDecisionEngine.swift; path = FunctionalFitnessDecisionEngine.swift; sourceTree = "<group>"; };
 		1E3006DAAE16451D879A5ABC /* FunctionalFitnessExposureHistoryBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FunctionalFitnessExposureHistoryBuilder.swift; path = FunctionalFitnessExposureHistoryBuilder.swift; sourceTree = "<group>"; };
 		2677A31E672F4132BD46B5BD /* FunctionalFitnessMovementSlotTemplate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FunctionalFitnessMovementSlotTemplate.swift; path = FunctionalFitnessMovementSlotTemplate.swift; sourceTree = "<group>"; };
+		260533F7AFDE4C7E97841F8E /* TrainingMix.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TrainingMix.swift; path = TrainingMix.swift; sourceTree = "<group>"; };
+		29759397E5FA46FFB6EEE8F2 /* TrainingMixComponent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TrainingMixComponent.swift; path = TrainingMixComponent.swift; sourceTree = "<group>"; };
+		4C5B28D676A342FA9EBF0C73 /* TrainingMixTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TrainingMixTypes.swift; path = TrainingMixTypes.swift; sourceTree = "<group>"; };
+		96493FA13905453CA63B421E /* SchedulingTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SchedulingTypes.swift; path = SchedulingTypes.swift; sourceTree = "<group>"; };
+		355714B9D5E943ED9888B1F0 /* ScheduleProposal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScheduleProposal.swift; path = ScheduleProposal.swift; sourceTree = "<group>"; };
+		B7B9D3E52DD8412196EB2936 /* ConcurrentScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ConcurrentScheduler.swift; path = ConcurrentScheduler.swift; sourceTree = "<group>"; };
+		8FA2F295772A423E90CF7617 /* SessionStressComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SessionStressComposer.swift; path = SessionStressComposer.swift; sourceTree = "<group>"; };
+		5D2112E204C14D75B19DE189 /* GoalAlignmentEvaluator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = GoalAlignmentEvaluator.swift; path = GoalAlignmentEvaluator.swift; sourceTree = "<group>"; };
+		D60B555E4695443AAD252362 /* AcceptScheduleProposalUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AcceptScheduleProposalUseCase.swift; path = AcceptScheduleProposalUseCase.swift; sourceTree = "<group>"; };
 		253E7874D0184492AA2C16FA /* FunctionalFitnessPrescriptionTemplate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FunctionalFitnessPrescriptionTemplate.swift; path = FunctionalFitnessPrescriptionTemplate.swift; sourceTree = "<group>"; };
 		1A5E6E7EC9C54EA5BA38CBD9 /* IntervalPrescriptionTemplate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = IntervalPrescriptionTemplate.swift; path = IntervalPrescriptionTemplate.swift; sourceTree = "<group>"; };
 		0487F3B15F3F4F1BB8E61A49 /* IntervalConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = IntervalConfiguration.swift; path = IntervalConfiguration.swift; sourceTree = "<group>"; };
@@ -231,6 +251,8 @@
 		788AC1711F2142B7AA4C232A /* SteadyStateProgramGeneratorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SteadyStateProgramGeneratorTests.swift; path = SteadyStateProgramGeneratorTests.swift; sourceTree = "<group>"; };
 		A3D9A752F4704351BF2B938A /* ActivityPerformanceProfileIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ActivityPerformanceProfileIntegrationTests.swift; path = ActivityPerformanceProfileIntegrationTests.swift; sourceTree = "<group>"; };
 		E4A29A55AE204FBD816B3439 /* SubstitutionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SubstitutionTests.swift; path = SubstitutionTests.swift; sourceTree = "<group>"; };
+		36CF9C5B45754F948C1DA590 /* ConcurrentSchedulerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ConcurrentSchedulerTests.swift; path = ConcurrentSchedulerTests.swift; sourceTree = "<group>"; };
+		877C7DE504C647E188C8B2A2 /* TrainingMixPersistenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TrainingMixPersistenceTests.swift; path = TrainingMixPersistenceTests.swift; sourceTree = "<group>"; };
 		50A2E014698D42C98D0E8C46 /* StrengthProgressionEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = StrengthProgressionEngineTests.swift; path = StrengthProgressionEngineTests.swift; sourceTree = "<group>"; };
 		4DDC684586414034BADEBF89 /* StrengthMaterializerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = StrengthMaterializerTests.swift; path = StrengthMaterializerTests.swift; sourceTree = "<group>"; };
 		2CB61E7290264147A90E7DB6 /* HypertrophyProgramJourneyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HypertrophyProgramJourneyTests.swift; path = HypertrophyProgramJourneyTests.swift; sourceTree = "<group>"; };
@@ -374,6 +396,8 @@
 				8E324E3DA961C03C4EA43C8D /* FunctionalFitnessMovement.swift */,
 				C61C65DA515B4168952010EA /* ExerciseSlot.swift */,
 				2677A31E672F4132BD46B5BD /* FunctionalFitnessMovementSlotTemplate.swift */,
+				260533F7AFDE4C7E97841F8E /* TrainingMix.swift */,
+				29759397E5FA46FFB6EEE8F2 /* TrainingMixComponent.swift */,
 				253E7874D0184492AA2C16FA /* FunctionalFitnessPrescriptionTemplate.swift */,
 				1A5E6E7EC9C54EA5BA38CBD9 /* IntervalPrescriptionTemplate.swift */,
 				9371B7F87D414C6D8FE13465 /* ExerciseRelationship.swift */,
@@ -416,6 +440,9 @@
 				236BAED98B284202AFDC7F53 /* MuscleGroup.swift */,
 				FEB93C5171CC401EA6090112 /* HypertrophyConfiguration.swift */,
 				8B06BE6A5A714AFDB8FA09D7 /* ProgramProvenance.swift */,
+				4C5B28D676A342FA9EBF0C73 /* TrainingMixTypes.swift */,
+				96493FA13905453CA63B421E /* SchedulingTypes.swift */,
+				355714B9D5E943ED9888B1F0 /* ScheduleProposal.swift */,
 				75C5B058B8E6411A897684E7 /* EquipmentProfile.swift */,
 				202CFFCBB78E416EB4FE77FB /* PowerliftingConfiguration.swift */,
 				9BF27DB9181B4400806F660F /* StimulusValidation.swift */,
@@ -458,6 +485,9 @@
 				37CC4963A0824B2C495890C3 /* ScoringEngine.swift */,
 				2C74461AA0E1D6FDDC442680 /* DoubleProgressionEngine.swift */,
 				E2854E9EBCF284C72C646DC3 /* ProgressionEngine.swift */,
+				B7B9D3E52DD8412196EB2936 /* ConcurrentScheduler.swift */,
+				8FA2F295772A423E90CF7617 /* SessionStressComposer.swift */,
+				5D2112E204C14D75B19DE189 /* GoalAlignmentEvaluator.swift */,
 			);
 			name = Engines;
 			path = Engines;
@@ -561,6 +591,8 @@
 				788AC1711F2142B7AA4C232A /* SteadyStateProgramGeneratorTests.swift */,
 				A3D9A752F4704351BF2B938A /* ActivityPerformanceProfileIntegrationTests.swift */,
 				E4A29A55AE204FBD816B3439 /* SubstitutionTests.swift */,
+				36CF9C5B45754F948C1DA590 /* ConcurrentSchedulerTests.swift */,
+				877C7DE504C647E188C8B2A2 /* TrainingMixPersistenceTests.swift */,
 			);
 			name = TrainingOSTests;
 			path = TrainingOSTests;
@@ -588,6 +620,7 @@
 				9C06E947F24D4D1B95F6598B /* PowerliftingBuiltInLibrary.swift */,
 				259B4ED3927612FE1B99A0FA /* PerformanceProfileStore.swift */,
 				997847CA96D0A5455620B7F0 /* RecordWorkoutResultUseCase.swift */,
+				D60B555E4695443AAD252362 /* AcceptScheduleProposalUseCase.swift */,
 			);
 			name = UseCases;
 			path = UseCases;
@@ -783,6 +816,8 @@
 				BF2D794F7F0D4CBC898B6FDF /* SteadyStateProgramGeneratorTests.swift in Sources */,
 				C9599AAE01BA4251ABF5FB03 /* ActivityPerformanceProfileIntegrationTests.swift in Sources */,
 				93DBDDE990D7493BB62556A8 /* SubstitutionTests.swift in Sources */,
+				7C0D299D329D40CCAB0A4F79 /* ConcurrentSchedulerTests.swift in Sources */,
+				9C0AAC2CD4D14B26B0410D66 /* TrainingMixPersistenceTests.swift in Sources */,
 				F9854D9FE44B4972B386FC58 /* StrengthProgressionEngineTests.swift in Sources */,
 				03E2E049ED5C4033BC3C024F /* StrengthMaterializerTests.swift in Sources */,
 				57B8B94029E54B4FAEAE2F43 /* HypertrophyProgramJourneyTests.swift in Sources */,
@@ -844,6 +879,15 @@
 				20803FB2B57D4D0D888779F5 /* FunctionalFitnessDecisionEngine.swift in Sources */,
 				79A5340F324C40E0938EFDDB /* FunctionalFitnessExposureHistoryBuilder.swift in Sources */,
 				6EDCA72839E44950802812B6 /* FunctionalFitnessMovementSlotTemplate.swift in Sources */,
+				21CF46B5A6324EA79743B36D /* TrainingMix.swift in Sources */,
+				C00BBCB002554BD09C6BDCAA /* TrainingMixComponent.swift in Sources */,
+				57633DEFF47B4812B8941428 /* TrainingMixTypes.swift in Sources */,
+				786A79F5672247338B162F58 /* SchedulingTypes.swift in Sources */,
+				E32EACFD9BB94ECA8D99F009 /* ScheduleProposal.swift in Sources */,
+				789BD6A2DEEE4C13927618F4 /* ConcurrentScheduler.swift in Sources */,
+				AC6C3F9B25E24B65B8145B20 /* SessionStressComposer.swift in Sources */,
+				CABB6C33693841428AAEC3CD /* GoalAlignmentEvaluator.swift in Sources */,
+				062378EBFB5E4A7581EC4416 /* AcceptScheduleProposalUseCase.swift in Sources */,
 				26F87CC4F24A45B98A58F63E /* FunctionalFitnessPrescriptionTemplate.swift in Sources */,
 				A6FE2F4D911949888CF3AD50 /* IntervalPrescriptionTemplate.swift in Sources */,
 				CFD32AD4E5B74872AA5DB721 /* IntervalConfiguration.swift in Sources */,

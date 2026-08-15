@@ -322,3 +322,30 @@ Functional-Fitness-owned slot as for a strength-owned one, proven by
   rows themselves or the `ProgramInstance`s they belong to — the same
   invariant already proven for strength slots, now confirmed to hold
   identically for Functional-Fitness-owned ones.
+
+## Stage 4F additions
+
+`TrainingMix`/`TrainingMixComponent` — pure planning/preference metadata,
+never performance history, so both cascade freely. See `TRAINING_MIX.md`
+for the full model.
+
+| Parent | Child | Relationship | Delete rule | Expected behaviour | Why |
+|---|---|---|---|---|---|
+| `TrainingPhase` | `TrainingMix` | `trainingMixes: [TrainingMix]` | `.cascade` | Deleting a Phase deletes its recommended/selected mixes. | A `TrainingMix` has no meaning outside the Phase it was proposed/selected for — mirrors `ProgramInstance.slotSelectionOverrides`'s identical cascade reasoning, not the `.nullify` used for `TrainingPhase.programInstances`. |
+| `TrainingMix` | `TrainingMixComponent` | `components: [TrainingMixComponent]` | `.cascade` | Deleting a mix deletes its components. | A component has no independent meaning outside its owning mix. |
+| `ProgramInstance` | `TrainingMixComponent` | `trainingMixComponents: [TrainingMixComponent]` | `.nullify` | Deleting a `ProgramInstance` nullifies `component.programInstance` on any component that referenced it; the component row (and its owning `TrainingMix`) survives. | `TrainingMixComponent.programInstance` is optional by design (a `.recommended` mix's components may never have one); losing the concrete instance an accepted component once pointed to is a normal, recoverable state, not a reason to delete planning metadata. |
+
+### Confirms rule 1/2 hold for the new types
+
+- Deleting a `TrainingMix`/`TrainingMixComponent` never touches `Session`,
+  `SetResult`, `WorkoutResult`, `PersonalRecord` or any
+  `*PerformanceProfile` — nothing in this stage's schema gives either type
+  a path to performance history. `ConcurrentScheduler`'s own output
+  (`ScheduleProposal`) is a plain, non-persisted value type for the same
+  reason: only `AcceptScheduleProposalUseCase` mutates real state, and it
+  only ever re-parents an already-existing `Session` onto a `Day` —
+  it never creates, deletes, or edits a prescription or result.
+- `ProgramDefinition`/`TrainingWeek` gained no new fields this stage —
+  `TrainingMixComponent` reads `ProgramInstance`, never
+  `ProgramDefinition`, keeping rule 2 (no performance data on the
+  template graph) trivially satisfied.

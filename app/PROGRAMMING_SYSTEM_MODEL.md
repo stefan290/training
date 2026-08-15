@@ -505,3 +505,22 @@ dimensions, rather than a parallel Functional-Fitness-specific slot/
 substitution system — consistent with every prior system's own
 "generalize the existing mechanism before building a parallel one"
 discipline.
+
+## Stage 4F implementation update
+
+`ConcurrentScheduler` is now built and Xcode-validated — see
+`STAGE4_IMPLEMENTATION_REPORT.md`'s "Stage 4F" section, `ARCHITECTURE.md`'s
+"ConcurrentScheduler and Training Mix" section, `TRAINING_MIX.md` and
+`CONCURRENT_SCHEDULER.md` for the full account. This document's own
+`ProgrammingSystem` -> `ProgramDefinition` -> `ProgramInstance` skeleton
+needed no change at all: `ConcurrentScheduler` sits strictly downstream
+of it, consuming already-materialized `Session`s from one or more
+`ProgramInstance`s and never touching a `ProgrammingSystem`'s generator
+or engine. `TrainingMixComponent.programmingSystem: ProgrammingSystemKind?`
+is a label only — a component may name which system it represents before
+any instance exists for it, but the actual generation/progression
+pipeline for that system is entirely unaffected by scheduling.
+
+`GoalPriority` (§5.1's "ProgramJourney" section) gained a third case,
+`.supporting`, purely additively — the same `ProgramInstance.priority`
+field this document already described, one more tier richer.

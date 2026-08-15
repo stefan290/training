@@ -544,3 +544,46 @@ candidates the generator can't know in advance. `FunctionalFitnessDecisionEngine
 (the first concrete `ProgrammingDecisionEngine` conformer) resolves
 exposure-informed stimulus variance between Stage C and Stage D; see
 `FUNCTIONAL_FITNESS_ENGINE.md` for the full pipeline contract.
+
+## ConcurrentScheduler and Training Mix (Stage 4F)
+
+Every prior Stage 4 system (`StrengthMaterializer` and its four siblings)
+already places its own Sessions onto naive, sequential calendar dates —
+each materializer's own doc comment says so explicitly ("calendar
+placement is naive by design... real preferred-day/availability
+placement is ConcurrentScheduler's job"). Stage 4F is that job, and nothing
+more: it operates entirely on the **execution graph**, never the template
+graph, and it consumes real, already-materialized `Session`s from one or
+more `ProgramInstance`s — it does not generate methodology, does not
+prescribe intensity, and does not pick exercises.
+
+**`TrainingMix`/`TrainingMixComponent`** (new `@Model` types, cascade off
+`TrainingPhase`) describe *what* to train — a typed composition of
+components, each with its own priority/frequency/flexibility/scheduling
+preferences — independent of *when* it lands on the calendar. A
+`TrainingMix` never duplicates `ProgramInstance` data; `TrainingMixComponent.programInstance`
+is optional precisely because a `.recommended` mix's components may
+describe a composition before any instance exists for them. See
+`TRAINING_MIX.md`.
+
+**`ConcurrentScheduler`** (a pure, stateless enum in `Engines/`, matching
+every other engine's "typed input in, typed output + reason codes out"
+shape) answers *where* — it takes `[ScheduledProgramInput]` (a component
+plus its own already-ordered Sessions) and `SchedulingConstraints`
+(availability + a tactical window + soft interference rules) and returns
+a `ScheduleProposal`: a transient, non-persisted value type, never a
+mutation. The Engine-recommendation -> Explanation -> User-approval
+pattern this project already uses elsewhere applies here too —
+`AcceptScheduleProposalUseCase` is the only thing that turns an approved
+proposal into real `Day`/`Session` state, by re-parenting Sessions the
+materializer already created and stamping `Session.schedulerVersion`
+(mirroring `ProgramDefinition.generatorVersion`'s "never reinterpret
+already-accepted state" precedent). See `CONCURRENT_SCHEDULER.md` for the
+full placement algorithm, its reason-code vocabulary, and its documented
+limitations.
+
+**`GoalAlignmentEvaluator`** scores a `(TrainingMix, ScheduleProposal)`
+pair as a qualitative rating (`GoalAlignmentRating`) plus a fully
+transparent list of boolean `GoalAlignmentFactor`s — never a fabricated
+numeric percentage, matching `TrainingStressProfile`'s own "no fake
+precision" design principle applied one layer up.

@@ -70,11 +70,19 @@ enum TrainingPriority: String, Codable, CaseIterable {
 /// `CONCURRENT_SCHEDULER_MODEL.md`'s `GoalPriority`, implemented here on
 /// `ProgramInstance` itself rather than a new wrapper entity). This is
 /// composition/priority metadata only — `TrainingPhase` still performs no
-/// scheduling logic itself; a future `ConcurrentScheduler` reads this to
+/// scheduling logic itself; `ConcurrentScheduler` (Stage 4F) reads this to
 /// decide placement.
+///
+/// **Stage 4F addition:** `.supporting`, a third tier below `.secondary`
+/// — Stage 4F §4-6's own framing distinguishes a phase's protected
+/// primary goal, a real secondary goal, and merely-supporting/optional
+/// work (e.g. Fat Loss "may protect strength/muscle retention while
+/// allowing more conditioning volume" implies more than 2 tiers). Purely
+/// additive — a `String`-rawValue enum gaining a case is free.
 enum GoalPriority: String, Codable, CaseIterable {
     case primary
     case secondary
+    case supporting
 }
 
 // MARK: - Program

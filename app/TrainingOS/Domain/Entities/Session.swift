@@ -27,6 +27,14 @@ final class Session {
     /// (the pre-existing UI grouping tag). `nil` is the common case for
     /// every Session that existed before this pass.
     var role: SessionRole?
+    /// Stage 4F addition: which `ConcurrentScheduler` version last placed
+    /// this Session's `day` — mirrors `ProgramDefinition.generatorVersion`.
+    /// `nil` means this Session has never been placed by
+    /// `AcceptScheduleProposalUseCase` (e.g. still at its materializer's
+    /// naive date, or logged ad hoc). Stamped, never read, by the
+    /// scheduler itself — a later scheduler-version bump must never
+    /// silently re-interpret an already-accepted placement.
+    var schedulerVersion: Int?
 
     @Relationship(deleteRule: .cascade, inverse: \WorkoutBlock.session)
     var blocks: [WorkoutBlock] = []
@@ -37,7 +45,8 @@ final class Session {
         name: String,
         modality: TrainingModality,
         status: SessionStatus = .scheduled,
-        role: SessionRole? = nil
+        role: SessionRole? = nil,
+        schedulerVersion: Int? = nil
     ) {
         self.id = id
         self.sortIndex = 0
@@ -46,6 +55,7 @@ final class Session {
         self.modality = modality
         self.status = status
         self.role = role
+        self.schedulerVersion = schedulerVersion
     }
 
     /// The only way application code should attach a WorkoutBlock to a

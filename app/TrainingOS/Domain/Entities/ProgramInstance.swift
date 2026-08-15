@@ -47,6 +47,18 @@ final class ProgramInstance {
     @Relationship(deleteRule: .cascade, inverse: \ActivitySelectionOverride.programInstance)
     var activitySelectionOverrides: [ActivitySelectionOverride] = []
 
+    /// Stage 4F addition: `TrainingMixComponent`s that reference this
+    /// instance once it has been instantiated from a recommended or
+    /// selected `TrainingMix`. Nullify, not cascade — the delete rule
+    /// that matters lives here (matching `sessions` above), since a
+    /// `TrainingMixComponent` outliving the `ProgramInstance` it once
+    /// pointed to (component's `programInstance` simply goes back to
+    /// `nil`) is far safer than deleting an instance and losing the
+    /// only inverse Swift-Data needs to keep `programInstance` from
+    /// crashing on a to-one reference to a deletable type.
+    @Relationship(deleteRule: .nullify, inverse: \TrainingMixComponent.programInstance)
+    var trainingMixComponents: [TrainingMixComponent] = []
+
     init(
         id: UUID = UUID(),
         ownerUserID: UUID,

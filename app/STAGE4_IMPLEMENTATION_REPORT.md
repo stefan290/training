@@ -1454,3 +1454,131 @@ requirements.
 See the final commit hash reported alongside this document. Local and
 remote verified to match; working tree clean apart from local Xcode user
 data.
+
+## Stage 4F: ConcurrentScheduler + Training Mix
+
+Places already-materialized Sessions onto a tactical calendar window,
+per the kickoff's explicit instruction not to start the full Long-Term
+Planner, HealthKit, or full workout-execution UI yet. Baseline: commit
+`b29a7c6` (Stage 4E, approved), 276/276 tests passing. Full contract in
+the new `CONCURRENT_SCHEDULER.md`/`TRAINING_MIX.md`; this section
+summarizes what changed and why.
+
+### 1. New persisted types
+
+`TrainingMix`/`TrainingMixComponent` (`@Model`, cascade off `TrainingPhase`)
+plus supporting plain value types (`TrainingMixKind`, `ComponentFlexibility`,
+`PreferenceStrength`, `SessionFrequency`, `Weekday`). `GoalPriority`
+(existing since Stage 3C) gained a third case, `.supporting`, purely
+additively. See `TRAINING_MIX.md` for the full model and the reasoning
+behind `programInstance`'s optionality and `priority`'s duplication.
+
+### 2. `ConcurrentScheduler`
+
+A pure, stateless enum in `Engines/`, matching every other engine's
+"typed input in, typed output + reason codes out" shape — `schedule(_:
+constraints:) -> ScheduleProposal`. Consumes `ScheduledProgramInput`
+(a `TrainingMixComponent` plus its own already-ordered `[Session]`) and
+`SchedulingConstraints` (`UserAvailability` + a `SchedulingWindow` +
+`[InterferenceAvoidanceRule]`); never generates methodology, prescribes
+intensity, or picks exercises. Full algorithm, reason-code vocabulary,
+and interference policy in `CONCURRENT_SCHEDULER.md`.
+
+`SessionStressComposer` composes a Session's own `TrainingStressProfile`
+from its blocks — deterministic categorical worst-case per dimension,
+never an average, matching `TrainingStressProfile`'s own "no fabricated
+precision" doc comment applied one level up.
+
+### 3. `ScheduleProposal` and acceptance
+
+`ScheduleProposal` (`placements`/`conflicts`/`feasibility`/`warnings`/
+`schedulerVersion`) is a plain, non-persisted value type — `schedule()`
+never mutates anything. `AcceptScheduleProposalUseCase` is the only thing
+that turns an approved proposal into real state: it re-parents an
+already-existing `Session` onto its target `Day` and stamps
+`Session.schedulerVersion` (new field, mirrors
+`ProgramDefinition.generatorVersion`'s "never reinterpret an
+already-accepted state" precedent). It throws rather than accept an
+`.infeasible` proposal.
+
+Impossible mixes are never silently dropped: an unplaceable session
+becomes a `SchedulingConflict` naming exactly what couldn't fit, why, and
+which concrete `ConflictResolutionOption`s would help (never auto-applied).
+
+### 4. `GoalAlignmentEvaluator`
+
+Scores a `(TrainingMix, ScheduleProposal)` pair as a qualitative
+`GoalAlignmentRating` plus a fully transparent `[GoalAlignmentFactor]` —
+never a fabricated numeric percentage. See `CONCURRENT_SCHEDULER.md` §10
+for the one documented simplification (two of the six factors currently
+detect their condition via the scheduler's own warning text rather than a
+dedicated structured signal).
+
+### 5. Adherence-aware scheduling
+
+Delivered through the architecture itself, not a separate mechanism: a
+`.selected` `TrainingMix` always wins over a `.recommended` one
+(`userSelectedMix` reason code); every preference that affects whether a
+plan actually gets followed (preferred days, double-session tolerance,
+flexibility) is a first-class scheduling constraint. `PreferenceStrength`
+is captured but deliberately not an active scheduling input (avoiding the
+kickoff's explicitly-ruled-out "predict motivation algorithmically"
+trap). `AdherenceMode` is not read by `ConcurrentScheduler` at all — a
+deliberate scope boundary, not a gap; see `CONCURRENT_SCHEDULER.md` §12
+for the full reasoning.
+
+### 6. Tests
+
+22 new tests, all passing, 298/298 total:
+
+- `ConcurrentSchedulerTests` (16): the required Case B (3 Strength + 2
+  Functional Fitness + 1 Running, proving modality-agnostic symmetry),
+  Case A (double-session pairing prefers the lightest partner), two Case
+  C variants (interference avoided when an alternative exists; violated
+  with a warning when it doesn't), hard constraints (unavailable
+  weekday, `maxSessionsPerDay`, `requiredSpacingDays`), soft constraints
+  (preferred day used/denied), `userSelectedMix` scoping, determinism
+  (two independently-built but structurally identical input sets produce
+  an identical placement signature), impossible-mix handling (never
+  drops sessions, offers only flexibility-appropriate resolution
+  options), `GoalAlignmentEvaluator` (excellent vs. poor), and
+  `AcceptScheduleProposalUseCase` persistence (re-parenting, version
+  stamping, and the infeasible-throws-and-mutates-nothing proof).
+- `TrainingMixPersistenceTests` (6): full round-trip of every new field
+  (including the `SessionFrequency` struct and the `[Weekday]` array),
+  the `TrainingMix` cascade, the `TrainingPhase` cascade (with an
+  explicit proof that `ProgramInstance` survives), the `ProgramInstance`
+  nullify, and the new `GoalPriority.supporting` case.
+
+### 7. Simulator
+
+Rebuilt and relaunched on an iPhone 17 (iOS 26.5) simulator after the
+schema change (2 new `@Model` types, one new `Session` field). App
+launched and stayed running — no `ModelContainer` crash.
+
+### 8. Source policy
+
+No new external source material was researched this stage.
+`InterferenceAvoidanceRule.conservativeDefault` is TRAININGOS_DESIGNED,
+motivated by (but not claiming to cite new numbers from) the
+concurrent-training interference literature already logged in
+`PROGRAMMING_SOURCES.md` §5 — see that document's new "Stage 4F note".
+
+### 9. Known gaps and deliberate simplifications
+
+- No Long-Term Planner: nothing generates a `.recommended` `TrainingMix`
+  automatically yet — this stage only builds the type a future
+  recommender would populate.
+- `GoalAlignmentEvaluator`'s `interferenceCost`/`userPreferenceSatisfaction`
+  factors detect their condition via warning-text matching rather than a
+  dedicated structured per-placement signal (`CONCURRENT_SCHEDULER.md` §10).
+- `.primaryGoalPriority` marks first-claim processing order, not a proof
+  that an actual scheduling conflict was resolved in the primary
+  component's favor (`CONCURRENT_SCHEDULER.md` §6).
+- No workout-execution UI, no HealthKit, no full-year planning horizon —
+  all explicitly out of scope per the kickoff.
+
+### 10. Commit
+
+See the final commit hash reported alongside this document. Local and
+remote verified to match.

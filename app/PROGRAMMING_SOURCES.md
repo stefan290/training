@@ -178,3 +178,19 @@ retrieval limitations, and used TRAININGOS_DESIGNED defaults throughout
 `ProgramDefinition` accordingly. Verifying a real external protocol and
 adding a genuine SOURCE-DERIVED entry here remains open for whoever has
 reliable access to the primary source material.
+
+## Stage 4F note
+
+`ConcurrentScheduler`'s soft interference-avoidance policy
+(`InterferenceAvoidanceRule.conservativeDefault`, gated on `lowerBodyLoad`/
+`impactLoading` both reaching `.high`) is TRAININGOS_DESIGNED, not a new
+citation — it operationalizes §5's own already-logged conclusion above
+("`ConcurrentScheduler` does not use a fixed rule like 'cardio kills
+gains'"; "any specific numeric scheduling rule... explicitly not
+produced by this analysis"). No new source search was performed this
+stage; the two dimensions and the `.high` threshold are a deliberately
+small, explicit product policy — expressed purely in `TrainingStressProfile`'s
+existing categorical vocabulary, never as a numeric hour count or a
+physiological claim — precisely to avoid the rigid universal rule §5's
+own sources warn against inventing. See `CONCURRENT_SCHEDULER.md` for the
+full mechanism and its documented limitations.

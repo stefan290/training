@@ -68,3 +68,9 @@ UI looks right.
     session, block or recommendation may ever be blocked by a missing
     Health permission. Programs, sets, reps, weight, RIR, PRs, progression,
     phases and planning are always owned by this app's own store.
+14. TrainingOS optimizes for long-term goal alignment subject to explicit
+    user training preferences and adherence. User-selected training
+    modalities must not be silently replaced by theoretically more
+    optimal modalities.
+15. ConcurrentScheduler schedules training; it does not create or
+    progress training methodology.
