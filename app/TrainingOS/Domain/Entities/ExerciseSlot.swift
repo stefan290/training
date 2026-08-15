@@ -26,6 +26,16 @@ final class ExerciseSlot {
     var allowedExercises: [Exercise]
     var resolvedExercise: Exercise?
 
+    /// Stage 4C addition: `SlotSelectionOverride`'s required inverse —
+    /// nothing reads this collection. Needed purely because an
+    /// un-inversed to-one reference to a type that can be deleted (this
+    /// one, unlike `Exercise`, genuinely is — `ExerciseSlot` cascades away
+    /// with its `ProgramDefinition`) crashes instead of nullifying
+    /// cleanly; same established pattern as
+    /// `PrescriptionTemplate.referencedAsPairedSlotBy`.
+    @Relationship(deleteRule: .nullify, inverse: \SlotSelectionOverride.templateSlot)
+    var slotSelectionOverrides: [SlotSelectionOverride] = []
+
     init(
         id: UUID = UUID(),
         name: String,

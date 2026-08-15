@@ -27,6 +27,15 @@ final class SteadyStatePrescription {
     /// `IntensityTarget` already discriminates the unit; see
     /// `ARCHITECTURE.md` for the full rationale.
     var secondaryIntensity: IntensityTarget?
+    /// Stage 4C addition: THIS SESSION ONLY activity substitution's entire
+    /// persisted footprint — mirrors `ExercisePrescription.substitutionUsed`/
+    /// `.substitutionReason` exactly. Substituting for this occasion means
+    /// directly editing `activityType` (and, if the new activity requires
+    /// it, re-deriving `primaryIntensity`/`secondaryIntensity` via
+    /// `IntensityTranslation`) on this already-materialized row — no new
+    /// entity, same reasoning as the strength side.
+    var substitutionUsed: Bool
+    var substitutionReason: SubstitutionReason?
 
     init(
         id: UUID = UUID(),
@@ -34,7 +43,9 @@ final class SteadyStatePrescription {
         durationSeconds: Int? = nil,
         distanceMeters: Double? = nil,
         primaryIntensity: IntensityTarget? = nil,
-        secondaryIntensity: IntensityTarget? = nil
+        secondaryIntensity: IntensityTarget? = nil,
+        substitutionUsed: Bool = false,
+        substitutionReason: SubstitutionReason? = nil
     ) {
         self.id = id
         self.activityType = activityType
@@ -42,5 +53,7 @@ final class SteadyStatePrescription {
         self.distanceMeters = distanceMeters
         self.primaryIntensity = primaryIntensity
         self.secondaryIntensity = secondaryIntensity
+        self.substitutionUsed = substitutionUsed
+        self.substitutionReason = substitutionReason
     }
 }

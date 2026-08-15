@@ -25,6 +25,12 @@ final class ExercisePrescription {
     /// (e.g. scaling Toes-to-Bar to Knee Raises). Recorded, never assumed
     /// permanent — handoff's scaling-is-sticky-but-not-assumed rule.
     var substitutionUsed: Bool
+    /// Stage 4C addition: why, if `substitutionUsed`. This is the THIS
+    /// SESSION ONLY substitution scope's entire persisted footprint —
+    /// deliberately just these two existing/additive fields, not a new
+    /// entity; see `SlotSelectionOverride`'s doc comment for why GOING
+    /// FORWARD needs a different mechanism and this one doesn't.
+    var substitutionReason: SubstitutionReason?
 
     @Relationship(deleteRule: .cascade, inverse: \SetPrescription.exercisePrescription)
     var setPrescriptions: [SetPrescription] = []
@@ -40,7 +46,8 @@ final class ExercisePrescription {
         exercise: Exercise? = nil,
         repsPerRound: Int? = nil,
         targetDurationSeconds: Int? = nil,
-        substitutionUsed: Bool = false
+        substitutionUsed: Bool = false,
+        substitutionReason: SubstitutionReason? = nil
     ) {
         self.id = id
         self.exercise = exercise
@@ -48,6 +55,7 @@ final class ExercisePrescription {
         self.repsPerRound = repsPerRound
         self.targetDurationSeconds = targetDurationSeconds
         self.substitutionUsed = substitutionUsed
+        self.substitutionReason = substitutionReason
     }
 
     /// The only way application code should attach a SetPrescription (a

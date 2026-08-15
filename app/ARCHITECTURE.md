@@ -427,3 +427,47 @@ changes, it produces a new `ProgramDefinition`/`generatorVersion`, never
 mutates an existing one in place (`ProgramDefinition.generatorVersion`'s
 doc comment) — an old configuration must never silently start producing a
 different program structure underneath an already-running instance.
+
+## Steady-state template graph (Stage 4C)
+
+`WorkoutBlockTemplate` carries one typed child relationship per
+modality, exactly mirroring `WorkoutBlock`'s own execution-side shape:
+`prescriptionTemplates` (strength, Stage 4A) and
+`steadyStatePrescriptionTemplate` (endurance, Stage 4C addition — closes
+the gap this file's Stage 4A section originally flagged as deferred).
+`SteadyStatePrescriptionTemplate` stores `primaryIntensity`/
+`secondaryIntensity` as direct top-level `IntensityTarget?` properties
+(the shape already proven safe by Stage 3C's `SteadyStatePrescription`
+itself) and flattens its progression rule
+(`SteadyStateProgressionRules`) into scalar fields exactly like
+`PrescriptionTemplate` already does for `StrengthProgressionRules` — see
+`STAGE4_IMPLEMENTATION_REPORT.md`'s Stage 4C section §4 for why a
+per-week `[IntensityTarget]` array was deliberately avoided rather than
+assumed safe.
+
+`SteadyStateMaterializer`, unlike `StrengthMaterializer`, materializes
+every week of a `ProgramDefinition` in one call — every steady-state
+dimension this pass implements (duration/distance/intensity-zone/
+recovery) is a deterministic function of week index alone, with no live
+per-week rating dependency the way strength's autoregulation has. This is
+a genuine architectural difference between the two systems, not an
+inconsistency.
+
+Frequency progression (a program having more Sessions per week later in
+a mesocycle) is modeled at the `TemplateSession` level
+(`activeFromWeek: Int`), not inside any per-block engine — see
+`TemplateSession.activeFromWeek`'s own doc comment for the explicit
+"this is not a `BlockProgressionEngine` concern" boundary.
+
+## Substitution architecture (Stage 4C)
+
+See `SUBSTITUTION_MODEL.md` for the full contract. In one sentence: a
+template slot's default selection (`ExerciseSlot.resolvedExercise`/
+`SteadyStatePrescriptionTemplate.preferredActivityType`) can be
+overridden per `ProgramInstance` going forward
+(`SlotSelectionOverride`/`ActivitySelectionOverride`, resolved by the
+materializer at the moment it builds a new Session) or overridden for a
+single already-materialized Session directly
+(`ExercisePrescription.exercise`/`SteadyStatePrescription.activityType`,
+no new persisted type at all) — never by mutating the template graph
+itself.

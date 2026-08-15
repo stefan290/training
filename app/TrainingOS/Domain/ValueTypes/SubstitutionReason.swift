@@ -1,0 +1,21 @@
+import Foundation
+
+/// Why a user (or the app, on the user's behalf) chose something other
+/// than the slot's/prescription's default selection — a deliberately
+/// separate vocabulary from `ProgressionReasonCode`. This answers "why did
+/// I pick this exercise/activity"; `ProgressionReasonCode` (which already
+/// carries `.substitutionEstimate`/`.calibrationRequired`) answers "how was
+/// this recommended number derived." Conflating the two would mean either
+/// duplicating `.calibrationRequired`'s meaning under a new name (a
+/// duplicate-truth smell — Stage 4C's own explicit warning) or overloading
+/// one enum with two unrelated questions.
+///
+/// Optional everywhere it's stored — Stage 4C explicitly does not require
+/// the user to supply a reason; `nil` means "no reason recorded," a
+/// legitimate, common state, never treated as a validation failure.
+enum SubstitutionReason: String, Codable, CaseIterable {
+    case userExerciseSubstitution
+    case exerciseUnavailable
+    case equipmentUnavailable
+    case userPreference
+}

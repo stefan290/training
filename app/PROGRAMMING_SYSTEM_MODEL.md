@@ -438,3 +438,24 @@ Stage 4A validated, with only `StrengthProgressionRules`' rule
 *parameters* differing per family (line 7's "not built yet" note above
 is now stale for Powerlifting specifically; still current for
 SteadyState/Interval/FunctionalFitness/ConcurrentScheduler).
+
+## Stage 4C implementation update
+
+`SteadyStateProgrammingSystem` is now built and Xcode-validated (Running/
+Cycling/Rowing/SkiErg, one generator/engine for all four) — see
+`STAGE4_IMPLEMENTATION_REPORT.md`'s "Stage 4C" section for the full
+account, and `ARCHITECTURE.md`'s "Steady-state template graph" section
+for the schema. No correction to this document's model is needed: one
+`ProgrammingSystem` + `ProgramConfiguration` + `ActivityType`, exactly the
+outcome this document's own framing anticipated (line 7's "not built yet"
+note is now stale for SteadyState specifically; still current for
+Interval/FunctionalFitness/ConcurrentScheduler).
+
+Stage 4C also builds the substitution foundation (Part B of its
+kickoff) — a domain/programming requirement this document's model always
+implied (a `ProgramInstance` executes a `ProgramDefinition`'s methodology
+with user-specific state layered on top) but never made explicit before
+now. See `SUBSTITUTION_MODEL.md` for the full contract: template slot ->
+instance selection -> materialized prescription -> actual performance ->
+permanent profile, with `ProgramDefinition` remaining immutable
+throughout.

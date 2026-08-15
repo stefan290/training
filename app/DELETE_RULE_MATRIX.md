@@ -197,3 +197,51 @@ above — this section is additive, nothing above it changed.
   it is deleted, across all three profile types
   (Exercise/Activity/Benchmark). This is the only case where performance
   history is supposed to disappear.
+
+## Stage 4C additions
+
+Two new categories: the steady-state template graph (structural, same
+shape as Stage 4A's strength template graph) and the substitution
+persistence model (`SlotSelectionOverride`/`ActivitySelectionOverride`) —
+see `SUBSTITUTION_MODEL.md`.
+
+### Structural (steady-state template graph)
+
+| Parent | Child | Relationship | Delete rule | Expected behaviour | Why |
+|---|---|---|---|---|---|
+| `WorkoutBlockTemplate` | `SteadyStatePrescriptionTemplate` | `steadyStatePrescriptionTemplate: SteadyStatePrescriptionTemplate?` | `.cascade` | Deleting a block template deletes its steady-state rule template. | Mirrors `WorkoutBlockTemplate.prescriptionTemplates` exactly — a `SteadyStatePrescriptionTemplate` has no independent meaning outside its block template. |
+
+### Substitution persistence (instance-specific state, not performance data)
+
+| Parent | Child | Relationship | Delete rule | Expected behaviour | Why |
+|---|---|---|---|---|---|
+| `ProgramInstance` | `SlotSelectionOverride` | `slotSelectionOverrides: [SlotSelectionOverride]` | `.cascade` | Deleting a ProgramInstance deletes its GOING FORWARD exercise overrides. | **Deliberately not `.nullify`** like `ProgramInstance.sessions` — an override is pure user-preference state about *that instance*, not performance history; there is nothing left worth preserving once the instance it was scoped to is gone. Confirmed by `SteadyStatePersistenceTests.testDeletingProgramInstanceCascadesItsSlotSelectionOverrides`. |
+| `ProgramInstance` | `ActivitySelectionOverride` | `activitySelectionOverrides: [ActivitySelectionOverride]` | `.cascade` | Same as above. | Same as above — the endurance/activity sibling. |
+| `ExerciseSlot` | `SlotSelectionOverride` | `slotSelectionOverrides: [SlotSelectionOverride]` (required inverse only; nothing reads it) | `.nullify` | Deleting an `ExerciseSlot` (which happens when its `ProgramDefinition` cascades away) nullifies `override.templateSlot` rather than crashing; the override row itself survives (still attached to its `ProgramInstance`) until that instance is separately deleted. | Same established "un-inversed to-one reference to a deletable type crashes instead of nullifying" fix as `PrescriptionTemplate.referencedAsPairedSlotBy` — proven directly by `SteadyStatePersistenceTests.testDeletingExerciseSlotNullifiesRatherThanCrashingSlotSelectionOverride`, not assumed safe by analogy. |
+| `SteadyStatePrescriptionTemplate` | `ActivitySelectionOverride` | `activitySelectionOverrides: [ActivitySelectionOverride]` (required inverse only) | `.nullify` | Same reasoning as the `ExerciseSlot` row above. | Same reasoning — the endurance/activity sibling. |
+
+### One-directional references (declared purely for delete-rule safety, or accepted as the existing deferred risk)
+
+- `SlotSelectionOverride.selectedExercise`, `ExerciseRelationship.fromExercise`,
+  `ExerciseRelationship.toExercise` remain plain, un-inversed references to
+  `Exercise` — the same accepted, already-documented latent risk as
+  `ExercisePrescription.exercise`/`FunctionalFitnessMovement.exercise`
+  above (nothing in this app deletes a canonical `Exercise` out from under
+  active data yet). Not a new risk category; three more instances of an
+  existing, already-flagged one — deliberately handled identically rather
+  than fixed in isolation for only the newest callers.
+
+### Summary addition
+
+- Deleting a **ProgramInstance** now also deletes its
+  `SlotSelectionOverride`/`ActivitySelectionOverride` rows (cascade) —
+  this is new relative to the pre-Stage-4C summary above, and is correct:
+  these rows are instance-scoped preference state, not performance
+  history, so they follow the instance rather than surviving it the way
+  `Session`s do.
+- Deleting a **ProgramDefinition** (and the `ExerciseSlot`/
+  `SteadyStatePrescriptionTemplate` rows that cascade away with its
+  template graph) nullifies any `SlotSelectionOverride`/
+  `ActivitySelectionOverride` rows that pointed at those now-deleted
+  template objects, without deleting the override rows themselves or the
+  `ProgramInstance`s they belong to — consistent with CLAUDE.md rule 1.

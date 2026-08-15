@@ -8,6 +8,21 @@
 
 /* Begin PBXBuildFile section */
 		1E5282D0BB2B440C94520A79 /* ExerciseSlot.swift in Sources */ = {isa = PBXBuildFile; fileRef = C61C65DA515B4168952010EA /* ExerciseSlot.swift */; };
+		52A7D261DF0E4FD0A5C7C327 /* ExerciseRelationship.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9371B7F87D414C6D8FE13465 /* ExerciseRelationship.swift */; };
+		18D9A3E4249548B6938746C5 /* SlotSelectionOverride.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2015F64AAE4468814D34D9 /* SlotSelectionOverride.swift */; };
+		0AE7776B125B431A95561B6C /* SteadyStatePrescriptionTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2304948879034A27B838D34A /* SteadyStatePrescriptionTemplate.swift */; };
+		B2E1F5D09A344AFE9DFCC524 /* ActivitySelectionOverride.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB0FE8E2F37542C58588737F /* ActivitySelectionOverride.swift */; };
+		4FF5E6332E954BF5B3DD7934 /* SubstitutionReason.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D1C80A29EAD40E0B85E855B /* SubstitutionReason.swift */; };
+		4BA4132761CF468AB3E530C4 /* SteadyStateProgressionRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF8AAF3929F04E18A3B06194 /* SteadyStateProgressionRules.swift */; };
+		740706C4A1F84465B26B0B63 /* SteadyStateConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FBA8E92C3C44360A9A70AD2 /* SteadyStateConfiguration.swift */; };
+		903E4161452A4735937B2042 /* ExerciseSubstitutionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9D602DA94B24FD3B316C251 /* ExerciseSubstitutionEngine.swift */; };
+		D9D293EF687D4C9E8EFC61C7 /* SubstitutionAwareRecommendation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E87ABA502914319A82C1265 /* SubstitutionAwareRecommendation.swift */; };
+		E66356BDFCBB4948B16908D5 /* SteadyStateProgressionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51583999363247E0B8E3F8A9 /* SteadyStateProgressionEngine.swift */; };
+		2CD944931F334EC08793D37F /* IntensityTranslation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9453C0F3FE074675AFB766DA /* IntensityTranslation.swift */; };
+		CA25CB61033142A2A5283A89 /* SubstituteExerciseUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3357B0E22BB4DAEB345D574 /* SubstituteExerciseUseCase.swift */; };
+		C590D2F2DED94B109424088A /* SubstituteActivityUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13404D2B2316430991600BD1 /* SubstituteActivityUseCase.swift */; };
+		8BD3A44DA03A4ADF84C8F828 /* SteadyStateProgramGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B742762184141A9A09105EE /* SteadyStateProgramGenerator.swift */; };
+		38F0C95B5C2648468AAA5D7C /* SteadyStateMaterializer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33596FBF283B446EBFBAED60 /* SteadyStateMaterializer.swift */; };
 		205EF20E27C4473798805A39 /* PrescriptionTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0F746C74EDF432D92F4F724 /* PrescriptionTemplate.swift */; };
 		BC7E88F401364980B712DA1D /* WorkoutBlockTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E31C02AB609E4A759BE83970 /* WorkoutBlockTemplate.swift */; };
 		AA9D5DED71B14ADABB95DD9C /* TemplateSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96BB5A7748D34684ACF0C620 /* TemplateSession.swift */; };
@@ -21,6 +36,11 @@
 		808386F83FC94216A766D926 /* HypertrophyProgramGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DD886531E7444D68549B9F1 /* HypertrophyProgramGeneratorTests.swift */; };
 		6D2897877D7B4366839F35CD /* PowerliftingProgramGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23B34D84FA7E4117942595D2 /* PowerliftingProgramGeneratorTests.swift */; };
 		E80C91EB0FC74C11AC65B159 /* PowerliftingRegressionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60D9C8CDB6574111B7F814E3 /* PowerliftingRegressionTests.swift */; };
+		53B81AD6E82A45F1BAAC6C16 /* SteadyStatePersistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F814CB5247DB49D5B61BEB54 /* SteadyStatePersistenceTests.swift */; };
+		EC37F1C698FA470EA2CEC063 /* SteadyStateProgressionEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD09B07FB9E74BB199280D80 /* SteadyStateProgressionEngineTests.swift */; };
+		BF2D794F7F0D4CBC898B6FDF /* SteadyStateProgramGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 788AC1711F2142B7AA4C232A /* SteadyStateProgramGeneratorTests.swift */; };
+		C9599AAE01BA4251ABF5FB03 /* ActivityPerformanceProfileIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3D9A752F4704351BF2B938A /* ActivityPerformanceProfileIntegrationTests.swift */; };
+		93DBDDE990D7493BB62556A8 /* SubstitutionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4A29A55AE204FBD816B3439 /* SubstitutionTests.swift */; };
 		F9854D9FE44B4972B386FC58 /* StrengthProgressionEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50A2E014698D42C98D0E8C46 /* StrengthProgressionEngineTests.swift */; };
 		03E2E049ED5C4033BC3C024F /* StrengthMaterializerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DDC684586414034BADEBF89 /* StrengthMaterializerTests.swift */; };
 		57B8B94029E54B4FAEAE2F43 /* HypertrophyProgramJourneyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CB61E7290264147A90E7DB6 /* HypertrophyProgramJourneyTests.swift */; };
@@ -125,6 +145,21 @@
 
 /* Begin PBXFileReference section */
 		C61C65DA515B4168952010EA /* ExerciseSlot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExerciseSlot.swift; path = ExerciseSlot.swift; sourceTree = "<group>"; };
+		9371B7F87D414C6D8FE13465 /* ExerciseRelationship.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExerciseRelationship.swift; path = ExerciseRelationship.swift; sourceTree = "<group>"; };
+		AF2015F64AAE4468814D34D9 /* SlotSelectionOverride.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SlotSelectionOverride.swift; path = SlotSelectionOverride.swift; sourceTree = "<group>"; };
+		2304948879034A27B838D34A /* SteadyStatePrescriptionTemplate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SteadyStatePrescriptionTemplate.swift; path = SteadyStatePrescriptionTemplate.swift; sourceTree = "<group>"; };
+		AB0FE8E2F37542C58588737F /* ActivitySelectionOverride.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ActivitySelectionOverride.swift; path = ActivitySelectionOverride.swift; sourceTree = "<group>"; };
+		6D1C80A29EAD40E0B85E855B /* SubstitutionReason.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SubstitutionReason.swift; path = SubstitutionReason.swift; sourceTree = "<group>"; };
+		EF8AAF3929F04E18A3B06194 /* SteadyStateProgressionRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SteadyStateProgressionRules.swift; path = SteadyStateProgressionRules.swift; sourceTree = "<group>"; };
+		8FBA8E92C3C44360A9A70AD2 /* SteadyStateConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SteadyStateConfiguration.swift; path = SteadyStateConfiguration.swift; sourceTree = "<group>"; };
+		C9D602DA94B24FD3B316C251 /* ExerciseSubstitutionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExerciseSubstitutionEngine.swift; path = ExerciseSubstitutionEngine.swift; sourceTree = "<group>"; };
+		8E87ABA502914319A82C1265 /* SubstitutionAwareRecommendation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SubstitutionAwareRecommendation.swift; path = SubstitutionAwareRecommendation.swift; sourceTree = "<group>"; };
+		51583999363247E0B8E3F8A9 /* SteadyStateProgressionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SteadyStateProgressionEngine.swift; path = SteadyStateProgressionEngine.swift; sourceTree = "<group>"; };
+		9453C0F3FE074675AFB766DA /* IntensityTranslation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = IntensityTranslation.swift; path = IntensityTranslation.swift; sourceTree = "<group>"; };
+		E3357B0E22BB4DAEB345D574 /* SubstituteExerciseUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SubstituteExerciseUseCase.swift; path = SubstituteExerciseUseCase.swift; sourceTree = "<group>"; };
+		13404D2B2316430991600BD1 /* SubstituteActivityUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SubstituteActivityUseCase.swift; path = SubstituteActivityUseCase.swift; sourceTree = "<group>"; };
+		2B742762184141A9A09105EE /* SteadyStateProgramGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SteadyStateProgramGenerator.swift; path = SteadyStateProgramGenerator.swift; sourceTree = "<group>"; };
+		33596FBF283B446EBFBAED60 /* SteadyStateMaterializer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SteadyStateMaterializer.swift; path = SteadyStateMaterializer.swift; sourceTree = "<group>"; };
 		A0F746C74EDF432D92F4F724 /* PrescriptionTemplate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PrescriptionTemplate.swift; path = PrescriptionTemplate.swift; sourceTree = "<group>"; };
 		E31C02AB609E4A759BE83970 /* WorkoutBlockTemplate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WorkoutBlockTemplate.swift; path = WorkoutBlockTemplate.swift; sourceTree = "<group>"; };
 		96BB5A7748D34684ACF0C620 /* TemplateSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TemplateSession.swift; path = TemplateSession.swift; sourceTree = "<group>"; };
@@ -138,6 +173,11 @@
 		0DD886531E7444D68549B9F1 /* HypertrophyProgramGeneratorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HypertrophyProgramGeneratorTests.swift; path = HypertrophyProgramGeneratorTests.swift; sourceTree = "<group>"; };
 		23B34D84FA7E4117942595D2 /* PowerliftingProgramGeneratorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PowerliftingProgramGeneratorTests.swift; path = PowerliftingProgramGeneratorTests.swift; sourceTree = "<group>"; };
 		60D9C8CDB6574111B7F814E3 /* PowerliftingRegressionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PowerliftingRegressionTests.swift; path = PowerliftingRegressionTests.swift; sourceTree = "<group>"; };
+		F814CB5247DB49D5B61BEB54 /* SteadyStatePersistenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SteadyStatePersistenceTests.swift; path = SteadyStatePersistenceTests.swift; sourceTree = "<group>"; };
+		FD09B07FB9E74BB199280D80 /* SteadyStateProgressionEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SteadyStateProgressionEngineTests.swift; path = SteadyStateProgressionEngineTests.swift; sourceTree = "<group>"; };
+		788AC1711F2142B7AA4C232A /* SteadyStateProgramGeneratorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SteadyStateProgramGeneratorTests.swift; path = SteadyStateProgramGeneratorTests.swift; sourceTree = "<group>"; };
+		A3D9A752F4704351BF2B938A /* ActivityPerformanceProfileIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ActivityPerformanceProfileIntegrationTests.swift; path = ActivityPerformanceProfileIntegrationTests.swift; sourceTree = "<group>"; };
+		E4A29A55AE204FBD816B3439 /* SubstitutionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SubstitutionTests.swift; path = SubstitutionTests.swift; sourceTree = "<group>"; };
 		50A2E014698D42C98D0E8C46 /* StrengthProgressionEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = StrengthProgressionEngineTests.swift; path = StrengthProgressionEngineTests.swift; sourceTree = "<group>"; };
 		4DDC684586414034BADEBF89 /* StrengthMaterializerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = StrengthMaterializerTests.swift; path = StrengthMaterializerTests.swift; sourceTree = "<group>"; };
 		2CB61E7290264147A90E7DB6 /* HypertrophyProgramJourneyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HypertrophyProgramJourneyTests.swift; path = HypertrophyProgramJourneyTests.swift; sourceTree = "<group>"; };
@@ -279,6 +319,10 @@
 				64E1458F8E3D57EF0174737D /* ProgramInstance.swift */,
 				8E324E3DA961C03C4EA43C8D /* FunctionalFitnessMovement.swift */,
 				C61C65DA515B4168952010EA /* ExerciseSlot.swift */,
+				9371B7F87D414C6D8FE13465 /* ExerciseRelationship.swift */,
+				AF2015F64AAE4468814D34D9 /* SlotSelectionOverride.swift */,
+				2304948879034A27B838D34A /* SteadyStatePrescriptionTemplate.swift */,
+				AB0FE8E2F37542C58588737F /* ActivitySelectionOverride.swift */,
 				A0F746C74EDF432D92F4F724 /* PrescriptionTemplate.swift */,
 				E31C02AB609E4A759BE83970 /* WorkoutBlockTemplate.swift */,
 				96BB5A7748D34684ACF0C620 /* TemplateSession.swift */,
@@ -317,6 +361,9 @@
 				8B06BE6A5A714AFDB8FA09D7 /* ProgramProvenance.swift */,
 				75C5B058B8E6411A897684E7 /* EquipmentProfile.swift */,
 				202CFFCBB78E416EB4FE77FB /* PowerliftingConfiguration.swift */,
+				6D1C80A29EAD40E0B85E855B /* SubstitutionReason.swift */,
+				EF8AAF3929F04E18A3B06194 /* SteadyStateProgressionRules.swift */,
+				8FBA8E92C3C44360A9A70AD2 /* SteadyStateConfiguration.swift */,
 			);
 			name = ValueTypes;
 			path = ValueTypes;
@@ -336,6 +383,10 @@
 			children = (
 				3D2F47A2B1091593A97276F5 /* BlockProgressionEngine.swift */,
 				EDA5586697D9472A9D3E1A95 /* DeloadStrategy.swift */,
+				C9D602DA94B24FD3B316C251 /* ExerciseSubstitutionEngine.swift */,
+				8E87ABA502914319A82C1265 /* SubstitutionAwareRecommendation.swift */,
+				51583999363247E0B8E3F8A9 /* SteadyStateProgressionEngine.swift */,
+				9453C0F3FE074675AFB766DA /* IntensityTranslation.swift */,
 				E48C65EF48E540B396D847A8 /* StrengthProgressionEngine.swift */,
 				B3634F918ED73F0BED77FB65 /* ProgrammingDecisionEngine.swift */,
 				37CC4963A0824B2C495890C3 /* ScoringEngine.swift */,
@@ -430,6 +481,11 @@
 				AB1E9BF387BC459C9A0639E4 /* PowerliftingBuiltInLibraryTests.swift */,
 				23B34D84FA7E4117942595D2 /* PowerliftingProgramGeneratorTests.swift */,
 				60D9C8CDB6574111B7F814E3 /* PowerliftingRegressionTests.swift */,
+				F814CB5247DB49D5B61BEB54 /* SteadyStatePersistenceTests.swift */,
+				FD09B07FB9E74BB199280D80 /* SteadyStateProgressionEngineTests.swift */,
+				788AC1711F2142B7AA4C232A /* SteadyStateProgramGeneratorTests.swift */,
+				A3D9A752F4704351BF2B938A /* ActivityPerformanceProfileIntegrationTests.swift */,
+				E4A29A55AE204FBD816B3439 /* SubstitutionTests.swift */,
 			);
 			name = TrainingOSTests;
 			path = TrainingOSTests;
@@ -441,6 +497,10 @@
 				B48F4B12981F158C3F1B7430 /* RecordSetResultUseCase.swift */,
 				C2A8878522D1432AB404AC6A /* HypertrophyProgramGenerator.swift */,
 				DABB6C13366A4F518D0C887B /* PowerliftingProgramGenerator.swift */,
+				E3357B0E22BB4DAEB345D574 /* SubstituteExerciseUseCase.swift */,
+				13404D2B2316430991600BD1 /* SubstituteActivityUseCase.swift */,
+				2B742762184141A9A09105EE /* SteadyStateProgramGenerator.swift */,
+				33596FBF283B446EBFBAED60 /* SteadyStateMaterializer.swift */,
 				1CE141F8BF9D41B3A5892171 /* StrengthMaterializer.swift */,
 				5E8DE90422F540E5B44654D9 /* HypertrophyProgramJourney.swift */,
 				CD9AD4D5F8644C4991AC5C09 /* HypertrophyBuiltInLibrary.swift */,
@@ -628,6 +688,11 @@
 				808386F83FC94216A766D926 /* HypertrophyProgramGeneratorTests.swift in Sources */,
 				6D2897877D7B4366839F35CD /* PowerliftingProgramGeneratorTests.swift in Sources */,
 				E80C91EB0FC74C11AC65B159 /* PowerliftingRegressionTests.swift in Sources */,
+				53B81AD6E82A45F1BAAC6C16 /* SteadyStatePersistenceTests.swift in Sources */,
+				EC37F1C698FA470EA2CEC063 /* SteadyStateProgressionEngineTests.swift in Sources */,
+				BF2D794F7F0D4CBC898B6FDF /* SteadyStateProgramGeneratorTests.swift in Sources */,
+				C9599AAE01BA4251ABF5FB03 /* ActivityPerformanceProfileIntegrationTests.swift in Sources */,
+				93DBDDE990D7493BB62556A8 /* SubstitutionTests.swift in Sources */,
 				F9854D9FE44B4972B386FC58 /* StrengthProgressionEngineTests.swift in Sources */,
 				03E2E049ED5C4033BC3C024F /* StrengthMaterializerTests.swift in Sources */,
 				57B8B94029E54B4FAEAE2F43 /* HypertrophyProgramJourneyTests.swift in Sources */,
@@ -679,6 +744,21 @@
 				4A864F528D892B3E07C72AFA /* ProgramInstance.swift in Sources */,
 				3E58401BA3A1F7F028B7D178 /* FunctionalFitnessMovement.swift in Sources */,
 				1E5282D0BB2B440C94520A79 /* ExerciseSlot.swift in Sources */,
+				52A7D261DF0E4FD0A5C7C327 /* ExerciseRelationship.swift in Sources */,
+				18D9A3E4249548B6938746C5 /* SlotSelectionOverride.swift in Sources */,
+				0AE7776B125B431A95561B6C /* SteadyStatePrescriptionTemplate.swift in Sources */,
+				B2E1F5D09A344AFE9DFCC524 /* ActivitySelectionOverride.swift in Sources */,
+				4FF5E6332E954BF5B3DD7934 /* SubstitutionReason.swift in Sources */,
+				4BA4132761CF468AB3E530C4 /* SteadyStateProgressionRules.swift in Sources */,
+				740706C4A1F84465B26B0B63 /* SteadyStateConfiguration.swift in Sources */,
+				903E4161452A4735937B2042 /* ExerciseSubstitutionEngine.swift in Sources */,
+				D9D293EF687D4C9E8EFC61C7 /* SubstitutionAwareRecommendation.swift in Sources */,
+				E66356BDFCBB4948B16908D5 /* SteadyStateProgressionEngine.swift in Sources */,
+				2CD944931F334EC08793D37F /* IntensityTranslation.swift in Sources */,
+				CA25CB61033142A2A5283A89 /* SubstituteExerciseUseCase.swift in Sources */,
+				C590D2F2DED94B109424088A /* SubstituteActivityUseCase.swift in Sources */,
+				8BD3A44DA03A4ADF84C8F828 /* SteadyStateProgramGenerator.swift in Sources */,
+				38F0C95B5C2648468AAA5D7C /* SteadyStateMaterializer.swift in Sources */,
 				205EF20E27C4473798805A39 /* PrescriptionTemplate.swift in Sources */,
 				BC7E88F401364980B712DA1D /* WorkoutBlockTemplate.swift in Sources */,
 				AA9D5DED71B14ADABB95DD9C /* TemplateSession.swift in Sources */,

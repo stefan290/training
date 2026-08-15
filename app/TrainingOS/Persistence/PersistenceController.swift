@@ -50,6 +50,11 @@ enum PersistenceController {
         WorkoutBlockTemplate.self,
         PrescriptionTemplate.self,
         ExerciseSlot.self,
+        // Stage 4C additions — see STAGE4_IMPLEMENTATION_REPORT.md.
+        SteadyStatePrescriptionTemplate.self,
+        ExerciseRelationship.self,
+        SlotSelectionOverride.self,
+        ActivitySelectionOverride.self,
     ])
 
     /// The app's on-disk, offline-first store. Local storage is

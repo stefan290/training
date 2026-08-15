@@ -13,6 +13,17 @@ final class Exercise {
     var modality: TrainingModality
     var equipment: String
     var movementPattern: String
+    /// Stage 4C addition: which `ExerciseSlot.allowedTargets` this Exercise
+    /// satisfies — closes a real gap `ExerciseSlot`'s own doc comment
+    /// already assumed was solvable ("any Exercise matching allowedTargets
+    /// is eligible") but nothing on `Exercise` could actually be matched
+    /// against until now. Empty is a legal, common state for every
+    /// pre-Stage-4C seed exercise; it means "no target-based validity
+    /// check possible for this Exercise," not "targets nothing" — slots
+    /// that rely on `allowedTargets` should treat an empty array here as
+    /// non-matching, never as wildcard-matching (see
+    /// `SubstitutionValidator`).
+    var primaryTargets: [MuscleGroup] = []
 
     @Relationship(deleteRule: .cascade, inverse: \ExerciseAlias.exercise)
     var aliases: [ExerciseAlias] = []
@@ -22,13 +33,15 @@ final class Exercise {
         canonicalName: String,
         modality: TrainingModality,
         equipment: String,
-        movementPattern: String
+        movementPattern: String,
+        primaryTargets: [MuscleGroup] = []
     ) {
         self.id = id
         self.canonicalName = canonicalName
         self.modality = modality
         self.equipment = equipment
         self.movementPattern = movementPattern
+        self.primaryTargets = primaryTargets
     }
 
     /// The only way application code should attach an ExerciseAlias.

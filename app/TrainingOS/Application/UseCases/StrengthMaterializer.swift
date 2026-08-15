@@ -36,6 +36,17 @@ import SwiftData
 /// `Recommendation.strengthReasonCode` sibling field (mirroring
 /// `WorkoutBlock`'s typed-per-modality pattern) is a reasonable follow-up
 /// if that auditability is needed, not a defect of this pass.
+///
+/// **Stage 4C addition:** every `ExercisePrescription` this materializer
+/// creates resolves its exercise through
+/// `SubstituteExerciseUseCase.resolvedExercise(for:in:)` rather than
+/// reading `slot.resolvedExercise` directly — this is the GOING FORWARD
+/// substitution hook (§30): a not-yet-materialized future Session
+/// automatically picks up whatever `SlotSelectionOverride` exists for
+/// this `instance`/slot at the time it's materialized, with the
+/// template's own default as the fallback. Already-materialized Sessions
+/// are never revisited by a later override — this function is never
+/// called again for a week that's already been materialized.
 enum StrengthMaterializer {
     /// Per-slot runtime context the caller must supply — everything the
     /// template graph itself cannot know (it's specific to who's running
@@ -150,7 +161,7 @@ enum StrengthMaterializer {
                         resolvedWeightsByTemplateID[template.id] = weightKg
                     }
 
-                    let prescription = ExercisePrescription(exercise: slot.resolvedExercise)
+                    let prescription = ExercisePrescription(exercise: SubstituteExerciseUseCase.resolvedExercise(for: slot, in: instance))
                     context.insert(prescription)
                     block.addPrescription(prescription)
 

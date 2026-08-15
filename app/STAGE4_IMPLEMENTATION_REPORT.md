@@ -542,3 +542,291 @@ no UI/ViewModel code, exactly Stage 4A's §9 precedent repeated).
 See the final commit hash reported alongside this document. Local and
 remote verified to match; working tree clean apart from local Xcode user
 data.
+
+## Stage 4C: SteadyStateProgrammingSystem + Substitution Foundation
+
+Two objectives, per the kickoff: (1) `SteadyStateProgrammingSystem`, and
+(2) the substitution architecture — explicitly "a domain/programming
+requirement, not merely a future UI feature." Baseline: commit `729faa7`
+(Stage 4B, approved), 144/144 tests passing.
+
+### 1. Architecture review before adding anything (§56-58)
+
+Read the full existing template graph, `ExerciseSlot`, `ProgramInstance`,
+`Session`/`WorkoutBlock`, and every performance-profile entity before
+writing a line of new schema. Found:
+
+- Most of Part A's execution-layer plumbing already exists from Stage 3C
+  (`SteadyStatePrescription`/`SteadyStateResult`, `ActivityType`,
+  `ActivityPerformanceProfile`, the persistence-safe `IntensityTarget`)
+  and needed no changes — only the **template-graph equivalent** was
+  missing, exactly as `WorkoutBlockTemplate`'s own Stage 4A doc comment
+  said it would be ("steady-state/interval/functional-fitness template
+  equivalents are a Stage 4C/D/E extension, not built here").
+- Functional Fitness scaling (§38-39) is already fully solved by
+  `FunctionalFitnessPerformedMovement.prescribedMovement`/`.performedExercise`
+  — no new code needed, only a confirming test.
+- `ProgressionReasonCode.calibrationRequired`/`.substitutionEstimate` were
+  declared in Stage 1-2 as "intentionally unreachable... until a later
+  pass" — this is that pass; reused rather than duplicated under new
+  names.
+- `ExerciseSlot.allowedTargets` had no way to be checked against a
+  candidate `Exercise` at all — `Exercise` had no target field. Closed by
+  adding `Exercise.primaryTargets: [MuscleGroup]`, additive, defaulted to
+  `[]` for every pre-existing exercise.
+
+No architectural flaw was found in the generic template/materialization
+model itself — see §8 below for the explicit statement Stage 4C's own
+discipline requires.
+
+### 2. SteadyStateProgrammingSystem architecture
+
+One `SteadyStateProgramGenerator`/`SteadyStateProgressionEngine` for
+every aerobic modality (§1) — nothing branches on `ActivityType`.
+`SteadyStatePrescriptionTemplate` (new, template-graph analogue of
+`SteadyStatePrescription`) attaches to `WorkoutBlockTemplate` via a new
+sibling relationship (`steadyStatePrescriptionTemplate`), exactly
+mirroring how `WorkoutBlock` already carries one typed relationship per
+modality. `ProgramDefinition` gained `steadyStateConfiguration:
+SteadyStateProgramConfiguration?`, the sibling of
+`hypertrophyConfiguration`/`powerliftingConfiguration`.
+
+**Supported modalities:** Running, Cycling, Rowing, SkiErg (`ActivityType`,
+unchanged from Stage 3C) — proven via
+`SteadyStateProgramGeneratorTests.testGeneratorProducesAZone2FortyFiveMinuteTemplateForEachRequiredModality`,
+which builds all four through the identical generator call and asserts
+identical resolved output. Adding a fifth modality is a new
+`ActivityType` case, nothing more — no engine/generator change.
+
+**Progression strategies implemented** (§7, `SteadyStateProgressionEngine`):
+duration, distance, intensity-zone (heart-rate-zone stepping only — see
+§4 below for why), and recovery-week reduction — each independently
+selectable via `SteadyStateProgressionDimension`, never assumed
+("do not assume duration always progresses" is directly tested:
+`testDurationDoesNotProgressWhenTheChosenDimensionIsDistance`).
+**Frequency progression** is modeled at the correct architecture level
+(§7-8): a new `TemplateSession.activeFromWeek: Int = 0` field (shared,
+generic — not steady-state-specific), consulted by the materializer when
+building a given week (`orderedTemplateSessions.filter { $0.activeFromWeek
+<= weekIndex }`), never by `BlockProgressionEngine`. Recovery-week
+reduction reuses `TrainingWeek.isDeload` exactly as Family A/B/C already
+do — no new "recovery" flag.
+
+**Frequency progression is deliberately not baked into the generator's
+own built-in numbers** — no source material specifies *when* a program
+should add a session, and inventing a specific week would be exactly the
+"ambiguous training rule" CLAUDE.md rule 10 rules out. The capability is
+proven directly at the engine/materializer level instead
+(`SteadyStateProgramGeneratorTests.testTemplateSessionActiveFromWeekControlsWhichWeeksAMaterializedSessionAppearsIn`),
+not fabricated into a numbered built-in.
+
+### 3. Source-derived vs. TrainingOS-designed (§10)
+
+Every numeric default in `SteadyStateProgramGenerator` (45 min base
+duration, +5 min/week, 8 km base distance, +1 km/week, Zone 2 -> Zone 4
+stepping, 0.7x recovery-week fractions) is explicitly
+`ProgramProvenance.constructed` and documented in the generator's own doc
+comment as TRAININGOS_DESIGNED — never presented as sourced. Stage 3B
+already found real retrieval limitations verifying British Cycling/NHS/
+research-literature protocols; this pass did not re-attempt live
+verification, per the kickoff's own instruction to implement the generic
+capability with clearly-labeled TrainingOS-designed test configurations
+rather than convert an unverified search snippet into production
+methodology. No V1_PROGRAM_LIBRARY.md entry names a curated steady-state
+built-in, so none was fabricated here — a reasonable follow-up once real
+program content exists, not attempted with false confidence.
+
+### 4. Persistence-safety decisions (§4, extending Stage 4A/4B's discipline)
+
+- `SteadyStatePrescriptionTemplate.primaryIntensity`/`.secondaryIntensity`
+  are stored as **direct top-level `IntensityTarget?` properties** — the
+  one shape Stage 3C/4A already proved safe (`SteadyStatePrescription`
+  itself, `TemplateGraphPersistenceTests`'s own diagnostics). Re-confirmed
+  directly for the new type, not assumed by analogy:
+  `SteadyStatePersistenceTests.testTwoSiblingRowsWithDifferentProgressionDimensionsBothSurviveRoundTrip`
+  round-trips two sibling rows with heterogeneous rule shapes.
+- Duration/distance progression schedules are plain `[Int]`/`[Double]`
+  arrays — already-proven-safe (arrays of primitives, same shape as
+  `RMBasedLoad.laterWeekMultipliers`).
+- **Intensity progression is deliberately restricted to heart-rate-zone
+  stepping**, expressed as three flat scalar fields
+  (`intensityZoneProgressionStartZone/StepPerWeek/MaxZone`), not a
+  per-week `[IntensityTarget]` array. No existing test in this codebase
+  proves an array of an enum-with-payload round-trips safely — rather
+  than assume it does (the exact mistake Stage 4A's Bug 2/3 warned
+  against repeating), this pass avoided the untested shape entirely.
+  Every other `IntensityTarget` case holds one static value for the whole
+  block when intensity isn't the chosen progression dimension.
+
+### 5. ActivityPerformanceProfile integration (§12-14)
+
+Required essentially no new production code — `ActivityPerformanceProfile`
+(Stage 3C) already has no relationship to `ProgramInstance`/
+`ProgramDefinition` at all, so "survives a program change" was already
+structurally true; this pass's job was proving it end-to-end against the
+*new* generator/materializer, not building new plumbing.
+`ActivityPerformanceProfileIntegrationTests` proves: Cycling history
+survives replacing one `ProgramInstance` with another built from a fresh
+`ProgramDefinition`; Rowing and Cycling never merge; a named
+`performanceContext` ("5K") stays distinct from the general activity
+profile; `BenchmarkPerformanceProfile` remains a structurally separate
+entity from `ActivityPerformanceProfile`.
+
+### 6. Substitution architecture — the five-stage pipeline
+
+Full contract in the new `SUBSTITUTION_MODEL.md`; summary here.
+
+```
+Template Slot -> ProgramInstance Selection -> Materialized Prescription -> Actual Performance -> PerformanceProfile
+```
+
+**THIS SESSION ONLY** (§18) needs no new persisted type at all — it's a
+direct edit of an already-materialized `ExercisePrescription.exercise`/
+`SteadyStatePrescription.activityType` (plus new `.substitutionUsed`/
+`.substitutionReason` fields on the latter, mirroring the former's
+pre-existing ones), exactly the shape
+`FunctionalFitnessPerformedMovement.performedExercise` already
+established. **GOING FORWARD** (§18) is a new `ProgramInstance`-scoped
+entity per domain — `SlotSelectionOverride` (strength, points at an
+`ExerciseSlot`) and `ActivitySelectionOverride` (endurance, points at a
+`SteadyStatePrescriptionTemplate`) — deliberately two small single-purpose
+types rather than the kickoff's own suggested one-entity-with-a-scope-field
+sketch, which would have needed nullable dual-purpose columns (§57's
+"nullable mega-entity" smell) since the two scopes reference genuinely
+different aggregate roots. `SUBSTITUTION_MODEL.md` §3 explains this
+deviation and why the kickoff's explicit "requirements over the suggested
+type" license was used.
+
+`StrengthMaterializer`/`SteadyStateMaterializer` were updated to resolve
+through `SubstituteExerciseUseCase.resolvedExercise(for:in:)`/
+`SubstituteActivityUseCase.resolvedActivityType(for:in:)` instead of
+reading `slot.resolvedExercise`/`template.preferredActivityType`
+directly — this is the entire GOING FORWARD hook (§30).
+
+**Substitution validity** (§27): `SubstitutionValidator.isValid` checks
+only `ExerciseSlot.allowedExercises`/`.allowedTargets` (via the new
+`Exercise.primaryTargets` field), deterministic and explainable, never a
+name/string heuristic. `SubstituteActivityUseCase.isValid` checks
+`SteadyStatePrescriptionTemplate.allowedActivityTypes` the same way — a
+running-specific template sets this to exactly `[.running]`, never empty.
+
+**Exercise relationships** (§26): `ExerciseRelationship` (new, curated —
+only `.directSubstitute`/`.similarMovement`) plus
+`ExerciseRelationshipResolver`, which merges curated rows with
+relationships *derivable* from `Exercise`'s own fields
+(`.sameMovementPattern`/`.samePrimaryTarget`/`.sameEquipmentFamily`) —
+the latter three are never persisted as rows, since doing so would be the
+"avoid duplicate truth" smell applied to already-computable facts.
+
+**Recommendation after substitution** (§25/§29/§44):
+`SubstitutionAwareRecommendation` escalates exact-own-history (existing
+`.percentageOfEstimate`) -> related-exercise estimate at a flat,
+explicitly-labeled 0.5 confidence discount (`.substitutionEstimate`) ->
+`.calibrationRequired`, never inventing a load. Reuses
+`ProgressionReasonCode` rather than a new parallel vocabulary — see
+`SUBSTITUTION_MODEL.md` §5 for why `SubstitutionReason` (why the user
+substituted) and `ProgressionReasonCode` (how the number was derived) are
+kept as two separate, purpose-fit vocabularies rather than merged into
+one.
+
+**Endurance substitution** (§34-37): `SubstituteActivityUseCase` mirrors
+`SubstituteExerciseUseCase` exactly. `IntensityTranslation` (new) is the
+§37 requirement made concrete: a physiological target (HR zone/percent,
+RPE) survives an activity substitution unchanged; an equipment-specific
+target (pace, power, cadence, stroke rate) drops to `nil` — proven
+directly with the exact scenario the kickoff names,
+`testEquipmentSpecificIntensityDoesNotTransferAcrossActivitySubstitution`
+(a Bike power range does not survive a substitution to Rowing).
+
+**Historical stability** (§30/§42): every substitution test that adds a
+GOING FORWARD override first materializes and marks a Session
+`.completed`, *then* substitutes, then asserts the already-materialized
+row is unchanged — not merely "future sessions get the new value," but
+explicitly "past sessions provably don't."
+
+### 7. What Stage 4C does not claim
+
+- A curated steady-state built-in library (no V1_PROGRAM_LIBRARY.md entry
+  names one) — the generic capability and all 4 required modalities are
+  proven; a specific named product configuration is a content task.
+- `THIS_PHASE` substitution scope — designed for extensibility, not built.
+- A full substitution UI — explicitly Stage 5+ scope.
+- A biomechanical intensity-translation or related-exercise-estimate
+  model — both are deliberately simple, clearly-labeled placeholders (a
+  flat confidence discount; drop-to-nil for equipment-specific targets),
+  not physiology models CLAUDE.md rule 10 would rule out inventing.
+- SteadyState materialization of a live per-week rating — moot here,
+  since every steady-state dimension this pass implements is a
+  deterministic function of week index alone (§8 elaborates).
+
+### 8. Architectural judgment: no flaw found in the template/materialization model
+
+Per the kickoff's explicit instruction to stop and explain before working
+around any exposed flaw: Stage 4C required one genuinely new structural
+element — `WorkoutBlockTemplate` gaining a second typed child
+relationship (`steadyStatePrescriptionTemplate`, alongside
+`prescriptionTemplates`) — but this is not a redesign, it's the same
+"one typed relationship per modality" pattern `WorkoutBlock` itself
+already uses on the execution side, applied one layer up as Stage 4A's
+own doc comment always said it eventually would be. The materializer
+pattern (template -> per-week resolution -> dated rows) needed no
+conceptual change at all; `SteadyStateMaterializer` is structurally
+identical to `StrengthMaterializer`, just able to resolve every week
+immediately because none of its dimensions need a live per-week rating —
+a genuine, notable difference from strength's necessarily-partial scope,
+not an architectural gap.
+
+The substitution requirement (Part B) needed one new additive concept —
+a `ProgramInstance`-scoped override, resolved at materialization time —
+which slots into the *existing* materializer call site
+(`slotContext`-style resolution was already the established pattern for
+"runtime input the template can't know"; substitution is simply one more
+such input) without requiring any change to the template graph itself.
+
+### 9. Persistence/schema changes
+
+New `@Model` types: `SteadyStatePrescriptionTemplate`,
+`ExerciseRelationship`, `SlotSelectionOverride`,
+`ActivitySelectionOverride` (all registered in
+`PersistenceController.schema`). New fields: `Exercise.primaryTargets`,
+`ExercisePrescription.substitutionReason`,
+`SteadyStatePrescription.substitutionUsed`/`.substitutionReason`,
+`TemplateSession.activeFromWeek`, `WorkoutBlockTemplate.steadyStatePrescriptionTemplate`,
+`ProgramDefinition.steadyStateConfiguration`,
+`ProgramInstance.slotSelectionOverrides`/`.activitySelectionOverrides`,
+`ExerciseSlot.slotSelectionOverrides` (required inverse). Every addition
+is additive with a safe default — no existing row's meaning changes. See
+`DELETE_RULE_MATRIX.md`'s new "Stage 4C additions" section for the full
+delete-rule reasoning.
+
+### 10. Test count and result
+
+192 tests total (144 Stage 4A/4B baseline + 48 new Stage 4C tests). All
+192 pass on the real Xcode toolchain, including all 144 pre-existing
+tests unchanged — none weakened.
+
+New Stage 4C test files: `SteadyStatePersistenceTests` (9, including the
+critical sibling-row-heterogeneity diagnostic and two nullify/cascade
+delete-rule proofs), `SteadyStateProgressionEngineTests` (14, covering
+every progression dimension, recovery reduction, determinism, and
+`IntensityTranslation`), `SteadyStateProgramGeneratorTests` (8, four
+modalities + frequency progression + full-suite materialization),
+`ActivityPerformanceProfileIntegrationTests` (4), `SubstitutionTests`
+(13, strength today-only/going-forward/historical-stability/performance-
+profile-separation, slot validity, endurance substitution, Functional
+Fitness compatibility).
+
+### 11. Simulator
+
+Rebuilt and relaunched on an iPhone 17 (iOS 26.5) simulator after the
+schema change (4 new `@Model` types, multiple new fields on existing
+types). App launched and stayed running — no `ModelContainer` crash;
+Today renders identically to every prior pass ("No sessions today" —
+Stage 4C added no seeded content and no UI/ViewModel code, matching Stage
+4A §9/4B §10's identical precedent).
+
+### 12. Commit
+
+See the final commit hash reported alongside this document. Local and
+remote verified to match; working tree clean apart from local Xcode user
+data.

@@ -128,3 +128,21 @@ convention, not sourced from a live spreadsheet. See
 is the next system expected to actually add entries to this document,
 per the kickoff's own instruction to verify external protocol sources
 directly before hardcoding numbers.
+
+## Stage 4C note
+
+No new SOURCE-DERIVED entries were added by Stage 4C, and that is a
+deliberate outcome, not an oversight: Stage 4C's own kickoff instructed
+verifying British Cycling/NHS/research-literature protocols directly
+before hardcoding any numeric progression rule, and to fall back to the
+generic programming capability with clearly-labeled TRAININGOS_DESIGNED
+test configurations if verification wasn't available — this pass did not
+re-attempt live retrieval given Stage 3B's own already-documented
+retrieval limitations, and used TRAININGOS_DESIGNED defaults throughout
+(`SteadyStateProgramGenerator`'s own doc comment: 45 min base duration,
++5 min/week, 8 km base distance, +1 km/week, Zone 2 -> Zone 4 stepping,
+0.7x recovery-week fractions). None of these are presented as sourced;
+`ProgramProvenance.constructed` is set on every generated
+`ProgramDefinition` accordingly. Verifying a real external protocol and
+adding a genuine SOURCE-DERIVED entry here remains open for whoever has
+reliable access to the primary source material.

@@ -29,6 +29,24 @@ final class ProgramInstance {
     @Relationship(deleteRule: .nullify, inverse: \Session.programInstance)
     var sessions: [Session] = []
 
+    /// Stage 4C addition: the GOING FORWARD substitution state for this
+    /// instance's slots — cascade, unlike `sessions` above, because this
+    /// is pure instance-specific preference state, not performance
+    /// history; deleting the instance has nothing left worth preserving
+    /// here (contrast with `sessions`, which survive via `.nullify`
+    /// because they hold real logged history). See
+    /// `SlotSelectionOverride`'s own doc comment.
+    @Relationship(deleteRule: .cascade, inverse: \SlotSelectionOverride.programInstance)
+    var slotSelectionOverrides: [SlotSelectionOverride] = []
+
+    /// Stage 4C addition: the endurance/activity sibling of
+    /// `slotSelectionOverrides` above — see `ActivitySelectionOverride`'s
+    /// own doc comment for why this is a separate, single-purpose type
+    /// rather than one entity awkwardly covering both Exercise- and
+    /// ActivityType-scoped selections.
+    @Relationship(deleteRule: .cascade, inverse: \ActivitySelectionOverride.programInstance)
+    var activitySelectionOverrides: [ActivitySelectionOverride] = []
+
     init(
         id: UUID = UUID(),
         ownerUserID: UUID,
@@ -52,5 +70,33 @@ final class ProgramInstance {
     /// relationship stays nil, which is a valid, supported state.
     func addSession(_ session: Session) {
         sessions.append(session)
+    }
+
+    /// The only way application code should attach a
+    /// `SlotSelectionOverride`. Mutates exactly one side (this array);
+    /// SwiftData maintains `override.programInstance` from the declared
+    /// inverse.
+    func addSlotSelectionOverride(_ override: SlotSelectionOverride) {
+        slotSelectionOverrides.append(override)
+    }
+
+    /// The only way application code should attach an
+    /// `ActivitySelectionOverride`. Mutates exactly one side; SwiftData
+    /// maintains the declared inverse.
+    func addActivitySelectionOverride(_ override: ActivitySelectionOverride) {
+        activitySelectionOverrides.append(override)
+    }
+
+    /// The single authoritative GOING FORWARD override for a slot, if one
+    /// exists — never more than one per slot (`SubstituteExerciseUseCase`
+    /// enforces this at write time), so first-match is unambiguous.
+    func slotSelectionOverride(for slot: ExerciseSlot) -> SlotSelectionOverride? {
+        slotSelectionOverrides.first { $0.templateSlot?.id == slot.id }
+    }
+
+    /// The single authoritative GOING FORWARD activity override for a
+    /// steady-state template, if one exists.
+    func activitySelectionOverride(for template: SteadyStatePrescriptionTemplate) -> ActivitySelectionOverride? {
+        activitySelectionOverrides.first { $0.templateSteadyState?.id == template.id }
     }
 }
