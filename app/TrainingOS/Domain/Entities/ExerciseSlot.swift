@@ -8,6 +8,20 @@ import SwiftData
 /// decision A6). `allowedTargets` survives resolution (never cleared once
 /// `resolvedExercise` is set) so the original slot intent stays
 /// inspectable even after a concrete choice was made.
+///
+/// **Stage 4E addition:** `allowedMovementFunctions`/`allowedModalities`
+/// let a Functional Fitness movement slot (e.g. "moderate-loaded squat/
+/// press," "gymnastics pull," "monostructural") reuse this exact same
+/// type, and therefore the exact same substitution machinery
+/// (`SubstitutionValidator`, `SlotSelectionOverride`,
+/// `SubstituteExerciseUseCase`) already built and tested for strength —
+/// rather than a second, parallel slot/override system for Functional
+/// Fitness. `owningFunctionalFitnessSlot` is the new owning parent this
+/// stage adds (`FunctionalFitnessMovementSlotTemplate` wraps one
+/// `ExerciseSlot` plus FF-specific per-movement targets, mirroring how
+/// `PrescriptionTemplate` already wraps one `ExerciseSlot` plus
+/// strength-specific rule fields) — `ExerciseSlot` itself stays exactly
+/// as general-purpose as it already was.
 @Model
 final class ExerciseSlot {
     @Attribute(.unique) var id: UUID
@@ -15,9 +29,30 @@ final class ExerciseSlot {
     /// is a plain inverse property, same pattern as
     /// `TrainingWeek.programDefinition`.
     var prescriptionTemplate: PrescriptionTemplate?
+    /// The Stage 4E sibling of `prescriptionTemplate` above — the delete
+    /// rule lives on `FunctionalFitnessMovementSlotTemplate.exerciseSlot`.
+    /// At most one of `prescriptionTemplate`/`owningFunctionalFitnessSlot`
+    /// is ever set on a given row — a slot belongs to exactly one
+    /// template graph, never both.
+    var owningFunctionalFitnessSlot: FunctionalFitnessMovementSlotTemplate?
     /// e.g. "Horizontal Push", "Chest Isolation or Triceps".
     var name: String
+    /// Stable position among a Functional Fitness prescription's
+    /// multiple slots (e.g. a triplet's 3 movements) — meaningless and
+    /// always `0` for strength's single-slot-per-`PrescriptionTemplate`
+    /// usage, assigned by `FunctionalFitnessMovementSlotTemplate`'s own
+    /// attach method.
+    var sortIndex: Int
     var allowedTargets: [MuscleGroup]
+    /// Stage 4E addition, Functional Fitness's movement-pattern
+    /// equivalent of `allowedTargets` — e.g. `[.squatLoaded, .pressLoaded]`
+    /// for "moderate-loaded squat/push." Empty means no movement-
+    /// function-based constraint (matched the same way an empty
+    /// `allowedTargets` means no muscle-group-based constraint).
+    var allowedMovementFunctions: [MovementFunction]
+    /// Stage 4E addition — e.g. `[.gymnastics]` for a "gymnastics pull"
+    /// slot, `[.metabolicConditioning]` for "monostructural."
+    var allowedModalities: [FunctionalModality]
     /// Optional explicit constraint narrower than `allowedTargets` (e.g.
     /// "barbell bench press or dumbbell bench press, nothing else"). Empty
     /// means any `Exercise` matching `allowedTargets` is eligible.
@@ -40,12 +75,17 @@ final class ExerciseSlot {
         id: UUID = UUID(),
         name: String,
         allowedTargets: [MuscleGroup] = [],
+        allowedMovementFunctions: [MovementFunction] = [],
+        allowedModalities: [FunctionalModality] = [],
         allowedExercises: [Exercise] = [],
         resolvedExercise: Exercise? = nil
     ) {
         self.id = id
         self.name = name
+        self.sortIndex = 0
         self.allowedTargets = allowedTargets
+        self.allowedMovementFunctions = allowedMovementFunctions
+        self.allowedModalities = allowedModalities
         self.allowedExercises = allowedExercises
         self.resolvedExercise = resolvedExercise
     }

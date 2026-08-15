@@ -66,17 +66,19 @@ final class DomainModelScenarioTests: XCTestCase {
         XCTAssertEqual(block.result?.incompleteMinuteIndexes, [6])
     }
 
-    // F. For Time benchmark.
+    // F. For Time benchmark. Stage 4E: migrated to the canonical
+    // FunctionalFitnessResult/BenchmarkPerformanceProfile path — see
+    // RecordWorkoutResultUseCase's own doc comment on the consolidation.
     func testForTimeBenchmarkRecordsRxTimeAndCreatesAPersonalRecord() throws {
         let session = try session(named: "Fran")
         let block = try XCTUnwrap(session.orderedBlocks.first)
-        XCTAssertEqual(block.type, .forTime)
-        XCTAssertEqual(block.result?.elapsedSeconds, 245)
-        XCTAssertEqual(block.result?.resultContext, .rx)
+        XCTAssertEqual(block.type, .functionalFitness)
+        XCTAssertEqual(block.functionalFitnessResult?.scoreValue, .time(seconds: 245))
+        XCTAssertEqual(block.functionalFitnessResult?.resultContext, .rx)
 
-        let franProfile = try XCTUnwrap(seed.performanceProfile.profile(for: seed.catalog.fran))
-        XCTAssertEqual(franProfile.personalRecords.count, 1)
-        XCTAssertEqual(franProfile.personalRecords.first?.value, 245)
+        let benchmarkProfile = try XCTUnwrap(seed.performanceProfile.benchmarkProfiles.first { $0.benchmark?.canonicalID == "benchmark.fran" })
+        XCTAssertEqual(benchmarkProfile.personalRecords.count, 1)
+        XCTAssertEqual(benchmarkProfile.personalRecords.first?.value, 245)
     }
 
     // G. Hybrid Strength + Metcon: one Session, two block types in order.

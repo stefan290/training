@@ -5,11 +5,11 @@ import SwiftData
 /// only, no execution state (no `status`, no result). Strength content
 /// uses `prescriptionTemplates` (Stage 4A); steady-state content uses
 /// `steadyStatePrescriptionTemplate` (Stage 4C); interval content uses
-/// `intervalPrescriptionTemplate` (Stage 4D addition, closing the gap
-/// this doc comment used to flag) — mirroring how `WorkoutBlock` itself
-/// already carries one typed relationship per modality rather than a
-/// generic slot. Functional-fitness template equivalents remain a
-/// Stage 4E extension, not built here — see `type`'s doc comment.
+/// `intervalPrescriptionTemplate` (Stage 4D); Functional Fitness content
+/// uses `functionalFitnessPrescriptionTemplate` (Stage 4E addition,
+/// closing the gap this doc comment used to flag) — mirroring how
+/// `WorkoutBlock` itself already carries one typed relationship per
+/// modality rather than a generic slot.
 @Model
 final class WorkoutBlockTemplate {
     @Attribute(.unique) var id: UUID
@@ -36,6 +36,10 @@ final class WorkoutBlockTemplate {
     /// Cascade: same reasoning, Stage 4D addition.
     @Relationship(deleteRule: .cascade, inverse: \IntervalPrescriptionTemplate.workoutBlockTemplate)
     var intervalPrescriptionTemplate: IntervalPrescriptionTemplate?
+
+    /// Cascade: same reasoning, Stage 4E addition.
+    @Relationship(deleteRule: .cascade, inverse: \FunctionalFitnessPrescriptionTemplate.workoutBlockTemplate)
+    var functionalFitnessPrescriptionTemplate: FunctionalFitnessPrescriptionTemplate?
 
     /// `ActivitySelectionOverride`'s required inverse — nothing reads
     /// this collection. Stage 4D addition: moved here from
@@ -71,6 +75,13 @@ final class WorkoutBlockTemplate {
     /// maintains the declared inverse.
     func attachIntervalPrescriptionTemplate(_ template: IntervalPrescriptionTemplate) {
         intervalPrescriptionTemplate = template
+    }
+
+    /// The only way application code should attach a
+    /// `FunctionalFitnessPrescriptionTemplate`. Mutates exactly one side;
+    /// SwiftData maintains the declared inverse.
+    func attachFunctionalFitnessPrescriptionTemplate(_ template: FunctionalFitnessPrescriptionTemplate) {
+        functionalFitnessPrescriptionTemplate = template
     }
 
     var orderedPrescriptionTemplates: [PrescriptionTemplate] {

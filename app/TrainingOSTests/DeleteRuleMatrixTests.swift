@@ -110,46 +110,56 @@ final class DeleteRuleMatrixTests: XCTestCase {
         XCTAssertTrue(formerlyPushDayResults.allSatisfy { $0.exercisePrescription == nil }, "Surviving results should have lost their session context, not their identity.")
     }
 
-    func testDeletingWorkoutResultPreservesItsPersonalRecord() throws {
+    /// Stage 4E: migrated from the legacy `WorkoutResult`/`ExercisePerformanceProfile`
+    /// path (Fran-as-canonical-Exercise) to the sole canonical benchmark
+    /// path (`FunctionalFitnessResult`/`BenchmarkPerformanceProfile`) —
+    /// see `RecordWorkoutResultUseCase`'s own doc comment on the
+    /// consolidation. `WorkoutBlock.functionalFitnessResult` is
+    /// `.nullify`, not `.cascade` (unlike the legacy `WorkoutBlock.result`),
+    /// so the equivalent proof here deletes the `FunctionalFitnessResult`
+    /// directly rather than via block deletion — the same underlying
+    /// invariant (a PersonalRecord survives the deletion of the result
+    /// that produced it), proven at its new, correct location.
+    func testDeletingFunctionalFitnessResultPreservesItsPersonalRecord() throws {
         let container = PersistenceController.makeInMemoryContainer()
         let context = container.mainContext
         let seed = SeedDataProvider.seedAll(in: context)
 
-        let franProfile = try XCTUnwrap(seed.performanceProfile.profile(for: seed.catalog.fran))
-        XCTAssertEqual(franProfile.personalRecords.count, 1)
-        let recordID = try XCTUnwrap(franProfile.personalRecords.first).id
-        let recordValue = try XCTUnwrap(franProfile.personalRecords.first).value
+        let benchmarkProfile = try XCTUnwrap(seed.performanceProfile.benchmarkProfiles.first { $0.benchmark?.canonicalID == "benchmark.fran" })
+        XCTAssertEqual(benchmarkProfile.personalRecords.count, 1)
+        let recordID = try XCTUnwrap(benchmarkProfile.personalRecords.first).id
+        let recordValue = try XCTUnwrap(benchmarkProfile.personalRecords.first).value
 
         let franSession = try session(named: "Fran", in: context)
         let franBlock = try XCTUnwrap(franSession.blocks.first)
-        let workoutResult = try XCTUnwrap(franBlock.result)
+        let ffResult = try XCTUnwrap(franBlock.functionalFitnessResult)
 
-        // Deleting the block (not the whole session) removes the raw
-        // WorkoutResult via cascade — this is the case the matrix calls
-        // out explicitly as "clarify and test."
-        context.delete(franBlock)
+        context.delete(ffResult)
         try context.save()
 
-        let remainingResults = try context.fetch(FetchDescriptor<WorkoutResult>())
-        XCTAssertFalse(remainingResults.contains { $0.id == workoutResult.id }, "The block-level WorkoutResult is expected to cascade-delete with its block.")
+        let remainingResults = try context.fetch(FetchDescriptor<FunctionalFitnessResult>())
+        XCTAssertFalse(remainingResults.contains { $0.id == ffResult.id })
 
-        let profiles = try context.fetch(FetchDescriptor<ExercisePerformanceProfile>())
-        let survivingProfile = try XCTUnwrap(profiles.first { $0.id == franProfile.id })
+        let profiles = try context.fetch(FetchDescriptor<BenchmarkPerformanceProfile>())
+        let survivingProfile = try XCTUnwrap(profiles.first { $0.id == benchmarkProfile.id })
         let survivingRecord = try XCTUnwrap(survivingProfile.personalRecords.first { $0.id == recordID })
-        XCTAssertEqual(survivingRecord.value, recordValue, "A PersonalRecord must survive the deletion of the WorkoutResult that produced it.")
-        XCTAssertNil(survivingRecord.sourceWorkoutResult, "The traceability pointer should be nullified, not the record itself.")
+        XCTAssertEqual(survivingRecord.value, recordValue, "A PersonalRecord must survive the deletion of the FunctionalFitnessResult that produced it.")
+        XCTAssertNil(survivingRecord.sourceFunctionalFitnessResult, "The traceability pointer should be nullified, not the record itself.")
     }
 
     // MARK: - Explicit PersonalRecord deletion
 
+    /// Stage 4E: migrated to the canonical benchmark path — see
+    /// `testDeletingFunctionalFitnessResultPreservesItsPersonalRecord`'s
+    /// own doc comment.
     func testExplicitPersonalRecordDeletionOnlyRemovesThatRecord() throws {
         let container = PersistenceController.makeInMemoryContainer()
         let context = container.mainContext
         let seed = SeedDataProvider.seedAll(in: context)
 
-        let franProfile = try XCTUnwrap(seed.performanceProfile.profile(for: seed.catalog.fran))
-        let record = try XCTUnwrap(franProfile.personalRecords.first)
-        let franProfileID = franProfile.id
+        let benchmarkProfile = try XCTUnwrap(seed.performanceProfile.benchmarkProfiles.first { $0.benchmark?.canonicalID == "benchmark.fran" })
+        let record = try XCTUnwrap(benchmarkProfile.personalRecords.first)
+        let benchmarkProfileID = benchmarkProfile.id
 
         let benchProfile = try XCTUnwrap(seed.performanceProfile.profile(for: seed.catalog.benchPress))
         let benchResultCountBefore = benchProfile.setResults.count
@@ -157,11 +167,12 @@ final class DeleteRuleMatrixTests: XCTestCase {
         context.delete(record)
         try context.save()
 
-        let profiles = try context.fetch(FetchDescriptor<ExercisePerformanceProfile>())
-        let survivingFranProfile = try XCTUnwrap(profiles.first { $0.id == franProfileID })
-        XCTAssertTrue(survivingFranProfile.personalRecords.isEmpty, "Deleting the record should remove it, and only it.")
+        let benchmarkProfiles = try context.fetch(FetchDescriptor<BenchmarkPerformanceProfile>())
+        let survivingBenchmarkProfile = try XCTUnwrap(benchmarkProfiles.first { $0.id == benchmarkProfileID })
+        XCTAssertTrue(survivingBenchmarkProfile.personalRecords.isEmpty, "Deleting the record should remove it, and only it.")
 
-        let survivingBenchProfile = try XCTUnwrap(profiles.first { $0.id == benchProfile.id })
+        let exerciseProfiles = try context.fetch(FetchDescriptor<ExercisePerformanceProfile>())
+        let survivingBenchProfile = try XCTUnwrap(exerciseProfiles.first { $0.id == benchProfile.id })
         XCTAssertEqual(survivingBenchProfile.setResults.count, benchResultCountBefore, "Deleting one PersonalRecord must not touch an unrelated ExercisePerformanceProfile.")
     }
 

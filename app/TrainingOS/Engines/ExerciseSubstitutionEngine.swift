@@ -9,25 +9,40 @@ enum SubstitutionValidator {
     /// A candidate is valid for a slot when:
     /// 1. `allowedExercises` is non-empty and contains the candidate by
     ///    identity (the slot's own explicit, narrower allow-list — checked
-    ///    first because it is the more specific constraint), OR
-    /// 2. `allowedExercises` is empty and the candidate's `primaryTargets`
-    ///    intersects `allowedTargets` — exactly what `ExerciseSlot`'s own
-    ///    doc comment already promises ("empty means any Exercise matching
-    ///    allowedTargets is eligible"). A candidate with no
-    ///    `primaryTargets` at all never matches a target-constrained slot
-    ///    — empty is "unmatchable," never "wildcard."
-    /// 3. A slot with both `allowedExercises` and `allowedTargets` empty
-    ///    is unconstrained — any candidate is valid (mirrors the existing
-    ///    "empty means no explicit constraint" convention throughout this
-    ///    codebase, e.g. `HypertrophyConfiguration`'s split fields).
+    ///    first because it is the more specific constraint, and it
+    ///    short-circuits every other dimension below, unchanged since
+    ///    Stage 4C), OR
+    /// 2. `allowedExercises` is empty and the candidate satisfies *every*
+    ///    non-empty constraint dimension among `allowedTargets`/
+    ///    `allowedMovementFunctions`/`allowedModalities` (Stage 4E
+    ///    addition, for Functional Fitness movement slots) — each
+    ///    non-empty dimension must intersect the candidate's
+    ///    corresponding field (OR within a dimension's own array, AND
+    ///    across dimensions); an empty dimension imposes no constraint at
+    ///    all. A candidate with no matching metadata at all never matches
+    ///    a dimension-constrained slot — empty is "unmatchable," never
+    ///    "wildcard," exactly `allowedTargets`' own existing rule,
+    ///    generalized.
+    /// 3. A slot with every dimension empty is fully unconstrained — any
+    ///    candidate is valid (mirrors the existing "empty means no
+    ///    explicit constraint" convention throughout this codebase, e.g.
+    ///    `HypertrophyConfiguration`'s split fields).
     static func isValid(candidate: Exercise, for slot: ExerciseSlot) -> Bool {
         if !slot.allowedExercises.isEmpty {
             return slot.allowedExercises.contains { $0.id == candidate.id }
         }
-        if slot.allowedTargets.isEmpty {
-            return true
+        if !slot.allowedTargets.isEmpty, Set(candidate.primaryTargets).isDisjoint(with: Set(slot.allowedTargets)) {
+            return false
         }
-        return !Set(candidate.primaryTargets).isDisjoint(with: Set(slot.allowedTargets))
+        if !slot.allowedMovementFunctions.isEmpty, Set(candidate.movementFunctions).isDisjoint(with: Set(slot.allowedMovementFunctions)) {
+            return false
+        }
+        if !slot.allowedModalities.isEmpty {
+            guard let candidateModality = candidate.functionalModality, slot.allowedModalities.contains(candidateModality) else {
+                return false
+            }
+        }
+        return true
     }
 }
 

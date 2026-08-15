@@ -46,6 +46,14 @@ enum FunctionalModality: String, Codable, CaseIterable {
 /// A closed set of movement-pattern requirements a movement slot can carry.
 /// `.other` exists so this never blocks a movement pattern the model hasn't
 /// anticipated, mirroring `PhaseType.custom`'s existing precedent.
+///
+/// **Stage 4E addition:** `.carry`, `.locomotion`, `.trunk` — Stage 4E §7
+/// explicitly names these alongside squat/hinge/push/pull as required
+/// movement-pattern categories; the original 7 cases had no way to
+/// distinguish a farmer's-carry-style slot, a running/rowing-style
+/// locomotion slot, or a core/trunk slot from `.other`. Purely additive —
+/// a `String`-rawValue enum gaining cases is free, no persistence risk,
+/// and every existing stored `MovementFunction` value is unaffected.
 enum MovementFunction: String, Codable, CaseIterable {
     case squatLoaded
     case hingeLoaded
@@ -53,6 +61,9 @@ enum MovementFunction: String, Codable, CaseIterable {
     case gymnasticsPull
     case gymnasticsPush
     case monostructural
+    case carry
+    case locomotion
+    case trunk
     case other
 }
 

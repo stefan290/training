@@ -4,8 +4,10 @@ Stage 4C's Part B deliverable: exercise/activity substitution is a
 domain/programming requirement, not a future UI feature. Stage 4D
 extended the activity-substitution half to cover `IntervalPrescriptionTemplate`
 alongside `SteadyStatePrescriptionTemplate`, correcting
-`ActivitySelectionOverride`'s key in the process (§3 below). This
-document is the contract for how it works — read it before touching
+`ActivitySelectionOverride`'s key in the process (§3 below). Stage 4E
+extended the *exercise*-substitution half to cover Functional Fitness
+movement slots, with zero new mechanism (§7 below). This document is the
+contract for how it works — read it before touching
 `SlotSelectionOverride`, `ActivitySelectionOverride`,
 `SubstituteExerciseUseCase`, or `SubstituteActivityUseCase`.
 
@@ -198,3 +200,38 @@ asks for it.
   — the "related exercise" confidence discount and the intensity-target
   drop-to-`nil` behavior are both deliberately simple, clearly-labeled
   placeholders, not a physiology model.
+
+## 7. Functional Fitness movement-slot substitution (Stage 4E)
+
+Functional Fitness movement slots (e.g. "moderate-loaded squat/push,"
+"gymnastics pull") are **not** a new substitution system — they're
+`ExerciseSlot` rows, exactly like a strength slot, owned by a new parent
+type (`FunctionalFitnessMovementSlotTemplate`) instead of
+`PrescriptionTemplate`. `ExerciseSlot` gained two new constraint
+dimensions to make this possible:
+
+- `allowedMovementFunctions: [MovementFunction]` — the movement-pattern
+  equivalent of `allowedTargets: [MuscleGroup]`.
+- `allowedModalities: [FunctionalModality]` — which broad category
+  (metabolic conditioning / gymnastics / weightlifting) a candidate must
+  belong to.
+
+`SubstitutionValidator.isValid` checks all three dimensions together
+(AND across dimensions, OR within one dimension's own array;
+`allowedExercises`, when set, still short-circuits everything else,
+unchanged since Stage 4C) — a strength slot that never sets the two new
+fields is completely unaffected, since an empty array imposes no
+constraint.
+
+Because substitution is validated and overridden through the exact same
+`ExerciseSlot`/`SlotSelectionOverride`/`SubstituteExerciseUseCase`
+machinery, THIS SESSION ONLY and GOING FORWARD both work for a
+Functional Fitness movement slot with no new code beyond the two new
+`ExerciseSlot` fields and the `SubstitutionValidator` generalization —
+proven end-to-end by
+`FunctionalFitnessSubstitutionAndBenchmarkTests.testGoingForwardMovementSlotSubstitutionNeverMutatesProgramDefinitionAndHistoricalSessionStaysStable`.
+`Exercise` gained matching typed metadata (`movementFunctions:
+[MovementFunction]`, `functionalModality: FunctionalModality?`) so a
+candidate can actually be checked against these new dimensions, closing
+the same "canonical Exercise metadata, never parsed names" gap
+`primaryTargets` closed for strength substitution in Stage 4C.

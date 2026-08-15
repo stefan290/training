@@ -1129,3 +1129,328 @@ Stage 4C added no seeded content and no UI/ViewModel code, matching Stage
 See the final commit hash reported alongside this document. Local and
 remote verified to match; working tree clean apart from local Xcode user
 data.
+
+## Stage 4E: FunctionalFitnessProgrammingSystem
+
+One deterministic `FunctionalFitnessProgrammingSystem` — explicitly not a
+random WOD generator, built on the stimulus-first pipeline
+(`FUNCTIONAL_FITNESS_PROGRAMMING_MODEL.md`) rather than double
+progression. Baseline: commit `c2efa33` (Stage 4D, approved), 236/236
+tests passing. Full contract in the new `FUNCTIONAL_FITNESS_ENGINE.md`;
+this section summarizes what changed and why.
+
+### 1. What Stage 3C already built
+
+The largest share of this stage's execution-layer plumbing already
+existed: `FunctionalFitnessPrescription`/`FunctionalFitnessMovement`
+(Stage 3C's own "ResolvedMovement" concept), `FunctionalFitnessResult`/
+`FunctionalFitnessPerformedMovement` (prescribed-vs-performed already
+separated), `BenchmarkDefinition`/`BenchmarkPerformanceProfile`,
+`Stimulus`/`WorkoutFormat`/`ScoreType`/`ScoreDirection`/`ScoreValue`,
+`MovementFunction`/`FunctionalModality`, `TrainingStressProfile`, and the
+`ProgrammingDecisionEngine` protocol scaffold (with `VarianceExposureRecord`/
+`VarianceConstraints`/`ProgrammingDecisionInput`/`ProgrammingDecisionOutput`
+already defined, "no concrete conformer exists in this pass"). What was
+missing, exactly mirroring every prior Stage 4 system's own finding, was
+the **template-graph equivalent** and the **concrete decision engine**.
+
+**A genuinely useful finding from this review:** `Stimulus`/`WorkoutFormat`
+have been round-tripping through SwiftData directly (no flattening) since
+Stage 3C — `FunctionalFitnessPrescription.stimulus`/`.format` and
+`BenchmarkDefinition.stimulus`/`.format` already store them this way,
+exercised by pre-existing passing tests. This retroactively confirms an
+array of a multi-field struct (`Stimulus.movementModalityMix: [ModalityCount]`)
+*can* round-trip safely in this codebase — evidence Stage 4D's own
+`IntervalProgressionStep` flattening caution didn't have available at the
+time. `FunctionalFitnessPrescriptionTemplate` stores `stimulus`/`format`
+directly on this existing evidence, not a fresh untested assumption.
+
+### 2. FunctionalFitnessProgrammingSystem architecture
+
+`FunctionalFitnessPrescriptionTemplate` (new) is `WorkoutBlockTemplate`'s
+fourth typed child, alongside strength/steady-state/interval. The five-
+stage pipeline (§2 of the kickoff) splits across generator and
+materializer exactly like Stage 4D split calendar-driven vs. performance-
+gated progression:
+
+- **Stage A (target stimulus)** and **Stage B (format)** are supplied
+  directly by the caller's `FunctionalFitnessProgramConfiguration` — a
+  real "given a training goal, choose a stimulus" decision is content
+  authoring, out of this pass's scope (§34).
+- **Stage C (movement slots)** runs at generation time:
+  `FunctionalFitnessProgramGenerator` derives one
+  `FunctionalFitnessMovementSlotTemplate` per `ModalityCount` entry in
+  the target stimulus's `movementModalityMix` (a triplet's 3 counts
+  become 3 slots), each constrained by `allowedModalities`/
+  `allowedMovementFunctions` — never a hard-coded exercise list.
+- **Stage D (concrete exercise selection)** and **Stage E (stimulus
+  validation)** run at `FunctionalFitnessMaterializer` time, not
+  generation time — they depend on live exposure history and available
+  candidates the generator can't know in advance, mirroring exactly how
+  Stage 4A deferred strength's concrete-exercise resolution to
+  materialization.
+
+**Movement slots reuse `ExerciseSlot` directly, not a parallel FF-specific
+slot type.** `ExerciseSlot` gained `allowedMovementFunctions: [MovementFunction]`/
+`allowedModalities: [FunctionalModality]` (Stage 4E addition, alongside
+the existing `allowedTargets: [MuscleGroup]`) and a second owning parent
+(`FunctionalFitnessMovementSlotTemplate`, mirroring `PrescriptionTemplate`'s
+existing ownership shape) — meaning Functional Fitness movement slots
+inherit `SubstitutionValidator`, `SlotSelectionOverride`, and
+`SubstituteExerciseUseCase` for free, rather than a second, parallel
+substitution system. `SubstitutionValidator.isValid` was generalized to
+check all three dimensions (AND across dimensions, OR within one
+dimension's array; `allowedExercises`, when set, still short-circuits
+everything else unchanged since Stage 4C) — every pre-existing strength-
+slot test still passes unchanged, since the two new dimensions default to
+empty.
+
+**`Exercise` gained typed movement metadata** — `movementFunctions:
+[MovementFunction]`, `functionalModality: FunctionalModality?` — closing
+the same "canonical Exercise metadata, never parsed exercise names" gap
+`primaryTargets` closed for strength in Stage 4C. `MovementFunction`
+itself gained 3 cases (`.carry`, `.locomotion`, `.trunk`) the kickoff's
+§7 explicitly named but the original 7-case enum had no way to represent
+— purely additive, no persistence risk.
+
+**Format vs. stimulus independence (§6)** is enforced by construction,
+not just convention: `FunctionalFitnessPrescriptionTemplate` stores both
+as two independent fields with no subtyping relationship, proven directly
+(`testSameFormatWithDifferentStimuliAreNotConflated`) — two AMRAPs with
+identical format but opposite intensity/loading are never treated as "the
+same kind of workout."
+
+### 3. ProgrammingDecisionEngine — the first concrete conformer
+
+**Stage 4E correction:** `ProgrammingDecisionOutput.reasonCode` was typed
+`ProgressionReasonCode` (a reasonable Stage 3C placeholder — "no concrete
+conformer exists in this pass"). `ProgressionReasonCode` is strength's own
+"why did the load change" vocabulary; reusing it for "why did the next
+stimulus balance duration vs. modality" would be the exact wrong-
+vocabulary-reused-for-a-different-concept mismatch Stage 4C's
+`SubstitutionReason`/`ProgressionReasonCode` split already corrected once.
+Retyped to the new `FunctionalFitnessReasonCode` — painless, since nothing
+produced or consumed a `ProgrammingDecisionOutput` before this pass.
+
+`FunctionalFitnessDecisionEngine` (new, `Engines/`) implements the
+protocol: checks exactly 4 dimensions (duration domain, loading,
+modality mix, movement function) in a **fixed, documented priority
+order**, adjusting only the first one it finds violated per call —
+directly mirroring Stage 4D's progression-priority discipline ("do not
+change several things at once"). Each violated dimension rotates to a
+deterministic alternative (duration/loading: the next value in the
+enum's own declared order; modality/movement-function: the least-exposed
+candidate across all of `exposureHistory`, added to the target) — never
+a random pick among candidates (§29). `VarianceConstraints` gained 2
+fields (`avoidRepeatingDurationDomainWithinSessions`/
+`avoidRepeatingLoadingWithinSessions`), additive alongside the original 2.
+
+`FunctionalFitnessExposureHistoryBuilder` (new, `Application/UseCases/`,
+touches `@Model` types so it's not part of the pure `Engines/` layer)
+builds `[VarianceExposureRecord]` from a `ProgramInstance`'s actual
+history: only a `Session` with `status == .completed` *and* a
+`WorkoutBlock` carrying both a real `FunctionalFitnessResult` and its
+originating `FunctionalFitnessPrescription` contributes — a scheduled-
+but-skipped Session contributes nothing, directly satisfying §27/§50.36.
+
+### 4. Scoring architecture
+
+No new scoring vocabulary — `ScoreType`/`ScoreDirection`/`ScoreValue`
+(Stage 3C) already cover every case §12 requires, always set explicitly
+at construction (no default, no inference from format name).
+`RecordFunctionalFitnessResultUseCase` (new) is the sole path from a
+`FunctionalFitnessResult` to a `PersonalRecord` — `comparableValue(for:)`
+turns a structured `ScoreValue` into one comparable `Double` purely for
+`ScoringEngine`'s existing higher/lower-is-better comparison (never for
+display; the structured value is what's actually stored), with a
+TRAININGOS_DESIGNED `.roundsAndReps` proxy (`rounds * 100_000 +
+partialReps` — more rounds always beats fewer, more partial reps wins
+within the same round count). `mapToScoringDirection(_:)` bridges the
+Stage 3C `ScoreDirection` (2 cases) onto the pre-existing `ScoringDirection`
+(4 cases) `ScoringEngine`/`PersonalRecord` already use.
+
+### 5. Benchmark architecture and the Fran consolidation (§22/§55)
+
+**Resolved before any other Stage 4E work**, per the kickoff's own
+instruction. Two parallel Fran representations existed:
+
+1. **Legacy** (Stage 1-2): "Fran" modelled as a canonical `Exercise`
+   (`ExerciseCatalog.fran`), scored through `RecordWorkoutResultUseCase`'s
+   `benchmarkExercise`/`prCandidateValue` parameters, folding a PR into
+   `ExercisePerformanceProfile` — the exact same entity type Bench Press's
+   PRs live in.
+2. **Canonical** (Stage 3C): `BenchmarkDefinition`/`BenchmarkPerformanceProfile`
+   plus the typed `FunctionalFitnessPrescription`/`FunctionalFitnessResult`
+   path.
+
+**The canonical (2) representation was kept; (1) was removed, not left
+dead.** `ExerciseCatalog.fran` is gone. `RecordWorkoutResultUseCase` lost
+its `benchmarkExercise`/`prCandidateValue` parameters entirely (its only
+real caller was the Fran scenario, migrated in the same pass — the 5
+other call sites already always passed `nil` for both). A new
+`RecordFunctionalFitnessResultUseCase` is the sole path to a benchmark
+`PersonalRecord` going forward. `SeedScenarios.forTimeBenchmarkSession`
+now builds Fran through `FunctionalFitnessPrescription`/
+`FunctionalFitnessMovement`/`FunctionalFitnessResult`/`BenchmarkDefinition`
+end to end. Three existing tests that asserted against the legacy path
+were migrated to the canonical one, proving the *same* delete-rule
+invariants (a PersonalRecord survives the deletion of the result that
+produced it; explicit PersonalRecord deletion touches nothing else) at
+their new, correct location:
+`DeleteRuleMatrixTests.testDeletingWorkoutResultPreservesItsPersonalRecord`
+-> `.testDeletingFunctionalFitnessResultPreservesItsPersonalRecord`,
+`.testExplicitPersonalRecordDeletionOnlyRemovesThatRecord` (same name,
+migrated body), and `DomainModelScenarioTests.testForTimeBenchmarkRecordsRxTimeAndCreatesAPersonalRecord`
+(same name, migrated body) — documented here as the exact approved
+architectural reason §53 requires, not a silent behavior change.
+`FunctionalFitnessSubstitutionAndBenchmarkTests.testExactlyOneCanonicalFranRepresentationExistsAfterSeeding`
+proves the migration directly: no `Exercise` named "Fran" exists in the
+seeded catalog, and exactly one `BenchmarkDefinition` with
+`canonicalID == "benchmark.fran"` does.
+
+`BenchmarkDefinition`'s own shape (stable `canonicalID`, `stimulus`,
+`format`, `scoreType`/`scoreDirection`) already satisfied §21's
+requirements unchanged; no versioning field was added since nothing in
+this pass changes an existing benchmark's prescription in place (§43's
+"new version where required" principle extends to benchmarks too, just
+not yet exercised).
+
+### 6. Scaling and substitution
+
+Functional Fitness scaling (Toes-to-Bar prescribed, Knee Raises
+performed) was already fully correct since Stage 3C
+(`FunctionalFitnessPerformedMovement.prescribedMovement`/`.performedExercise`)
+— re-confirmed with a Stage-4E-scoped test, no new code. GOING FORWARD
+movement-slot substitution is new *behavior*, though zero new
+*mechanism* — it's `SubstituteExerciseUseCase`/`SlotSelectionOverride`
+applied to an `ExerciseSlot` now reachable through a
+`FunctionalFitnessMovementSlotTemplate` parent, proven end-to-end
+(`testGoingForwardMovementSlotSubstitutionNeverMutatesProgramDefinitionAndHistoricalSessionStaysStable`):
+the template graph is never mutated, a completed historical Session is
+unaffected, and the next materialized week picks up the substitution.
+
+### 7. PerformanceProfile integration
+
+No fourth profile type — Functional Fitness uses `ExercisePerformanceProfile`
+(a specific movement performed, e.g. Thrusters logged with real load,
+context-scoped by whichever block it came from), `ActivityPerformanceProfile`
+(monostructural activity history — Stage 4C/4D's system, untouched),
+and `BenchmarkPerformanceProfile` (repeatable benchmarks) — exactly as
+§32 specifies, satisfied entirely by pre-existing Stage 3C/4C
+infrastructure.
+
+### 8. TrainingStressProfile
+
+`FunctionalFitnessStressProfileMapper` (new, `Engines/`, pure) maps a
+resolved `Stimulus` to a `TrainingStressProfile` — coarse, deterministic,
+explicitly documented as *not* a physiological formula (mirroring
+`TrainingStressProfile`'s own doc comment). `lowerBodyLoad`/`upperBodyLoad`
+derive from which movement functions are present (squat/hinge -> lower,
+press/pull -> upper), scaled by the stimulus's own `loading` classification;
+`impactLoading` is set only when a locomotion/monostructural function is
+present (a coarse, explicitly-labeled simplification); `metabolicDemand`/
+`recoveryDemand` mirror `intensity`/`systemicDemand` respectively, since
+this pass has no independent signal to distinguish them.
+`durationClassification` passes `targetDurationDomain` straight through
+(no re-classification — `Stimulus` and `TrainingStressProfile` already
+share the exact same `DurationDomain` type).
+
+### 9. Source-derived vs. TrainingOS-designed rules
+
+No new source-derived numeric fixture was added this stage — Stage 3B's
+own CrossFit-sourced material (`PROGRAMMING_SOURCES.md` §4, the "goal/
+stimulus → program → analyze" sequence) already grounds the five-stage
+pipeline's *shape*, cited unchanged. Every number this stage introduces
+is explicitly TRAININGOS_DESIGNED and labeled as such:
+`FunctionalFitnessStimulusValidator`'s short(<5min)/medium(5-15min)/
+long(>15min) duration-domain thresholds (carried from
+`FUNCTIONAL_FITNESS_PROGRAMMING_MODEL.md` §1.1's own Stage 3B sketch,
+not invented fresh), the `.roundsAndReps` PR-comparison proxy, and the
+strength+metcon composition's fixed 5×5 placeholder numbers. No
+proprietary CrossFit workout catalog was imported (§45) — the curated
+movement catalog (§35, `ExerciseCatalog`'s Stage 4E additions) is a small,
+generic, well-known-movement set, and every generated program is an
+original configuration of the deterministic system, never a copied named
+workout beyond Fran itself (already a widely-known, non-proprietary
+reference benchmark, exactly as Stage 3C originally used it).
+
+### 10. Persistence/schema changes
+
+New `@Model` types: `FunctionalFitnessPrescriptionTemplate`,
+`FunctionalFitnessMovementSlotTemplate` (both registered in
+`PersistenceController.schema`). New fields: `Exercise.movementFunctions`/
+`.functionalModality`, `ExerciseSlot.allowedMovementFunctions`/
+`.allowedModalities`/`.sortIndex`/`.owningFunctionalFitnessSlot`,
+`WorkoutBlockTemplate.functionalFitnessPrescriptionTemplate`,
+`ProgramDefinition.functionalFitnessConfiguration`. Changed:
+`RecordWorkoutResultUseCase`'s signature (benchmark-folding parameters
+removed, §5). `MovementFunction` gained 3 cases. See
+`DELETE_RULE_MATRIX.md`'s new "Stage 4E additions" section for full
+delete-rule reasoning.
+
+### 11. Test count and result
+
+276 tests total (236 Stage 4A-4D baseline + 40 new Stage 4E tests). All
+276 pass on the real Xcode toolchain, including all 236 pre-existing
+tests unchanged in substance — the 3 Fran-migration test updates are
+documented in §5 above, not silent.
+
+New Stage 4E test files: `FunctionalFitnessPersistenceTests` (6,
+including the sibling-row-heterogeneity diagnostic for direct `Stimulus`/
+`WorkoutFormat` storage and for the new `Exercise.functionalModality`
+field, plus a cascade-delete proof for the new template relationship),
+`FunctionalFitnessProgramGeneratorTests` (11, all 10 required format
+shapes plus the format-vs-stimulus independence proof),
+`FunctionalFitnessDecisionEngineTests` (9, missing-duration/missing-
+modality/movement-pattern-overuse detection, fixed-priority-order
+adjustment, determinism, insufficient-history-never-false-triggers, and
+the skipped-session-exposure proof), `FunctionalFitnessScoringAndStressProfileTests`
+(9, every required scoring direction plus 3 stress-profile
+distinctness proofs), `FunctionalFitnessSubstitutionAndBenchmarkTests`
+(5, benchmark identity/history/Rx-Scaled-independence, the Fran-
+consolidation confirmation, scaling, and going-forward movement
+substitution).
+
+### 12. Simulator
+
+Rebuilt and relaunched on an iPhone 17 (iOS 26.5) simulator after the
+schema change (2 new `@Model` types, several new/changed fields, and the
+Fran seed-scenario migration). App launched and stayed running — no
+`ModelContainer` crash; Today renders identically to every prior pass.
+
+### 13. What Stage 4E does not claim
+
+- A curated Functional Fitness built-in library — no `V1_PROGRAM_LIBRARY.md`
+  entry names one, matching every prior Stage 4 generator's identical
+  finding.
+- A full CrossFit-style programming methodology or a general skill-level
+  gating system — §36's skill-demand-vs-user-level check is explicitly
+  deferred (no per-Exercise skill classification exists; `FunctionalFitnessStimulusValidator`
+  documents this gap rather than inventing a score).
+- `FunctionalFitnessReasonCode.functionalSkillExposure`/`.functionalVarianceBalance`
+  are declared for vocabulary completeness (matching `IntervalReasonCode`'s
+  own "reserved code" precedent) but never produced by this pass's engine.
+- ConcurrentScheduler integration (Stage 4F) — Functional Fitness emits
+  Sessions/WorkoutBlocks/TrainingStressProfile the future scheduler can
+  consume, but nothing here schedules across systems.
+- Any UI (AMRAP/EMOM timer, benchmark UI) — explicitly out of scope (§58).
+
+### 14. Architectural judgment: no flaw found, one consolidation resolved
+
+Per the kickoff's explicit instruction to stop and explain before working
+around any exposed flaw: this stage's one required structural resolution
+(the Fran consolidation, §5) was an explicitly pre-identified, deferred
+decision from Stage 3C, not a newly-discovered flaw — resolving it was
+this stage's own explicit charter (§22/§55), not a deviation from plan.
+The template graph and materializer pattern needed no conceptual change;
+`FunctionalFitnessPrescriptionTemplate`/`FunctionalFitnessMaterializer`
+are structurally consistent with every other Stage 4 system, differing
+only in reusing `ExerciseSlot` (generalized with 2 new constraint
+dimensions) instead of introducing a parallel slot type for movement
+requirements.
+
+### 15. Commit
+
+See the final commit hash reported alongside this document. Local and
+remote verified to match; working tree clean apart from local Xcode user
+data.

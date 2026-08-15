@@ -275,3 +275,50 @@ duplicate inverse-and-property pair for the interval type:
 `ExerciseSlot.slotSelectionOverrides`/`SlotSelectionOverride.templateSlot`
 (the strength side) are unaffected — this correction is scoped entirely
 to the endurance/activity override.
+
+## Stage 4E additions
+
+The Functional Fitness template graph, plus one generalization:
+`ExerciseSlot` gains a *second* owning parent (`FunctionalFitnessMovementSlotTemplate`,
+alongside the pre-existing `PrescriptionTemplate`), following the exact
+established pattern rather than a new relationship shape.
+
+### Structural (Functional Fitness template graph)
+
+| Parent | Child | Relationship | Delete rule | Expected behaviour | Why |
+|---|---|---|---|---|---|
+| `WorkoutBlockTemplate` | `FunctionalFitnessPrescriptionTemplate` | `functionalFitnessPrescriptionTemplate: FunctionalFitnessPrescriptionTemplate?` | `.cascade` | Deleting a block template deletes its Functional Fitness prescription template. | Mirrors `WorkoutBlockTemplate.steadyStatePrescriptionTemplate`/`.intervalPrescriptionTemplate` exactly. |
+| `FunctionalFitnessPrescriptionTemplate` | `FunctionalFitnessMovementSlotTemplate` | `movementSlots: [FunctionalFitnessMovementSlotTemplate]` | `.cascade` | Deleting the prescription template deletes its movement-slot requirements. | A movement slot has no independent meaning outside its owning prescription template. |
+| `FunctionalFitnessMovementSlotTemplate` | `ExerciseSlot` | `exerciseSlot: ExerciseSlot?` | `.cascade` | Deleting the movement-slot template deletes its `ExerciseSlot`. | Mirrors `PrescriptionTemplate.exerciseSlot` exactly — an `ExerciseSlot` has no independent meaning outside whichever template owns it. |
+
+### `ExerciseSlot`'s second owning parent
+
+`ExerciseSlot` already had one owning parent (`PrescriptionTemplate`,
+strength). Rather than build a parallel Functional-Fitness-specific slot
+type, Stage 4E added a second, independent optional back-reference:
+
+- `ExerciseSlot.owningFunctionalFitnessSlot: FunctionalFitnessMovementSlotTemplate?`
+  — the inverse of `FunctionalFitnessMovementSlotTemplate.exerciseSlot`'s
+  cascade above. A given `ExerciseSlot` row has at most one of
+  `prescriptionTemplate`/`owningFunctionalFitnessSlot` set — it belongs to
+  exactly one template graph, never both. This is the same "one type,
+  multiple independent optional parent relationships" shape
+  `WorkoutBlockTemplate` itself already uses for its 4 typed children —
+  applied one level deeper, to the slot type both `PrescriptionTemplate`
+  and `FunctionalFitnessMovementSlotTemplate` share.
+
+`ExerciseSlot.slotSelectionOverrides`/`SlotSelectionOverride` (the GOING
+FORWARD substitution mechanism) needed no changes at all — it already
+keys off `ExerciseSlot` directly, so it works identically for a
+Functional-Fitness-owned slot as for a strength-owned one, proven by
+`FunctionalFitnessSubstitutionAndBenchmarkTests.testGoingForwardMovementSlotSubstitutionNeverMutatesProgramDefinitionAndHistoricalSessionStaysStable`.
+
+### Summary addition
+
+- Deleting a **ProgramDefinition** (and the `FunctionalFitnessPrescriptionTemplate`/
+  `FunctionalFitnessMovementSlotTemplate`/`ExerciseSlot` rows that cascade
+  away with its template graph) nullifies any `SlotSelectionOverride` rows
+  that pointed at those now-deleted slots, without deleting the override
+  rows themselves or the `ProgramInstance`s they belong to — the same
+  invariant already proven for strength slots, now confirmed to hold
+  identically for Functional-Fitness-owned ones.

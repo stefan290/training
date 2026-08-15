@@ -15,11 +15,29 @@ struct VarianceExposureRecord: Codable, Equatable {
 }
 
 /// Typed constraints on how a next stimulus should relate to recent
-/// exposure — deliberately narrow in this pass (only what's needed to
-/// prove the contract compiles); additive fields, never a raw string rule.
+/// exposure — additive fields, never a raw string rule. Stage 4E extends
+/// the original 2 fields (proving the contract compiles) with 2 more, one
+/// per additional dimension its concrete `FunctionalFitnessDecisionEngine`
+/// actually evaluates (§25).
 struct VarianceConstraints: Codable, Equatable {
     var avoidRepeatingModalityMixWithinSessions: Int?
     var avoidRepeatingMovementFunctionWithinSessions: Int?
+    /// Stage 4E addition.
+    var avoidRepeatingDurationDomainWithinSessions: Int?
+    /// Stage 4E addition.
+    var avoidRepeatingLoadingWithinSessions: Int?
+
+    init(
+        avoidRepeatingModalityMixWithinSessions: Int? = nil,
+        avoidRepeatingMovementFunctionWithinSessions: Int? = nil,
+        avoidRepeatingDurationDomainWithinSessions: Int? = nil,
+        avoidRepeatingLoadingWithinSessions: Int? = nil
+    ) {
+        self.avoidRepeatingModalityMixWithinSessions = avoidRepeatingModalityMixWithinSessions
+        self.avoidRepeatingMovementFunctionWithinSessions = avoidRepeatingMovementFunctionWithinSessions
+        self.avoidRepeatingDurationDomainWithinSessions = avoidRepeatingDurationDomainWithinSessions
+        self.avoidRepeatingLoadingWithinSessions = avoidRepeatingLoadingWithinSessions
+    }
 }
 
 /// Stage 3B (§35) found that Functional Fitness cannot honestly be forced
@@ -50,17 +68,25 @@ struct ProgrammingDecisionInput {
 /// like `BlockProgressionOutput`.
 struct ProgrammingDecisionOutput {
     let nextStimulus: Stimulus
-    let reasonCode: ProgressionReasonCode
+    let reasonCode: FunctionalFitnessReasonCode
     let confidence: Double
     let inputsSummary: String
 }
 
-/// No concrete conformer exists in this pass — per Stage 3C §24/§45, the
-/// Functional Fitness generator is explicitly not implemented yet. This
-/// protocol exists only to settle the contract boundary between
-/// "repeatable parametric work" (`BlockProgressionEngine`) and
-/// "exposure-informed decision-making" (this), so Stage 4 has an agreed
-/// target rather than an open design question.
+/// **Stage 4E correction:** `reasonCode` was originally typed
+/// `ProgressionReasonCode` — a reasonable placeholder when this protocol
+/// was scaffolded (Stage 3C, "no concrete conformer exists in this
+/// pass"), but `ProgressionReasonCode` is strength's own "why did the
+/// load change" vocabulary (load increase/decrease, deload,
+/// calibration), not Functional Fitness's "why did the next stimulus
+/// balance duration vs. modality" one. Corrected to `FunctionalFitnessReasonCode`
+/// now that `FunctionalFitnessDecisionEngine` (this stage's concrete
+/// conformer) needs a real vocabulary — painless, since nothing produced
+/// or consumed a `ProgrammingDecisionOutput` before this pass.
+///
+/// `FunctionalFitnessDecisionEngine` (Application/UseCases or Engines —
+/// see that type) is the first concrete conformer, closing the boundary
+/// this protocol existed to settle.
 protocol ProgrammingDecisionEngine {
     func decide(_ input: ProgrammingDecisionInput) -> ProgrammingDecisionOutput
 }

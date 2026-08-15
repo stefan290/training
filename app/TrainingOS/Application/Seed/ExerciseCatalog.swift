@@ -5,6 +5,13 @@ import SwiftData
 /// against. Not a real exercise library — just enough distinct movements
 /// to exercise every block type without reusing one exercise for
 /// everything.
+///
+/// **Stage 4E addition:** a small curated Functional Fitness set (§35) —
+/// enough monostructural/gymnastics/weightlifting examples to prove
+/// `FunctionalFitnessProgramGenerator`'s movement-slot resolution across
+/// single-modality, couplet, triplet and benchmark shapes, tagged with
+/// the new `Exercise.movementFunctions`/`.functionalModality` fields.
+/// Deliberately not a full CrossFit movement library.
 struct ExerciseCatalog {
     let benchPress: Exercise
     let backSquat: Exercise
@@ -16,17 +23,33 @@ struct ExerciseCatalog {
     let kettlebellSwing: Exercise
     let thruster: Exercise
     let pullUp: Exercise
-    let fran: Exercise
+    // Stage 4E additions.
+    let bike: Exercise
+    let row: Exercise
+    let skiErg: Exercise
+    let toesToBar: Exercise
+    let pushUp: Exercise
+    let handstandPushUp: Exercise
+    let deadlift: Exercise
+    let dumbbellSnatch: Exercise
 
     static func makeAndInsert(context: ModelContext) -> ExerciseCatalog {
-        func make(_ name: String, _ modality: TrainingModality, _ equipment: String, _ pattern: String) -> Exercise {
-            let exercise = Exercise(canonicalName: name, modality: modality, equipment: equipment, movementPattern: pattern)
+        func make(
+            _ name: String, _ modality: TrainingModality, _ equipment: String, _ pattern: String,
+            primaryTargets: [MuscleGroup] = [],
+            movementFunctions: [MovementFunction] = [],
+            functionalModality: FunctionalModality? = nil
+        ) -> Exercise {
+            let exercise = Exercise(
+                canonicalName: name, modality: modality, equipment: equipment, movementPattern: pattern,
+                primaryTargets: primaryTargets, movementFunctions: movementFunctions, functionalModality: functionalModality
+            )
             context.insert(exercise)
             return exercise
         }
 
-        let benchPress = make("Barbell Bench Press", .hypertrophy, "barbell", "horizontalPush")
-        let inclineDumbbellPress = make("Incline Dumbbell Press", .hypertrophy, "dumbbell", "horizontalPush")
+        let benchPress = make("Barbell Bench Press", .hypertrophy, "barbell", "horizontalPush", primaryTargets: [.chest, .triceps])
+        let inclineDumbbellPress = make("Incline Dumbbell Press", .hypertrophy, "dumbbell", "horizontalPush", primaryTargets: [.chest, .triceps])
 
         // Demonstrates the alias/mapping shape (handoff section 10) without
         // an import pipeline: several source spellings resolve to one
@@ -37,19 +60,76 @@ struct ExerciseCatalog {
             inclineDumbbellPress.addAlias(alias)
         }
 
-        let backSquat = make("Back Squat", .strength, "barbell", "squat")
-        let easyRun = make("Easy Run (Zone 2)", .conditioning, "none", "locomotion")
-        let trackIntervalRun = make("Track Interval Run", .conditioning, "none", "locomotion")
-        let wallBall = make("Wall Ball", .functionalFitness, "medicineBall", "squatToPress")
-        let burpee = make("Burpee", .functionalFitness, "bodyweight", "fullBody")
-        let kettlebellSwing = make("Kettlebell Swing", .functionalFitness, "kettlebell", "hipHinge")
-        let thruster = make("Thruster", .functionalFitness, "barbell", "squatToPress")
-        let pullUp = make("Pull-up", .functionalFitness, "bodyweight", "verticalPull")
+        let backSquat = make(
+            "Back Squat", .strength, "barbell", "squat",
+            primaryTargets: [.quadriceps, .glutes], movementFunctions: [.squatLoaded], functionalModality: .weightlifting
+        )
+        let easyRun = make(
+            "Easy Run (Zone 2)", .conditioning, "none", "locomotion",
+            movementFunctions: [.monostructural, .locomotion], functionalModality: .metabolicConditioning
+        )
+        let trackIntervalRun = make(
+            "Track Interval Run", .conditioning, "none", "locomotion",
+            movementFunctions: [.monostructural, .locomotion], functionalModality: .metabolicConditioning
+        )
+        let wallBall = make(
+            "Wall Ball", .functionalFitness, "medicineBall", "squatToPress",
+            primaryTargets: [.quadriceps, .shoulders], movementFunctions: [.squatLoaded, .pressLoaded], functionalModality: .weightlifting
+        )
+        let burpee = make(
+            "Burpee", .functionalFitness, "bodyweight", "fullBody",
+            movementFunctions: [.other], functionalModality: .gymnastics
+        )
+        let kettlebellSwing = make(
+            "Kettlebell Swing", .functionalFitness, "kettlebell", "hipHinge",
+            primaryTargets: [.glutes, .hamstrings], movementFunctions: [.hingeLoaded], functionalModality: .weightlifting
+        )
+        let thruster = make(
+            "Thruster", .functionalFitness, "barbell", "squatToPress",
+            primaryTargets: [.quadriceps, .shoulders], movementFunctions: [.squatLoaded, .pressLoaded], functionalModality: .weightlifting
+        )
+        let pullUp = make(
+            "Pull-up", .functionalFitness, "bodyweight", "verticalPull",
+            primaryTargets: [.back, .biceps], movementFunctions: [.gymnasticsPull], functionalModality: .gymnastics
+        )
 
-        // "Fran" is modelled as a canonical Exercise so it can carry a
-        // PersonalRecord like any other movement — see Exercise.swift for
-        // why a dedicated Benchmark entity was deferred.
-        let fran = make("Fran", .functionalFitness, "barbell+bodyweight", "benchmark")
+        // Monostructural.
+        let bike = make(
+            "Assault Bike", .functionalFitness, "bike", "locomotion",
+            movementFunctions: [.monostructural, .locomotion], functionalModality: .metabolicConditioning
+        )
+        let row = make(
+            "Row Erg", .functionalFitness, "rower", "locomotion",
+            movementFunctions: [.monostructural, .locomotion], functionalModality: .metabolicConditioning
+        )
+        let skiErg = make(
+            "SkiErg", .functionalFitness, "skiErg", "locomotion",
+            movementFunctions: [.monostructural, .locomotion], functionalModality: .metabolicConditioning
+        )
+
+        // Gymnastics.
+        let toesToBar = make(
+            "Toes-to-Bar", .functionalFitness, "bodyweight", "coreFlexion",
+            primaryTargets: [.core], movementFunctions: [.gymnasticsPull, .trunk], functionalModality: .gymnastics
+        )
+        let pushUp = make(
+            "Push-up", .functionalFitness, "bodyweight", "horizontalPush",
+            primaryTargets: [.chest, .triceps], movementFunctions: [.gymnasticsPush], functionalModality: .gymnastics
+        )
+        let handstandPushUp = make(
+            "Handstand Push-up", .functionalFitness, "bodyweight", "verticalPush",
+            primaryTargets: [.shoulders, .triceps], movementFunctions: [.gymnasticsPush], functionalModality: .gymnastics
+        )
+
+        // Weightlifting.
+        let deadlift = make(
+            "Deadlift", .functionalFitness, "barbell", "hinge",
+            primaryTargets: [.back, .hamstrings, .glutes], movementFunctions: [.hingeLoaded], functionalModality: .weightlifting
+        )
+        let dumbbellSnatch = make(
+            "Dumbbell Snatch", .functionalFitness, "dumbbell", "hingeToPress",
+            primaryTargets: [.shoulders, .glutes], movementFunctions: [.hingeLoaded, .pressLoaded], functionalModality: .weightlifting
+        )
 
         return ExerciseCatalog(
             benchPress: benchPress,
@@ -62,7 +142,14 @@ struct ExerciseCatalog {
             kettlebellSwing: kettlebellSwing,
             thruster: thruster,
             pullUp: pullUp,
-            fran: fran
+            bike: bike,
+            row: row,
+            skiErg: skiErg,
+            toesToBar: toesToBar,
+            pushUp: pushUp,
+            handstandPushUp: handstandPushUp,
+            deadlift: deadlift,
+            dumbbellSnatch: dumbbellSnatch
         )
     }
 }

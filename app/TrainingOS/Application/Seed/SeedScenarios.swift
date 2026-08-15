@@ -140,9 +140,6 @@ enum SeedScenarios {
         RecordWorkoutResultUseCase.recordResult(
             result,
             for: block,
-            benchmarkExercise: nil,
-            prCandidateValue: nil,
-            performanceProfile: nil,
             modelContext: modelContext
         )
         return session
@@ -181,9 +178,6 @@ enum SeedScenarios {
         RecordWorkoutResultUseCase.recordResult(
             result,
             for: block,
-            benchmarkExercise: nil,
-            prCandidateValue: nil,
-            performanceProfile: nil,
             modelContext: modelContext
         )
         return session
@@ -227,9 +221,6 @@ enum SeedScenarios {
         RecordWorkoutResultUseCase.recordResult(
             result,
             for: block,
-            benchmarkExercise: nil,
-            prCandidateValue: nil,
-            performanceProfile: nil,
             modelContext: modelContext
         )
         return session
@@ -273,17 +264,26 @@ enum SeedScenarios {
         RecordWorkoutResultUseCase.recordResult(
             result,
             for: block,
-            benchmarkExercise: nil,
-            prCandidateValue: nil,
-            performanceProfile: nil,
             modelContext: modelContext
         )
         return session
     }
 
-    /// F. For Time benchmark ("Fran"). Fran's real 21-15-9 descending
-    /// ladder is simplified to one `repsPerRound` figure per movement —
-    /// see ARCHITECTURE.md for why a full rep-scheme model was deferred.
+    /// F. For Time benchmark ("Fran") — 21-15-9 Thrusters/Pull-ups.
+    ///
+    /// **Stage 4E consolidation:** previously modelled "Fran" as a
+    /// canonical `Exercise` scored through the legacy `WorkoutResult`
+    /// path (see `RecordWorkoutResultUseCase`'s own doc comment on why
+    /// that was the exact duplicate-canonical-identity problem Stage 3C
+    /// deferred). Now built exclusively through the typed
+    /// `FunctionalFitnessPrescription`/`FunctionalFitnessResult`/
+    /// `BenchmarkDefinition`/`BenchmarkPerformanceProfile` path — the sole
+    /// canonical benchmark representation as of this stage. The real
+    /// 21-15-9 descending ladder is still simplified to one total-reps
+    /// figure per movement at the execution layer (45 = 21+15+9) — the
+    /// explicit rep-scheme array now lives on the template graph
+    /// (`FunctionalFitnessMovementSlotTemplate.repScheme`), not
+    /// duplicated here.
     @discardableResult
     static func forTimeBenchmarkSession(
         day: Day,
@@ -298,30 +298,40 @@ enum SeedScenarios {
         day.addSession(session)
         programInstance?.addSession(session)
 
-        let block = WorkoutBlock(type: .forTime, status: .completed, timeCapSeconds: 600)
+        let block = WorkoutBlock(type: .functionalFitness, status: .completed)
         modelContext.insert(block)
         session.addBlock(block)
 
+        let stimulus = Stimulus(
+            targetDurationDomain: .short, intensity: .high, loading: .moderate,
+            movementFunctions: [.squatLoaded, .gymnasticsPull],
+            movementModalityMix: [ModalityCount(modality: .weightlifting, count: 1), ModalityCount(modality: .gymnastics, count: 1)],
+            skillDemand: .moderate, systemicDemand: .high, scoreType: .time
+        )
+        let format = WorkoutFormat.forTime(capSeconds: 600)
+
+        let prescription = FunctionalFitnessPrescription(stimulus: stimulus, format: format)
+        modelContext.insert(prescription)
+        block.attachFunctionalFitnessPrescription(prescription)
+
         for pair in [(catalog.thruster, 45), (catalog.pullUp, 45)] {
-            let movement = ExercisePrescription(exercise: pair.0, repsPerRound: pair.1)
+            let movement = FunctionalFitnessMovement(exercise: pair.0, reps: pair.1)
             modelContext.insert(movement)
-            block.addPrescription(movement)
+            prescription.addMovement(movement)
         }
 
-        let result = WorkoutResult(
-            type: .forTime,
-            scoringDirection: .lowerIsBetter,
-            resultContext: .rx,
-            completedAt: day.date,
-            elapsedSeconds: 245
+        let benchmark = BenchmarkDefinition(
+            canonicalID: "benchmark.fran", name: "Fran",
+            stimulus: stimulus, format: format, scoreType: .time, scoreDirection: .lowerIsBetter
         )
-        RecordWorkoutResultUseCase.recordResult(
-            result,
-            for: block,
-            benchmarkExercise: catalog.fran,
-            prCandidateValue: 245,
-            performanceProfile: performanceProfile,
-            modelContext: modelContext
+        modelContext.insert(benchmark)
+
+        let result = FunctionalFitnessResult(
+            scoreType: .time, scoreValue: .time(seconds: 245), scoreDirection: .lowerIsBetter,
+            resultContext: .rx, completedAt: day.date
+        )
+        RecordFunctionalFitnessResultUseCase.recordResult(
+            result, for: block, benchmark: benchmark, performanceProfile: performanceProfile, modelContext: modelContext
         )
         return session
     }
@@ -394,9 +404,6 @@ enum SeedScenarios {
         RecordWorkoutResultUseCase.recordResult(
             metconResult,
             for: metconBlock,
-            benchmarkExercise: nil,
-            prCandidateValue: nil,
-            performanceProfile: nil,
             modelContext: modelContext
         )
 

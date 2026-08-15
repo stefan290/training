@@ -481,3 +481,27 @@ against real Stage 4C/4D generator output in
 `IntervalSubstitutionAndHistoryTests.testSteadyStateAndIntervalPhasesComposeInOneTrainingPlanWithNoNewEntityType`).
 A full `RunningProgrammingSystem` composing them into curated Couch-to-5K/
 5K/10K/marathon content remains out of scope (Stage 4D §23/§45).
+
+## Stage 4E implementation update
+
+`FunctionalFitnessProgrammingSystem` is now built and Xcode-validated —
+see `STAGE4_IMPLEMENTATION_REPORT.md`'s "Stage 4E" section and the new
+`FUNCTIONAL_FITNESS_ENGINE.md` for the full account. No correction to
+this document's model was needed for the programming-system shape
+itself; the concrete conformer this document's own §3C boundary note
+anticipated (`ProgrammingDecisionEngine`, "no concrete conformer exists
+in this pass") now exists as `FunctionalFitnessDecisionEngine`, and its
+output type was corrected from `ProgressionReasonCode` to the new
+`FunctionalFitnessReasonCode` in the same pass (painless — nothing
+consumed the old type yet).
+
+This stage also resolved Stage 3C's one deliberately-deferred
+consolidation: two parallel Fran representations (a canonical-Exercise-
+based legacy path and the typed `BenchmarkDefinition` path) are now one —
+see `STAGE4_IMPLEMENTATION_REPORT.md`'s Stage 4E §5 for the full
+migration account. Movement-slot substitution reuses `ExerciseSlot`/
+`SubstituteExerciseUseCase` generalized with two new constraint
+dimensions, rather than a parallel Functional-Fitness-specific slot/
+substitution system — consistent with every prior system's own
+"generalize the existing mechanism before building a parallel one"
+discipline.

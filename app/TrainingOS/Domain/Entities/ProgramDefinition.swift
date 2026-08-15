@@ -46,6 +46,8 @@ final class ProgramDefinition {
     var steadyStateConfiguration: SteadyStateProgramConfiguration?
     /// Only set when `programmingSystem == .interval`.
     var intervalConfiguration: IntervalProgramConfiguration?
+    /// Only set when `programmingSystem == .functionalFitness`.
+    var functionalFitnessConfiguration: FunctionalFitnessProgramConfiguration?
 
     @Relationship(deleteRule: .cascade, inverse: \TrainingWeek.programDefinition)
     var weeks: [TrainingWeek] = []
@@ -83,7 +85,8 @@ final class ProgramDefinition {
         hypertrophyConfiguration: HypertrophyProgramConfiguration? = nil,
         powerliftingConfiguration: PowerliftingProgramConfiguration? = nil,
         steadyStateConfiguration: SteadyStateProgramConfiguration? = nil,
-        intervalConfiguration: IntervalProgramConfiguration? = nil
+        intervalConfiguration: IntervalProgramConfiguration? = nil,
+        functionalFitnessConfiguration: FunctionalFitnessProgramConfiguration? = nil
     ) {
         self.id = id
         self.name = name
@@ -98,6 +101,7 @@ final class ProgramDefinition {
         self.powerliftingConfiguration = powerliftingConfiguration
         self.steadyStateConfiguration = steadyStateConfiguration
         self.intervalConfiguration = intervalConfiguration
+        self.functionalFitnessConfiguration = functionalFitnessConfiguration
     }
 
     /// The only way application code should attach a TrainingWeek

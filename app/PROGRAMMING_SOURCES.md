@@ -129,6 +129,23 @@ is the next system expected to actually add entries to this document,
 per the kickoff's own instruction to verify external protocol sources
 directly before hardcoding numbers.
 
+## Stage 4E note
+
+No new source verification was attempted this stage, and none was
+needed: every SOURCE-DERIVED/TRAININGOS-INTERPRETATION row in §4 above
+was already researched in Stage 3B and is reused unchanged (the five-
+stage pipeline, the 3-modality vocabulary, planned-variance-not-
+randomness). Every genuinely new number `FunctionalFitnessProgramGenerator`/
+`FunctionalFitnessStimulusValidator` introduces this stage is explicitly
+TRAININGOS_DESIGNED, not presented as sourced: the short(<5min)/
+medium(5-15min)/long(>15min) duration-domain thresholds are carried from
+§4's own row above ("a direct structural mapping... an interpretation,
+not an invention") rather than reverified against a fresh source; the
+`.roundsAndReps` PR-comparison proxy and the strength+metcon composition's
+fixed 5×5 numbers are this pass's own construction. No proprietary
+CrossFit workout catalog was imported (§45) — see
+`STAGE4_IMPLEMENTATION_REPORT.md`'s Stage 4E §9.
+
 ## Stage 4D note
 
 §3's Helgerud et al. 2007 4×4 protocol (already documented above since

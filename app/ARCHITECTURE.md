@@ -341,13 +341,14 @@ purpose, called out here so they're a decision record, not a surprise:
   `SteadyStatePrescription`/`IntervalPrescription`/
   `FunctionalFitnessPrescription` are the typed alternative for new blocks
   — again additive, not a replacement of the existing fields.
-- **Fran (and benchmarks generally) are still modelled as a canonical
-  Exercise in the Stage 1-2 seed scenario** (`SeedScenarios.forTimeBenchmarkSession`)
-  — left exactly as it was. A real `BenchmarkDefinition` entity now exists
-  (Stage 3C) and is used by the new architecture-proof/round-trip tests,
-  but the existing scenario was not migrated to it; see
-  `STAGE3C_IMPLEMENTATION_REPORT.md` for why both are left in place rather
-  than consolidated in this pass.
+- **Fran is no longer modelled as a canonical Exercise — consolidated in
+  Stage 4E.** This bullet used to document exactly that dual
+  representation as a deliberately-deferred Stage 3C gap; it's resolved
+  now. `SeedScenarios.forTimeBenchmarkSession` builds Fran through
+  `FunctionalFitnessPrescription`/`FunctionalFitnessResult`/
+  `BenchmarkDefinition`/`BenchmarkPerformanceProfile` exclusively — see
+  `STAGE4_IMPLEMENTATION_REPORT.md`'s Stage 4E §5 for the full migration
+  account.
 - **Ad hoc AMRAP/EMOM blocks don't carry a PersonalRecord.** Only a named,
   repeatable benchmark has a stable identity to compare against; a one-off
   12-minute AMRAP has nothing to be a "record" relative to yet. This is
@@ -509,3 +510,37 @@ one week at a time: an interval template's rules may set
 `requiresSuccessfulCompletionToProgress`, in which case the materializer
 throws rather than fabricate a future week's progression from calendar
 position alone.
+
+## Functional Fitness template graph and pipeline (Stage 4E)
+
+`WorkoutBlockTemplate` carries a fourth typed child relationship,
+`functionalFitnessPrescriptionTemplate`. `FunctionalFitnessPrescriptionTemplate`
+stores `stimulus: Stimulus` and `format: WorkoutFormat` as direct top-
+level properties (proven persistence-safe since Stage 3C — see
+`STAGE4_IMPLEMENTATION_REPORT.md`'s Stage 4E §1) and owns a cascade
+collection of `FunctionalFitnessMovementSlotTemplate` rows — one per
+`ModalityCount` entry in the target stimulus's `movementModalityMix`.
+
+**Movement slots reuse `ExerciseSlot` directly**, generalized with two
+new constraint dimensions (`allowedMovementFunctions: [MovementFunction]`,
+`allowedModalities: [FunctionalModality]`) alongside the pre-existing
+`allowedTargets: [MuscleGroup]`. `FunctionalFitnessMovementSlotTemplate`
+is the Functional Fitness analogue of `PrescriptionTemplate` — it owns
+one `ExerciseSlot` plus its own per-movement prescription target fields
+(reps/calories/distance/load/minuteSlot/repScheme), exactly mirroring how
+`PrescriptionTemplate` owns one `ExerciseSlot` plus strength-specific
+rule fields. This means Functional Fitness movement-slot substitution
+inherits `SubstitutionValidator`/`SlotSelectionOverride`/
+`SubstituteExerciseUseCase` for free — see `SUBSTITUTION_MODEL.md`.
+
+**The five-stage pipeline** (Stage A: target stimulus, B: format, C:
+movement slots, D: concrete exercise selection, E: stimulus validation)
+splits across generator and materializer the same way Stage 4D split
+calendar-driven vs. performance-gated interval progression: Stages A/B
+are configuration inputs, Stage C runs at generation time (producing the
+persisted template), and Stages D/E run at `FunctionalFitnessMaterializer`
+time, since they depend on live exposure history and available
+candidates the generator can't know in advance. `FunctionalFitnessDecisionEngine`
+(the first concrete `ProgrammingDecisionEngine` conformer) resolves
+exposure-informed stimulus variance between Stage C and Stage D; see
+`FUNCTIONAL_FITNESS_ENGINE.md` for the full pipeline contract.

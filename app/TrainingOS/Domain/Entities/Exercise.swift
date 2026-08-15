@@ -3,9 +3,12 @@ import SwiftData
 
 /// A canonical, stable exercise identity. All performance data references
 /// this ID — never a source string — so renamed or re-imported exercises
-/// never fragment a user's history. Benchmarks (e.g. "Fran") are modelled
-/// as Exercises too in this pass rather than a separate Benchmark entity;
-/// see ARCHITECTURE.md for the tradeoff.
+/// never fragment a user's history. Benchmarks (e.g. "Fran") are **not**
+/// modelled as Exercises — Stage 3C's `BenchmarkDefinition`/
+/// `BenchmarkPerformanceProfile` is the sole canonical benchmark
+/// representation as of Stage 4E's consolidation (see
+/// `STAGE4_IMPLEMENTATION_REPORT.md`'s Stage 4E §9); this doc comment
+/// previously said otherwise, from before that consolidation.
 @Model
 final class Exercise {
     @Attribute(.unique) var id: UUID
@@ -24,6 +27,22 @@ final class Exercise {
     /// non-matching, never as wildcard-matching (see
     /// `SubstitutionValidator`).
     var primaryTargets: [MuscleGroup] = []
+    /// Stage 4E addition: which `ExerciseSlot.allowedMovementFunctions`
+    /// this Exercise satisfies — a Functional Fitness movement-slot
+    /// sibling of `primaryTargets`, closing the identical gap for
+    /// movement-pattern-based slot matching (§7: "Do not parse exercise
+    /// names... Use canonical Exercise metadata"). A Thruster is both
+    /// `.squatLoaded` and `.pressLoaded`, hence an array, not a single
+    /// value. Empty means "no movement-function-based validity check
+    /// possible," never "matches nothing."
+    var movementFunctions: [MovementFunction] = []
+    /// Stage 4E addition: which broad Functional Fitness category this
+    /// Exercise belongs to (metabolic conditioning / gymnastics /
+    /// weightlifting) — `nil` for exercises outside Functional Fitness
+    /// programming entirely (e.g. Barbell Bench Press), matching
+    /// `primaryTargets`' "empty/nil means not applicable, not wildcard"
+    /// convention.
+    var functionalModality: FunctionalModality?
 
     @Relationship(deleteRule: .cascade, inverse: \ExerciseAlias.exercise)
     var aliases: [ExerciseAlias] = []
@@ -34,7 +53,9 @@ final class Exercise {
         modality: TrainingModality,
         equipment: String,
         movementPattern: String,
-        primaryTargets: [MuscleGroup] = []
+        primaryTargets: [MuscleGroup] = [],
+        movementFunctions: [MovementFunction] = [],
+        functionalModality: FunctionalModality? = nil
     ) {
         self.id = id
         self.canonicalName = canonicalName
@@ -42,6 +63,8 @@ final class Exercise {
         self.equipment = equipment
         self.movementPattern = movementPattern
         self.primaryTargets = primaryTargets
+        self.movementFunctions = movementFunctions
+        self.functionalModality = functionalModality
     }
 
     /// The only way application code should attach an ExerciseAlias.
