@@ -411,13 +411,15 @@ must never conflate them:
   template on demand: `ProgramInstance -> Day -> Session -> WorkoutBlock
   -> ExercisePrescription -> SetPrescription`. Carries resolved numbers
   ("92.5 kg for Stefan"), computed by a pure rule engine
-  (`HypertrophyProgressionEngine`/`SourceCompatibleDeloadStrategy`) from
-  the template's rules plus runtime inputs the template cannot know
+  (`StrengthProgressionEngine`/`SourceCompatibleDeloadStrategy` — renamed
+  from `HypertrophyProgressionEngine` in Stage 4B once Powerlifting
+  started sharing it) from the template's rules plus runtime inputs the
+  template cannot know
   (a tested RM, an `EquipmentProfile`, a live autoregulation rating).
   Materialization is inherently incremental, one week at a time — later
   weeks need the *actual* outcome of the previous week as input, which
   doesn't exist until a user has actually trained it
-  (`HypertrophyMaterializer`'s own scope note).
+  (`StrengthMaterializer`'s own scope note).
 
 A `ProgramDefinition`'s template graph, once any `ProgramInstance`
 references it, is treated as frozen by convention: if generator logic

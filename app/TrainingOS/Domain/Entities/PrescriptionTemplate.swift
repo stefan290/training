@@ -56,6 +56,13 @@ final class PrescriptionTemplate {
     var setCountRuleKind: SetCountRuleKind?
     var setCountRuleSetsByWeek: [Int] = []
     var setCountRuleBaselineSets: Int?
+    /// `AutoregulatedSetCount`'s 2 extra fields (Stage 4B) — flat for the
+    /// same reason as everything else here, though these two are plain
+    /// `Bool`/`Int?` (not an enum-with-payload) so they were never at risk
+    /// of the failure modes documented above; kept flat anyway for
+    /// consistency with the rest of this tagged union.
+    var setCountRuleApplyRatingOnFinalWeek: Bool = true
+    var setCountRuleFreezeAfterWeek: Int?
 
     /// Parallel arrays, index-aligned — `RepGoal` is a plain struct with
     /// no enum-with-payload field, so it is not implicated in either
@@ -68,6 +75,14 @@ final class PrescriptionTemplate {
     var deloadWeightAction: DeloadExerciseAction = DeloadExerciseAction.standard
     var deloadRepAction: DeloadExerciseAction = DeloadExerciseAction.standard
     var deloadRepFraction: Double = 0.5
+    /// `DeloadPositionOverride` is a plain struct (`Int`/`Double` fields
+    /// only, no enum-with-payload nested) — the already-proven-safe shape
+    /// (`TrainingStressProfile`/`HypertrophyProgramConfiguration`), so
+    /// these 2 are stored directly rather than needing further
+    /// flattening.
+    var deloadWeightPositionOverride: DeloadPositionOverride?
+    var deloadRepPositionOverride: DeloadPositionOverride?
+    var deloadSetCount: Int = 2
 
     /// Structural, authoring-time reference to another slot in the *same*
     /// template graph — the target of `autoregulatedSetCount`'s rating
@@ -148,19 +163,27 @@ final class PrescriptionTemplate {
                 return .fixed(setsByWeek: setCountRuleSetsByWeek)
             case .autoregulated:
                 guard let baseline = setCountRuleBaselineSets else { return nil }
-                return .autoregulated(baselineSets: baseline)
+                return .autoregulated(AutoregulatedSetCount(
+                    baselineSets: baseline,
+                    applyRatingOnFinalWeek: setCountRuleApplyRatingOnFinalWeek,
+                    freezeAfterWeek: setCountRuleFreezeAfterWeek
+                ))
             }
         }
         set {
             setCountRuleSetsByWeek = []
             setCountRuleBaselineSets = nil
+            setCountRuleApplyRatingOnFinalWeek = true
+            setCountRuleFreezeAfterWeek = nil
             switch newValue {
             case .fixed(let sets):
                 setCountRuleKind = .fixed
                 setCountRuleSetsByWeek = sets
-            case .autoregulated(let baseline):
+            case .autoregulated(let config):
                 setCountRuleKind = .autoregulated
-                setCountRuleBaselineSets = baseline
+                setCountRuleBaselineSets = config.baselineSets
+                setCountRuleApplyRatingOnFinalWeek = config.applyRatingOnFinalWeek
+                setCountRuleFreezeAfterWeek = config.freezeAfterWeek
             case nil:
                 setCountRuleKind = nil
             }
@@ -186,7 +209,10 @@ final class PrescriptionTemplate {
                 repGoalSchedule: repGoalSchedule,
                 deloadWeightAction: deloadWeightAction,
                 deloadRepAction: deloadRepAction,
-                deloadRepFraction: deloadRepFraction
+                deloadRepFraction: deloadRepFraction,
+                deloadRepPositionOverride: deloadRepPositionOverride,
+                deloadWeightPositionOverride: deloadWeightPositionOverride,
+                deloadSetCount: deloadSetCount
             )
         }
         set {
@@ -196,6 +222,9 @@ final class PrescriptionTemplate {
             deloadWeightAction = newValue?.deloadWeightAction ?? .standard
             deloadRepAction = newValue?.deloadRepAction ?? .standard
             deloadRepFraction = newValue?.deloadRepFraction ?? 0.5
+            deloadRepPositionOverride = newValue?.deloadRepPositionOverride
+            deloadWeightPositionOverride = newValue?.deloadWeightPositionOverride
+            deloadSetCount = newValue?.deloadSetCount ?? 2
         }
     }
 }

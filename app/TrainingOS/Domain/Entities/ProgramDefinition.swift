@@ -35,11 +35,13 @@ final class ProgramDefinition {
     var programmingSystem: ProgrammingSystemKind?
     var generatorVersion: Int?
     var provenance: ProgramProvenance?
-    /// Only set when `programmingSystem == .hypertrophy`. Stage 4B adds a
-    /// sibling `powerliftingConfiguration` field alongside this one rather
-    /// than a shared/generic blob — the same pattern as `WorkoutBlock`'s
-    /// typed per-modality prescriptions.
+    /// Only set when `programmingSystem == .hypertrophy`. `powerliftingConfiguration`
+    /// below is the sibling field for `.powerlifting`, not a shared/generic
+    /// blob — the same pattern as `WorkoutBlock`'s typed per-modality
+    /// prescriptions.
     var hypertrophyConfiguration: HypertrophyProgramConfiguration?
+    /// Only set when `programmingSystem == .powerlifting`.
+    var powerliftingConfiguration: PowerliftingProgramConfiguration?
 
     @Relationship(deleteRule: .cascade, inverse: \TrainingWeek.programDefinition)
     var weeks: [TrainingWeek] = []
@@ -74,7 +76,8 @@ final class ProgramDefinition {
         programmingSystem: ProgrammingSystemKind? = nil,
         generatorVersion: Int? = nil,
         provenance: ProgramProvenance? = nil,
-        hypertrophyConfiguration: HypertrophyProgramConfiguration? = nil
+        hypertrophyConfiguration: HypertrophyProgramConfiguration? = nil,
+        powerliftingConfiguration: PowerliftingProgramConfiguration? = nil
     ) {
         self.id = id
         self.name = name
@@ -86,6 +89,7 @@ final class ProgramDefinition {
         self.generatorVersion = generatorVersion
         self.provenance = provenance
         self.hypertrophyConfiguration = hypertrophyConfiguration
+        self.powerliftingConfiguration = powerliftingConfiguration
     }
 
     /// The only way application code should attach a TrainingWeek

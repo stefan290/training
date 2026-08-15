@@ -309,3 +309,236 @@ requires (§41), not a check for new UI (there is none, by design).
 See the final commit hash reported alongside this document. Local and
 remote verified to match; working tree clean apart from local Xcode user
 data, matching every prior pass's report format.
+
+## Stage 4B: PowerliftingProgrammingSystem
+
+Reuses the Stage 4A template-graph architecture unchanged. Per the
+kickoff's own instruction, Family B ("RP Powerlifting Strength") and
+Family C ("RP Powerlifting Hypertrophy-block") are two
+`PowerliftingProgramConfiguration` parameterizations of one
+`PowerliftingProgramGenerator` + the shared `StrengthProgressionRules`
+rule vocabulary — no per-family engine.
+
+### 1. Shared rule vocabulary extended, additively
+
+`StrengthProgressionRules` (renamed from the Stage 4A `Hypertrophy*`
+naming — see §2) gained four purely-additive fields, all defaulted so
+every existing Family A fixture is untouched:
+
+- `AutoregulatedSetCount` struct — bundles `baselineSets` with
+  `applyRatingOnFinalWeek: Bool = true` (Family B's Week-4 asymmetry:
+  the final week's rating is ignored, the previous week's set count
+  carries forward unchanged) and `freezeAfterWeek: Int? = nil` (Family
+  C's Week-4 freeze: autoregulation stops entirely after a given week,
+  every later week — including Week 4 — holds that week's frozen value
+  regardless of any rating supplied). These are genuinely different
+  mechanisms, not the same behavior under two names — proven directly by
+  `PowerliftingRegressionTests.testFamilyBAsymmetryAndFamilyCFreezeAreDistinctMechanisms`.
+- `StrengthReasonCode` (renamed from `HypertrophyReasonCode`) gained
+  `.autoregulatedSetFinalWeekUnchanged` and `.autoregulatedSetFrozen`.
+- `DeloadPositionOverride` struct — `boundaryDayIndex`,
+  `fullPositionFactor`, `halfPositionFactor`. Family A's deload day-split
+  was previously hardcoded to `ceil(dayCount/2)+1`/0.7/0.5 inside
+  `DeloadStrategy` itself; Family B needs the *same shape* of split
+  (boundary + full/half factor) but with a different boundary (fixed at
+  2, not derived from `dayCount`) and, for reps, a different pair of
+  factors (2/3 and 1/2, not a single flat fraction). Generalized into a
+  configurable override on `StrengthProgressionRules`
+  (`deloadWeightPositionOverride`, `deloadRepPositionOverride`), both
+  `nil` by default — `nil` reproduces Family A's original hardcoded
+  formula exactly, so no existing test needed to change.
+- `deloadSetCount: Int = 2` — made configurable per-rule rather than a
+  hardcoded engine constant, defaulted to Family A's confirmed value.
+  **Flagged, not invented:** neither Family B nor Family C's source
+  material documents a deload set count at all (only weight and reps);
+  this default is carried forward without independent confirmation, and
+  is called out again in `PowerliftingProgramGenerator`'s own doc
+  comment.
+
+### 2. Rename: `Hypertrophy*` shared engine/materializer -> `Strength*`
+
+`HypertrophyProgressionEngine` -> `StrengthProgressionEngine`,
+`HypertrophyMaterializer` -> `StrengthMaterializer` (and their test
+files) — both were already family-agnostic pure functions operating on
+`StrengthProgressionRules`; the old names implied Family-A-only scope
+that no longer matched what the code does now that Family B/C share the
+same engine. `HypertrophyProgramGenerator`/`HypertrophyProgramJourney`/
+`HypertrophyBuiltInLibrary` keep their names — those really are
+Hypertrophy-specific (day-count/split/phase configuration, the 3-phase
+journey), unlike the engine and materializer underneath them.
+
+### 3. `PrescriptionTemplate` flat-storage extension
+
+Following the Stage 4A Bug-3 pattern exactly (§4 above — no enum-with-
+payload may be stored nested inside a wrapping struct field on a
+`@Model`), the new rule fields were added as more flat scalar fields
+alongside the existing tagged-union storage:
+`setCountRuleApplyRatingOnFinalWeek: Bool = true`,
+`setCountRuleFreezeAfterWeek: Int?`, `deloadWeightPositionOverride:
+DeloadPositionOverride?`, `deloadRepPositionOverride:
+DeloadPositionOverride?`, `deloadSetCount: Int = 2` — `DeloadPositionOverride`
+itself is a plain struct of primitives (no nested enum), the
+proven-safe shape from Stage 4A's own finding. Round-trip proven with
+**two sibling rows holding different `AutoregulatedSetCount`/
+`DeloadPositionOverride` values** specifically
+(`TemplateGraphPersistenceTests.testStageFourBDeloadOverridesAndAutoregulationExtensionsSurviveRoundTrip`)
+— the exact shape (sibling-row heterogeneity) that exposed Bug 3 in the
+first place, so this is not assumed safe by analogy, it's re-tested.
+
+### 4. `DeloadStrategy` generalized for day-position overrides
+
+`resolveDeloadWeight`/`resolveDeloadRepGoal` check
+`rules.deload*PositionOverride` first and fall back to the original
+Family-A-hardcoded formula only when `nil` — Family A's own tests pass
+unchanged. `resolveSetCount` gained `isFinalWeek`/`frozenSetCount`
+parameters: freeze check first (`weekIndex > freezeAfterWeek` ->
+`frozenSetCount`, `.autoregulatedSetFrozen`), then the final-week
+exception (`isFinalWeek && !applyRatingOnFinalWeek` -> previous week's
+value unchanged, `.autoregulatedSetFinalWeekUnchanged`), else the
+existing rating-addition logic.
+
+### 5. `PowerliftingProgramGenerator` (`Application/UseCases/`)
+
+One generator, two private family-specific functions
+(`generateFamilyB`/`generateFamilyC`), both building local closures/
+variables only — no static mutable state (an early draft used
+`static var` for Family C's cross-day Friday-backoff-to-Monday-squat
+pairing; recognized as fragile before ever building or testing it, and
+rewritten with local variables/closures within `generateFamilyC` itself).
+
+- **Family B** (4 representative slots): Monday "Bench (Triples)" (5RM,
+  0.7 factor, flat 3-rep non-toFailure schedule, `applyRatingOnFinalWeek:
+  true`), Tuesday "Squat" (5RM, 0.95, stepping rep schedule,
+  `applyRatingOnFinalWeek: true`), Thursday "Deadlift (Triples)" (5RM,
+  0.7, flat reps, `applyRatingOnFinalWeek: false` — the Week-4 asymmetry),
+  Friday "Upper-Pull" (8RM, `.fixed([2,2,3,3])`, never autoregulated).
+  Both Triples rows and both ordinary rows share the same deload
+  position-override pair (boundary 2, weight 0.7/0.5, reps 2/3 · 1/2).
+- **Family C** (6 slots across 5 days): Monday "Squat"/Tuesday "Bench"/
+  Wednesday "Row" (10RM, 0.95, `AutoregulatedSetCount(baselineSets: 3)`,
+  no freeze), Thursday "Deadlift"/Friday "Overhead Press"
+  (`freezeAfterWeek: 2`), plus Friday "Squat Backoff"
+  (`.linkedToPairedSlot(fractionOfSourceResult: 0.85/0.95)`, structurally
+  paired to Monday's slot via `pairedSlot`, `deloadRepFraction: 1.0` —
+  the sole no-reduction exception among Family C's deload reps). All
+  rows share `deloadWeightPositionOverride` (boundary 2, 1.0/0.5 — no
+  reduction Mon/Tue, halved Wed-Fri).
+- **Flagged, not invented (per the generator's own doc comment):**
+  neither family's exact 10-slot (Family B) / full day-by-day (Family C)
+  exercise catalog survives in the source material beyond the explicitly
+  cited day names — this pass proves the *rule engine mechanics* with
+  one representative slot per day, matching `HypertrophyProgramGenerator`'s
+  identical, already-accepted scope statement. Family C's non-deload
+  rep-per-week schedule is also undocumented anywhere in the surviving
+  material; a flat 8-reps-every-week placeholder is used, explicitly
+  flagged in the source as unconfirmed.
+
+### 6. Regression fixtures proving Family B/C distinctness (`PowerliftingRegressionTests`, 12 tests)
+
+Engine-level (not generator/materializer-level), all **CONSTRUCTED**
+(RM=100), each numeric fixture precomputed in Python before being
+written as a Swift assertion (the Stage 3C-era 52.5-vs-50 mistake
+discipline, applied again here):
+
+- Mixed 5RM/8RM basis and uniform 10RM basis resolve independently
+  through the same engine call.
+- Triples protocol: week-1 factor 0.7 (-> 70) distinct from the ordinary
+  0.95 factor (-> 95); rep goal flat across all 4 weeks.
+- Family B Week-4 asymmetry: baseline 3 -> 4 -> 4 -> **4** even when
+  Week 4 is deliberately supplied a rating of +1 that would otherwise
+  raise it to 5 — proves the rating is ignored, not merely untested.
+- Family C Week-4 freeze: baseline 2 -> 3 -> 4 -> **4** even when Week 4
+  is deliberately supplied a *negative* rating — rules out the freeze
+  being mistaken for "the rating happened to be 0."
+- Explicit side-by-side proof (`testFamilyBAsymmetryAndFamilyCFreezeAreDistinctMechanisms`)
+  that the two Week-4 shapes are structurally different configurations,
+  not the same behavior under two names.
+- Family C backoff: Monday resolves to 95, Friday backoff resolves to
+  85 as a fraction (0.85/0.95) of Monday's *resolved* value, not an
+  independent computation.
+- Family B deload: both the Triples row (70 -> 50/35 by day position)
+  and the ordinary row (95 -> 67.5/47.5) exercise the real 2/3 · 1/2 rep
+  split and 0.7 · 0.5 weight split, both position sides.
+- Family C deload: weight unchanged Monday/Tuesday, halved from
+  Wednesday on; reps uniformly halved for every row **except** the
+  Friday backoff, whose reps are the sole unchanged exception — tested
+  as an explicit negative case against an ordinary row, not just
+  asserted for the backoff alone.
+- Metric-native / no-lb-rounding-leakage: the same rule resolves to a
+  different final number purely from swapping the `EquipmentProfile`
+  increment (2.5 kg vs 5 kg vs 0.25 kg), proving no rule stores or
+  assumes a rounding increment itself.
+
+### 7. `PowerliftingBuiltInLibrary` (`Application/UseCases/`, 3 tests)
+
+The 2 curated V1 configurations from `V1_PROGRAM_LIBRARY.md` (#7-8):
+"4-Day Powerlifting Strength" (Family B, `dayCount: 4`) and "5-Day
+Powerlifting Hypertrophy" (Family C, `dayCount: 5`) — plain
+`PowerliftingProgramConfiguration` values instantiated through the one
+shared generator, mirroring `HypertrophyBuiltInLibrary`'s pattern
+exactly. Tests confirm both instantiate correctly, produce genuinely
+different day structures (4 vs. 5 named sessions), and each carries the
+correct `programmingSystem`/`powerliftingConfiguration`.
+
+### 8. Architectural judgment: no flaw found in the template graph or materializer
+
+Per the kickoff's explicit instruction to stop and explain before
+working around any exposed flaw: Family B/C required extending the
+*rule vocabulary* (new `StrengthProgressionRules` fields, all additive)
+and the *pure deload-strategy functions* (position-override lookups
+that fall back to the original formula), but the template graph itself
+(`ProgramDefinition -> TemplateSession -> WorkoutBlockTemplate ->
+PrescriptionTemplate -> ExerciseSlot`) and the materialization mechanism
+needed no structural change at all — `PowerliftingProgramGenerator`
+builds the identical entity graph shape `HypertrophyProgramGenerator`
+does, just with different rule parameters. This is not a flaw in the
+generic architecture; it's the additive-configuration outcome Stage 4A
+was validated to support.
+
+### 9. Test count and result
+
+144 tests total (115 Stage 4A baseline + 29 new Stage 4B tests). All 144
+pass on the real Xcode toolchain, including all 115 pre-existing tests
+unchanged — none weakened.
+
+New/changed Stage 4B test files: `PowerliftingProgramGeneratorTests`
+(13, structural: day names/counts, RM-type mixing, Triples factor+rep
+goal, Week-4 asymmetry-vs-freeze distinction, Friday accessory fixed
+schedule, deload day-split overrides, backoff structural pairing,
+round-trip persistence), `PowerliftingRegressionTests` (12, engine-level
+numeric — §6 above), `PowerliftingBuiltInLibraryTests` (3),
+`TemplateGraphPersistenceTests` (+1: sibling-row round-trip for the new
+`AutoregulatedSetCount`/`DeloadPositionOverride` fields, now 9 total).
+`StrengthProgressionEngineTests`/`StrengthMaterializerTests` (renamed
+from their Stage 4A `Hypertrophy*` names, contents unchanged).
+
+### 10. Simulator
+
+Rebuilt and relaunched on an iPhone 17 (iOS 26.5) simulator after the
+schema change (`ProgramDefinition.powerliftingConfiguration` and
+`PrescriptionTemplate`'s new fields). App launched and stayed running
+(no crash); Today renders identically to every prior pass ("No sessions
+today" — Stage 4B added no seeded `ProgramInstance` content and touched
+no UI/ViewModel code, exactly Stage 4A's §9 precedent repeated).
+
+### 11. What Stage 4B does not claim
+
+- A complete, realistic per-day exercise catalog for Family B's full
+  10-slot layout or Family C's full day-by-day content beyond the
+  explicitly cited day names (§5's generator scope note).
+- Family C's non-deload rep-per-week schedule — undocumented in the
+  surviving source material; a flagged placeholder is used.
+- Either family's deload set count — undocumented for both families;
+  Family A's confirmed value (2) is carried forward as a default,
+  flagged as unconfirmed.
+- Materialization of weeks 1-3, a stored typed `Recommendation`, or any
+  UI surfacing — identical, still-standing scope boundaries from Stage
+  4A §10.
+- SteadyState, Interval, FunctionalFitness, or ConcurrentScheduler
+  (Stages 4C-4F) — not started.
+
+### 12. Commit
+
+See the final commit hash reported alongside this document. Local and
+remote verified to match; working tree clean apart from local Xcode user
+data.

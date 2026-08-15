@@ -16,7 +16,7 @@ import SwiftData
 /// materializing it upfront would mean fabricating a rating (exactly the
 /// "guess aggressively" Stage 4 explicitly rules out). A real app calls
 /// `materializeWeek` again for week N once week N-1's actual results are
-/// known — the same per-slot `HypertrophyProgressionEngine` calls, not a
+/// known — the same per-slot `StrengthProgressionEngine` calls, not a
 /// new mechanism, so no additional engine work is needed to extend this
 /// later.
 ///
@@ -27,16 +27,16 @@ import SwiftData
 ///
 /// **No `Recommendation` is persisted.** `Recommendation.reasonCode` is
 /// typed to `ProgressionReasonCode` (`DoubleProgressionEngine`'s
-/// vocabulary); mapping `HypertrophyReasonCode` onto it would misrepresent
+/// vocabulary); mapping `StrengthReasonCode` onto it would misrepresent
 /// which engine actually produced the value. Resolved values are written
 /// directly onto `SetPrescription.targetWeight`/`repRange*` instead,
 /// exactly like Stage 1-2's hand-authored seed data — since the engine is
 /// pure and deterministic, any later "why" audit can simply re-run it
 /// rather than needing a stored explanation. A typed
-/// `Recommendation.hypertrophyReasonCode` sibling field (mirroring
+/// `Recommendation.strengthReasonCode` sibling field (mirroring
 /// `WorkoutBlock`'s typed-per-modality pattern) is a reasonable follow-up
 /// if that auditability is needed, not a defect of this pass.
-enum HypertrophyMaterializer {
+enum StrengthMaterializer {
     /// Per-slot runtime context the caller must supply — everything the
     /// template graph itself cannot know (it's specific to who's running
     /// the program). `weekOneResolvedWeightKg`/`previousWeekSetCount` are
@@ -119,25 +119,27 @@ enum HypertrophyMaterializer {
                     let ctx = slotContext(slot)
                     let pairedResolvedWeight = template.pairedSlot.flatMap { resolvedWeightsByTemplateID[$0.id] }
 
-                    let weightResult: (weightKg: Double?, reasonCode: HypertrophyReasonCode)
-                    let repResult: (repGoal: RepGoal?, reasonCode: HypertrophyReasonCode)
-                    let setResult: (sets: Int?, reasonCode: HypertrophyReasonCode)
+                    let weightResult: (weightKg: Double?, reasonCode: StrengthReasonCode)
+                    let repResult: (repGoal: RepGoal?, reasonCode: StrengthReasonCode)
+                    let setResult: (sets: Int?, reasonCode: StrengthReasonCode)
 
                     if isDeload {
                         weightResult = deloadStrategy.resolveDeloadWeight(
                             rules: rules, dayPositionInWeek: dayIndex, dayCount: orderedTemplateSessions.count,
                             weekOneResolvedWeightKg: ctx.weekOneResolvedWeightKg, equipmentProfile: equipmentProfile
                         )
-                        repResult = deloadStrategy.resolveDeloadRepGoal(rules: rules)
+                        repResult = deloadStrategy.resolveDeloadRepGoal(
+                            rules: rules, dayPositionInWeek: dayIndex, dayCount: orderedTemplateSessions.count
+                        )
                         setResult = deloadStrategy.resolveDeloadSetCount(rules: rules)
                     } else {
-                        weightResult = HypertrophyProgressionEngine.resolveWeight(
+                        weightResult = StrengthProgressionEngine.resolveWeight(
                             rules: rules, weekIndex: weekIndex, rmKilograms: ctx.rmKilograms,
                             weekOneResolvedWeightKg: ctx.weekOneResolvedWeightKg,
                             pairedSlotResolvedWeightKg: pairedResolvedWeight, equipmentProfile: equipmentProfile
                         )
-                        repResult = HypertrophyProgressionEngine.resolveRepGoal(rules: rules, weekIndex: weekIndex)
-                        setResult = HypertrophyProgressionEngine.resolveSetCount(
+                        repResult = StrengthProgressionEngine.resolveRepGoal(rules: rules, weekIndex: weekIndex)
+                        setResult = StrengthProgressionEngine.resolveSetCount(
                             rules: rules, weekIndex: weekIndex,
                             previousWeekSetCount: ctx.previousWeekSetCount, autoregulationRating: ctx.autoregulationRating
                         )

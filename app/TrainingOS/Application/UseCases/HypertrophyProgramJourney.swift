@@ -14,7 +14,7 @@ import SwiftData
 /// 3 phases' `ProgramDefinition`/`TrainingPhase`/`ProgramInstance` up
 /// front (so the whole journey is inspectable/previewable before any of
 /// it runs), but does **not** materialize any phase's actual Sessions —
-/// that's `HypertrophyMaterializer`'s job, called per-phase whenever that
+/// that's `StrengthMaterializer`'s job, called per-phase whenever that
 /// phase actually starts, with that phase's own starting RM (from
 /// `PerformanceProfile` if history exists, calibration otherwise — never
 /// a cross-phase spreadsheet formula, per decision A1).

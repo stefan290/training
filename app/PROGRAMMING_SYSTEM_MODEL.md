@@ -424,3 +424,17 @@ document's own assumptions rather than just adding new code:
    rule *already* carries the whole mesocycle's week-by-week progression
    as arrays, so one recurring weekly structure is correct, not one copy
    per week.
+
+## Stage 4B implementation update
+
+`PowerliftingProgrammingSystem` is now built and Xcode-validated (Family
+B "RP Powerlifting Strength" and Family C "RP Powerlifting
+Hypertrophy-block") — see `STAGE4_IMPLEMENTATION_REPORT.md`'s "Stage 4B"
+section for the full account. No correction to this document's model is
+needed: Family B/C are exactly the "one engine + configuration" outcome
+this document's own framing anticipated, reusing
+`PowerliftingProgramGenerator` over the identical template-graph shape
+Stage 4A validated, with only `StrengthProgressionRules`' rule
+*parameters* differing per family (line 7's "not built yet" note above
+is now stale for Powerlifting specifically; still current for
+SteadyState/Interval/FunctionalFitness/ConcurrentScheduler).

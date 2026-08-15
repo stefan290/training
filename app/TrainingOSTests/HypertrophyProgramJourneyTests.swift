@@ -81,7 +81,7 @@ final class HypertrophyProgramJourneyTests: XCTestCase {
         // Start only the *second* phase (Metabolite Focus) — proves it
         // doesn't depend on the first phase ever having been started.
         let metaboliteFocus = try XCTUnwrap(results.first { $0.phaseType == .metaboliteFocus })
-        let materialized = HypertrophyMaterializer.materializeWeek(
+        let materialized = StrengthMaterializer.materializeWeek(
             definition: metaboliteFocus.definition, instance: metaboliteFocus.instance,
             weekIndex: 0, isDeload: false, startDate: Date(timeIntervalSince1970: 0),
             ownerUserID: ownerUserID, equipmentProfile: EquipmentProfile(equipmentType: .barbell, smallestIncrementKg: 2.5),

@@ -366,3 +366,23 @@ hardcoded 0.5 — Family A's own data always sets it to 0.5, but the plan's
 own 2/3 fixture (chosen specifically to rule out a round-to-nearest
 coincidence) only makes sense if the rule itself can express a fraction
 other than one-half.
+
+## Stage 4B implementation update
+
+Family B/C's distinctness fixtures (mixed 5RM/8RM and uniform 10RM
+basis, the Triples protocol, the Week-4 asymmetry-vs-freeze distinction,
+the Friday backoff reference, both families' deload day-position
+splits) are now implemented as table-driven XCTests in
+`PowerliftingRegressionTests.swift` — see
+`STAGE4_IMPLEMENTATION_REPORT.md`'s "Stage 4B" §6 for the fixture-to-test
+mapping. Same discipline as Stage 4A: every fixture is CONSTRUCTED
+(RM=100), precomputed in Python before being written as a Swift
+assertion, and this pass's own search confirmed no real Family B/C/D
+source workbook survives in this repository beyond what
+`PROGRAMMING_SOURCES.md`/`PROGRAM_LOGIC_SPEC.md` already document.
+
+One deliberate strengthening beyond what this plan originally asked for:
+the Week-4 asymmetry/freeze fixtures each supply a rating on Week 4 that
+*would* change the result under the other family's rule (a +1 for Family
+B, a -1 for Family C) specifically to prove the value is ignored, not
+merely that it happens to match by coincidence.

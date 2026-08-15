@@ -59,7 +59,7 @@ final class TemplateGraphPersistenceTests: XCTestCase {
             id: primaryID,
             rules: StrengthProgressionRules(
                 loadRule: .rmBased(RMBasedLoad(rmType: .rm10, weekOneFactor: 0.85, laterWeekMultipliers: [1.05, 1.075, 1.1])),
-                setCountRule: .autoregulated(baselineSets: 3),
+                setCountRule: .autoregulated(AutoregulatedSetCount(baselineSets: 3)),
                 repGoalSchedule: [
                     RepGoal(reps: 3, toFailure: true),
                     RepGoal(reps: 3, toFailure: true),
@@ -128,7 +128,7 @@ final class TemplateGraphPersistenceTests: XCTestCase {
 
         let reloadedPrimary = try XCTUnwrap(block.orderedPrescriptionTemplates.first { $0.id == primaryID })
         XCTAssertEqual(reloadedPrimary.rules?.loadRule, .rmBased(RMBasedLoad(rmType: .rm10, weekOneFactor: 0.85, laterWeekMultipliers: [1.05, 1.075, 1.1])))
-        XCTAssertEqual(reloadedPrimary.rules?.setCountRule, .autoregulated(baselineSets: 3))
+        XCTAssertEqual(reloadedPrimary.rules?.setCountRule, .autoregulated(AutoregulatedSetCount(baselineSets: 3)))
         XCTAssertEqual(reloadedPrimary.rules?.repGoalSchedule, [
             RepGoal(reps: 3, toFailure: true), RepGoal(reps: 3, toFailure: true),
             RepGoal(reps: 2, toFailure: true), RepGoal(reps: 1, toFailure: true)
@@ -344,5 +344,57 @@ final class TemplateGraphPersistenceTests: XCTestCase {
         )
         XCTAssertEqual(reloadedFirst.rules?.loadRule, .linkedToPairedSlot(fractionOfSourceResult: 0.5))
         XCTAssertEqual(reloadedSecond.rules?.loadRule, .rmBased(RMBasedLoad(rmType: .rm10, weekOneFactor: 0.85, laterWeekMultipliers: [1.05])))
+    }
+
+    /// Stage 4B additions: `AutoregulatedSetCount`'s 2 new fields
+    /// (`applyRatingOnFinalWeek`/`freezeAfterWeek`) and the 2 new
+    /// `DeloadPositionOverride?` struct fields — none of these are
+    /// exercised by any Stage 4A fixture (all default/nil there), so this
+    /// is the first round-trip proof they persist correctly before
+    /// `PowerliftingProgramGenerator` relies on them. Two sibling rows
+    /// with *different* override values, per this file's own established
+    /// diagnostic discipline for anything added to `PrescriptionTemplate`.
+    func testStageFourBDeloadOverridesAndAutoregulationExtensionsSurviveRoundTrip() throws {
+        let familyBID = UUID()
+        let familyBTemplate = PrescriptionTemplate(id: familyBID, rules: StrengthProgressionRules(
+            loadRule: .rmBased(RMBasedLoad(rmType: .rm5, weekOneFactor: 0.7, laterWeekMultipliers: [1.05, 1.075, 1.1])),
+            setCountRule: .autoregulated(AutoregulatedSetCount(baselineSets: 3, applyRatingOnFinalWeek: false)),
+            repGoalSchedule: [RepGoal(reps: 3, toFailure: true)],
+            deloadRepPositionOverride: DeloadPositionOverride(boundaryDayIndex: 2, fullPositionFactor: 2.0 / 3.0, halfPositionFactor: 0.5),
+            deloadWeightPositionOverride: DeloadPositionOverride(boundaryDayIndex: 2, fullPositionFactor: 0.7, halfPositionFactor: 0.5)
+        ))
+        context.insert(familyBTemplate)
+
+        let familyCID = UUID()
+        let familyCTemplate = PrescriptionTemplate(id: familyCID, rules: StrengthProgressionRules(
+            loadRule: .rmBased(RMBasedLoad(rmType: .rm10, weekOneFactor: 0.95, laterWeekMultipliers: [1.05, 1.075, 1.1])),
+            setCountRule: .autoregulated(AutoregulatedSetCount(baselineSets: 2, freezeAfterWeek: 2)),
+            repGoalSchedule: [RepGoal(reps: 8, toFailure: true)],
+            deloadWeightPositionOverride: DeloadPositionOverride(boundaryDayIndex: 2, fullPositionFactor: 1.0, halfPositionFactor: 0.5)
+        ))
+        context.insert(familyCTemplate)
+        try context.save()
+
+        let reloadedB = try XCTUnwrap(
+            freshContext().fetch(FetchDescriptor<PrescriptionTemplate>(predicate: #Predicate { $0.id == familyBID })).first
+        )
+        guard case .autoregulated(let bConfig) = try XCTUnwrap(reloadedB.rules?.setCountRule) else {
+            return XCTFail("expected .autoregulated")
+        }
+        XCTAssertEqual(bConfig.applyRatingOnFinalWeek, false)
+        XCTAssertNil(bConfig.freezeAfterWeek)
+        XCTAssertEqual(reloadedB.rules?.deloadRepPositionOverride, DeloadPositionOverride(boundaryDayIndex: 2, fullPositionFactor: 2.0 / 3.0, halfPositionFactor: 0.5))
+        XCTAssertEqual(reloadedB.rules?.deloadWeightPositionOverride, DeloadPositionOverride(boundaryDayIndex: 2, fullPositionFactor: 0.7, halfPositionFactor: 0.5))
+
+        let reloadedC = try XCTUnwrap(
+            freshContext().fetch(FetchDescriptor<PrescriptionTemplate>(predicate: #Predicate { $0.id == familyCID })).first
+        )
+        guard case .autoregulated(let cConfig) = try XCTUnwrap(reloadedC.rules?.setCountRule) else {
+            return XCTFail("expected .autoregulated")
+        }
+        XCTAssertEqual(cConfig.applyRatingOnFinalWeek, true)
+        XCTAssertEqual(cConfig.freezeAfterWeek, 2)
+        XCTAssertNil(reloadedC.rules?.deloadRepPositionOverride)
+        XCTAssertEqual(reloadedC.rules?.deloadWeightPositionOverride, DeloadPositionOverride(boundaryDayIndex: 2, fullPositionFactor: 1.0, halfPositionFactor: 0.5))
     }
 }

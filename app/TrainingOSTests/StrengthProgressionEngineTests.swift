@@ -1,7 +1,7 @@
 import XCTest
 @testable import TrainingOS
 
-/// Pure rule-arithmetic tests for `HypertrophyProgressionEngine` and
+/// Pure rule-arithmetic tests for `StrengthProgressionEngine` and
 /// `SourceCompatibleDeloadStrategy` — no `ModelContext` needed, same
 /// discipline as `DoubleProgressionEngineTests`. Every numeric fixture
 /// here is **CONSTRUCTED** (RM=100, chosen for arithmetic convenience) per
@@ -10,7 +10,7 @@ import XCTest
 /// by this pass's own research; see `STAGE4_IMPLEMENTATION_REPORT.md`).
 /// Every formula transcribed here is still cited to its
 /// `PROGRAM_LOGIC_SPEC.md` rule name and this plan's own section number.
-final class HypertrophyProgressionEngineTests: XCTestCase {
+final class StrengthProgressionEngineTests: XCTestCase {
     private let equipment = EquipmentProfile(equipmentType: .barbell, smallestIncrementKg: 2.5)
 
     // MARK: - §4.1 Load progression (CONSTRUCTED, RM=100)
@@ -29,7 +29,7 @@ final class HypertrophyProgressionEngineTests: XCTestCase {
             repGoalSchedule: [RepGoal(reps: 3, toFailure: true)]
         )
 
-        let week1 = HypertrophyProgressionEngine.resolveWeight(
+        let week1 = StrengthProgressionEngine.resolveWeight(
             rules: rules, weekIndex: 0, rmKilograms: 100, weekOneResolvedWeightKg: nil,
             pairedSlotResolvedWeightKg: nil, equipmentProfile: equipment
         )
@@ -38,19 +38,19 @@ final class HypertrophyProgressionEngineTests: XCTestCase {
 
         let week1Resolved = try! XCTUnwrap(week1.weightKg)
 
-        let week2 = HypertrophyProgressionEngine.resolveWeight(
+        let week2 = StrengthProgressionEngine.resolveWeight(
             rules: rules, weekIndex: 1, rmKilograms: nil, weekOneResolvedWeightKg: week1Resolved,
             pairedSlotResolvedWeightKg: nil, equipmentProfile: equipment
         )
         XCTAssertEqual(week2.weightKg ?? -1, 90, accuracy: 0.0001)
 
-        let week3 = HypertrophyProgressionEngine.resolveWeight(
+        let week3 = StrengthProgressionEngine.resolveWeight(
             rules: rules, weekIndex: 2, rmKilograms: nil, weekOneResolvedWeightKg: week1Resolved,
             pairedSlotResolvedWeightKg: nil, equipmentProfile: equipment
         )
         XCTAssertEqual(week3.weightKg ?? -1, 92.5, accuracy: 0.0001)
 
-        let week4 = HypertrophyProgressionEngine.resolveWeight(
+        let week4 = StrengthProgressionEngine.resolveWeight(
             rules: rules, weekIndex: 3, rmKilograms: nil, weekOneResolvedWeightKg: week1Resolved,
             pairedSlotResolvedWeightKg: nil, equipmentProfile: equipment
         )
@@ -63,7 +63,7 @@ final class HypertrophyProgressionEngineTests: XCTestCase {
             setCountRule: .fixed(setsByWeek: [3]),
             repGoalSchedule: [RepGoal(reps: 3)]
         )
-        let result = HypertrophyProgressionEngine.resolveWeight(
+        let result = StrengthProgressionEngine.resolveWeight(
             rules: rules, weekIndex: 0, rmKilograms: nil, weekOneResolvedWeightKg: nil,
             pairedSlotResolvedWeightKg: nil, equipmentProfile: equipment
         )
@@ -73,7 +73,7 @@ final class HypertrophyProgressionEngineTests: XCTestCase {
 
     func testNoLoadRuleNeverProducesAWeight() {
         let rules = StrengthProgressionRules(loadRule: .none, setCountRule: .fixed(setsByWeek: [3]), repGoalSchedule: [RepGoal(reps: 12)])
-        let result = HypertrophyProgressionEngine.resolveWeight(
+        let result = StrengthProgressionEngine.resolveWeight(
             rules: rules, weekIndex: 0, rmKilograms: 100, weekOneResolvedWeightKg: nil,
             pairedSlotResolvedWeightKg: nil, equipmentProfile: equipment
         )
@@ -91,14 +91,14 @@ final class HypertrophyProgressionEngineTests: XCTestCase {
             setCountRule: .fixed(setsByWeek: [2, 2, 2, 2]),
             repGoalSchedule: [RepGoal(reps: 12)]
         )
-        let week1 = HypertrophyProgressionEngine.resolveWeight(
+        let week1 = StrengthProgressionEngine.resolveWeight(
             rules: rules, weekIndex: 0, rmKilograms: nil, weekOneResolvedWeightKg: nil,
             pairedSlotResolvedWeightKg: 85, equipmentProfile: equipment
         )
         XCTAssertEqual(week1.weightKg ?? -1, 50, accuracy: 0.0001) // MROUND(85*0.6, 2.5) = MROUND(51, 2.5) = 50
         XCTAssertEqual(week1.reasonCode, .linkedToPairedSlotLoad)
 
-        let week2 = HypertrophyProgressionEngine.resolveWeight(
+        let week2 = StrengthProgressionEngine.resolveWeight(
             rules: rules, weekIndex: 1, rmKilograms: nil, weekOneResolvedWeightKg: nil,
             pairedSlotResolvedWeightKg: 90, equipmentProfile: equipment
         )
@@ -115,37 +115,37 @@ final class HypertrophyProgressionEngineTests: XCTestCase {
     func testAutoregulatedSetCountAcrossFourWeeksWithNegativeRating() {
         let rules = StrengthProgressionRules(
             loadRule: .none,
-            setCountRule: .autoregulated(baselineSets: 3),
+            setCountRule: .autoregulated(AutoregulatedSetCount(baselineSets: 3)),
             repGoalSchedule: [RepGoal(reps: 3, toFailure: true)]
         )
 
-        let week1 = HypertrophyProgressionEngine.resolveSetCount(rules: rules, weekIndex: 0, previousWeekSetCount: nil, autoregulationRating: nil)
+        let week1 = StrengthProgressionEngine.resolveSetCount(rules: rules, weekIndex: 0, previousWeekSetCount: nil, autoregulationRating: nil)
         XCTAssertEqual(week1.sets, 3)
         XCTAssertEqual(week1.reasonCode, .fixedSetSchedule)
 
-        let week2 = HypertrophyProgressionEngine.resolveSetCount(rules: rules, weekIndex: 1, previousWeekSetCount: 3, autoregulationRating: 1)
+        let week2 = StrengthProgressionEngine.resolveSetCount(rules: rules, weekIndex: 1, previousWeekSetCount: 3, autoregulationRating: 1)
         XCTAssertEqual(week2.sets, 4)
         XCTAssertEqual(week2.reasonCode, .autoregulatedSetIncrease)
 
-        let week3 = HypertrophyProgressionEngine.resolveSetCount(rules: rules, weekIndex: 2, previousWeekSetCount: 4, autoregulationRating: 0)
+        let week3 = StrengthProgressionEngine.resolveSetCount(rules: rules, weekIndex: 2, previousWeekSetCount: 4, autoregulationRating: 0)
         XCTAssertEqual(week3.sets, 4)
         XCTAssertEqual(week3.reasonCode, .autoregulatedSetHold)
 
-        let week4 = HypertrophyProgressionEngine.resolveSetCount(rules: rules, weekIndex: 3, previousWeekSetCount: 4, autoregulationRating: -1)
+        let week4 = StrengthProgressionEngine.resolveSetCount(rules: rules, weekIndex: 3, previousWeekSetCount: 4, autoregulationRating: -1)
         XCTAssertEqual(week4.sets, 3)
         XCTAssertEqual(week4.reasonCode, .autoregulatedSetDecrease)
     }
 
     func testAutoregulatedSetCountNeverGoesNegative() {
-        let rules = StrengthProgressionRules(loadRule: .none, setCountRule: .autoregulated(baselineSets: 0), repGoalSchedule: [RepGoal(reps: 3)])
-        let result = HypertrophyProgressionEngine.resolveSetCount(rules: rules, weekIndex: 1, previousWeekSetCount: 0, autoregulationRating: -1)
+        let rules = StrengthProgressionRules(loadRule: .none, setCountRule: .autoregulated(AutoregulatedSetCount(baselineSets: 0)), repGoalSchedule: [RepGoal(reps: 3)])
+        let result = StrengthProgressionEngine.resolveSetCount(rules: rules, weekIndex: 1, previousWeekSetCount: 0, autoregulationRating: -1)
         XCTAssertEqual(result.sets, 0)
     }
 
     func testFixedSetScheduleIsAPlainLookup() {
         let rules = StrengthProgressionRules(loadRule: .none, setCountRule: .fixed(setsByWeek: [2, 2, 2, 2]), repGoalSchedule: [RepGoal(reps: 12)])
         for week in 0..<4 {
-            let result = HypertrophyProgressionEngine.resolveSetCount(rules: rules, weekIndex: week, previousWeekSetCount: nil, autoregulationRating: nil)
+            let result = StrengthProgressionEngine.resolveSetCount(rules: rules, weekIndex: week, previousWeekSetCount: nil, autoregulationRating: nil)
             XCTAssertEqual(result.sets, 2)
             XCTAssertEqual(result.reasonCode, .fixedSetSchedule)
         }
@@ -194,7 +194,7 @@ final class HypertrophyProgressionEngineTests: XCTestCase {
     /// slot never autoregulates during deload.
     func testDeloadSetCountIsAHardcodedConstantRegardlessOfNormalSetCountRule() {
         let strategy = SourceCompatibleDeloadStrategy()
-        let autoregulated = StrengthProgressionRules(loadRule: .none, setCountRule: .autoregulated(baselineSets: 5), repGoalSchedule: [RepGoal(reps: 3)])
+        let autoregulated = StrengthProgressionRules(loadRule: .none, setCountRule: .autoregulated(AutoregulatedSetCount(baselineSets: 5)), repGoalSchedule: [RepGoal(reps: 3)])
         XCTAssertEqual(strategy.resolveDeloadSetCount(rules: autoregulated).sets, 2)
 
         let fixed = StrengthProgressionRules(loadRule: .none, setCountRule: .fixed(setsByWeek: [4, 4, 4, 4]), repGoalSchedule: [RepGoal(reps: 12)])
@@ -211,7 +211,7 @@ final class HypertrophyProgressionEngineTests: XCTestCase {
     func testDeloadOmitAppliesOnlyToTheConfirmedSlotNotItsPrimaryPartner() {
         let primaryRules = StrengthProgressionRules(
             loadRule: .rmBased(RMBasedLoad(rmType: .rm10, weekOneFactor: 0.85, laterWeekMultipliers: [1.05])),
-            setCountRule: .autoregulated(baselineSets: 3),
+            setCountRule: .autoregulated(AutoregulatedSetCount(baselineSets: 3)),
             repGoalSchedule: [RepGoal(reps: 3, toFailure: true)],
             deloadWeightAction: .standard,
             deloadRepAction: .standard
@@ -262,8 +262,8 @@ final class HypertrophyProgressionEngineTests: XCTestCase {
             loadRule: .none, setCountRule: .fixed(setsByWeek: [3, 3, 3, 3]),
             repGoalSchedule: [RepGoal(reps: 3, toFailure: true), RepGoal(reps: 3, toFailure: true), RepGoal(reps: 2, toFailure: true), RepGoal(reps: 1, toFailure: true)]
         )
-        XCTAssertEqual(HypertrophyProgressionEngine.resolveRepGoal(rules: rules, weekIndex: 0).repGoal, RepGoal(reps: 3, toFailure: true))
-        XCTAssertEqual(HypertrophyProgressionEngine.resolveRepGoal(rules: rules, weekIndex: 2).repGoal, RepGoal(reps: 2, toFailure: true))
-        XCTAssertEqual(HypertrophyProgressionEngine.resolveRepGoal(rules: rules, weekIndex: 3).repGoal, RepGoal(reps: 1, toFailure: true))
+        XCTAssertEqual(StrengthProgressionEngine.resolveRepGoal(rules: rules, weekIndex: 0).repGoal, RepGoal(reps: 3, toFailure: true))
+        XCTAssertEqual(StrengthProgressionEngine.resolveRepGoal(rules: rules, weekIndex: 2).repGoal, RepGoal(reps: 2, toFailure: true))
+        XCTAssertEqual(StrengthProgressionEngine.resolveRepGoal(rules: rules, weekIndex: 3).repGoal, RepGoal(reps: 1, toFailure: true))
     }
 }

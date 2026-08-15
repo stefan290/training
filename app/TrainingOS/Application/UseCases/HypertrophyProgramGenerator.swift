@@ -131,7 +131,7 @@ enum HypertrophyProgramGenerator {
 
         let primary = PrescriptionTemplate(rules: StrengthProgressionRules(
             loadRule: .rmBased(RMBasedLoad(rmType: .rm10, weekOneFactor: weekOneFactor, laterWeekMultipliers: laterWeekMultipliers)),
-            setCountRule: .autoregulated(baselineSets: 3),
+            setCountRule: .autoregulated(AutoregulatedSetCount(baselineSets: 3)),
             repGoalSchedule: repGoalSchedule
         ))
         let primarySlot = ExerciseSlot(

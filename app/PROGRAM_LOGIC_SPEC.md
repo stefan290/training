@@ -494,3 +494,21 @@ A, Xcode-validated against the exact numeric fixtures in
   `SourceCompatibleDeloadStrategy.resolveDeloadSetCount`, tested against
   both a `.fixed` and an `.autoregulated` slot to confirm neither's
   normal rule leaks through during deload.
+
+## Stage 4B implementation update
+
+`StrengthProgressionEngine`/`SourceCompatibleDeloadStrategy` (renamed
+from their Stage 4A `Hypertrophy*` names — both were already
+family-agnostic) now also implement §3-4's Family B/C rules, Xcode-
+validated against the exact numeric fixtures this document specifies —
+see `STAGE4_IMPLEMENTATION_REPORT.md`'s "Stage 4B" section for the full
+account. One gap this document itself already flags is carried forward
+unresolved, not silently filled in: **neither family's deload
+documentation states a set count** (only weight and reps) — Family A's
+confirmed value (2) is used as the default, explicitly marked
+unconfirmed in `StrengthProgressionRules.deloadSetCount`'s doc comment
+and `PowerliftingProgramGenerator`'s own doc comment. Family C's
+non-deload rep-per-week schedule is likewise undocumented anywhere in
+the surviving material (unlike Family A/B, whose docs state one); a flat
+8-reps-every-week placeholder is used, flagged as a representative
+placeholder rather than a sourced fixture.

@@ -2,13 +2,13 @@ import XCTest
 import SwiftData
 @testable import TrainingOS
 
-/// Proves `HypertrophyMaterializer` turns a generated template graph into
+/// Proves `StrengthMaterializer` turns a generated template graph into
 /// real, dated `Day -> Session -> WorkoutBlock -> ExercisePrescription ->
-/// SetPrescription` rows with the exact values `HypertrophyProgressionEngine`/
+/// SetPrescription` rows with the exact values `StrengthProgressionEngine`/
 /// `SourceCompatibleDeloadStrategy` would independently compute, and that
 /// the materialized graph survives a real save/refetch cycle.
 @MainActor
-final class HypertrophyMaterializerTests: XCTestCase {
+final class StrengthMaterializerTests: XCTestCase {
     var container: ModelContainer!
     var context: ModelContext!
     let ownerUserID = UUID()
@@ -39,7 +39,7 @@ final class HypertrophyMaterializerTests: XCTestCase {
         let instance = makeInstance(definition: definition)
         let startDate = Date(timeIntervalSince1970: 0)
 
-        let result = HypertrophyMaterializer.materializeWeek(
+        let result = StrengthMaterializer.materializeWeek(
             definition: definition, instance: instance, weekIndex: 0, isDeload: false,
             startDate: startDate, ownerUserID: ownerUserID, equipmentProfile: equipment,
             slotContext: { _ in .init(rmKilograms: 100) }, context: context
@@ -73,7 +73,7 @@ final class HypertrophyMaterializerTests: XCTestCase {
         )
         let instance = makeInstance(definition: definition)
 
-        let result = HypertrophyMaterializer.materializeWeek(
+        let result = StrengthMaterializer.materializeWeek(
             definition: definition, instance: instance, weekIndex: 0, isDeload: false,
             startDate: Date(timeIntervalSince1970: 0), ownerUserID: ownerUserID, equipmentProfile: equipment,
             slotContext: { _ in .init(rmKilograms: 100) }, context: context
@@ -97,7 +97,7 @@ final class HypertrophyMaterializerTests: XCTestCase {
         )
         let instance = makeInstance(definition: definition)
 
-        let result = HypertrophyMaterializer.materializeWeek(
+        let result = StrengthMaterializer.materializeWeek(
             definition: definition, instance: instance, weekIndex: 0, isDeload: false,
             startDate: Date(timeIntervalSince1970: 0), ownerUserID: ownerUserID, equipmentProfile: equipment,
             slotContext: { _ in .init(rmKilograms: nil) }, context: context
@@ -120,7 +120,7 @@ final class HypertrophyMaterializerTests: XCTestCase {
         )
         let instance = makeInstance(definition: definition)
 
-        let weekZero = HypertrophyMaterializer.materializeWeek(
+        let weekZero = StrengthMaterializer.materializeWeek(
             definition: definition, instance: instance, weekIndex: 0, isDeload: false,
             startDate: Date(timeIntervalSince1970: 0), ownerUserID: ownerUserID, equipmentProfile: equipment,
             slotContext: { _ in .init(rmKilograms: 100) }, context: context
@@ -128,7 +128,7 @@ final class HypertrophyMaterializerTests: XCTestCase {
         let resolvedWeights = weekZero.resolvedWeightsBySlotID
 
         let deloadStartDate = Date(timeIntervalSince1970: 7 * 24 * 3600 * 4) // arbitrary later date
-        let deload = HypertrophyMaterializer.materializeWeek(
+        let deload = StrengthMaterializer.materializeWeek(
             definition: definition, instance: instance, weekIndex: 4, isDeload: true,
             startDate: deloadStartDate, ownerUserID: ownerUserID, equipmentProfile: equipment,
             slotContext: { slot in .init(weekOneResolvedWeightKg: resolvedWeights[slot.id]) }, context: context
@@ -159,7 +159,7 @@ final class HypertrophyMaterializerTests: XCTestCase {
         let instance = makeInstance(definition: definition)
         let instanceID = instance.id
 
-        HypertrophyMaterializer.materializeWeek(
+        StrengthMaterializer.materializeWeek(
             definition: definition, instance: instance, weekIndex: 0, isDeload: false,
             startDate: Date(timeIntervalSince1970: 0), ownerUserID: ownerUserID, equipmentProfile: equipment,
             slotContext: { _ in .init(rmKilograms: 100) }, context: context
