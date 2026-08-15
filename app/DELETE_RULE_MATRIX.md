@@ -245,3 +245,33 @@ see `SUBSTITUTION_MODEL.md`.
   `ActivitySelectionOverride` rows that pointed at those now-deleted
   template objects, without deleting the override rows themselves or the
   `ProgramInstance`s they belong to — consistent with CLAUDE.md rule 1.
+
+## Stage 4D additions
+
+One new structural relationship (the interval template graph, identical
+shape to Stage 4C's steady-state one) and one **correction** to a Stage
+4C relationship rather than a new one.
+
+### Structural (interval template graph)
+
+| Parent | Child | Relationship | Delete rule | Expected behaviour | Why |
+|---|---|---|---|---|---|
+| `WorkoutBlockTemplate` | `IntervalPrescriptionTemplate` | `intervalPrescriptionTemplate: IntervalPrescriptionTemplate?` | `.cascade` | Deleting a block template deletes its interval rule template. | Mirrors `WorkoutBlockTemplate.steadyStatePrescriptionTemplate` exactly. |
+
+### Correction: `ActivitySelectionOverride`'s required inverse moved
+
+Stage 4C declared `ActivitySelectionOverride`'s required inverse
+(`.nullify`) on `SteadyStatePrescriptionTemplate.activitySelectionOverrides`,
+keyed by `templateSteadyState: SteadyStatePrescriptionTemplate?`. Stage
+4D needed the identical GOING FORWARD mechanism for
+`IntervalPrescriptionTemplate` too, and re-keyed the whole relationship
+to the common `WorkoutBlockTemplate` parent instead of adding a second,
+duplicate inverse-and-property pair for the interval type:
+
+| Parent | Child | Relationship | Delete rule | Expected behaviour | Why |
+|---|---|---|---|---|---|
+| `WorkoutBlockTemplate` | `ActivitySelectionOverride` | `activitySelectionOverrides: [ActivitySelectionOverride]` (required inverse only; nothing reads it) | `.nullify` | Deleting a `WorkoutBlockTemplate` (which happens when its `ProgramDefinition` cascades away) nullifies `override.templateBlock` rather than crashing; the override row itself survives (still attached to its `ProgramInstance`) until that instance is separately deleted. | Same established "un-inversed to-one reference to a deletable type crashes instead of nullifying" fix as ever, now serving both endurance template types through one relationship. Re-proven directly at the new location by `IntervalPersistenceTests.testDeletingWorkoutBlockTemplateNullifiesRatherThanCrashingActivitySelectionOverride` — not assumed carried over from the Stage 4C test that exercised the old key. |
+
+`ExerciseSlot.slotSelectionOverrides`/`SlotSelectionOverride.templateSlot`
+(the strength side) are unaffected — this correction is scoped entirely
+to the endurance/activity override.

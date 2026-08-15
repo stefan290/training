@@ -1,8 +1,11 @@
 # Substitution Model
 
 Stage 4C's Part B deliverable: exercise/activity substitution is a
-domain/programming requirement, not a future UI feature. This document is
-the contract for how it works — read it before touching
+domain/programming requirement, not a future UI feature. Stage 4D
+extended the activity-substitution half to cover `IntervalPrescriptionTemplate`
+alongside `SteadyStatePrescriptionTemplate`, correcting
+`ActivitySelectionOverride`'s key in the process (§3 below). This
+document is the contract for how it works — read it before touching
 `SlotSelectionOverride`, `ActivitySelectionOverride`,
 `SubstituteExerciseUseCase`, or `SubstituteActivityUseCase`.
 
@@ -67,6 +70,25 @@ kickoff's suggested schema):
   `SubstituteActivityUseCase.resolvedActivityType(for:in:)` are the only
   functions a materializer should ever call instead of reading
   `slot.resolvedExercise`/`template.preferredActivityType` directly.
+
+**Stage 4D addition:** `IntervalPrescriptionTemplate` needed the exact
+same GOING FORWARD mechanism as `SteadyStatePrescriptionTemplate`. Rather
+than add a second, duplicate `ActivitySelectionOverride`-like entity for
+intervals, `ActivitySelectionOverride` was **re-keyed to the owning
+`WorkoutBlockTemplate`** (`templateBlock: WorkoutBlockTemplate?`, was
+`templateSteadyState: SteadyStatePrescriptionTemplate?`) — the one object
+both endurance template types already hang off of. A small
+`ActivitySubstitutionTemplate` protocol
+(`preferredActivityType`/`allowedActivityTypes`) lets
+`SubstituteActivityUseCase` stay generic over whichever endurance
+template a given block carries
+(`WorkoutBlockTemplate.activitySubstitutionTemplate`). THIS SESSION ONLY
+for intervals follows the identical strategy as steady-state — a direct
+edit of `IntervalPrescription.activityType`/`.substitutionUsed`/
+`.substitutionReason` (fields added this stage, mirroring
+`SteadyStatePrescription`'s Stage 4C ones), with `IntensityTranslation`
+applied to `workIntensity`/`recoveryIntensity` instead of
+`primaryIntensity`/`secondaryIntensity`.
 
 **Why two entities instead of one with a `scope` field:** the kickoff's
 own sketch (`templateSlotID, selectedExerciseID, scope, reason,

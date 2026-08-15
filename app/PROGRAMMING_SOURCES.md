@@ -129,6 +129,21 @@ is the next system expected to actually add entries to this document,
 per the kickoff's own instruction to verify external protocol sources
 directly before hardcoding numbers.
 
+## Stage 4D note
+
+§3's Helgerud et al. 2007 4×4 protocol (already documented above since
+Stage 3B, never previously consumed into a real fixture) is now backing
+`IntervalProgressionEngineTests.testHelgerud4x4NeverProgressesAcrossAnyWeek`/
+`.testHelgerud4x4StructureIsIdenticalAcrossRunningCyclingAndRowingWithModalityAppropriateIntensity` —
+the exact figures above (4×4min @ 90-95% HRmax, 3min active recovery @
+70% HRmax), constructed directly as an `IntervalProgressionRules` value
+with `priority: []` (the source study's own fixed protocol, never
+progressed). No new source verification was attempted for this stage's
+TRAININGOS_DESIGNED defaults (warm-up/cool-down durations, the count-
+then-duration priority ordering, the 5×1km distance-basis default) — see
+`STAGE4_IMPLEMENTATION_REPORT.md`'s Stage 4D §4 for the full,
+honestly-labeled list.
+
 ## Stage 4C note
 
 No new SOURCE-DERIVED entries were added by Stage 4C, and that is a

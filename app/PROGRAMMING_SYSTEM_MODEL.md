@@ -459,3 +459,25 @@ now. See `SUBSTITUTION_MODEL.md` for the full contract: template slot ->
 instance selection -> materialized prescription -> actual performance ->
 permanent profile, with `ProgramDefinition` remaining immutable
 throughout.
+
+## Stage 4D implementation update
+
+`IntervalProgrammingSystem` is now built and Xcode-validated (Running/
+Cycling/Rowing/SkiErg, one generator/engine for all four, both time-based
+and distance-based work) — see `STAGE4_IMPLEMENTATION_REPORT.md`'s
+"Stage 4D" section for the full account. No correction to this
+document's *model* was needed (one `ProgrammingSystem` + configuration +
+`ActivityType`, again exactly as anticipated); one correction *was* made
+to Stage 4C's substitution schema — `ActivitySelectionOverride` re-keyed
+to `WorkoutBlockTemplate` instead of `SteadyStatePrescriptionTemplate`
+directly, once a second endurance template type needed the same
+mechanism — documented in `SUBSTITUTION_MODEL.md` and
+`STAGE4_IMPLEMENTATION_REPORT.md`'s Stage 4D §6.
+
+Also confirmed, not newly built: SteadyState and Interval phases compose
+into one `TrainingPlan`/`ProgramJourney` with zero new entity types
+(`ENDURANCE_PROGRAMMING_MODEL.md` §10's own prediction, re-proven directly
+against real Stage 4C/4D generator output in
+`IntervalSubstitutionAndHistoryTests.testSteadyStateAndIntervalPhasesComposeInOneTrainingPlanWithNoNewEntityType`).
+A full `RunningProgrammingSystem` composing them into curated Couch-to-5K/
+5K/10K/marathon content remains out of scope (Stage 4D §23/§45).

@@ -24,6 +24,11 @@ final class IntervalPrescription {
     var recoveryDurationSeconds: Int?
     var recoveryDistanceMeters: Double?
     var recoveryIntensity: IntensityTarget?
+    /// Stage 4D addition: THIS SESSION ONLY activity substitution's entire
+    /// persisted footprint — mirrors `SteadyStatePrescription.substitutionUsed`/
+    /// `.substitutionReason` exactly.
+    var substitutionUsed: Bool
+    var substitutionReason: SubstitutionReason?
 
     init(
         id: UUID = UUID(),
@@ -34,7 +39,9 @@ final class IntervalPrescription {
         workIntensity: IntensityTarget? = nil,
         recoveryDurationSeconds: Int? = nil,
         recoveryDistanceMeters: Double? = nil,
-        recoveryIntensity: IntensityTarget? = nil
+        recoveryIntensity: IntensityTarget? = nil,
+        substitutionUsed: Bool = false,
+        substitutionReason: SubstitutionReason? = nil
     ) {
         self.id = id
         self.activityType = activityType
@@ -45,5 +52,7 @@ final class IntervalPrescription {
         self.recoveryDurationSeconds = recoveryDurationSeconds
         self.recoveryDistanceMeters = recoveryDistanceMeters
         self.recoveryIntensity = recoveryIntensity
+        self.substitutionUsed = substitutionUsed
+        self.substitutionReason = substitutionReason
     }
 }

@@ -55,6 +55,8 @@ enum PersistenceController {
         ExerciseRelationship.self,
         SlotSelectionOverride.self,
         ActivitySelectionOverride.self,
+        // Stage 4D additions.
+        IntervalPrescriptionTemplate.self,
     ])
 
     /// The app's on-disk, offline-first store. Local storage is

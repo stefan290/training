@@ -28,7 +28,7 @@ import SwiftData
 /// `SteadyStateProgressionRules`'s own doc comment) rather than risking an
 /// untested persistence shape.
 @Model
-final class SteadyStatePrescriptionTemplate {
+final class SteadyStatePrescriptionTemplate: ActivitySubstitutionTemplate {
     @Attribute(.unique) var id: UUID
     var workoutBlockTemplate: WorkoutBlockTemplate?
 
@@ -58,12 +58,6 @@ final class SteadyStatePrescriptionTemplate {
     var recoveryWeekDurationFraction: Double = 1.0
     var recoveryWeekDistanceFraction: Double = 1.0
     var recoveryWeekIntensityZoneStepDown: Int = 0
-
-    /// `ActivitySelectionOverride`'s required inverse — nothing reads
-    /// this collection. Same established pattern as
-    /// `ExerciseSlot.slotSelectionOverrides`.
-    @Relationship(deleteRule: .nullify, inverse: \ActivitySelectionOverride.templateSteadyState)
-    var activitySelectionOverrides: [ActivitySelectionOverride] = []
 
     init(
         id: UUID = UUID(),

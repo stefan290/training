@@ -94,9 +94,12 @@ final class ProgramInstance {
         slotSelectionOverrides.first { $0.templateSlot?.id == slot.id }
     }
 
-    /// The single authoritative GOING FORWARD activity override for a
-    /// steady-state template, if one exists.
-    func activitySelectionOverride(for template: SteadyStatePrescriptionTemplate) -> ActivitySelectionOverride? {
-        activitySelectionOverrides.first { $0.templateSteadyState?.id == template.id }
+    /// The single authoritative GOING FORWARD activity override for an
+    /// endurance block template (steady-state or interval), if one
+    /// exists. Stage 4D: keyed by `WorkoutBlockTemplate` rather than a
+    /// specific endurance template type — see `ActivitySelectionOverride`'s
+    /// own "Stage 4D correction" doc comment.
+    func activitySelectionOverride(for templateBlock: WorkoutBlockTemplate) -> ActivitySelectionOverride? {
+        activitySelectionOverrides.first { $0.templateBlock?.id == templateBlock.id }
     }
 }

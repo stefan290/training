@@ -257,16 +257,17 @@ final class SubstitutionTests: XCTestCase {
 
     // MARK: - §34-37/§51: endurance activity substitution
 
-    private func buildSteadyStateFixture(preferred: ActivityType, allowed: [ActivityType], primaryIntensity: IntensityTarget?) -> (definition: ProgramDefinition, template: SteadyStatePrescriptionTemplate) {
+    private func buildSteadyStateFixture(preferred: ActivityType, allowed: [ActivityType], primaryIntensity: IntensityTarget?) -> (definition: ProgramDefinition, templateBlock: WorkoutBlockTemplate, template: SteadyStatePrescriptionTemplate) {
         let configuration = SteadyStateProgramConfiguration(activityType: preferred, allowedActivityTypes: allowed, daysPerWeek: 1, lengthWeeks: 2, progressionDimension: .none)
         let definition = SteadyStateProgramGenerator.generate(configuration: configuration, provenance: .constructed(reason: "test"), context: context)
-        let template = definition.orderedTemplateSessions[0].orderedBlockTemplates[0].steadyStatePrescriptionTemplate!
+        let templateBlock = definition.orderedTemplateSessions[0].orderedBlockTemplates[0]
+        let template = templateBlock.steadyStatePrescriptionTemplate!
         template.primaryIntensity = primaryIntensity
-        return (definition, template)
+        return (definition, templateBlock, template)
     }
 
     func testThisSessionOnlyActivitySubstitutionDoesNotAffectFutureSessionsAndEntersTheNewActivitysHistory() throws {
-        let (definition, template) = buildSteadyStateFixture(preferred: .cycling, allowed: [.cycling, .rowing], primaryIntensity: .heartRateZone(.two))
+        let (definition, _, template) = buildSteadyStateFixture(preferred: .cycling, allowed: [.cycling, .rowing], primaryIntensity: .heartRateZone(.two))
         let instance = ProgramInstance(ownerUserID: UUID())
         context.insert(instance)
         instance.programDefinition = definition
@@ -300,7 +301,7 @@ final class SubstitutionTests: XCTestCase {
     }
 
     func testGoingForwardActivitySubstitutionAffectsOnlyFutureMaterialization() throws {
-        let (definition, template) = buildSteadyStateFixture(preferred: .cycling, allowed: [.cycling, .rowing], primaryIntensity: .heartRateZone(.two))
+        let (definition, templateBlock, template) = buildSteadyStateFixture(preferred: .cycling, allowed: [.cycling, .rowing], primaryIntensity: .heartRateZone(.two))
         let instance = ProgramInstance(ownerUserID: UUID())
         context.insert(instance)
         instance.programDefinition = definition
@@ -308,16 +309,16 @@ final class SubstitutionTests: XCTestCase {
         let firstBatch = SteadyStateMaterializer.materializeAllWeeks(definition: definition, instance: instance, startDate: Date(timeIntervalSince1970: 0), ownerUserID: instance.ownerUserID, context: context)
         let alreadyMaterializedPrescription = try XCTUnwrap(firstBatch.first?.orderedBlocks.first?.steadyStatePrescription)
 
-        try SubstituteActivityUseCase.substituteGoingForward(instance: instance, template: template, with: .rowing, context: context)
+        try SubstituteActivityUseCase.substituteGoingForward(instance: instance, templateBlock: templateBlock, eligibilityTemplate: template, with: .rowing, context: context)
 
         XCTAssertEqual(alreadyMaterializedPrescription.activityType, .cycling, "already-materialized Sessions must not retroactively change")
-        XCTAssertEqual(SubstituteActivityUseCase.resolvedActivityType(for: template, in: instance), .rowing)
+        XCTAssertEqual(SubstituteActivityUseCase.resolvedActivityType(for: templateBlock, defaultActivityType: template.preferredActivityType, in: instance), .rowing)
         XCTAssertEqual(template.preferredActivityType, .cycling, "the template's own default must never be mutated")
     }
 
     /// §35/§38: a running-specific prescription must reject Bike.
     func testRunningSpecificPrescriptionRejectsCyclingSubstitution() {
-        let (_, template) = buildSteadyStateFixture(preferred: .running, allowed: [.running], primaryIntensity: .pace(PaceRange(lower: Pace(secondsPerKilometer: 260), upper: Pace(secondsPerKilometer: 280))))
+        let (_, _, template) = buildSteadyStateFixture(preferred: .running, allowed: [.running], primaryIntensity: .pace(PaceRange(lower: Pace(secondsPerKilometer: 260), upper: Pace(secondsPerKilometer: 280))))
         XCTAssertFalse(SubstituteActivityUseCase.isValid(candidate: .cycling, for: template))
         XCTAssertThrowsError(try SubstituteActivityUseCase.substituteThisSessionOnly(
             prescription: SteadyStatePrescription(activityType: .running), template: template, with: .cycling
@@ -330,7 +331,7 @@ final class SubstitutionTests: XCTestCase {
     /// transfer to the new activity.
     func testEquipmentSpecificIntensityDoesNotTransferAcrossActivitySubstitution() throws {
         let bikePower = IntensityTarget.powerRange(PowerRange(lower: Power(watts: 180), upper: Power(watts: 200)))
-        let (_, template) = buildSteadyStateFixture(preferred: .cycling, allowed: [.cycling, .rowing], primaryIntensity: bikePower)
+        let (_, _, template) = buildSteadyStateFixture(preferred: .cycling, allowed: [.cycling, .rowing], primaryIntensity: bikePower)
         let prescription = SteadyStatePrescription(activityType: .cycling, primaryIntensity: bikePower)
         context.insert(prescription)
 

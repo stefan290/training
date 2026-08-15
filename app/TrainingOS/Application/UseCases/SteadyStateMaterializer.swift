@@ -66,7 +66,9 @@ enum SteadyStateMaterializer {
                     // GOING FORWARD activity substitution hook — mirrors
                     // `StrengthMaterializer`'s `SubstituteExerciseUseCase.resolvedExercise`
                     // call exactly.
-                    let activityType = SubstituteActivityUseCase.resolvedActivityType(for: steadyStateTemplate, in: instance)
+                    let activityType = SubstituteActivityUseCase.resolvedActivityType(
+                        for: blockTemplate, defaultActivityType: steadyStateTemplate.preferredActivityType, in: instance
+                    )
 
                     let prescription = SteadyStatePrescription(
                         activityType: activityType,

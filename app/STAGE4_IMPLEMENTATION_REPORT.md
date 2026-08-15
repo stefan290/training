@@ -543,6 +543,305 @@ See the final commit hash reported alongside this document. Local and
 remote verified to match; working tree clean apart from local Xcode user
 data.
 
+## Stage 4D: IntervalProgrammingSystem
+
+One objective: `IntervalProgrammingSystem`, generic across Running,
+Cycling, Rowing and SkiErg — no per-modality engine. Baseline: commit
+`6101da5` (Stage 4C, approved), 192/192 tests passing.
+
+### 1. What Stage 3C already built
+
+Same pattern as Stage 4C's own discovery: most of the execution-layer
+plumbing already existed. `IntervalPrescription` (`activityType`,
+`intervalCount`, work duration/distance, work intensity, recovery
+duration/distance, recovery intensity) and `IntervalResult`/
+`IntervalRepResult` (per-interval-inspectable, never a session-average-
+only value) were both built in Stage 3C and needed zero changes to
+satisfy Stage 4D §4-6/§8/§12. `IntensityTarget` already had every case
+Stage 3B's own validation pass found necessary (`.heartRatePercent` for
+Helgerud's "90-95% HRmax," `.strokeRate` for rowing) — no new case was
+added. What was missing, exactly mirroring Stage 4C's own finding, was
+the **template-graph equivalent**: `IntervalPrescriptionTemplate`.
+
+### 2. IntervalProgrammingSystem architecture
+
+One `IntervalProgramGenerator`/`IntervalProgressionEngine` for every
+modality (§1) — nothing branches on `ActivityType`. New
+`IntervalPrescriptionTemplate` gives `WorkoutBlockTemplate` a third typed
+child relationship, alongside `prescriptionTemplates` (strength) and
+`steadyStatePrescriptionTemplate` (endurance, continuous) from Stage
+4A/4C.
+
+**Time-based vs. distance-based work** (§3, §9-10, §36): `IntervalWorkBasis`
+(`.duration`/`.distance`) selects which of `weekOneWorkDurationSeconds`/
+`weekOneWorkDistanceMeters` is set — never both, matching
+`IntervalPrescription`'s own pre-existing doc comment exactly.
+`IntervalProgramGeneratorTests` proves both bases produce a template with
+the other dimension `nil`, not a dummy zero.
+
+**Warm-up/cool-down use the existing ordered `WorkoutBlock` architecture**
+(§7): `Session -> WarmUp Block -> Interval Block -> CoolDown Block`, the
+warm-up/cool-down blocks typed `.steadyState` (reusing Stage 4C's type,
+not a third "warm-up prescription" shape) at a low, unprogressed Zone 1
+target.
+
+**Progression strategies** (§13-14, §37): interval count, work duration,
+work distance, intensity (heart-rate-zone stepping, reusing
+`IntensityZoneProgression` unchanged from `SteadyStateProgressionRules`),
+and recovery-duration reduction — each independently selectable, and
+**ordered** via `IntervalProgressionRules.priority: [IntervalProgressionStep]`,
+directly satisfying §14's explicit requirement ("do NOT automatically
+increase count + duration + intensity and reduce recovery at the same
+time"): an earlier step in the list fully consumes its own
+`weeksToCeiling` worth of elapsed weeks before a later step starts
+advancing at all. Proven with the kickoff's own example ("1. increase
+interval count until ceiling, then 2. increase work duration") in
+`IntervalProgressionEngineTests.testProgressionPriorityAdvancesEarlierStepFullyBeforeLaterStepStarts`,
+precomputed by hand before being asserted.
+
+**A design wrinkle found and fixed during this pass, before any test was
+written against the wrong behavior:** reason codes were initially derived
+from "has this dimension's cumulative progression count become nonzero,"
+which incorrectly reported `.intervalCountIncrease` for every week after
+a dimension had already hit its priority ceiling (the number itself was
+unchanged, but the reason code still claimed it was increasing). Fixed by
+comparing the *actual resolved value* for the current week against the
+same computation one week earlier — the engine's `changed(current:previous:)`
+helper — so a dimension that maxed out weeks ago correctly reports
+`.noProgressionConfigured` ("no change this week"), not a false-positive
+increase. Caught by `testProgressionPriorityAdvancesEarlierStepFullyBeforeLaterStepStarts`
+itself on first run, fixed before any other test was written against the
+same (wrong) assumption.
+
+**Completion criteria and failure outcomes** (§16-17): `IntervalCompletionCriteria`
+— configured completion-fraction thresholds (never inferred) plus an
+explicitly-configured `reductionStrategy` (`.reduceIntensity` or
+`.reduceIntervalCount`) for a severely failed session, so "which lever
+gets pulled on a bad session" is always traceable to configuration, never
+a runtime guess. `IntervalProgressionEngine.evaluateSessionOutcome` maps
+a session's actual completed/total fraction (and worst RPE) to one of
+`.progress`/`.hold`/`.repeatSession`/`.reduceIntensity`/`.reduceIntervalCount`/
+`.calibrationRequired` — `totalCount == 0` (nothing logged at all) always
+yields `.calibrationRequired`, never an invented fraction.
+
+**Performance-driven vs. calendar-driven progression** (§15/§33):
+`IntervalProgressionRules.requiresSuccessfulCompletionToProgress` — when
+`false` (a fixed protocol like Helgerud's 4×4, which the source study
+never varies), every week resolves as a pure function of week index
+alone. When `true`, `IntervalMaterializer.materializeWeek` **throws**
+`IntervalMaterializationError.previousOutcomeRequired` if asked to
+resolve week N+1 without week N's actual outcome — a loud programmer
+error, not a silent calendar-progression fallback, directly enforcing
+"do not invent future outcomes."
+
+**No trailing recovery/taper week is fabricated** (unlike Strength/
+SteadyState) — no source material or kickoff instruction asks for an
+interval-specific taper week, and CLAUDE.md rule 10 rules out inventing
+one; a caller who wants one can still append a `TrainingWeek(isDeload:
+true)` manually.
+
+### 3. Verified source-derived fixture: Helgerud et al. 2007 4×4
+
+`PROGRAMMING_SOURCES.md` §3 already documented (from Stage 3B) the exact
+source figures — "4 intervals of 4 min running at 90-95% HRmax, each
+followed by 3 min active recovery at 70% HRmax," verified via cross-
+checked secondary sources quoting the abstract. This pass did not
+re-attempt live retrieval (Stage 3B's own documented retrieval
+limitations still stand) — it consumed the already-verified citation into
+a real, tested fixture for the first time:
+`IntervalProgressionEngineTests.testHelgerud4x4NeverProgressesAcrossAnyWeek`/
+`.testHelgerud4x4StructureIsIdenticalAcrossRunningCyclingAndRowingWithModalityAppropriateIntensity`
+(§19-20). The fixture's `priority: []` is itself the citation-honoring
+detail — the source study fixes this protocol, and representing it as
+progressing would misrepresent the source, exactly as
+`ENDURANCE_PROGRAMMING_MODEL.md` §3.1 already required.
+
+**Cross-modality proof (§20):** the identical `IntervalProgressionRules`
+(4 intervals, 240s work, 180s recovery, never progressing) backs Running
+(`.heartRatePercent(0.90...0.95)`, matching the source study's own unit),
+Cycling (`.powerZone(.four)`) and Rowing (`.strokeRate(28...32)`) — only
+the `IntensityTarget` idiom changes per modality, proving no per-modality
+engine duplication is needed.
+
+### 4. TrainingOS-designed rules
+
+Every numeric default in `IntervalProgramGenerator` (10 min warm-up, 5 min
+cool-down, 4×4min/180s-recovery duration-basis default, 5×1km/120s-
+recovery distance-basis default, count-then-duration priority ordering)
+is explicitly `ProgramProvenance.constructed`/TRAININGOS_DESIGNED, clearly
+labeled in the generator's own doc comment, never presented as sourced —
+distinct from the one verified Helgerud fixture above, which is
+constructed directly in a test, not through this generator (the source
+study's fixed protocol would be misrepresented by running it through a
+generator whose whole purpose is producing *progressing* templates).
+
+### 5. ActivityPerformanceProfile integration
+
+Required no new production code, mirroring Stage 4C's own finding exactly
+— `ActivityPerformanceProfile` already has no relationship to
+`ProgramInstance`/`ProgramDefinition`. `IntervalSubstitutionAndHistoryTests`
+proves: interval history survives replacing one `ProgramInstance` with
+another; Rowing and Cycling interval histories never merge; distinct
+performance contexts ("Threshold" vs. "VO2") stay separate; and —a
+genuinely new proof this stage adds — **SteadyState history and Interval
+history coexist for the same `ActivityType` without overwriting one
+another**, since both hang off the same `ActivityPerformanceProfile` in
+two independent arrays (`steadyStateResults`/`intervalResults`).
+
+### 6. Substitution integration — one architectural correction
+
+Stage 4C's `ActivitySelectionOverride` was keyed directly to
+`SteadyStatePrescriptionTemplate`, the only endurance template type that
+existed at the time. Stage 4D needed the same GOING FORWARD mechanism for
+`IntervalPrescriptionTemplate` too. Rather than build a second, near-
+duplicate `IntervalActivitySelectionOverride` entity (an "avoid duplicate
+truth" violation this codebase has repeatedly flagged as a smell),
+**`ActivitySelectionOverride` was re-keyed to the owning
+`WorkoutBlockTemplate`** — the one object both endurance template types
+already hang off of — via a new `ActivitySubstitutionTemplate` protocol
+(`preferredActivityType`/`allowedActivityTypes`) both
+`SteadyStatePrescriptionTemplate` and `IntervalPrescriptionTemplate`
+conform to. Made before any Stage 4D generator/materializer code was
+written against the old shape — the same Stage 4A/4B discipline of
+correcting a schema mistake before it ships, not working around it. Two
+existing Stage 4C test call sites were updated accordingly; both re-pass
+unchanged in substance. `SubstituteActivityUseCase`'s `isValid`/
+`substituteGoingForward`/`resolvedActivityType` became generic over
+`ActivitySubstitutionTemplate`; `substituteThisSessionOnly` gained an
+`IntervalPrescription` overload alongside the existing `SteadyStatePrescription`
+one (their intensity fields differ in name —
+`workIntensity`/`recoveryIntensity` vs. `primaryIntensity`/
+`secondaryIntensity` — so one shared function would need awkward
+branching; two small overloads sharing the same validation/translation
+calls was the cleaner fit).
+
+`IntervalPrescription` gained `substitutionUsed`/`substitutionReason`
+fields, mirroring `SteadyStatePrescription`'s Stage 4C addition exactly —
+THIS SESSION ONLY substitution's entire persisted footprint, no new
+entity. `IntensityTranslation` (Stage 4C, unchanged) already covers
+interval substitution correctly: a Bike watt target does not survive a
+substitution to Row (§25/§39.33, proven directly by
+`testBikeWattsAreNotCopiedIntoRowTarget`); a physiological target would
+survive unchanged if one were used instead.
+
+### 7. Recommendation/calibration behavior
+
+No new recommendation vocabulary was needed — `IntervalReasonCode`
+(new, this stage's engine-internal reason codes for count/duration/
+distance/intensity/recovery changes and HOLD/REPEAT/REDUCE*/
+CALIBRATION_REQUIRED) and the pre-existing `SubstitutionAwareRecommendation`/
+`ProgressionReasonCode` (Stage 4C, unchanged) together cover everything
+§18/§30 ask for — `ACTIVITY_HISTORY_USED` maps onto
+`SubstitutionAwareRecommendation`'s existing exact-history path, reused
+rather than duplicated.
+
+### 8. Template/materializer changes
+
+New: `IntervalPrescriptionTemplate` (flattened tagged-union storage,
+including a flattened `priority: [IntervalProgressionStep]` — stored as
+three parallel primitive arrays, not an array of the struct directly,
+since no existing test in this codebase proves an array of a multi-field
+struct round-trips safely; see §9). `IntervalProgramGenerator`,
+`IntervalMaterializer` (new Application/UseCases). `WorkoutBlockTemplate`
+gained `intervalPrescriptionTemplate` (cascade) and
+`activitySelectionOverrides` (moved here from
+`SteadyStatePrescriptionTemplate`, nullify). `ProgramDefinition` gained
+`intervalConfiguration`.
+
+`IntervalMaterializer.materializeWeek` resolves one week at a time,
+always — unlike `SteadyStateMaterializer` (which resolves every week
+immediately since none of its dimensions depend on a live result), an
+interval template's rules *may* set
+`requiresSuccessfulCompletionToProgress`, so this materializer can't
+assume otherwise. A caller whose rules never set that flag can still call
+it once per week in a simple loop with `previousOutcome: nil` throughout,
+producing an identical result to materializing every week up front.
+
+### 9. Persistence changes
+
+New `@Model` type: `IntervalPrescriptionTemplate` (registered in
+`PersistenceController.schema`). New fields: `IntervalPrescription.substitutionUsed`/
+`.substitutionReason`, `ProgramDefinition.intervalConfiguration`,
+`WorkoutBlockTemplate.intervalPrescriptionTemplate`/
+`.activitySelectionOverrides`. Changed: `ActivitySelectionOverride.templateSteadyState`
+-> `.templateBlock: WorkoutBlockTemplate?` (§6's correction).
+`SteadyStatePersistenceTests`'s existing round-trip test for
+`ActivitySelectionOverride` was updated to construct a `WorkoutBlockTemplate`
+and assert through it — documented here as the "exact approved
+architectural reason" §41 requires, not a silent behavior change: the
+override's semantics are identical, only its template-object key moved.
+Every new persisted shape got its own round-trip test, including the
+critical sibling-row-heterogeneity diagnostic for the new flattened
+`priority` array storage
+(`IntervalPersistenceTests.testTwoSiblingRowsWithDifferentPriorityListsBothSurviveRoundTrip`)
+and a repeat of the nullify-not-crash proof at `ActivitySelectionOverride`'s
+new key (`testDeletingWorkoutBlockTemplateNullifiesRatherThanCrashingActivitySelectionOverride`).
+See `DELETE_RULE_MATRIX.md`'s "Stage 4D additions" section for full
+delete-rule reasoning.
+
+### 10. Test count and result
+
+236 tests total (192 Stage 4A/4B/4C baseline + 44 new Stage 4D tests). All
+236 pass on the real Xcode toolchain, including all 192 pre-existing
+tests unchanged — none weakened; the 2 call-site updates in
+`SteadyStatePersistenceTests`/`SubstitutionTests` required by §6's
+correction are documented above, not silent.
+
+New Stage 4D test files: `IntervalPersistenceTests` (9, including the
+priority-array sibling-row diagnostic and two nullify/cascade proofs at
+the corrected `ActivitySelectionOverride` key), `IntervalProgressionEngineTests`
+(18, covering every progression dimension, explicit priority ordering,
+completion-criteria thresholds, failure outcomes, determinism, and the
+Helgerud fixture + cross-modality proof), `IntervalProgramGeneratorTests`
+(7, both work bases, warm-up/cool-down structure, no fabricated recovery
+week, materializer progression, and the performance-gate-throws proof),
+`IntervalSubstitutionAndHistoryTests` (10, today-only/going-forward
+interval substitution, running-rejects-cycling, no-blind-watt-transfer,
+history survival/coexistence, and the SteadyState+Interval `TrainingPlan`
+composition proof).
+
+### 11. Simulator
+
+Rebuilt and relaunched on an iPhone 17 (iOS 26.5) simulator after the
+schema change (1 new `@Model` type, several new/changed fields). App
+launched and stayed running — no `ModelContainer` crash; Today renders
+identically to every prior pass ("No sessions today" — Stage 4D added no
+seeded content and no UI/ViewModel code, matching every prior stage's
+identical precedent).
+
+### 12. What Stage 4D does not claim
+
+- A curated interval built-in library (no `V1_PROGRAM_LIBRARY.md` entry
+  names one, exactly as Stage 4C's steady-state generator also found).
+- A full `RunningProgrammingSystem`/Couch-to-5K/5K/10K/marathon plan —
+  explicitly deferred (§23/§45); only the composability of SteadyState +
+  Interval phases into one `TrainingPlan` (no new entity type) is proven.
+- Functional Fitness (AMRAP/EMOM/WOD generator, benchmark catalog) —
+  explicitly Stage 4E scope, not started (§46).
+- A curated `ExerciseRelationship`-style benchmark curation for repeated
+  interval tests (§29) — deferred, matching Stage 4C's identical
+  deferral for exercises.
+- An interval-specific taper/recovery week — deliberately not fabricated
+  (§2 above).
+
+### 13. Architectural judgment: no flaw found, one correction made
+
+Per the kickoff's explicit instruction to stop and explain before working
+around any exposed flaw: Stage 4D required one genuine, well-justified
+correction (§6 — re-keying `ActivitySelectionOverride` to
+`WorkoutBlockTemplate`), made proactively before any code depended on the
+old shape, not a workaround for a flaw discovered late. The template
+graph and materializer pattern themselves needed no conceptual change —
+`IntervalPrescriptionTemplate`/`IntervalMaterializer` are structurally
+identical to their SteadyState siblings, differing only in which rule
+vocabulary and which per-week resolution functions they call.
+
+### 14. Commit
+
+See the final commit hash reported alongside this document. Local and
+remote verified to match; working tree clean apart from local Xcode user
+data.
+
 ## Stage 4C: SteadyStateProgrammingSystem + Substitution Foundation
 
 Two objectives, per the kickoff: (1) `SteadyStateProgrammingSystem`, and

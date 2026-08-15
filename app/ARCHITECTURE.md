@@ -459,15 +459,53 @@ a mesocycle) is modeled at the `TemplateSession` level
 `TemplateSession.activeFromWeek`'s own doc comment for the explicit
 "this is not a `BlockProgressionEngine` concern" boundary.
 
-## Substitution architecture (Stage 4C)
+## Substitution architecture (Stage 4C, extended Stage 4D)
 
 See `SUBSTITUTION_MODEL.md` for the full contract. In one sentence: a
 template slot's default selection (`ExerciseSlot.resolvedExercise`/
-`SteadyStatePrescriptionTemplate.preferredActivityType`) can be
-overridden per `ProgramInstance` going forward
+`SteadyStatePrescriptionTemplate.preferredActivityType`/
+`IntervalPrescriptionTemplate.preferredActivityType`) can be overridden
+per `ProgramInstance` going forward
 (`SlotSelectionOverride`/`ActivitySelectionOverride`, resolved by the
 materializer at the moment it builds a new Session) or overridden for a
 single already-materialized Session directly
-(`ExercisePrescription.exercise`/`SteadyStatePrescription.activityType`,
-no new persisted type at all) — never by mutating the template graph
+(`ExercisePrescription.exercise`/`SteadyStatePrescription.activityType`/
+`IntervalPrescription.activityType`, no new persisted type at all) —
+never by mutating the template graph itself.
+
+`ActivitySelectionOverride` is keyed to the owning `WorkoutBlockTemplate`
+(a Stage 4D correction — originally keyed directly to
+`SteadyStatePrescriptionTemplate`, before a second endurance template
+type existed) rather than to either specific endurance template type,
+via a small `ActivitySubstitutionTemplate` protocol
+(`preferredActivityType`/`allowedActivityTypes`) both
+`SteadyStatePrescriptionTemplate` and `IntervalPrescriptionTemplate`
+conform to — one override mechanism serving both systems, not a
+duplicate entity per system.
+
+## Interval template graph (Stage 4D)
+
+`WorkoutBlockTemplate` carries a third typed child relationship,
+`intervalPrescriptionTemplate`, alongside `prescriptionTemplates`
+(strength) and `steadyStatePrescriptionTemplate` (continuous endurance) —
+the same "one typed relationship per modality" pattern extended once
+more. `IntervalPrescriptionTemplate` stores `workIntensity`/
+`recoveryIntensity` as direct top-level `IntensityTarget?` properties
+(proven-safe) and flattens its progression rule
+(`IntervalProgressionRules`, including its **ordered** `priority:
+[IntervalProgressionStep]` list) into parallel primitive arrays rather
+than storing an array of the struct directly — no existing test in this
+codebase proves an array of a multi-field struct round-trips safely, so
+this pass didn't assume it does.
+
+Warm-up and cool-down reuse the ordinary ordered `WorkoutBlock`
+architecture (`Session -> WarmUp Block -> Interval Block -> CoolDown
+Block`), the warm-up/cool-down blocks themselves plain `.steadyState`
+prescriptions — never a field buried inside the interval prescription
 itself.
+
+`IntervalMaterializer`, unlike `SteadyStateMaterializer`, always resolves
+one week at a time: an interval template's rules may set
+`requiresSuccessfulCompletionToProgress`, in which case the materializer
+throws rather than fabricate a future week's progression from calendar
+position alone.

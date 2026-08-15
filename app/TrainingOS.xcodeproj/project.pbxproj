@@ -8,6 +8,12 @@
 
 /* Begin PBXBuildFile section */
 		1E5282D0BB2B440C94520A79 /* ExerciseSlot.swift in Sources */ = {isa = PBXBuildFile; fileRef = C61C65DA515B4168952010EA /* ExerciseSlot.swift */; };
+		A6FE2F4D911949888CF3AD50 /* IntervalPrescriptionTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A5E6E7EC9C54EA5BA38CBD9 /* IntervalPrescriptionTemplate.swift */; };
+		CFD32AD4E5B74872AA5DB721 /* IntervalConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0487F3B15F3F4F1BB8E61A49 /* IntervalConfiguration.swift */; };
+		FB59B55BF80142C096F07FF2 /* IntervalProgressionRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 012CAEB8BE0D43708C4A7691 /* IntervalProgressionRules.swift */; };
+		0303DB7D311342C197C59248 /* IntervalProgressionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = C712C45DA5A84E9C84664BF4 /* IntervalProgressionEngine.swift */; };
+		31EC28402D2A4994AAA2A846 /* IntervalProgramGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF54CBE9E26A4258841BA2C4 /* IntervalProgramGenerator.swift */; };
+		EDD59D438B1E444EA29874E4 /* IntervalMaterializer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4640777D6C884B498DD14ACE /* IntervalMaterializer.swift */; };
 		52A7D261DF0E4FD0A5C7C327 /* ExerciseRelationship.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9371B7F87D414C6D8FE13465 /* ExerciseRelationship.swift */; };
 		18D9A3E4249548B6938746C5 /* SlotSelectionOverride.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2015F64AAE4468814D34D9 /* SlotSelectionOverride.swift */; };
 		0AE7776B125B431A95561B6C /* SteadyStatePrescriptionTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2304948879034A27B838D34A /* SteadyStatePrescriptionTemplate.swift */; };
@@ -36,6 +42,10 @@
 		808386F83FC94216A766D926 /* HypertrophyProgramGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DD886531E7444D68549B9F1 /* HypertrophyProgramGeneratorTests.swift */; };
 		6D2897877D7B4366839F35CD /* PowerliftingProgramGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23B34D84FA7E4117942595D2 /* PowerliftingProgramGeneratorTests.swift */; };
 		E80C91EB0FC74C11AC65B159 /* PowerliftingRegressionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60D9C8CDB6574111B7F814E3 /* PowerliftingRegressionTests.swift */; };
+		11112222111122221111222A /* IntervalSubstitutionAndHistoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33334444333344443333444B /* IntervalSubstitutionAndHistoryTests.swift */; };
+		EEEE5555EEEE5555EEEE555E /* IntervalProgramGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFFF6666FFFF6666FFFF666F /* IntervalProgramGeneratorTests.swift */; };
+		AAAA1111AAAA1111AAAA111A /* IntervalPersistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB2222BBBB2222BBBB222B /* IntervalPersistenceTests.swift */; };
+		CCCC3333CCCC3333CCCC333C /* IntervalProgressionEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD4444DDDD4444DDDD444D /* IntervalProgressionEngineTests.swift */; };
 		53B81AD6E82A45F1BAAC6C16 /* SteadyStatePersistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F814CB5247DB49D5B61BEB54 /* SteadyStatePersistenceTests.swift */; };
 		EC37F1C698FA470EA2CEC063 /* SteadyStateProgressionEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD09B07FB9E74BB199280D80 /* SteadyStateProgressionEngineTests.swift */; };
 		BF2D794F7F0D4CBC898B6FDF /* SteadyStateProgramGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 788AC1711F2142B7AA4C232A /* SteadyStateProgramGeneratorTests.swift */; };
@@ -145,6 +155,12 @@
 
 /* Begin PBXFileReference section */
 		C61C65DA515B4168952010EA /* ExerciseSlot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExerciseSlot.swift; path = ExerciseSlot.swift; sourceTree = "<group>"; };
+		1A5E6E7EC9C54EA5BA38CBD9 /* IntervalPrescriptionTemplate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = IntervalPrescriptionTemplate.swift; path = IntervalPrescriptionTemplate.swift; sourceTree = "<group>"; };
+		0487F3B15F3F4F1BB8E61A49 /* IntervalConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = IntervalConfiguration.swift; path = IntervalConfiguration.swift; sourceTree = "<group>"; };
+		012CAEB8BE0D43708C4A7691 /* IntervalProgressionRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = IntervalProgressionRules.swift; path = IntervalProgressionRules.swift; sourceTree = "<group>"; };
+		C712C45DA5A84E9C84664BF4 /* IntervalProgressionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = IntervalProgressionEngine.swift; path = IntervalProgressionEngine.swift; sourceTree = "<group>"; };
+		EF54CBE9E26A4258841BA2C4 /* IntervalProgramGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = IntervalProgramGenerator.swift; path = IntervalProgramGenerator.swift; sourceTree = "<group>"; };
+		4640777D6C884B498DD14ACE /* IntervalMaterializer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = IntervalMaterializer.swift; path = IntervalMaterializer.swift; sourceTree = "<group>"; };
 		9371B7F87D414C6D8FE13465 /* ExerciseRelationship.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExerciseRelationship.swift; path = ExerciseRelationship.swift; sourceTree = "<group>"; };
 		AF2015F64AAE4468814D34D9 /* SlotSelectionOverride.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SlotSelectionOverride.swift; path = SlotSelectionOverride.swift; sourceTree = "<group>"; };
 		2304948879034A27B838D34A /* SteadyStatePrescriptionTemplate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SteadyStatePrescriptionTemplate.swift; path = SteadyStatePrescriptionTemplate.swift; sourceTree = "<group>"; };
@@ -173,6 +189,10 @@
 		0DD886531E7444D68549B9F1 /* HypertrophyProgramGeneratorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HypertrophyProgramGeneratorTests.swift; path = HypertrophyProgramGeneratorTests.swift; sourceTree = "<group>"; };
 		23B34D84FA7E4117942595D2 /* PowerliftingProgramGeneratorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PowerliftingProgramGeneratorTests.swift; path = PowerliftingProgramGeneratorTests.swift; sourceTree = "<group>"; };
 		60D9C8CDB6574111B7F814E3 /* PowerliftingRegressionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PowerliftingRegressionTests.swift; path = PowerliftingRegressionTests.swift; sourceTree = "<group>"; };
+		33334444333344443333444B /* IntervalSubstitutionAndHistoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = IntervalSubstitutionAndHistoryTests.swift; path = IntervalSubstitutionAndHistoryTests.swift; sourceTree = "<group>"; };
+		FFFF6666FFFF6666FFFF666F /* IntervalProgramGeneratorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = IntervalProgramGeneratorTests.swift; path = IntervalProgramGeneratorTests.swift; sourceTree = "<group>"; };
+		BBBB2222BBBB2222BBBB222B /* IntervalPersistenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = IntervalPersistenceTests.swift; path = IntervalPersistenceTests.swift; sourceTree = "<group>"; };
+		DDDD4444DDDD4444DDDD444D /* IntervalProgressionEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = IntervalProgressionEngineTests.swift; path = IntervalProgressionEngineTests.swift; sourceTree = "<group>"; };
 		F814CB5247DB49D5B61BEB54 /* SteadyStatePersistenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SteadyStatePersistenceTests.swift; path = SteadyStatePersistenceTests.swift; sourceTree = "<group>"; };
 		FD09B07FB9E74BB199280D80 /* SteadyStateProgressionEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SteadyStateProgressionEngineTests.swift; path = SteadyStateProgressionEngineTests.swift; sourceTree = "<group>"; };
 		788AC1711F2142B7AA4C232A /* SteadyStateProgramGeneratorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SteadyStateProgramGeneratorTests.swift; path = SteadyStateProgramGeneratorTests.swift; sourceTree = "<group>"; };
@@ -319,6 +339,7 @@
 				64E1458F8E3D57EF0174737D /* ProgramInstance.swift */,
 				8E324E3DA961C03C4EA43C8D /* FunctionalFitnessMovement.swift */,
 				C61C65DA515B4168952010EA /* ExerciseSlot.swift */,
+				1A5E6E7EC9C54EA5BA38CBD9 /* IntervalPrescriptionTemplate.swift */,
 				9371B7F87D414C6D8FE13465 /* ExerciseRelationship.swift */,
 				AF2015F64AAE4468814D34D9 /* SlotSelectionOverride.swift */,
 				2304948879034A27B838D34A /* SteadyStatePrescriptionTemplate.swift */,
@@ -361,6 +382,8 @@
 				8B06BE6A5A714AFDB8FA09D7 /* ProgramProvenance.swift */,
 				75C5B058B8E6411A897684E7 /* EquipmentProfile.swift */,
 				202CFFCBB78E416EB4FE77FB /* PowerliftingConfiguration.swift */,
+				0487F3B15F3F4F1BB8E61A49 /* IntervalConfiguration.swift */,
+				012CAEB8BE0D43708C4A7691 /* IntervalProgressionRules.swift */,
 				6D1C80A29EAD40E0B85E855B /* SubstitutionReason.swift */,
 				EF8AAF3929F04E18A3B06194 /* SteadyStateProgressionRules.swift */,
 				8FBA8E92C3C44360A9A70AD2 /* SteadyStateConfiguration.swift */,
@@ -383,6 +406,7 @@
 			children = (
 				3D2F47A2B1091593A97276F5 /* BlockProgressionEngine.swift */,
 				EDA5586697D9472A9D3E1A95 /* DeloadStrategy.swift */,
+				C712C45DA5A84E9C84664BF4 /* IntervalProgressionEngine.swift */,
 				C9D602DA94B24FD3B316C251 /* ExerciseSubstitutionEngine.swift */,
 				8E87ABA502914319A82C1265 /* SubstitutionAwareRecommendation.swift */,
 				51583999363247E0B8E3F8A9 /* SteadyStateProgressionEngine.swift */,
@@ -481,6 +505,10 @@
 				AB1E9BF387BC459C9A0639E4 /* PowerliftingBuiltInLibraryTests.swift */,
 				23B34D84FA7E4117942595D2 /* PowerliftingProgramGeneratorTests.swift */,
 				60D9C8CDB6574111B7F814E3 /* PowerliftingRegressionTests.swift */,
+				33334444333344443333444B /* IntervalSubstitutionAndHistoryTests.swift */,
+				FFFF6666FFFF6666FFFF666F /* IntervalProgramGeneratorTests.swift */,
+				BBBB2222BBBB2222BBBB222B /* IntervalPersistenceTests.swift */,
+				DDDD4444DDDD4444DDDD444D /* IntervalProgressionEngineTests.swift */,
 				F814CB5247DB49D5B61BEB54 /* SteadyStatePersistenceTests.swift */,
 				FD09B07FB9E74BB199280D80 /* SteadyStateProgressionEngineTests.swift */,
 				788AC1711F2142B7AA4C232A /* SteadyStateProgramGeneratorTests.swift */,
@@ -497,6 +525,8 @@
 				B48F4B12981F158C3F1B7430 /* RecordSetResultUseCase.swift */,
 				C2A8878522D1432AB404AC6A /* HypertrophyProgramGenerator.swift */,
 				DABB6C13366A4F518D0C887B /* PowerliftingProgramGenerator.swift */,
+				EF54CBE9E26A4258841BA2C4 /* IntervalProgramGenerator.swift */,
+				4640777D6C884B498DD14ACE /* IntervalMaterializer.swift */,
 				E3357B0E22BB4DAEB345D574 /* SubstituteExerciseUseCase.swift */,
 				13404D2B2316430991600BD1 /* SubstituteActivityUseCase.swift */,
 				2B742762184141A9A09105EE /* SteadyStateProgramGenerator.swift */,
@@ -688,6 +718,10 @@
 				808386F83FC94216A766D926 /* HypertrophyProgramGeneratorTests.swift in Sources */,
 				6D2897877D7B4366839F35CD /* PowerliftingProgramGeneratorTests.swift in Sources */,
 				E80C91EB0FC74C11AC65B159 /* PowerliftingRegressionTests.swift in Sources */,
+				11112222111122221111222A /* IntervalSubstitutionAndHistoryTests.swift in Sources */,
+				EEEE5555EEEE5555EEEE555E /* IntervalProgramGeneratorTests.swift in Sources */,
+				AAAA1111AAAA1111AAAA111A /* IntervalPersistenceTests.swift in Sources */,
+				CCCC3333CCCC3333CCCC333C /* IntervalProgressionEngineTests.swift in Sources */,
 				53B81AD6E82A45F1BAAC6C16 /* SteadyStatePersistenceTests.swift in Sources */,
 				EC37F1C698FA470EA2CEC063 /* SteadyStateProgressionEngineTests.swift in Sources */,
 				BF2D794F7F0D4CBC898B6FDF /* SteadyStateProgramGeneratorTests.swift in Sources */,
@@ -744,6 +778,12 @@
 				4A864F528D892B3E07C72AFA /* ProgramInstance.swift in Sources */,
 				3E58401BA3A1F7F028B7D178 /* FunctionalFitnessMovement.swift in Sources */,
 				1E5282D0BB2B440C94520A79 /* ExerciseSlot.swift in Sources */,
+				A6FE2F4D911949888CF3AD50 /* IntervalPrescriptionTemplate.swift in Sources */,
+				CFD32AD4E5B74872AA5DB721 /* IntervalConfiguration.swift in Sources */,
+				FB59B55BF80142C096F07FF2 /* IntervalProgressionRules.swift in Sources */,
+				0303DB7D311342C197C59248 /* IntervalProgressionEngine.swift in Sources */,
+				31EC28402D2A4994AAA2A846 /* IntervalProgramGenerator.swift in Sources */,
+				EDD59D438B1E444EA29874E4 /* IntervalMaterializer.swift in Sources */,
 				52A7D261DF0E4FD0A5C7C327 /* ExerciseRelationship.swift in Sources */,
 				18D9A3E4249548B6938746C5 /* SlotSelectionOverride.swift in Sources */,
 				0AE7776B125B431A95561B6C /* SteadyStatePrescriptionTemplate.swift in Sources */,

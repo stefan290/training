@@ -208,14 +208,17 @@ final class SteadyStatePersistenceTests: XCTestCase {
     // MARK: - ActivitySelectionOverride
 
     func testActivitySelectionOverrideSurvivesRoundTrip() throws {
+        let templateBlock = WorkoutBlockTemplate(type: .steadyState)
+        context.insert(templateBlock)
         let template = SteadyStatePrescriptionTemplate(preferredActivityType: .cycling, allowedActivityTypes: [.cycling, .rowing])
         context.insert(template)
+        templateBlock.attachSteadyStatePrescriptionTemplate(template)
         let instance = ProgramInstance(ownerUserID: UUID())
         context.insert(instance)
 
         let overrideID = UUID()
         let override = ActivitySelectionOverride(id: overrideID, selectedActivityType: .rowing, reason: .equipmentUnavailable)
-        override.templateSteadyState = template
+        override.templateBlock = templateBlock
         context.insert(override)
         instance.addActivitySelectionOverride(override)
         try context.save()
@@ -225,7 +228,7 @@ final class SteadyStatePersistenceTests: XCTestCase {
         let fetched = try XCTUnwrap(try fetchContext.fetch(descriptor).first)
         XCTAssertEqual(fetched.selectedActivityType, .rowing)
         XCTAssertEqual(fetched.reason, .equipmentUnavailable)
-        XCTAssertEqual(fetched.templateSteadyState?.preferredActivityType, .cycling)
+        XCTAssertEqual(fetched.templateBlock?.steadyStatePrescriptionTemplate?.preferredActivityType, .cycling)
     }
 
     /// Deleting the `ProgramInstance` cascades its overrides away — pure
