@@ -219,3 +219,14 @@ doesn't change again when that work starts.
   fixed, transparent product policy, not a validated or tuned scoring
   model — deliberately simple rather than an attempt at more precision
   than 7 booleans can honestly support.
+
+## 10. Reuse by the Long-Term Planner (Stage 5A)
+
+Stage 5A's design pass (`LONG_TERM_PLANNER.md`) reuses this exact
+`GoalAlignment`/`GoalAlignmentRating` machinery twice more, unmodified:
+ranking `[CandidateTrainingMix]` alternatives
+(`ADHERENCE_AWARE_PLANNING.md` §5-6) and rating a `ProgramCandidate`'s
+compatibility (`PROGRAM_RECOMMENDATION_MODEL.md` §2, rendered as
+"Excellent/Good/Acceptable/Poor Fit" — same five-tier enum, different
+display words). Neither reuse adds a new scoring system; both are new
+*callers* of `GoalAlignmentEvaluator.evaluate`/`GoalAlignmentRating`.

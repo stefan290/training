@@ -82,3 +82,9 @@ UI looks right.
     correctness bug even on the day it happens to still work, because
     rewording a message must never change what any business logic
     concludes.
+17. A theoretically optimal program that the user does not want to
+    perform is not considered practically optimal. The Long-Term
+    Planner must support explicit user preference (variety, modality,
+    temporary style switches, custom mixes) as first-class planning
+    input — it must never attempt to predict motivation or adherence
+    using an opaque model.

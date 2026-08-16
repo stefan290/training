@@ -622,3 +622,37 @@ could alter results for identical inputs (e.g. a mix with an explicit
 differently), so an already-accepted Stage 4F `Session.schedulerVersion == 1`
 must never be silently reinterpreted under the new logic. Full account:
 `GOAL_ALIGNMENT.md`, `CONCURRENT_SCHEDULER.md` §4/§6/§14-16.
+
+## Long-Term Planner (Stage 5A — design pass, not yet implemented)
+
+Stage 5A specified, but did not build, the layer that turns a
+`LongTermGoal` into a sequence of `TrainingPhase`s each carrying a
+`RecommendedTrainingMix` — everything from `RecommendedTrainingMix`
+downward (`ProgramGenerator`s → `Sessions` → `SchedulingPipeline` →
+`ScheduleProposal`/`GoalAlignment`) is already built and unchanged; the
+planner is a new *caller* of that pipeline, never a parallel one. Key
+findings, all detailed in `LONG_TERM_PLANNER.md` and its 6 companion
+documents:
+
+- **No new plan container.** `StrategicPlan` (the kickoff's own term) is
+  the existing `TrainingPlan`/`PlanStatus` — it already carries ordered
+  `TrainingPhase`s, each phase's recommended mix, and approximate
+  durations.
+- **No new phase-objective schema.** A phase's "primary/protected/
+  supporting" goal composition is entirely expressed through
+  `TrainingMixComponent.priority`/`.flexibility` (`.secondary`+
+  `.required` == "protected") — Stage 4G's two-dimension priority model
+  already carries this, one layer up from where it was designed.
+  `PHASE_PLANNING_RULES.md` §2-3.
+- **Temporary modality switching reuses `TrainingMix.validFrom`/
+  `.validUntil`** (declared in Stage 4F, given real expiry behavior here
+  for the first time) rather than a new type. `ADHERENCE_AWARE_PLANNING.md`
+  §2-3.
+- **One new persisted type is proposed for Stage 5B:** `PlannerDecision`,
+  mirroring `Recommendation`'s existing "no reason code, no
+  recommendation" precedent, one layer up. `PLAN_REVISION_MODEL.md` §2.
+- **`Goal` extension, one new `PhaseType` case, and one new
+  `TrainingPlan.supersedes` field** are proposed, additive, and flagged
+  as MUST RESOLVE before Stage 5B — `STAGE5A_DECISION_MEMO.md` §1.
+
+See `LONG_TERM_PLANNER.md` for the full pipeline and document map.

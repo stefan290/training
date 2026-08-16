@@ -124,6 +124,14 @@ remain exactly as they were; only which `TrainingMix` is currently active
 changes. `nil` bounds mean "active until explicitly superseded" — the
 common case.
 
+**Stage 5A gives this real behavior for the first time**: when
+`validUntil` passes, the Long-Term Planner surfaces an explicit choice
+(return to recommended / continue as stable / choose another path) —
+never an automatic revert. This is also how "stable preference" vs.
+"temporary desire" (a distinction the planner needs) is drawn: `nil` ==
+stable, set == temporary — no separate field required. See
+`ADHERENCE_AWARE_PLANNING.md` §2-3.
+
 ## 9. Delete rules
 
 See `DELETE_RULE_MATRIX.md`'s "Stage 4F additions" — both types cascade
@@ -135,9 +143,11 @@ reference into a deletable execution-side type.
 ## 10. What this model does not claim
 
 - No recommendation engine. Nothing in this pass computes a `.recommended`
-  `TrainingMix` from a goal automatically — that's the deferred Long-Term
-  Planner's job. This stage only builds the type both a future
-  recommender and a manual/test-authored mix would use identically.
+  `TrainingMix` from a goal automatically. Stage 5A (`LONG_TERM_PLANNER.md`)
+  specified *how* that will work — reusing this exact type, unchanged —
+  but the engine itself is still not built as of that pass either; this
+  stage only builds the type both a future recommender and a manual/
+  test-authored mix use identically.
 - No adherence *prediction*. `PreferenceStrength` is captured input, not
   a modeled or inferred quantity.
 - No numeric goal-fit score. See `CONCURRENT_SCHEDULER.md`'s
