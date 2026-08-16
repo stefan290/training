@@ -1,5 +1,11 @@
 # Program Recommendation Model
 
+**Stage 5B status: implemented.** `ProgramCandidate`/`CapabilityGap`/
+`ProgramCapabilityRegistry` (§1, §5) and `LongTermPlanner.proposeProgram`
+(§3-4) exist exactly per this document; the capability check runs before
+any fit-factor scoring, and a `ProgramCandidate` is never constructed for
+an uninstantiable configuration. See `STAGE5B_IMPLEMENTATION_REPORT.md` §6-7.
+
 How `LongTermPlanner` recommends a concrete `ProgramDefinition`/generator
 configuration for each `TrainingMixComponent`, how it rates a user's own
 choice, and why it never touches a program's internal methodology to do

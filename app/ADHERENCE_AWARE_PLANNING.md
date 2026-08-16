@@ -1,5 +1,19 @@
 # Adherence-Aware Planning
 
+**Stage 5B status: implemented.** `LongTermPlanner.proposeTrainingMix`/
+`rankCandidateMixes` implement §5's exact two-stage ranking (the
+compatibility gate, then bounded tier-gap promotion, reusing
+`GoalAlignmentEvaluator` unmodified via `SchedulingPipeline` with
+representative, never-persisted comparison Sessions). §1's variety
+preference and §5b's preference-alignment boolean are implemented as
+specified. `TemporaryPreferenceEvaluator` implements §2/§2a's expiry and
+materiality detection; `SwitchTrainingModalityUseCase` implements the
+mechanical "attach a new `.selected` mix, close the previous one" half of
+§2's three-option resolution — the three prompts themselves (which mix
+object each option supplies) are a caller/UI decision, not built in this
+stage (no UI expansion is in scope). See `STAGE5B_IMPLEMENTATION_REPORT.md`
+§8-11.
+
 The locked principle this document exists to operationalize:
 
 > A theoretically optimal program that the user does not want to perform

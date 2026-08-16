@@ -1,5 +1,16 @@
 # Training Mix
 
+**Stage 5B addition:** `TrainingPhase.activeTrainingMix(asOf:)` is a new,
+purely additive method (`selectedTrainingMix` above is untouched) that
+disambiguates among more than one `.selected` mix on the same phase by
+`validFrom`/`validUntil` — the real behavior `ADHERENCE_AWARE_PLANNING.md`
+§2's temporary modality switching needed once more than one `.selected`
+mix could legitimately coexist on a phase (a stable mix plus a bounded
+temporary override). `SwitchTrainingModalityUseCase` is the only code
+that attaches a new `.selected` mix and closes the previous one's window;
+no existing `TrainingMix`/`TrainingMixComponent` field or behavior
+changed. See `STAGE5B_IMPLEMENTATION_REPORT.md` §10.
+
 Stage 4F's answer to "what should this phase's training actually consist
 of, given both the goal and the person" — a typed, persisted composition
 of training components, deliberately separate from *when* any of it lands

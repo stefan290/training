@@ -1,5 +1,17 @@
 # Plan Revision Model
 
+**Stage 5B status: implemented.** `PlannerDecision`/`PlannerDecisionType`/
+`DecisionSource`/`ConsideredAlternative`/`PlannerReasonCode` (§2-3) exist
+exactly as specified. `TrainingPlan.supersedes`/`.lineageID` (§4) and
+`AcceptStrategicPlanUseCase` implement §4a's revision-lineage mechanics:
+a superseded plan's still-`.planned` phases become `.abandoned`, its
+status becomes `.superseded`, a completed phase is never mutated, and a
+long-term-goal-change revision (§4c) gets a fresh `lineageID` while a
+minor revision (§4b) keeps the old one. `LongTermPlanner.reviseStrategicPlan`
+implements §4b's `PlanRevisionRequest` (`.extendPhase`/`.shortenPhase`/
+`.changeMilestoneDate`/`.changeLongTermGoal`). See
+`STAGE5B_IMPLEMENTATION_REPORT.md` §12-16.
+
 How a strategic plan changes after it's already been accepted — phase
 extension/shortening, milestone changes, a long-term goal change entirely
 — without ever rewriting what actually happened. Also the authoritative

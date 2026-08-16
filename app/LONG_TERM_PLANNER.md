@@ -1,5 +1,18 @@
 # Long-Term Planner
 
+**Stage 5B status: implemented.** `LongTermPlanner` (`Application/UseCases/LongTermPlanner.swift`)
+implements `proposeProgram`, `proposeTrainingMix`, `proposeStrategicPlan`
+and `reviseStrategicPlan` exactly per this document's §5 signatures (plus
+`AcceptStrategicPlanUseCase`/`SwitchTrainingModalityUseCase` as the
+explicit acceptance steps §5 calls for). See `STAGE5B_IMPLEMENTATION_REPORT.md`
+for what was built, which illustrative fixture numbers were chosen, and
+the small number of deliberately deferred nuances (each flagged with a
+code comment at its exact call site, never silently decided). Everything
+below is retained as the original Stage 5A design record; where the
+implementation made a concrete choice among several this document left
+open, the report is the authoritative account, not a rewrite of history
+here.
+
 Stage 5A: architecture for turning a long-term user goal into executable
 training, without duplicating any existing system. **This is a
 design/domain/algorithm specification pass — nothing in this document is

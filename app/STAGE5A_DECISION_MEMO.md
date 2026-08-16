@@ -1,5 +1,13 @@
 # Stage 5A Decision Memo
 
+**Stage 5B status: all eleven resolved decisions below were implemented
+as resolved — none were revisited or reopened during implementation.**
+See `STAGE5B_IMPLEMENTATION_REPORT.md` for the concrete code each
+resolution produced, and for the small number of additional,
+implementation-level simplifications that came up only once actual code
+was written (each flagged at its call site, never silently decided —
+CLAUDE.md rule 10).
+
 Every place this pass's design documents (`LONG_TERM_PLANNER.md` and its
 7 companions) made a judgment call, deferred a question, or found a real
 gap — collected here so Stage 5B does not start on an unreviewed

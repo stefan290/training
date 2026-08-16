@@ -1,5 +1,20 @@
 # Tactical Planning Handoff
 
+**Stage 5B status: window sizing and regeneration-trigger detection are
+implemented (§1-2); §3's "starting a new phase" orchestration and §4's UI
+data contracts are not built this stage** — no full tactical
+materialization pipeline or UI expansion was in scope
+(`STAGE5B_IMPLEMENTATION_REPORT.md` §22 lists this as a known gap, not a
+silent omission). `TacticalWindowPolicy.windowLengthInDays` implements
+§1's mesocycle/phase-remaining/transition-date bounding with the
+4-week fallback; `TacticalWindowTriggerEvaluator` implements §2's two
+date-driven triggers (`.windowApproachingEnd`/`.windowCompleted`);
+`TacticalWindowTrigger`'s other four cases exist as the closed
+vocabulary for the event-driven triggers, fired by whichever use case
+already knows the event occurred (`SwitchTrainingModalityUseCase`,
+`AcceptStrategicPlanUseCase`) rather than re-detected here. See
+`STAGE5B_IMPLEMENTATION_REPORT.md` §17.
+
 Where the strategic layer (`STRATEGIC_PLAN_MODEL.md`,
 `PHASE_PLANNING_RULES.md`) meets the already-existing execution machinery
 (`ProgramGenerator`s, `SchedulingPipeline`) — the tactical horizon, when

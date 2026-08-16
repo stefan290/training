@@ -115,4 +115,24 @@ final class TrainingPhase {
     var recommendedTrainingMix: TrainingMix? {
         trainingMixes.first { $0.kind == .recommended }
     }
+
+    /// Stage 5B addition: the `.selected` mix that is actually active as
+    /// of a given date, once more than one `.selected` mix may exist on
+    /// the same phase (a temporary modality switch, `ADHERENCE_AWARE_PLANNING.md`
+    /// §2, never deletes the mix it replaces — it only closes its
+    /// `validUntil` window). Purely additive: `selectedTrainingMix` above
+    /// is untouched and keeps its exact Stage 4F meaning for every
+    /// existing call site that only ever expects a single `.selected`
+    /// mix; this is a second, temporally-aware query for callers that
+    /// need to disambiguate among several.
+    func activeTrainingMix(asOf: Date) -> TrainingMix? {
+        trainingMixes
+            .filter { $0.kind == .selected }
+            .filter { mix in
+                if let validFrom = mix.validFrom, validFrom > asOf { return false }
+                if let validUntil = mix.validUntil, validUntil <= asOf { return false }
+                return true
+            }
+            .max { ($0.validFrom ?? .distantPast) < ($1.validFrom ?? .distantPast) }
+    }
 }

@@ -1,5 +1,18 @@
 # Phase Planning Rules
 
+**Stage 5B status: implemented, with one documented scope narrowing.**
+`LongTermPlanner.proposeStrategicPlan`/`.reviseStrategicPlan` implement
+§1-§7 (no `PhaseType.hybrid`, protected-component composition, per-goal-
+type architecture, forward-fill + backward milestone anchoring). §5's
+extend/shorten redistribution and §8's protected-minimum classification
+are implemented at the *proposal* structure level; §5's fuller "a later
+Maintenance/Recovery phase absorbs freed time first" redistribution
+detail and §5's in-place resize of an already-`.active` phase are
+deliberately deferred (flagged at their exact call site in
+`LongTermPlanner.swift`, not silently assumed) — see
+`STAGE5B_IMPLEMENTATION_REPORT.md` §21 for the full list of deferred
+nuances.
+
 How `TrainingPhase` gets its goal, why it needs no new schema to express
 a multi-objective phase, and when a phase ends. The central finding:
 **"what a phase prioritizes" is already fully expressible through the

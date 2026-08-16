@@ -1,5 +1,12 @@
 # Strategic Plan Model
 
+**Stage 5B status: implemented as designed.** `Goal`'s compositional
+extension (§1), `TrainingPlan.supersedes`/`.lineageID` (§2), and
+`PhaseDurationKind`/`PhaseDurationDefaults` (§4a) all exist exactly as
+specified, with the illustrative fixture numbers in §4a's table used
+verbatim (still TRAININGOS_DESIGNED, still not a physiology claim). See
+`STAGE5B_IMPLEMENTATION_REPORT.md` §5.
+
 `LongTermGoal` and `StrategicPlan` — the two concepts sitting above
 `TrainingPhase` in `LONG_TERM_PLANNER.md`'s pipeline. The central finding
 of this document: **neither needs a new persisted container.**

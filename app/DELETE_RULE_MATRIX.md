@@ -349,3 +349,40 @@ for the full model.
   `TrainingMixComponent` reads `ProgramInstance`, never
   `ProgramDefinition`, keeping rule 2 (no performance data on the
   template graph) trivially satisfied.
+
+## Stage 5B additions
+
+`TrainingPlan.supersedes`, `PlannerDecision`'s optional back-references,
+and `Goal`'s new value-type fields (`secondaryObjectives`/`milestoneDate`/
+`bodyCompositionDirection`/`preferences`) — none of these touch
+performance data, and none needed a new cascade.
+
+| Parent | Child | Relationship | Delete rule | Expected behaviour | Why |
+|---|---|---|---|---|---|
+| `TrainingPlan` (self) | `TrainingPlan` | `supersedes: TrainingPlan?` | `.nullify` | Deleting a plan revision that a later revision's `supersedes` points to nullifies that pointer; the later revision survives untouched. | A superseded plan's own history must never be deleted just because a later revision replacing it is — mirrors `PrescriptionTemplate.pairedSlot`'s identical self-referential nullify reasoning. |
+
+`PlannerDecision.goal`/`.planRevision`/`.phase`/`.trainingMix`/`.programInstance`
+are plain, un-annotated optional `var`s — no `@Relationship` declared on
+either side, deliberately (`PlannerDecision.swift`'s own doc comment:
+"mirroring `WorkoutBlock`'s own established multiple optional typed
+children pattern rather than an unsafe enum-with-payload holding a
+`@Model` reference"). No delete rule needed in either direction: deleting
+a `Goal`/`TrainingPlan`/`TrainingPhase`/`TrainingMix`/`ProgramInstance`
+must never delete its audit trail, and deleting a `PlannerDecision` must
+never affect the object it references — both already hold by construction
+since SwiftData never cascades across an undeclared relationship.
+
+### Confirms rule 1/2 hold for the new types
+
+- `PlannerDecision` never references `Session`/`SetResult`/`WorkoutResult`/
+  `PersonalRecord`/any `*PerformanceProfile` at all — it is an audit
+  record of a strategic/tactical *decision*, never a performance fact.
+- `Goal`'s new fields (`secondaryObjectives: [SecondaryObjective]`,
+  `preferences: GoalPreferences?`) are `Codable` value types embedded
+  directly on `Goal`, the same proven-safe "array of small struct" shape
+  already used for `Stimulus.movementModalityMix`/`PersonalRecord`'s own
+  fields — confirmed via `LongTermPlannerPersistenceTests.testTwoSiblingGoalsWithDifferentPreferencesBothSurviveRoundTrip`,
+  this stage's own repeat of the Stage 4A Bug 2/3 sibling-row diagnostic.
+- `TrainingMix.validFrom`/`.validUntil` (existing Stage 4F fields, given
+  real behavior this stage) remain plain optional `Date`s — no schema or
+  delete-rule change.
