@@ -82,6 +82,19 @@ volume" — that's a third, lighter-touch tier, not a second `.secondary`).
 Purely additive: a `String`-rawValue enum gaining a case breaks nothing
 already persisted.
 
+**Stage 4G confirmation:** `priority` (`GoalPriority`) and `flexibility`
+(`ComponentFlexibility`) answer genuinely different questions — which
+adaptation goal a component serves, vs. whether its own frequency can be
+reduced under pressure — and this model already kept them as two
+independent fields rather than one collapsed enum. The hardening pass's
+conflict-resolution rewrite (`CONCURRENT_SCHEDULER.md` §4,
+`GOAL_ALIGNMENT.md` §5) depends on exactly this separation: "required
+minimum frequency" (driven by `flexibility`) and "primary-goal protection"
+(driven by `priority`) are two distinct steps in the resolution order,
+each reading its own field — collapsing them into one enum would have
+lost the information needed to rank a `.primary`/`.optional` component
+correctly against a `.secondary`/`.required` one.
+
 ## 6. Frequency — the smallest clean model
 
 `SessionFrequency { target: Int, minimum: Int?, maximum: Int? }`. A fixed

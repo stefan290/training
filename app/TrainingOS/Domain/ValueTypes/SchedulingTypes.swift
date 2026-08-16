@@ -40,6 +40,18 @@ enum SchedulingReasonCode: String, Codable, CaseIterable {
     /// `.recommended` one — surfaced so the UI can distinguish "system
     /// chose this" from "you chose this."
     case userSelectedMix
+    /// Hardening-pass addition (additive, per this file's own "codes are
+    /// additive" rule): this session counts toward its component's
+    /// required minimum (or target, when no minimum was set) frequency —
+    /// true for every placement made during the scheduler's
+    /// guarantee-minimums phase, regardless of whether a specific
+    /// cross-component conflict existed for its exact day. Distinct from
+    /// `primaryGoalPriority`, which is reserved for placements that won a
+    /// *genuine* same-day contention against a lower-priority
+    /// component's session — see `CONCURRENT_SCHEDULER.md`'s "conflict
+    /// resolution" section for why these are deliberately two different,
+    /// non-overlapping claims.
+    case requiredFrequencyProtected
 }
 
 // MARK: - User availability
@@ -262,9 +274,16 @@ struct SchedulableSession {
     /// carry a `trainingStressProfile`.
     var stressProfile: TrainingStressProfile?
     /// This session's position within its own component's existing
-    /// materialized order — the scheduler orders placements within a
-    /// component by this, never by re-sorting on some other property.
+    /// materialized order — used as a tie-break among same-importance
+    /// sessions of the same component; see `isKeySession` below for the
+    /// one thing that can outrank it.
     var componentSortIndex: Int
+    /// Snapshot of `Session.isKeySession` — when a component has more
+    /// sessions than the window can fit, a key session is preferred over
+    /// a standard one from the same component, regardless of
+    /// `componentSortIndex`. Never crosses component boundaries: it only
+    /// affects which of THIS component's own sessions get first claim.
+    var isKeySession: Bool
 }
 
 // MARK: - Goal alignment
@@ -272,8 +291,11 @@ struct SchedulableSession {
 /// A deterministic, qualitative rating — never a fabricated numeric
 /// percentage ("85% optimal"). Ordered so callers may compare two
 /// `GoalAlignment`s, but the ordering itself carries no claim of
-/// interval-scale precision.
+/// interval-scale precision. `.infeasible` is its own tier, distinct from
+/// `.poor` — a schedule that could not be produced at all is a different
+/// kind of outcome than one that was produced but scores badly.
 enum GoalAlignmentRating: String, Codable, CaseIterable, Comparable {
+    case infeasible
     case poor
     case acceptable
     case good
@@ -281,10 +303,11 @@ enum GoalAlignmentRating: String, Codable, CaseIterable, Comparable {
 
     private var ordinal: Int {
         switch self {
-        case .poor: return 0
-        case .acceptable: return 1
-        case .good: return 2
-        case .excellent: return 3
+        case .infeasible: return 0
+        case .poor: return 1
+        case .acceptable: return 2
+        case .good: return 3
+        case .excellent: return 4
         }
     }
 
@@ -293,23 +316,33 @@ enum GoalAlignmentRating: String, Codable, CaseIterable, Comparable {
     }
 }
 
-/// Which dimension a single `GoalAlignmentFactor` speaks to.
+/// Which dimension a single `GoalAlignmentFactor` speaks to — the 7
+/// factors the hardening pass's own kickoff names explicitly. Every one
+/// of these is computed from `ScheduleProposal.issues`/`.placements`
+/// typed data only — never from `warnings` display text.
 enum GoalAlignmentFactorKind: String, Codable, CaseIterable {
     /// Does the mix's primary-priority component get its stimulus in at
-    /// all, given the schedule that was actually produced?
+    /// all — i.e. no `.primaryGoalCompromise` issue.
     case primaryStimulusCoverage
-    /// Did every component hit at least its `SessionFrequency.minimum`
-    /// (or `target`, when no explicit minimum was set)?
-    case minimumFrequencySatisfaction
-    /// Did secondary/supporting components get any coverage at all?
+    /// Did every `.required`-flexibility component reach its required
+    /// minimum (or target, when no minimum was set) — i.e. no
+    /// `.requiredFrequencyUnsatisfied` issue.
+    case requiredComponentSatisfaction
+    /// Did EVERY component, regardless of flexibility, reach its minimum
+    /// (or target) frequency.
+    case targetFrequencySatisfaction
+    /// Did every secondary/supporting component get at least one session
+    /// placed.
     case supportingGoalCoverage
-    /// Could the mix be scheduled at all within the user's availability?
+    /// Was the `.selected` mix's own preference data (preferred days)
+    /// honored — i.e. no `.preferenceCompromise` issue.
+    case userSelectedPreferenceSatisfaction
+    /// Could the mix be scheduled at all within the user's availability.
     case schedulingFeasibility
-    /// How many soft interference constraints had to be violated?
-    case interferenceCost
-    /// Does the mix match the user's stated preferred days/double-session
-    /// permissions, independent of pure goal fit?
-    case userPreferenceSatisfaction
+    /// Did placing this mix require any soft interference/recovery
+    /// compromise — i.e. no `.interferenceConflict`/
+    /// `.recoverySpacingCompromise` issue.
+    case interferenceAndRecoveryCompromise
 }
 
 /// One transparent, inspectable input to an overall `GoalAlignment` — the

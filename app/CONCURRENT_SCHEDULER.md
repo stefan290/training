@@ -2,6 +2,8 @@
 
 Stage 4F's placement engine — it decides *where* on the calendar an
 already-produced Session lands. It never decides *what* that Session is.
+**Stage 4G** hardened its conflict-resolution and explanation semantics
+(see §4/§6/§10 and `GOAL_ALIGNMENT.md`) without changing this scope.
 
 ## 1. Scope — what this system does and does not do
 
@@ -56,6 +58,11 @@ it.
   says no.
 - `TrainingMixComponent.requiredSpacingDays`, when set, is violated
   against that component's own previously-placed session.
+- `UserAvailability.minutesAvailablePerDay`, when set for that weekday,
+  is below the session's estimated duration (§7's `minMinutesNeeded` —
+  a TRAININGOS_DESIGNED conservative floor per `DurationDomain` category,
+  never an exact-minute claim). A weekday absent from that dictionary has
+  no ceiling and always passes this check.
 
 **Soft** (avoided when possible; placed anyway with `.softConstraintViolated`
 and a warning when every hard-valid candidate would violate it):
@@ -65,39 +72,67 @@ and a warning when every hard-valid candidate would violate it):
 - None of a component's `preferredDays` is reachable at all within the
   hard-valid candidate set.
 
-## 4. The placement algorithm
+## 4. The placement algorithm — conflict resolution, not first-claim
 
-Deterministic and greedy, session-by-session:
+**Stage 4G rewrite.** Stage 4F's original algorithm sorted every session
+once by `GoalPriority` tier alone and processed them in one single pass —
+which meant a primary component's placements were tagged
+`.primaryGoalPriority` even when no other component was actually
+competing for that day. This section describes the replacement: a
+genuine two-phase, contention-aware algorithm. The full, numbered
+conflict-resolution order (the answer to "when two sessions could both
+use the same day, who wins") is documented once, canonically, in
+`GOAL_ALIGNMENT.md` §5 — this section describes how `ConcurrentScheduler`
+actually implements that order.
 
-1. Flatten every `ScheduledProgramInput` into `[SchedulableSession]` (one
-   entry per Session, annotated with its component's priority,
-   flexibility, double-pairing permission, preferred days, required
-   spacing, and its own composed `TrainingStressProfile` — see §7).
-2. Sort by `GoalPriority` (`.primary` before `.secondary` before
-   `.supporting`). The sort is stable, so within a tier the caller's own
-   input order is preserved — the one remaining degree of freedom
-   belongs to the caller, not the algorithm.
-3. For each session in that order, collect every day in the window that
-   passes all hard constraints (§3). None -> the session becomes part of
-   a `SchedulingConflict` (§6), never silently dropped.
-4. Score every hard-valid candidate day with a fixed, lexicographic
-   tuple (lower wins on every field, in this order):
-   1. Not a double-session (prefer a free day).
-   2. No soft interference-rule trigger.
-   3. Lands on one of the component's `preferredDays`.
-   4. Among double-session candidates, the lightest existing partner
-      (lowest worst-case `TrainingStressProfile` ordinal on that day) —
-      this is what produces `.lowIntensityPairing`.
-   5. Earliest day offset — the final, always-decisive tie-break, so two
-      identical `(inputs, constraints)` calls never diverge.
-5. Place on the winning day, tag reason codes (§6), record the day as
+1. **Flatten and snapshot.** Every `ScheduledProgramInput` becomes
+   `[SchedulableSession]` (one entry per Session, annotated with its
+   component's priority, flexibility, double-pairing permission,
+   preferred days, required spacing, `isKeySession`, and its own composed
+   `TrainingStressProfile` — see §7). Nothing is re-read from
+   `TrainingMixComponent`/`Session` after this point.
+2. **Split into two phases per component** (`buildPhases`): each
+   component's own sessions, importance-ordered (`isKeySession` promoted
+   first, then materialized sequence — see §14), are split into "counts
+   toward `frequency.minimum ?? frequency.target`" (phase 1) and "beyond
+   it" (phase 2). A component with no explicit `minimum` puts its entire
+   `target` into phase 1 — the common case, and the reason most existing
+   fixtures see no phase-2 sessions at all.
+3. **Sort each phase into one deterministic global order**
+   (`processingOrder`): primary-goal protection first (`.primary`-priority
+   sessions before any other), then component-priority ordinal, then
+   `componentLabel` alphabetically, then the session's own effective
+   position — never array/insertion order. Phase 1 is processed to
+   completion before phase 2 begins.
+4. **For each session in that order:** collect every day in the window
+   that passes all hard constraints (§3). None -> the session becomes
+   part of a `SchedulingConflict` *and* a hard `ScheduleIssue` (§6),
+   classified by whichever hard rule excluded the most candidate days —
+   never silently dropped.
+5. **Score every hard-valid candidate day** with the same fixed,
+   lexicographic tuple as Stage 4F (unchanged): not-a-double, no
+   interference trigger, lands on a preferred day, lightest available
+   double-session partner, earliest day offset as the final tie-break.
+6. **Before committing, check for genuine contention:** only when the
+   session belongs to a `.primary`-priority component, scan the *rest* of
+   this phase's remaining queue for any different-component session that
+   could *also* have used the winning day right now (same hard-constraint
+   check, current pre-commit occupancy). Only then is `.primaryGoalPriority`
+   tagged — never merely because this component was processed first.
+7. Place on the winning day, tag every applicable reason code (§6, plus
+   any soft `ScheduleIssue`s this placement required), record the day as
    occupied, and continue.
 
-Nothing here special-cases a modality. The same five steps place a
-Strength session, a Functional Fitness session, or a Running session
-identically — proven directly by the required Case B test (3 Strength +
-2 Functional Fitness + 1 Running, one `schedule()` call, no branch
-anywhere keyed on `TrainingModality`).
+Nothing here special-cases a modality. The same steps place a Strength
+session, a Functional Fitness session, or a Running session identically
+— proven directly by the required Case B test (3 Strength + 2 Functional
+Fitness + 1 Running, one `schedule()` call) and, for priority
+specifically, by `SchedulerHardeningTests
+.testRunningPriorityPhaseProtectsKeyRunningWork`/
+`.testMuscleGainPhaseProtectsRequiredResistanceTraining` — the same
+algorithm protects whichever component the caller configured as primary,
+proving priority comes from configuration, never from a hardcoded
+modality check.
 
 ## 5. Interference avoidance — conservative, categorical, never a physiology claim
 
@@ -118,28 +153,37 @@ avoidance entirely.
 
 ## 6. Reason codes
 
-Every non-trivial placement carries one or more of these ten codes — the
-kickoff's own authoritative list, additive and never renamed once a
-`ScheduleProposal` referencing one has shipped:
+Every non-trivial placement carries one or more of these codes — additive
+and never renamed once a `ScheduleProposal` referencing one has shipped.
+The original 10 are the kickoff's own authoritative list; `.requiredFrequencyProtected`
+is Stage 4G's one addition:
 
 | Code | Meaning |
 |---|---|
-| `primaryGoalPriority` | This placement belongs to the mix's `.primary` component — processed (and given first claim on days) before any other tier. |
+| `primaryGoalPriority` | This placement won a **genuine** same-day contention against a lower-priority, different component's session — see §4 step 6. Never tagged merely because a primary component was processed first. |
+| `requiredFrequencyProtected` | **Stage 4G addition.** This session counts toward its component's required minimum (or target, when no minimum was set) — true for every phase-1 placement (§4 step 2), regardless of whether a specific conflict existed for its exact day. A narrower, always-honest claim than `primaryGoalPriority`'s. |
 | `recoverySpacing` | Placement honored `requiredSpacingDays` against this component's own prior session. |
 | `interferenceAvoided` | A non-adjacent/non-triggering day was chosen over an available interference-triggering alternative. |
 | `lowIntensityPairing` | A double-session was paired with the lightest available partner day. |
 | `doubleSessionSelected` | Two sessions were deliberately placed on the same day. |
 | `preferredDayUsed` | Landed on one of the component's `preferredDays`. |
 | `availabilityConstraint` | The user's own availability shaped this window's placements (at least one day in the window was excluded). |
-| `softConstraintViolated` | A soft constraint (interference or "no reachable preferred day") had to give way — always paired with a warning. |
-| `programOrderPreserved` | This component's own sessions landed in their existing materialized order — always true, on every placement. |
+| `softConstraintViolated` | A soft constraint (interference or "no reachable preferred day") had to give way — always paired with a matching `ScheduleIssue` (§6a), never left silent. |
+| `programOrderPreserved` | This component's own sessions landed in their existing effective claim order (materialized order, with `isKeySession` promoted first — see §14) — always true, on every placement. |
 | `userSelectedMix` | This session belongs to the phase's `.selected` mix, not a `.recommended` one. |
 
-**Documented simplification:** `.primaryGoalPriority` marks first-claim
-status (the primary component is processed, and picks its days, before
-anyone else), not a proof that an actual conflict was resolved in its
-favor — determining the latter would require simulating the schedule
-without priority and diffing outcomes, which this pass does not do.
+### 6a. `ScheduleIssue` — the structured signal `GoalAlignmentEvaluator` reads
+
+`SchedulingReasonCode` above explains a placement that *happened*.
+`ScheduleIssue` (new in Stage 4G) is the separate, structured vocabulary
+for compromises and failures — 11 `ScheduleIssueCode` cases, each with a
+`severity` (`.hard`/`.soft`), a `componentLabel`, an optional affected
+`session`, and a `reason` that is **pure display copy**, generated from
+the structured fields and safe to reword freely. `ScheduleProposal.warnings`
+is a *computed* property (`issues.map(\.reason)`) — there is no
+independent "warnings" state to drift out of sync with `issues`, and no
+business logic (including `GoalAlignmentEvaluator`) may read it. See
+`GOAL_ALIGNMENT.md` §2 for the full code table.
 
 ## 7. `TrainingStressProfile` composition — `SessionStressComposer`
 
@@ -154,10 +198,12 @@ fabricated all-`.none` profile).
 ## 8. `ScheduleProposal` and acceptance
 
 `schedule()` never mutates anything — it returns a `ScheduleProposal`
-(`placements`, `conflicts`, `feasibility`, `warnings`, `schedulerVersion`),
-a plain, non-persisted value type. This is the Engine-recommendation ->
-Explanation -> User-approval pattern this project already uses
-elsewhere: only `AcceptScheduleProposalUseCase.accept(_:ownerUserID:context:)`
+(`placements`, `conflicts`, `feasibility`, `issues`, `schedulerVersion`,
+plus a reserved, always-empty `alternatives: [ScheduleProposal]` for a
+future planner — see `GOAL_ALIGNMENT.md` §8), a plain, non-persisted
+value type. `warnings` is computed from `issues`, not a separate field —
+see §6a. This is the Engine-recommendation -> Explanation -> User-approval
+pattern this project already uses elsewhere: only `AcceptScheduleProposalUseCase.accept(_:ownerUserID:context:)`
 turns an approved proposal into real state, and only by re-parenting
 Sessions that already exist (removing from whatever naive `Day` the
 materializer assigned, finding-or-creating the target `Day`, and stamping
@@ -189,20 +235,13 @@ has no valid day at all).
 ## 10. `GoalAlignmentEvaluator`
 
 Scores a `(TrainingMix, ScheduleProposal)` pair as a `GoalAlignmentRating`
-(`.poor`/`.acceptable`/`.good`/`.excellent`) plus a fully transparent list
-of `GoalAlignmentFactor`s (primary-stimulus coverage, minimum-frequency
-satisfaction, supporting-goal coverage, scheduling feasibility,
-interference cost, user-preference satisfaction) — each a plain boolean
-plus a note, never a fabricated numeric percentage.
-
-**Documented simplification:** the `interferenceCost` and
-`userPreferenceSatisfaction` factors are currently detected by matching
-`ScheduleProposal.warnings`' own generated text, rather than from a
-dedicated structured signal — this correctly distinguishes "was any soft
-constraint of this kind violated" but does not yet distinguish severity
-or count. A future pass could add a structured per-placement violation
-reason instead of text-matching, but the qualitative-only output is
-already accurate at the granularity this stage promises.
+(`.infeasible`/`.poor`/`.acceptable`/`.good`/`.excellent`) plus 7 fully
+transparent `GoalAlignmentFactor`s — never a fabricated numeric
+percentage, and, since Stage 4G, computed entirely from `issues`/
+`placements` typed data, never from `warnings` display text. The full
+factor table, rating thresholds, and the reasoning behind the `.infeasible`
+short-circuit live in `GOAL_ALIGNMENT.md` §3 — this section only points
+there so the two documents don't drift.
 
 ## 11. Determinism
 
@@ -240,10 +279,34 @@ correctly:
   here. Coupling the two would blur exactly the boundary the second
   required CLAUDE.md addition exists to keep intact.
 
-## 13. What this system does not claim
+## 14. Key sessions
+
+`Session.isKeySession: Bool` (default `false`, Stage 4G addition) marks a
+session as more important than a standard sibling from the *same*
+`TrainingMixComponent` — a running week's long run or threshold session
+vs. an easy run. `buildPhases` (§4 step 2) promotes key sessions ahead of
+standard ones when deciding both which sessions count toward a
+component's required minimum and which get first claim on scarce days;
+it never crosses component boundaries and never reorders which day a
+*placed* session lands on relative to its own placed siblings. See
+`GOAL_ALIGNMENT.md` §6 for the full reasoning and
+`SchedulerHardeningTests.testRunningPriorityPhaseProtectsKeyRunningWork`
+for the proof that a key session survives being dropped in favor of a
+sequence-earlier standard one.
+
+## 15. Planner-facing API
+
+`SchedulingPipeline.propose(mix:inputs:constraints:) -> (proposal:
+alignment:)` bundles `schedule()` and `GoalAlignmentEvaluator.evaluate`
+into the single entry point a future Long-Term Planner calls once per
+candidate mix — see `GOAL_ALIGNMENT.md` §8 for the full pipeline
+contract.
+
+## 16. What this system does not claim
 
 - No Long-Term Planner. This stage never generates a `.recommended`
-  `TrainingMix` — see `TRAINING_MIX.md` §10.
+  `TrainingMix` — see `TRAINING_MIX.md` §10. `SchedulingPipeline` (§15)
+  is the contract that planner will use, not the planner itself.
 - No full-year scheduling. The window is tactical (a rolling week/short
   horizon) by design, never the whole `TrainingPlan`.
 - No numeric interference thresholds beyond the two-dimension
@@ -251,3 +314,8 @@ correctly:
   exactly these dimensions or this threshold.
 - No workout-execution UI. `ScheduleProposal`/`ConflictResolutionOption`
   are data a future UI would render; none of that UI exists yet.
+- `TrainingMix` remains one type with a `kind` flag, not two duplicate
+  `RecommendedTrainingMix`/`UserSelectedTrainingMix` types — see
+  `GOAL_ALIGNMENT.md` §7 for why this satisfies the "two separate
+  concepts" requirement without duplicating `TrainingMixComponent`'s
+  schema twice.

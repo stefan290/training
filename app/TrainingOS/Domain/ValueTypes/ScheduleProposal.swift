@@ -105,10 +105,23 @@ struct ScheduleProposal {
     var placements: [SessionPlacement]
     var conflicts: [SchedulingConflict]
     var feasibility: ScheduleFeasibility
-    /// Human-readable notes for every `.softConstraintViolated` placement
-    /// and any other non-fatal caveat — always populated when
-    /// `feasibility == .feasibleWithSoftViolations`.
-    var warnings: [String]
+    /// Structured, machine-readable facts about this proposal —
+    /// `GoalAlignmentEvaluator` and any future UI must read this, never
+    /// `warnings` (see below). Populated for every soft compromise and
+    /// every hard conflict this proposal contains.
+    var issues: [ScheduleIssue]
+    /// Reserved for a future pass (the Long-Term Planner): alternative
+    /// proposals worth comparing against this one (e.g. "allow doubles"
+    /// or "add a day" applied). Always empty in this pass — nothing
+    /// currently populates it — declared now so `ScheduleProposal`'s
+    /// shape doesn't need to change again when that work starts.
+    var alternatives: [ScheduleProposal]
+
+    /// Pure display copy, generated FROM `issues` — never an independent
+    /// source of truth. Business logic (including `GoalAlignmentEvaluator`)
+    /// must never read this; it exists only so a caller that just wants
+    /// something to show a user doesn't have to format `issues` itself.
+    var warnings: [String] { issues.map(\.reason) }
 
     init(
         schedulerVersion: Int,
@@ -116,13 +129,15 @@ struct ScheduleProposal {
         placements: [SessionPlacement],
         conflicts: [SchedulingConflict],
         feasibility: ScheduleFeasibility,
-        warnings: [String] = []
+        issues: [ScheduleIssue] = [],
+        alternatives: [ScheduleProposal] = []
     ) {
         self.schedulerVersion = schedulerVersion
         self.window = window
         self.placements = placements
         self.conflicts = conflicts
         self.feasibility = feasibility
-        self.warnings = warnings
+        self.issues = issues
+        self.alternatives = alternatives
     }
 }

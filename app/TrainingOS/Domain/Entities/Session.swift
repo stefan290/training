@@ -35,6 +35,18 @@ final class Session {
     /// scheduler itself — a later scheduler-version bump must never
     /// silently re-interpret an already-accepted placement.
     var schedulerVersion: Int?
+    /// Hardening-pass addition: marks this Session as more important than
+    /// a sibling within the same `TrainingMixComponent` — e.g. a running
+    /// week's long run or threshold session vs. an easy run. `false` (the
+    /// default) is the common case for every Session that existed before
+    /// this pass and for any component with no internal importance
+    /// distinction. `ConcurrentScheduler` uses this only to decide which
+    /// of a component's OWN sessions get first claim on scarce days/are
+    /// least likely to end up unplaced — it never changes the *relative*
+    /// calendar order of sessions that do get placed, and it never
+    /// crosses component boundaries (see `CONCURRENT_SCHEDULER.md`'s
+    /// "key sessions" section).
+    var isKeySession: Bool
 
     @Relationship(deleteRule: .cascade, inverse: \WorkoutBlock.session)
     var blocks: [WorkoutBlock] = []
@@ -46,7 +58,8 @@ final class Session {
         modality: TrainingModality,
         status: SessionStatus = .scheduled,
         role: SessionRole? = nil,
-        schedulerVersion: Int? = nil
+        schedulerVersion: Int? = nil,
+        isKeySession: Bool = false
     ) {
         self.id = id
         self.sortIndex = 0
@@ -56,6 +69,7 @@ final class Session {
         self.status = status
         self.role = role
         self.schedulerVersion = schedulerVersion
+        self.isKeySession = isKeySession
     }
 
     /// The only way application code should attach a WorkoutBlock to a

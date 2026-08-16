@@ -210,8 +210,18 @@ final class ConcurrentSchedulerTests: XCTestCase {
 
         let proposal = ConcurrentScheduler.schedule(inputs, constraints: constraints)
 
-        XCTAssertEqual(proposal.feasibility, .feasible)
+        // 5 weekdays, 5 Hypertrophy sessions with no minimum set (so all 5
+        // count as "required" and claim every weekday first) — the 2
+        // Aerobic Base sessions can ONLY land via forced doubling, a real,
+        // structured soft compromise (`.doubleSessionRequired`), not a
+        // clean `.feasible` outcome.
+        XCTAssertEqual(proposal.feasibility, .feasibleWithSoftViolations)
         XCTAssertEqual(proposal.placements.count, 7)
+        XCTAssertTrue(proposal.conflicts.isEmpty)
+        let doubleIssues = proposal.issues.filter { $0.code == .doubleSessionRequired }
+        XCTAssertEqual(doubleIssues.count, 2)
+        XCTAssertTrue(doubleIssues.allSatisfy { $0.severity == .soft })
+        XCTAssertTrue(doubleIssues.allSatisfy { $0.componentLabel == "Aerobic Base" })
 
         let doubles = proposal.placements.filter { $0.isDoubleSessionPairing }
         XCTAssertEqual(doubles.count, 2)
@@ -546,9 +556,11 @@ final class ConcurrentSchedulerTests: XCTestCase {
         let proposal = ConcurrentScheduler.schedule([ScheduledProgramInput(component: component, sessions: sessions)], constraints: constraints)
 
         let alignment = GoalAlignmentEvaluator.evaluate(mix: mix, proposal: proposal)
-        XCTAssertEqual(alignment.rating, .poor)
-        let feasibilityFactor = try XCTUnwrap(alignment.factors.first { $0.kind == .schedulingFeasibility })
-        XCTAssertFalse(feasibilityFactor.satisfied)
+        // `.infeasible` is its own rating tier, distinct from `.poor` — an
+        // unschedulable mix short-circuits to an empty factor list rather
+        // than a per-factor breakdown that would be meaningless here.
+        XCTAssertEqual(alignment.rating, .infeasible)
+        XCTAssertTrue(alignment.factors.isEmpty)
     }
 
     // MARK: - AcceptScheduleProposalUseCase persistence

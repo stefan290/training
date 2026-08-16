@@ -1582,3 +1582,148 @@ concurrent-training interference literature already logged in
 
 See the final commit hash reported alongside this document. Local and
 remote verified to match.
+
+## Stage 4G: Scheduler Alignment & Priority Hardening
+
+A focused architecture-hardening pass on `ScheduleProposal`,
+`GoalAlignment` and priority semantics, requested before any Long-Term
+Planner work — explicitly not a new programming system, no new
+`ProgrammingSystem`/materializer involved. Baseline: commit `8ab37d9`
+(Stage 4F, approved), 298/298 tests passing. This section resolves the
+two "known gaps" Stage 4F's own report flagged above (§9):
+
+> "`GoalAlignmentEvaluator`'s `interferenceCost`/`userPreferenceSatisfaction`
+> factors detect their condition via warning-text matching..."
+> "`.primaryGoalPriority` marks first-claim processing order, not a proof
+> that an actual scheduling conflict was resolved..."
+
+Both are fixed structurally in this pass, not patched — see
+`GOAL_ALIGNMENT.md` for the full account.
+
+### 1. `ScheduleIssue` — structured signals replace text matching
+
+New `ScheduleIssueCode` (11 cases) / `IssueSeverity` (`.hard`/`.soft`) /
+`ScheduleIssue` vocabulary (`Domain/ValueTypes/ScheduleIssue.swift`).
+`ScheduleProposal.warnings` changed from a stored array to a **computed**
+property (`issues.map(\.reason)`) — there is no longer any way to
+construct a proposal where structured facts and display text disagree in
+a way business logic could act on. `GoalAlignmentEvaluator` was rewritten
+to read only `issues`/`placements`.
+
+### 2. `GoalAlignment` — 7 factors, a new `.infeasible` rating tier
+
+`GoalAlignmentFactorKind` expanded/renamed to the 7 factors the kickoff
+named explicitly (adding `requiredComponentSatisfaction` as distinct from
+`targetFrequencySatisfaction`, combining interference+recovery into one
+factor). `GoalAlignmentRating` gained `.infeasible` as its own tier below
+`.poor` — `evaluate` short-circuits to `GoalAlignment(rating: .infeasible,
+factors: [])` whenever `proposal.feasibility == .infeasible`, since a
+per-factor breakdown is mostly noise once a mix couldn't be scheduled at
+all.
+
+### 3. Real conflict resolution — `ConcurrentScheduler` rewrite
+
+Replaced the single priority-tier-sorted greedy pass with a genuine
+two-phase algorithm (`buildPhases`/`processingOrder` in
+`Engines/ConcurrentScheduler.swift`): every component's required minimum
+is guaranteed, across ALL components, before any component's sessions
+beyond that minimum are attempted; within either phase, primary-goal
+protection is checked first, then component-priority ordinal, then a
+fully insertion-order-independent tie-break (`componentLabel`, then
+effective sequence position — never array position). `.primaryGoalPriority`
+is now tagged only when a genuine, still-pending, different-component
+session could also have used the winning day at that moment; a new
+`.requiredFrequencyProtected` reason code (additive) makes the
+narrower, always-true "counts toward a required minimum" claim
+`.primaryGoalPriority` used to conflate with it. `ConcurrentScheduler.currentVersion`
+bumped `1` -> `2` accordingly.
+
+### 4. `Session.isKeySession` — key sessions
+
+New `Bool` field (default `false`). When a component has more sessions
+than a window can fit, a key session (e.g. a running week's long run or
+threshold session) is preferred over a standard sibling (e.g. an easy
+run) from the *same* component, regardless of materialized sequence
+position — never crossing component boundaries, never reordering placed
+sessions relative to each other.
+
+### 5. `SchedulingPipeline` — planner-facing API
+
+New `Engines/SchedulingPipeline.swift`: `propose(mix:inputs:constraints:)`
+bundles `ConcurrentScheduler.schedule` + `GoalAlignmentEvaluator.evaluate`
+into the one call a future Long-Term Planner needs — it never needs
+scheduler internals or `warnings`.
+
+### 6. Recommended vs. selected mix — judgment call, not a rebuild
+
+The kickoff asked to "preserve two separate objects/concepts:
+`RecommendedTrainingMix`/`UserSelectedTrainingMix`." This pass did **not**
+introduce two duplicate Swift types — `TrainingMix.kind` already gives
+two fully independent, persisted objects satisfying the behavioral
+requirement (a lower-scoring selected mix remains schedulable and
+untouched by the recommended one), and duplicating the type would
+reintroduce the schema duplication `TRAINING_MIX.md` already rejected.
+Flagged explicitly here, per CLAUDE.md rule 10's spirit, as a judgment
+call for the product owner to confirm or override — see
+`GOAL_ALIGNMENT.md` §7.
+
+### 7. Tests
+
+12 new tests (`SchedulerHardeningTests`), all passing, 310/310 total:
+no-warning-text-dependency and display-copy-independence proofs (A/B),
+primary-required-wins-a-real-conflict and insertion-order-independence
+(C/D), optional-component structured issue (E), selected-mix-lower-
+alignment-still-schedulable-and-not-mutated (F), running-priority and
+muscle-gain phase protection — including the key-session promotion proof
+— (G/H), infeasible → `.infeasible` (I), feasible-with-soft-compromise
+non-infeasible rating (J), determinism of both proposal and alignment
+(K), and component-insertion-order independence (L). 2 existing Stage 4F
+tests were updated, not weakened, to match corrected semantics: Case A's
+forced doubling now correctly reports `.feasibleWithSoftViolations` with
+a `.doubleSessionRequired` issue (previously silently `.feasible`), and
+the infeasible-mix alignment test now checks the new `.infeasible` tier
+instead of `.poor`.
+
+A real bug was caught and fixed during this pass's own test-writing, not
+after: the first implementation of `isKeySession` promotion reordered a
+component's sessions for phase-assignment purposes but let the final
+global sort's tie-break (`componentSortIndex`, still reading raw
+materialized-sequence position) silently undo the promotion whenever an
+entire component's sessions fit in one phase. Fixed by re-stamping
+`componentSortIndex` to the importance-first order immediately after
+sorting, so every later comparison reflects the same effective order —
+caught by `testRunningPriorityPhaseProtectsKeyRunningWork`'s explicit
+key-session-survives-scarcity assertion before this reached the reviewed
+baseline.
+
+### 8. Simulator
+
+The stale on-disk SwiftData store on the dev simulator (from prior
+Stage 4F test runs) could not lightweight-migrate `Session.isKeySession`'s
+new non-optional field and crashed `PersistenceController.makeAppContainer()`
+at launch — a dev-only artifact, not a schema design issue (no real user
+data exists yet). Resolved by uninstalling the stale app bundle so a
+fresh on-disk store was created matching the current schema; rebuilt,
+reinstalled and relaunched on an iPhone 17 (iOS 26.5) simulator
+afterward — no crash, stayed running.
+
+### 9. Known remaining gaps
+
+- No Long-Term Planner — `SchedulingPipeline` is the contract it will
+  use, not the planner itself.
+- `interferenceAndRecoveryCompromise` remains one combined factor
+  (matching the kickoff's own "interference/recovery compromises"
+  wording) rather than two separate factors — the underlying `issues`
+  still distinguish the two codes.
+- The recommended-vs-selected "two objects" requirement is satisfied via
+  `TrainingMix.kind` rather than two duplicate types — an explicit
+  judgment call (§6) open for the product owner to override.
+- `recoverySpacingCompromise` never fires as an accepted soft compromise
+  in this pass — required spacing remains a hard constraint, so this
+  code only ever classifies a hard conflict's cause, matching the
+  `FunctionalFitnessReasonCode` "reserved code" precedent (Stage 4E §9).
+
+### 10. Commit
+
+See the final commit hash reported alongside this document. Local and
+remote verified to match.

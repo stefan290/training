@@ -587,3 +587,38 @@ pair as a qualitative rating (`GoalAlignmentRating`) plus a fully
 transparent list of boolean `GoalAlignmentFactor`s — never a fabricated
 numeric percentage, matching `TrainingStressProfile`'s own "no fake
 precision" design principle applied one layer up.
+
+## Scheduler alignment and priority hardening (Stage 4G)
+
+Before any Long-Term Planner work could start, two Stage 4F weak points
+were hardened structurally rather than patched:
+
+- **`ScheduleIssue`** (new `Domain/ValueTypes/ScheduleIssue.swift`) is a
+  typed vocabulary (`ScheduleIssueCode`/`IssueSeverity`) for every
+  compromise/failure a `ScheduleProposal` can contain.
+  `ScheduleProposal.warnings` became a **computed** property
+  (`issues.map(\.reason)`) instead of an independently-stored array — so
+  `GoalAlignmentEvaluator` (rewritten this stage to read only `issues`/
+  `placements`) cannot drift out of sync with display text, structurally,
+  not by convention.
+- **`ConcurrentScheduler`'s placement algorithm** was rewritten from a
+  single priority-tier-sorted pass into a genuine two-phase,
+  contention-aware algorithm (`buildPhases`/`processingOrder` in
+  `Engines/ConcurrentScheduler.swift`) — required minimums are guaranteed
+  across every component before any component's "extra" sessions are
+  attempted, and `.primaryGoalPriority` is now tagged only when a real,
+  still-pending, different-component session could also have used the
+  winning day. `Session.isKeySession: Bool` (new field) lets one
+  component's own sessions carry different importance (a running week's
+  long run vs. an easy run) without a new planner.
+- **`SchedulingPipeline`** (new `Engines/SchedulingPipeline.swift`) is the
+  minimal planner-facing entry point — `propose(mix:inputs:constraints:)`
+  bundles `schedule()` + `evaluate` into the one call a future planner
+  needs, never exposing scheduler internals or `warnings`.
+
+`ConcurrentScheduler.currentVersion` bumped to `2` — the algorithm change
+could alter results for identical inputs (e.g. a mix with an explicit
+`SessionFrequency.minimum` narrower than its target now schedules
+differently), so an already-accepted Stage 4F `Session.schedulerVersion == 1`
+must never be silently reinterpreted under the new logic. Full account:
+`GOAL_ALIGNMENT.md`, `CONCURRENT_SCHEDULER.md` §4/§6/§14-16.

@@ -74,3 +74,11 @@ UI looks right.
     optimal modalities.
 15. ConcurrentScheduler schedules training; it does not create or
     progress training methodology.
+16. **Scheduling/planning explanations are structured, never string-parsed.**
+    `GoalAlignmentEvaluator` (and any future planner or UI) must read a
+    `ScheduleIssue`'s typed `code`/`severity`/`componentLabel`/`session`
+    fields, never `ScheduleProposal.warnings`. `warnings` is display copy
+    computed FROM `issues` — parsing it back to infer meaning is a
+    correctness bug even on the day it happens to still work, because
+    rewording a message must never change what any business logic
+    concludes.
