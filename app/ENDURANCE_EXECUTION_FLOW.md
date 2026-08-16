@@ -3,6 +3,10 @@
 Stage 6A: execution for `.steadyState` and `.intervals` `WorkoutBlock`s.
 **Design pass — nothing here is implemented yet.**
 
+**Status: RESOLVED.** §1/§2c reflect the resolved save-boundary
+convention and the confirmed per-modality partial-result progression
+behavior — see `STAGE6A_DECISION_MEMO.md` §1a/§1d.
+
 ## 1. Steady state (§14)
 
 `SteadyStatePrescription` already carries everything the screen needs:
@@ -47,15 +51,30 @@ HealthKit integration only pre-fills these same fields, it never becomes
 a precondition for finishing the block (§14/§29, restated from
 `ARCHITECTURE.md`'s existing HealthKit-boundary rule).
 
-Recorded via a new `RecordSteadyStateResultUseCase` (§1 of
-`WORKOUT_COMPLETION_PIPELINE.md` — the identified gap), mirroring
-`RecordSetResultUseCase`'s exact shape: get-or-create the
-`ActivityPerformanceProfile` via `PerformanceProfileStore.activityProfile`,
-attach the result, update `lastPerformedAt`, run PR detection through
-`ScoringEngine` using the phase/mix's own scoring direction for this
-activity (steady-state's "better" is duration-at-a-held-intensity, per
-`Training OS.dc.html`'s own workout-model table — not a single scalar
-this stage invents; see decision memo §5 for the exact comparable value).
+Recorded via `LogEnduranceResultUseCase`, wrapping the new
+`RecordSteadyStateResultUseCase` (§2 of `WORKOUT_COMPLETION_PIPELINE.md`
+— the identified gap), mirroring `RecordSetResultUseCase`'s exact shape:
+get-or-create the `ActivityPerformanceProfile` via
+`PerformanceProfileStore.activityProfile`, attach the result, update
+`lastPerformedAt`, run PR detection through `ScoringEngine` using the
+phase/mix's own scoring direction for this activity (steady-state's
+"better" is duration-at-a-held-intensity, per `Training OS.dc.html`'s
+own workout-model table). `LogEnduranceResultUseCase` saves immediately
+after recording — this result is durable the instant Finish is tapped
+(resolved save-boundary convention, `WORKOUT_COMPLETION_PIPELINE.md` §1),
+and the recording call also reports `isFirstEverEntry` for the resolved
+PR-presentation split (§4 of `FUNCTIONAL_FITNESS_EXECUTION_FLOW.md`,
+applied identically here).
+
+**Partial steady-state completion and progression — resolved, no engine
+change:** `SteadyStateProgressionEngine`'s `resolveDuration`/
+`resolveDistance`/`resolveIntensity` do not consume actual results at
+all — next week's prescribed values are already a pure function of
+configured rules + week index (`WORKOUT_COMPLETION_PIPELINE.md` §5).
+A steady-state block finished early (`completionContext = .partial`)
+has no special progression consequence to add, because this engine's
+contract never reads "how much happened" for *any* session, full or
+partial.
 
 ## 2. Interval execution (§16-18)
 
@@ -113,7 +132,27 @@ comment ("the engine should be able to inspect individual intervals
 later") and the kickoff's explicit instruction. Session-level summary
 fields (`sessionDurationSeconds`, `averagePaceSecondsPerKilometer`, etc.)
 are computed once at Finish, from the per-rep rows, and stored alongside
-them — both, not one instead of the other.
+them — both, not one instead of the other. Recorded via
+`LogEnduranceResultUseCase` (wrapping `RecordIntervalResultUseCase`),
+saving immediately, identically to §1's steady-state path.
+
+**Partial interval completion and progression — resolved, already
+mechanically supported, no engine change:**
+`IntervalProgressionEngine.evaluateSessionOutcome(completedCount:totalCount:worstRpe:)`
+is already a graduated, deterministic, completion-fraction-based outcome
+mapper — `.progress`/`.hold`/`.repeatSession`/`.reduceIntensity`/
+`.reduceIntervalCount`, with `totalCount == 0` (nothing attempted at
+all) already yielding `.calibrationRequired` rather than inventing a
+fraction from no data. Execution's job is only to supply
+`completedCount`/`totalCount`/`worstRpe` accurately from the block's own
+`IntervalRepResult` rows — **the exact meaning of `totalCount`
+(prescribed interval count vs. attempted-this-session count) should be
+confirmed against `evaluateSessionOutcome`'s call sites during Stage 6B
+implementation** (non-blocking build-time verification,
+`STAGE6A_DECISION_MEMO.md` §5) so a partial session genuinely produces a
+conservative outcome and not an inflated one from comparing only
+against what was attempted. No new engine logic, no new reason code, no
+execution-layer progression decision either way.
 
 ## 3. Endurance substitution (§15, Stage 4C reused exactly)
 
@@ -144,6 +183,10 @@ e.g. a generic aerobic prescription might allow
   `SubstituteActivityUseCase.resolvedActivityType`; historical Sessions
   and `ProgramDefinition` untouched, identical guarantee to the strength
   side.
+
+Both scopes are invoked through `ApplySubstitutionUseCase`
+(`WORKOUT_COMPLETION_PIPELINE.md` §1), saving immediately — identical
+convention to the strength side (`STRENGTH_EXECUTION_FLOW.md` §7).
 
 ## 4. What endurance execution does not do
 

@@ -2,8 +2,11 @@
 
 Stage 6A: the exact execution states for `Session` and `WorkoutBlock`, their
 transitions, and what must survive a crash. **This is a design pass —
-nothing here is implemented yet** (Stage 6B builds it); see
-`STAGE6A_DECISION_MEMO.md` for what's still open.
+nothing here is implemented yet** (Stage 6B builds it).
+
+**Status: RESOLVED.** All partial-session/completion-context decisions
+below reflect the product owner's final Stage 6A resolution — see
+`STAGE6A_DECISION_MEMO.md` §1a/§1g for the decision record.
 
 ## 1. `SessionStatus` — no new cases needed
 
@@ -46,21 +49,26 @@ built — §33). This preserves the Handoff's own invariant: *"the reflow
 proposal is generated on next app open, not a background job, so the
 user is never told about changes made while they were away."*
 
-`.abandoned` is reserved for a Session that was started
-(`inProgress`) and never explicitly finished at all — discovered later
-(e.g. the next day, or the next time the app opens), never a status the
-user directly chooses from an in-session action sheet. See §4's exact
-mapping of the three "stopped halfway" options.
+`.abandoned` is reserved **exclusively** for a Session that was started
+(`inProgress`) and never explicitly closed out at all — discovered
+later (e.g. a future "you left this unfinished 3 days ago" prompt, out
+of scope this stage), never a button the user taps mid-session. Stopping
+a Session early is always either "Resume later" (no state change) or
+"Finish as Partial" (§2-4) — there is no separate, user-facing "Abandon"
+action.
 
-## 2. New, additive field: `Session.completionContext`
+## 2. RESOLVED: two new, additive completion-context fields — Session and Block
 
 ```swift
 enum SessionCompletionContext: String, Codable, CaseIterable {
-    /// Every non-skipped block reached `.completed`.
+    /// Every non-skipped block reached `.completed` with its own
+    /// `completionContext == .full`.
     case full
-    /// The user explicitly finished early via "Finish partial" (§4) —
-    /// some blocks remain `.pending`/`.active`. Logged results are kept
-    /// exactly as recorded; nothing is discarded.
+    /// The user explicitly finished early via "Finish as Partial" (§4) —
+    /// some blocks remain `.pending`/`.active` (and are flipped to
+    /// `.skipped` as part of that action) and/or one or more completed
+    /// blocks are themselves `.partial`. Logged results are kept exactly
+    /// as recorded; nothing is discarded.
     case partial
 }
 
@@ -68,34 +76,63 @@ enum SessionCompletionContext: String, Codable, CaseIterable {
 var completionContext: SessionCompletionContext?   // nil until `.completed`
 ```
 
-**Why one new field instead of a new `SessionStatus` case:** "how much
-was actually done" and "is this Session finished" are independent
-questions. Collapsing them into more `SessionStatus` cases (`.completed`,
-`.partiallyCompleted`, `.completedWithSkips`, …) would just be the same
-information split across more enum cases with no new behavior attached
-to any of them — every consumer (the planner's adherence read, the Plan
-calendar dot, `WORKOUT_COMPLETION_PIPELINE.md`'s transaction) only ever
-needs to ask "is it completed" and, separately, "was it the whole
-thing." One optional field answers the second question without
-multiplying the first. `nil` is a valid, common state for every Session
-that is not yet `.completed` (`.scheduled`/`.inProgress`/`.skipped`/
-`.missed`/`.abandoned` never set it).
+```swift
+enum BlockCompletionContext: String, Codable, CaseIterable {
+    /// Every unit the block's prescription called for (sets, rounds,
+    /// intervals, movements) has a real logged result.
+    case full
+    /// The block was marked `.completed` with fewer results than its
+    /// prescription called for — e.g. 2 of 3 sets logged, one round of
+    /// an AMRAP circuit skipped mid-effort.
+    case partial
+}
 
-**Flagged as a decision-memo item** (`STAGE6A_DECISION_MEMO.md` §1) —
-this is a schema addition, not something the locked Handoff spec states
-explicitly; the resolution above is a recommendation, not a foregone
-conclusion.
+// WorkoutBlock gains:
+var completionContext: BlockCompletionContext?   // nil until `.completed`
+```
+
+**Why two fields, not new `SessionStatus`/`BlockStatus` cases:** "how
+much was actually done" and "is this Session/Block finished" are
+independent questions. Collapsing them into more enum cases (`.completed`,
+`.partiallyCompleted`, `.completedWithSkips`, …) would just split the
+same information across more cases with no new behavior attached to any
+of them — every consumer (the planner's adherence read, the Plan
+calendar dot, `WORKOUT_COMPLETION_PIPELINE.md`'s transaction, a
+`ProgrammingSystem`'s own progression engine) only ever needs to ask "is
+it completed" and, separately, "was it the whole thing." `nil` is a
+valid, common state for every Session/Block that is not yet `.completed`.
+
+**Why the Block-level field is needed, not just the Session-level one:**
+the resolved decision explicitly asks for "which blocks were completed /
+partially completed / not started" to be individually answerable — a
+Session-level flag alone can't say *which* block(s) were partial when a
+Session has several. `BlockStatus.skipped` already answers "not
+started/skipped" cleanly; `completionContext` only ever refines
+`.completed`.
+
+**Progression consumption — resolved, no new engine input:** execution
+never computes progress/hold/repeat itself. It reports actual results
+honestly; each `ProgrammingSystem`'s own engine already has (or, for
+Steady State, structurally doesn't need) a conservative default for
+incomplete input — see `STAGE6A_DECISION_MEMO.md` §1a for the full,
+per-modality confirmation (`DoubleProgressionEngine` → `HOLD` on
+mismatched count; `IntervalProgressionEngine.evaluateSessionOutcome` →
+a graduated fraction-based outcome; `SteadyStateProgressionEngine` →
+doesn't consume actual results at all; `FunctionalFitnessDecisionEngine`
+→ reasons over exposure history, unaffected by a single partial
+session). No new `ProgressionInput` field is introduced by this
+decision.
 
 ## 3. Session transitions
 
 ```
 scheduled ──[user taps Start]──────────────────────────────► inProgress
 scheduled ──[user taps "Skip / Can't train today," §4]─────► skipped
-scheduled ──[reflow prompt accepted/dismissed, day passed]─► missed
-inProgress ──[Finish Session — every block .completed/.skipped]──► completed(.full)
-inProgress ──[Finish partial — some blocks still .pending/.active]──► completed(.partial)
-inProgress ──[Abandon]──────────────────────────────────────► abandoned
-inProgress ──[background / lock / force-quit / crash]──────► inProgress (no transition — §5)
+scheduled ──[missed-session prompt interacted with, day passed]─► missed
+inProgress ──[Finish Session — every block .completed(.full)]──► completed(.full)
+inProgress ──[Finish as Partial — some blocks .pending/.active,
+              and/or a completed block was itself .partial]────► completed(.partial)
+inProgress ──[background / lock / force-quit / crash]──────► inProgress (no transition — §6)
 ```
 
 No transition ever moves a Session backward (`.completed` →
@@ -103,44 +140,48 @@ No transition ever moves a Session backward (`.completed` →
 scope for this stage; if it's needed later it is a new, explicitly-named
 transition, not a reuse of an existing one.
 
-### 3a. What "Abandon" actually does differently from "Finish partial"
+`.abandoned` is intentionally not reachable from any in-session action —
+see §1's note. It has no transition arrow above because nothing in
+Stage 6B writes it; it is reserved entirely for a future, separate
+"unfinished session discovered later" mechanism, out of scope this
+stage.
 
-Both preserve every logged result — CLAUDE.md rule 1 applies to a
-Session's own state exactly as it does to a `ProgramDefinition`'s.  The
-difference is intent, not data loss:
+### 3a. "Finish as Partial" — the only stopped-halfway terminal action
 
-- **Finish partial** — the user is done for today and wants what they
-  did to count as today's legitimate training. Runs the full completion
-  pipeline (`WORKOUT_COMPLETION_PIPELINE.md`) exactly like a full
-  finish, just over fewer blocks.
-- **Abandon** — the user is walking away from something that didn't
-  really happen as training (interrupted, injured, a mistake). Still
-  never discards logged sets/results (they already live permanently in
-  `ExercisePerformanceProfile`/`ActivityPerformanceProfile`/
-  `BenchmarkPerformanceProfile` the moment each was logged — see §5 of
-  `WORKOUT_COMPLETION_PIPELINE.md`), but the Session itself does not
-  count as a positive adherence signal for planning purposes (§32 of
-  `PHASE_PLANNING_RULES.md`'s missed-progress signal reads
-  `.abandoned` the same way it would read a genuine miss — an
-  observable fact, never a punitive label shown to the user).
+**RESOLVED:** the original three-option design (Resume later / Finish
+partial / Abandon) is reduced to two real choices — the product owner's
+decision removed "Abandon" as a distinct, user-facing action. Every
+early stop that the user explicitly commits to is "Finish as Partial":
 
-**Flagged as a decision-memo item** — the exact planner-adherence
-treatment of `.abandoned` vs. `.completed(.partial)` is a product
-question this stage surfaces the *state* for for; it does not implement
-new planner logic to consume it (`LongTermPlanner`/`PHASE_PLANNING_RULES.md`
-already reads `Session.status` for missed-progress detection today; that
-reading logic is unchanged by this stage).
+- Every `.pending`/`.active` block becomes `.skipped`.
+- Any block that was `.completed` with fewer results than prescribed
+  keeps `completionContext = .partial` (set when that block itself was
+  finished, §5 below) — untouched by the Session-level action.
+- `Session.status = .completed`, `Session.completionContext = .partial`.
+- The full completion pipeline runs exactly as it would for a full
+  finish, just over fewer/partial blocks
+  (`WORKOUT_COMPLETION_PIPELINE.md` §5) — never a different, lesser
+  pipeline.
+- Every logged result is permanent and untouched — CLAUDE.md rule 1
+  applies to a Session's own state exactly as it does to a
+  `ProgramDefinition`'s.
 
-## 4. The three "stopped halfway" options, and the pre-start "can't train" option
+There is no separate "this didn't really count" outcome for an
+in-session action — if a session genuinely didn't happen as training
+(injury, a false start), the user simply never taps Start, or uses
+"Skip / Can't train today" beforehand (§4). Once a Session is
+`.inProgress` and the user explicitly finishes it, it is `.completed`
+(full or partial), full stop.
+
+## 4. The two "stopped halfway" options, and the pre-start "can't train" option
 
 | User sees | Action | Result |
 |---|---|---|
-| Before starting: "Skip / Can't train today" | Explicit, one tap, from Today | `status = .skipped` — a structured fact, never silently dropped from the schedule. `ProposeMissedSessionReflowUseCase` (not yet built, §33) is the only thing that acts on it, and only when the user next opens the app. |
-| Mid-session: "Resume later" | No state change at all | Session stays `.inProgress`; this is simply leaving the screen. Recovery (§5) picks it back up exactly where it was. |
-| Mid-session: "Finish partial" | Explicit tap | `status = .completed`, `completionContext = .partial`. Full completion pipeline runs. |
-| Mid-session: "Abandon / skip remainder" | Explicit tap | `status = .abandoned`. Logged results are untouched and permanent; the Session itself is not treated as a positive adherence signal (§3a). |
+| Before starting: "Skip / Can't train today" | Explicit, one tap, from Today | `status = .skipped` — a structured fact, distinct from `.missed` (§7), never silently dropped from the schedule. Only the missed/skipped-session use cases (not yet built, §33) act on it, and only when the user next opens the app. |
+| Mid-session: "Resume later" | No state change at all | Session stays `.inProgress`; this is simply leaving the screen. Recovery (§6) picks it back up exactly where it was. |
+| Mid-session: "Finish as Partial" | Explicit tap | `status = .completed`, `completionContext = .partial` (§3a). Full completion pipeline runs. |
 
-## 5. `BlockStatus` — unchanged, no new cases
+## 5. `BlockStatus` — unchanged, no new cases; `completionContext` refines `.completed`
 
 ```swift
 enum BlockStatus: String, Codable, CaseIterable {
@@ -151,20 +192,23 @@ enum BlockStatus: String, Codable, CaseIterable {
 }
 ```
 
-A block reaching `.completed` never implies "every prescribed set/rep/
-interval was logged" — a strength block with 2 of 3 sets logged and then
-moved past is still `.completed` at the block level; the true record of
-what happened lives in the actual `SetResult`/`SteadyStateResult`/
-`IntervalResult`/`FunctionalFitnessResult` rows, which the completion
-pipeline never fabricates to match the prescription. This mirrors §2's
-same reasoning one level down: block-level partial-ness needs no new
-enum case because the underlying result rows already carry the whole
-truth.
+A block reaching `.completed` sets its own `completionContext` (§2) at
+the moment it's finished: `.full` when every prescribed unit (set/round/
+interval/movement) has a real logged result, `.partial` otherwise — e.g.
+a strength block with 2 of 3 sets logged and then moved past is
+`.completed`/`.partial`, never silently reported as `.full`. The true
+record of what happened always lives in the actual `SetResult`/
+`SteadyStateResult`/`IntervalResult`/`FunctionalFitnessResult` rows,
+which the completion pipeline never fabricates to match the
+prescription — `completionContext` is a cheap, pre-computed summary of
+that fact for fast reads (planner/UI), never a second source of truth
+that could disagree with the underlying rows.
 
-`.skipped` at the block level is what the kickoff's "mark incomplete"
-actions (an EMOM minute, a For Time round not attempted, an entire block
-the user chooses not to do) resolve to — always an explicit user action
-via the block's own execution screen, never inferred by a timer expiring
+`.skipped` at the block level (no `completionContext` — it's only set on
+`.completed`) is what the kickoff's "mark incomplete" actions (an EMOM
+minute, a For Time round not attempted, an entire block the user
+chooses not to do) resolve to — always an explicit user action via the
+block's own execution screen, never inferred by a timer expiring
 silently.
 
 ## 6. Crash / app-restart recovery (offline-first, no network involved)
@@ -183,10 +227,13 @@ state."* Concretely:
 - The **current, not-yet-logged** set/round/interval's in-progress entry
   (a stepper value the user was mid-adjustment on, an AMRAP round count
   before "Finish" was tapped) is the one thing that is *not* already a
-  permanent result row — recovering it needs an explicit, promptly-
-  persisted draft, not app-lifecycle luck. `STAGE6A_DECISION_MEMO.md` §2
-  flags exactly what that draft needs to hold and how often it's
-  written.
+  permanent result row — an unconfirmed edit like this is deliberately
+  **not** persisted (`WORKOUT_COMPLETION_PIPELINE.md` §1's "no save for
+  transient UI state" rule); only a *confirmed* action (a logged set, a
+  round tap, a block/session status change) is promptly saved. A crash
+  before confirmation loses only that one unconfirmed edit, never
+  anything already confirmed — see `TIMER_ARCHITECTURE.md` §5 for the
+  identical cadence rule applied to timer state.
 - Which block is "current" is always re-derivable from `WorkoutBlock.status`
   (`orderedBlocks.first { $0.status != .completed && $0.status != .skipped }`)
   — never a separately-stored "current block index" that could drift out
@@ -195,22 +242,39 @@ state."* Concretely:
   (`startedAt`/`pausedAt`/accumulated pause), never from an in-memory
   `Timer`/`Task` — see `TIMER_ARCHITECTURE.md`.
 
-## 7. Missed-session state contract (structural only — full reflow UX deferred, §33)
+## 7. Missed-session scope boundary — RESOLVED
 
-Stage 6 defines the *state*, not the reflow proposal/approval UI itself
-(that is `LongTermPlanner`/`SchedulingPipeline` territory, already
-partly built in Stage 5, and screen 09's approval-sheet UI is explicitly
-out of scope for this stage's screens):
+**Execution's job is to record what happened; deciding what happens to
+the future schedule is `SchedulingPipeline`/`LongTermPlanner`'s job,
+unchanged.** Stage 6B never implements a second reflow engine inside
+workout execution:
 
-- A `.scheduled` Session whose `scheduledTime` (or its Day's date) is in
-  the past, read as of a caller-supplied `asOf`, is *displayable* as
-  missed without its `status` having changed yet.
-- The transition to a persisted `.missed` status happens only through an
-  explicit use case (`ProposeMissedSessionReflowUseCase`/
-  `AcceptMissedSessionReflowUseCase` — names only, not built this stage)
-  triggered by the user viewing and acting on the prompt — never a
-  background job, matching the Handoff's own locked instruction.
-- Once `.missed`, the existing `SchedulingPipeline`/`LongTermPlanner`
-  read this fact through `Session.status`/`ScheduleIssue` exactly as
-  they already do for any other scheduling signal — no new reading
-  mechanism is required, only the new writer described above.
+```
+Execution → records missed/partial/skipped state
+         → SchedulingPipeline/LongTermPlanner reads that state
+         → generates a reflow proposal
+         → user approves/rejects (existing approval-sheet pattern)
+```
+
+**The one distinction Stage 6B must never blur — two different existing
+`SessionStatus` cases, two different triggers, never auto-applied to
+the wrong one:**
+
+| | `.skipped` | `.missed` |
+|---|---|---|
+| Meaning | The user explicitly said "Can't train today" | The Session's date passed with no action at all |
+| Written by | An explicit, one-tap user action, **before** the Session was ever started (§4) | Only when the user later views and interacts with the missed-session prompt — never a background process, never written just because a date comparison is true |
+| What Stage 6B must not do | Must not write `.skipped` for a Session the user simply never got to | Must not auto-write `.missed` onto every past-due `.scheduled` Session indiscriminately the moment its date passes |
+
+A `.scheduled` Session whose `scheduledTime` (or Day's date) is in the
+past, read as of a caller-supplied `asOf`, is *displayable* as missed
+without its `status` having changed yet — the persisted write to
+`.missed` happens only through the explicit use case pair
+(`ProposeMissedSessionReflowUseCase`/`AcceptMissedSessionReflowUseCase`
+— names only, full reflow UX deferred, §33) triggered by user
+interaction, matching the Handoff's own locked "never a background job"
+instruction. Once written (`.skipped` or `.missed`), the existing
+`SchedulingPipeline`/`LongTermPlanner` read it through `Session.status`/
+`ScheduleIssue` exactly as they already do for any other scheduling
+signal — no new reading mechanism, only the two narrowly-scoped writers
+described above.

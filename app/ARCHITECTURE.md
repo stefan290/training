@@ -1,16 +1,22 @@
 # Training OS — architecture (foundation pass)
 
-**Stage 6A status:** `WORKOUT_EXECUTION.md` and its 6 companion documents
-(`SESSION_STATE_MACHINE.md`, `TIMER_ARCHITECTURE.md`,
+**Stage 6A status: RESOLVED.** `WORKOUT_EXECUTION.md` and its 6 companion
+documents (`SESSION_STATE_MACHINE.md`, `TIMER_ARCHITECTURE.md`,
 `STRENGTH_EXECUTION_FLOW.md`, `ENDURANCE_EXECUTION_FLOW.md`,
 `FUNCTIONAL_FITNESS_EXECUTION_FLOW.md`, `WORKOUT_COMPLETION_PIPELINE.md`)
 are the design pass for turning the domain model described below into
-real Session/Block execution UI — a design pass only, per
-`STAGE6A_DECISION_MEMO.md`; nothing described in them is implemented as
-of this note. They confirm the execution model needs **no new
-`WorkoutBlockType`/`BlockStatus` case and no modality-specific `Session`
-subclass** — `BlockPrescription`/`BlockResult`'s existing typed-enum
-shape (§ below) already carries everything execution needs.
+real Session/Block execution UI — a design pass only; nothing described
+in them is implemented as of this note. All 7 MUST RESOLVE product
+decisions raised during this pass are resolved (`STAGE6A_DECISION_MEMO.md`)
+and Stage 6B may now begin implementing against them. They confirm the
+execution model needs **no new `WorkoutBlockType`/`BlockStatus`/
+`SessionStatus` case and no modality-specific `Session` subclass** —
+`BlockPrescription`/`BlockResult`'s existing typed-enum shape (§ below)
+already carries everything execution needs; the only additive schema is
+two small completion-context fields (`Session`/`WorkoutBlock`) and a
+`Codable` `TimerState` struct, per the decision memo's final schema list.
+Crash-safety and timer-truth are now locked project invariants — see
+`CLAUDE.md`.
 
 This document describes what exists after the Stage 1/2 foundation pass:
 project setup, domain model, persistence, a minimal Progression Engine, and

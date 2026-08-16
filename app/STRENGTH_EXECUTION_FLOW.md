@@ -6,6 +6,10 @@ Stage 6A: the execution flow for `.strength`/`.hypertrophy`/`.accessory`
 `SetPrescription`/`SetResult` shape. **Design pass — nothing here is
 implemented yet.**
 
+**Status: RESOLVED.** §3/§6/§8 reflect the product owner's final
+decisions on save-boundary, within-session autoregulation, and
+first-entry PR presentation — see `STAGE6A_DECISION_MEMO.md` §1b/§1d/§1e.
+
 ## 1. Screen anatomy (per `Training OS.dc.html` frames 03/07, "live" fidelity)
 
 One exercise (`ExercisePrescription`) on screen at a time, its
@@ -79,6 +83,14 @@ suggested = ProgressionEngine.recommend(
   most recent few only — 2-3 sets, never a full history dump on this
   screen; full history lives on the Exercise detail screen, Progress
   tab, out of this stage's scope but already schema-supported).
+- **First-entry PR presentation (resolved, `STAGE6A_DECISION_MEMO.md`
+  §1b):** unrelated to the suggested-load card itself, but the same
+  exercise's completion-time PR treatment (§4 of
+  `WORKOUT_COMPLETION_PIPELINE.md`) reads `isFirstEverEntry` from
+  `RecordSetResultUseCase`'s widened return value — a true first-ever
+  logged set for this exercise never shows as "Personal record!," only
+  as a neutral "First recorded." The underlying `PersonalRecord`/
+  `isPersonalRecord` data is unaffected.
 
 ## 3. Per-set logging (§5-6 of the kickoff)
 
@@ -90,11 +102,17 @@ chips. Logging one set is:
 
 ```
 weight  ±stepper, increment = EquipmentProfile.smallestIncrementKg
+        (user-editable — see §6 on why an edited value here is
+        execution input, never a new autoregulation rule)
 reps    ±stepper
 RIR     row of chips (0…4, or whatever range the program configures —
         preselected at targetRir; tapping a different chip is the only
         extra interaction beyond confirming)
-[done]  → RecordSetResultUseCase.recordSet(... actualRir: <chip value> ...)
+[done]  → LogSetUseCase (wraps RecordSetResultUseCase.recordSet(...
+          actualRir: <chip value> ...), then saves immediately —
+          WORKOUT_COMPLETION_PIPELINE.md §1, resolved save-boundary
+          convention: this set is durable the instant "done" is tapped,
+          never deferred to Session completion)
 ```
 
 Confirming with the preselected RIR is **one tap** — the button always
@@ -113,10 +131,13 @@ at target" decision.
 **Completed/skipped:** a set can be marked skipped instead of logged
 (the toggle button in frame 03's row, `{{ s.toggle }}`) — this simply
 means no `SetResult` is created for that `SetPrescription`; the
-prescription itself is never deleted or mutated. A block can still reach
-`.completed` with fewer `SetResult`s than `SetPrescription`s — exactly
-`SESSION_STATE_MACHINE.md` §5's "block-level partial-ness needs no new
-enum case."
+prescription itself is never deleted or mutated. A block that reaches
+`.completed` with fewer `SetResult`s than `SetPrescription`s sets its
+own `completionContext = .partial` (`SESSION_STATE_MACHINE.md` §2/§5) —
+`BlockStatus` itself gains no new case; `CompleteBlockUseCase` sets
+`completionContext` from a simple count comparison at the moment the
+block is finished, and saves immediately (§1 of
+`WORKOUT_COMPLETION_PIPELINE.md`).
 
 ## 4. RIR interaction (§6) — no new screens
 
@@ -154,7 +175,7 @@ setting — TRAININGOS_DESIGNED default, see decision memo):
   wants variable rest, that is a plain configured value on the
   prescription, never a live engine call.
 
-## 6. Mid-session / within-session recommendation (§9) — none exists; document, don't invent
+## 6. Mid-session / within-session recommendation (§9) — RESOLVED: not supported, manual edits are execution input
 
 **Finding, confirmed by reading every existing engine:**
 `DoubleProgressionEngine`/`StrengthProgressionEngine` both operate at
@@ -167,15 +188,34 @@ week"* (a cross-slot, week-boundary input resolved once when the next
 week's `SetPrescription`s are materialized) — not a same-session,
 same-exercise, set-to-set live adjustment.
 
-**Resolution: Stage 6 does not add mid-session load/rep adjustment.**
-Every `SetPrescription` a Session already carries is shown exactly as
-materialized, set after set, regardless of how set 1 went. This is not a
-missing feature to build around — it is the correct, current boundary of
-what exists, and the kickoff's own instruction ("do not invent new
-autoregulation rules in UI. Use existing engine contracts only") is
-satisfied by leaving this alone. If genuine intra-session autoregulation
-is wanted later, it needs a new, explicitly-designed engine contract —
-out of scope here, flagged in `STAGE6A_DECISION_MEMO.md` §7.
+**Resolved decision: Stage 6B does not add mid-session load/rep
+adjustment logic.** The suggested load/`Recommendation` shown before an
+exercise starts (§2) is computed once and never recomputed between sets
+based on how earlier sets in the same session went — no new
+`ProgressionEngine` rule, no automatic "add weight" prompt after a set
+felt easy.
+
+**What Stage 6B does allow — and why it's not the same thing:** every
+set's weight/rep stepper (§3) is always user-editable. A user who
+decides, mid-session, to load set 3 heavier or lighter than the
+materialized `SetPrescription` simply edits the stepper before logging
+— this is **ordinary execution input**, recorded as `SetResult` (actual
+performance), never confused with `SetPrescription` (the engine's
+target) or `Recommendation` (the engine's suggested value). All three
+stay strictly separate per CLAUDE.md rule 3:
+
+| Type | What it is | Who sets it |
+|---|---|---|
+| `SetPrescription` | The materialized target | The generator/materializer, before the session started — never rewritten mid-session |
+| `Recommendation` | The engine's suggested load, shown once (§2) | `ProgressionEngine`, computed once, cached |
+| `SetResult` | What actually happened | The user, per set, including any manual override of the stepper's default value |
+
+The app never *automatically* tells the user to add/remove weight after
+set 1 — a manually-edited stepper is the user's own choice, never a
+system-initiated suggestion. If genuine intra-session autoregulation
+(the *system* deciding to change the target mid-session) is wanted
+later, it needs a new, explicitly-designed engine contract — out of
+scope here, per `STAGE6A_DECISION_MEMO.md` §1e.
 
 ## 7. Exercise substitution (§10-11, Stage 4C reused exactly)
 
@@ -207,7 +247,10 @@ exact two Stage 4C scopes, unchanged:
 Both paths validate through `SubstitutionValidator.isValid` first
 (slot's `allowedExercises`/`allowedTargets`/`allowedMovementFunctions`/
 `allowedModalities`) — an invalid candidate is rejected before either
-scope can be chosen, identically.
+scope can be chosen, identically. Both are invoked through
+`ApplySubstitutionUseCase` (§1 of `WORKOUT_COMPLETION_PIPELINE.md`),
+which saves immediately after either `SubstituteExerciseUseCase` call —
+a substitution choice is durable the instant it's made, not deferred.
 
 ## 8. Calibration (§12) — no separate database
 
@@ -222,9 +265,10 @@ Execution's job is purely presentational:
   in for the missing suggestion.
 - The user logs the set exactly as in §3 — weight, reps, actual RIR.
   **This is a completely ordinary `SetResult`, recorded through the
-  identical `RecordSetResultUseCase.recordSet` call as every other set**
-  — there is no separate "calibration result" type, per the kickoff's
-  explicit instruction not to build a disposable calibration store.
+  identical `LogSetUseCase` (wrapping `RecordSetResultUseCase.recordSet`)
+  call as every other set, saved immediately** — there is no separate
+  "calibration result" type, per the kickoff's explicit instruction not
+  to build a disposable calibration store.
 - Because it is a normal `SetResult` attached to the exercise's real
   `ExercisePerformanceProfile`, the very next time this exercise is
   prescribed, `hasUsableHistory`/`lastKnownWeight` are already populated

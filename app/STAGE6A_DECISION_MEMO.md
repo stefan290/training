@@ -4,190 +4,332 @@ Every place this pass's design documents (`WORKOUT_EXECUTION.md` and its
 6 companions — `SESSION_STATE_MACHINE.md`, `TIMER_ARCHITECTURE.md`,
 `STRENGTH_EXECUTION_FLOW.md`, `ENDURANCE_EXECUTION_FLOW.md`,
 `FUNCTIONAL_FITNESS_EXECUTION_FLOW.md`, `WORKOUT_COMPLETION_PIPELINE.md`)
-made a judgment call, found a real gap, or deferred a question —
-collected here so Stage 6B does not start on an unreviewed assumption.
-Per the kickoff's own instruction: **do not silently invent product
-behavior.**
+made a judgment call, found a real gap, or deferred a question — and how
+each was resolved.
 
-**Status: nothing below is yet reviewed/approved.** Every "Recommended
-resolution" is this pass's confident proposal, not a decision already
-made — Stage 6B should not begin until the MUST RESOLVE items are
-either accepted as written or corrected.
+**Status: all 7 MUST RESOLVE items are RESOLVED** — decided by the
+product owner, applied to every affected document. **Zero MUST RESOLVE
+items remain before Stage 6B implementation.** What's left (§4) is
+non-blocking build-time verification, not a gate.
 
-## 1. MUST RESOLVE before Stage 6B
+## 1. The seven resolved decisions
 
-### 1a. Partial-session semantics — new field, not new status
+### 1a. Partial-session semantics — RESOLVED
 
-**Question:** how does a Session finished early differ, in the data
-model, from one finished in full?
+**Decision:** a Session may end `PARTIALLY COMPLETED`. Completed work is
+never discarded because the whole Session wasn't finished.
 
-**Recommended resolution:** add `Session.completionContext: SessionCompletionContext?`
-(`.full`/`.partial`) — `SessionStatus` itself gains no new case.
-`.abandoned` (existing case) stays reserved for a Session walked away
-from with no explicit finish action at all. See
-`SESSION_STATE_MACHINE.md` §2-4 for the full reasoning and the exact
-three "stopped halfway" options (Resume later / Finish partial /
-Abandon).
+**Final model:**
+- `Session.completionContext: SessionCompletionContext?` (`.full`/`.partial`)
+  — unchanged from the original proposal.
+- `WorkoutBlock.completionContext: BlockCompletionContext?` (`.full`/`.partial`)
+  — **new**: added specifically because "which blocks were completed /
+  partially completed / not started" needs to be answerable per block,
+  not only per session. `BlockStatus` itself still gains no new case
+  (`.pending`/`.active`/`.completed`/`.skipped` unchanged) —
+  `completionContext` only exists once a block reaches `.completed`.
+- **Stopped-halfway actions reduced to two, not three:** `Resume later`
+  (no state change) and `Finish as Partial` (terminal — every remaining
+  `.pending`/`.active` block becomes `.skipped`, the Session becomes
+  `.completed` with `completionContext = .partial`). The previous
+  proposal's separate "Abandon" action is **removed as a direct,
+  user-facing action** — `.abandoned` remains in `SessionStatus` only as
+  a passive fallback for a Session nobody ever explicitly closed out
+  (discovered later, e.g. by a future "you left this unfinished 3 days
+  ago" prompt — out of scope this stage), never a button the user taps
+  mid-session.
+- **Progression consumption:** execution never decides progress/hold/
+  repeat itself — it only records the structured facts
+  (`completionContext`, actual result rows) and hands them to whichever
+  `ProgrammingSystem`'s engine already consumes them. Verified per
+  system (§2 of `WORKOUT_COMPLETION_PIPELINE.md`, restated in
+  `ENDURANCE_EXECUTION_FLOW.md`):
+  - **Strength** — `DoubleProgressionEngine` already defaults to `HOLD`
+    the moment `targets.count != latestResults.count` — a partial
+    strength block already gets exactly the conservative, non-invented
+    outcome the decision calls for, with zero new engine code.
+  - **Interval** — `IntervalProgressionEngine.evaluateSessionOutcome(completedCount:totalCount:worstRpe:)`
+    is already a graduated, deterministic partial-completion-aware
+    system: a completion fraction maps to `.progress`/`.hold`/
+    `.repeatSession`/`.reduceIntensity`/`.reduceIntervalCount`, and
+    `totalCount == 0` (nothing attempted) already yields
+    `.calibrationRequired`. Execution's only job is to report
+    `completedCount`/`totalCount`/`worstRpe` accurately from what
+    actually happened.
+  - **Steady state** — `SteadyStateProgressionEngine`'s resolve
+    functions do not consume actual results at all; next week's
+    duration/distance/intensity is already a pure function of
+    configured rules + week index. A partial steady-state session
+    therefore has no special "insufficient data" branch to add — there
+    is nothing for partial-ness to feed into under this engine's
+    existing, unchanged contract.
+  - **Functional Fitness** — `FunctionalFitnessDecisionEngine` reasons
+    over *exposure history* (`FunctionalFitnessExposureHistoryBuilder`,
+    already filtered to `Session.status == .completed`), not a
+    completion fraction. A partial FF result still represents a real
+    stimulus exposure and correctly continues to count — no change
+    needed.
 
-**Why this needs sign-off:** it's a schema addition, and the exact
-planner-adherence treatment of `.abandoned` vs. `.completed(.partial)`
-(does a partial count as "trained today" for missed-progress detection?)
-is a product question this memo does not resolve on its own —
-`SESSION_STATE_MACHINE.md` §3a flags it explicitly.
+  **No new `ProgressionInput`/engine parameter is introduced anywhere.**
+  Every system's existing "insufficient information" branch already
+  satisfies "default to a conservative outcome rather than pretending
+  the Session was fully completed" — this decision is implemented
+  entirely by *execution reporting actual results honestly*, never by
+  execution computing a progression outcome itself.
 
-### 1b. First-entry PR semantics — presentation split, data unchanged
+**Files updated:** `SESSION_STATE_MACHINE.md` §2-4, `WORKOUT_COMPLETION_PIPELINE.md`
+§1/§5, `ENDURANCE_EXECUTION_FLOW.md` §2/§4, `WORKOUT_EXECUTION.md` §4.
 
-**Question:** should a first-ever logged result for an exercise/
-benchmark show as "Personal record!" the way a genuine improvement does?
+### 1b. First-entry PR presentation — RESOLVED
 
-**Finding:** `ScoringEngine.isNewPersonalRecord` already returns `true`
-for a first-ever entry — existing, tested, correct, and Stage 6 must not
-change it (CLAUDE.md rule 4-adjacent: don't silently change a
-tested engine's behavior).
+**Decision:** the first valid result establishes the baseline but is
+never presented as "you beat a PR." Data model is unchanged.
 
-**Recommended resolution:** keep the data model exactly as is; have the
-recording use case's return value (or `CompleteSessionUseCase`'s
-`CompletionSummary`) additionally surface whether `existingBest == nil`,
-so the completion screen can label a true first entry neutrally
-("First recorded") instead of celebratory ("Personal record!") — see
-`FUNCTIONAL_FITNESS_EXECUTION_FLOW.md` §8.
+**Final model:** `ScoringEngine`/`PersonalRecord`/`isPersonalRecord` are
+untouched — a first-ever entry still creates a real `PersonalRecord`
+row, exactly as today. The recording use cases (and
+`CompleteSessionUseCase`'s `CompletionSummary`) additionally surface
+whether `existingBest == nil` at the moment of recording, so the
+completion screen can render:
+- **First-ever valid result** → neutral copy ("First recorded result" /
+  "Baseline established").
+- **Later result that beats a compatible prior best** → "New PR."
 
-**Why this needs sign-off:** it's a UI/copy policy decision (what
-counts as "over-celebrating"), not something derivable from existing
-locked docs.
+"Compatible" means the same `ResultContext`/rep-band comparison
+`ScoringEngine.bestRecord` already enforces (§1f) — this decision adds
+no new compatibility rule of its own.
 
-### 1c. Timer recovery behavior — confirmed safe, flagging the one edge case
+**Files updated:** `FUNCTIONAL_FITNESS_EXECUTION_FLOW.md` §8,
+`STRENGTH_EXECUTION_FLOW.md` §2, `WORKOUT_COMPLETION_PIPELINE.md` §4.
 
-**Finding:** wall-clock-anchored `TimerState` (`TIMER_ARCHITECTURE.md`
-§2) already handles ordinary recovery correctly by construction. The one
-edge case worth explicit sign-off: a countdown that fully elapsed while
-the app was closed (§4 of `TIMER_ARCHITECTURE.md`) renders as
-already-expired on relaunch rather than replaying missed transitions —
-**recommended resolution: this is correct and intended**, but confirm no
-stakeholder expects "catch-up" playback (e.g. re-firing every missed
-EMOM minute cue) — that would be a materially different, more complex
-design.
+### 1c. Timer catch-up on relaunch — RESOLVED (confirmed as designed)
 
-### 1d. Session-result transaction boundary — confirmed, one convention gap to close
+**Decision:** no catch-up playback, ever. Timer truth is derived from
+persisted wall-clock timestamps and explicit state transitions, never
+in-memory ticks.
 
-**Finding:** every existing `RecordXResultUseCase` inserts/mutates but
-never calls `context.save()` itself; `CompleteSessionUseCase` should
-follow the identical convention, with the calling ViewModel issuing
-exactly one `save()` (`WORKOUT_COMPLETION_PIPELINE.md` §1).
+**Final behavior, by scenario:**
+- **Background:** the timer keeps running per elapsed wall-clock time
+  unless explicitly paused (`pausedAt` set) — no special handling
+  needed, this is the default behavior of `elapsedSeconds`/
+  `remainingSeconds` (`TIMER_ARCHITECTURE.md` §2).
+- **Force-close / relaunch:** recovered directly from `TimerState`
+  (`startedAt`/`pausedAt`/`accumulatedPauseSeconds`/`currentUnitIndex`)
+  against `Date()` at the moment the view reappears.
+- **Device restart:** identical, provided the persisted store survived
+  the restart (ordinary SwiftData persistence guarantee, nothing
+  timer-specific).
+- **Expired while closed:**
+  - *Rest timer* — renders as completed/expired immediately, no replay.
+  - *AMRAP* — if the cap already passed, the round-tap target is
+    disabled and the flow moves directly to the post-cap "extra reps"
+    completion step (§1 of `FUNCTIONAL_FITNESS_EXECUTION_FLOW.md`) —
+    the screen **requires** the user to complete the result rather than
+    silently sitting at its last-rendered state.
+  - *EMOM/interval* — the current minute/interval index is recomputed
+    from elapsed time against the prescribed per-unit duration
+    (deterministic: `elapsed ÷ unitDuration`, floored), landing directly
+    on the correct current unit — never replaying the minutes/intervals
+    in between.
+- **No missed haptic/sound cues are replayed** — cues are best-effort
+  presentation derived from `TimerState`, never a source of truth
+  (`TIMER_ARCHITECTURE.md` §6, unchanged).
 
-**Recommended resolution:** adopt this convention explicitly for Stage
-6B and hold it as a project-wide rule going forward (candidate for
-`ARCHITECTURE.md`) — flagged as MUST RESOLVE only because it's the first
-time this convention is being written down as a *rule* rather than an
-observed pattern; if the team wants a different boundary (e.g. `save()`
-per block, not per Session), that changes the crash-recovery story in
-`SESSION_STATE_MACHINE.md` §6 non-trivially.
+**Files updated:** `TIMER_ARCHITECTURE.md` §4/§7,
+`FUNCTIONAL_FITNESS_EXECUTION_FLOW.md` §1/§2.
 
-### 1e. Within-session load adjustment — not supported, confirm no expectation otherwise
+### 1d. Save-boundary convention — RESOLVED (revises the original Stage 6A proposal)
 
-**Finding:** no existing engine contract (`ProgressionEngine`/
-`DoubleProgressionEngine`/`StrengthProgressionEngine`) supports live,
-same-session, set-to-set load/rep adjustment — every mechanism operates
-at "last occurrence's results → this occurrence's target" or coarser.
+**Decision:** incremental durability. A single final `save()` at Session
+completion is **not** the only persistence boundary — completed work
+must survive a crash at any point.
 
-**Recommended resolution:** Stage 6 does not add this; every
-`SetPrescription` is shown exactly as materialized regardless of how
-earlier sets in the same session went (`STRENGTH_EXECUTION_FLOW.md` §6).
-**Needs explicit confirmation** because it's plausible a stakeholder
-expects RPE-based autoregulation to feel more "live" than this — if so,
-that is new engine design, out of scope for this stage entirely, not a
-UI-only addition.
+**Final model — who saves, and when:**
 
-### 1f. Benchmark Rx/Scaled comparison rules — confirmed already correct
+| Action | Use case | Saves? |
+|---|---|---|
+| Log a set | `LogSetUseCase` (wraps `RecordSetResultUseCase`) | Yes — immediately after |
+| Log an endurance/interval result | `LogEnduranceResultUseCase` (wraps `RecordSteadyStateResultUseCase`/`RecordIntervalResultUseCase`) | Yes — immediately after |
+| Apply a substitution/scaling choice | `ApplySubstitutionUseCase` | Yes — immediately after |
+| A block changes status (pending→active→completed/skipped) | `CompleteBlockUseCase` (or the block-start equivalent) | Yes — immediately after |
+| Session status changes (start/pause-timer/resume/completion) | `ChangeSessionStatusUseCase` / `CompleteSessionUseCase` | Yes — immediately after |
+| Every UI tick / in-progress stepper edit before confirming | *(nothing)* | No — never persisted until confirmed |
 
-**Finding:** `ScoringEngine.bestRecord`'s `context` filter already
-guarantees Rx and Scaled never compete for the same `PersonalRecord`,
-for every modality (`FUNCTIONAL_FITNESS_EXECUTION_FLOW.md` §7) — no new
-logic needed. Listed here only to record that it was explicitly checked
-against the kickoff's own requirement (§24-25) and found already
-satisfied, not overlooked.
+The lower-level, already-existing recording use cases
+(`RecordSetResultUseCase`, `RecordFunctionalFitnessResultUseCase`, and
+the new `RecordSteadyStateResultUseCase`/`RecordIntervalResultUseCase`)
+**remain pure mutation, no `save()`** — unchanged, since they're reused
+outside live execution too (seed data, tests). The **new, execution-
+specific orchestrating use cases** named above are what actually own
+`save()`, each covering exactly one meaningful user action. Views never
+call `save()` (or any use case directly bypassing a ViewModel action) —
+unchanged from the original design.
 
-### 1g. Missed-session state model — structural contract only, confirm scope boundary
+`CompleteSessionUseCase`'s own final save covers only what's left at
+that point: `Session.status`/`completionContext`/`completedAt` and any
+still-`.pending` blocks flipping to `.skipped`. It is the **final
+consistency/commit point**, not the first durability point — every
+result row logged earlier in the session is already durable by the time
+Finish is tapped.
 
-**Finding:** a `.scheduled` Session past its date is *displayable* as
-missed without a persisted status change; the actual `.missed` write
-happens only through a not-yet-built
-`ProposeMissedSessionReflowUseCase`/`AcceptMissedSessionReflowUseCase`
-pair, triggered by explicit user interaction (`SESSION_STATE_MACHINE.md`
-§7).
+**Files updated:** `WORKOUT_COMPLETION_PIPELINE.md` §1 (rewritten),
+`WORKOUT_EXECUTION.md` §5, `STRENGTH_EXECUTION_FLOW.md` §3,
+`ENDURANCE_EXECUTION_FLOW.md` §1/§3, `ARCHITECTURE.md`, `CLAUDE.md`
+(new locked invariant).
 
-**Recommended resolution:** Stage 6B builds the *state* (the derived
-missed-display condition, the two use case names/signatures) but not the
-reflow proposal/approval screen itself (frame 09) — that screen's full
-UX is explicitly deferred to a later substage per the kickoff's own
-§33 allowance. **Confirm this scope line** before Stage 6B, since
-"missed session" touches both execution (this stage) and planning
-(`LongTermPlanner`, already built) — it would be easy to accidentally
-duplicate reflow logic across both if the boundary isn't held precisely.
+### 1e. Within-session autoregulation — RESOLVED (confirmed as designed)
 
-## 2. Safe to implement (no further sign-off needed)
+**Decision:** no new within-session load-adjustment logic in Stage 6B.
+Progression happens between Sessions, using the existing engines,
+exactly as already documented.
+
+**Final model:**
+- The suggested load/`Recommendation` shown before an exercise starts is
+  unchanged and still comes from the existing engine, computed once.
+- Every set's stepper values are **user-editable** — the user may
+  manually type/adjust a different load or rep count for any set,
+  including sets later in the same exercise. This is **ordinary
+  execution input**, not a new autoregulation rule: it is recorded as
+  `SetResult` (actual), never conflated with `SetPrescription` (target)
+  or `Recommendation` (engine output) — the three stay strictly
+  separate, exactly as CLAUDE.md rule 3 already requires.
+  `SESSION_STATE_MACHINE.md`/`STRENGTH_EXECUTION_FLOW.md` are explicit
+  that this manual edit is user-initiated, never system-suggested
+  mid-session.
+- The app never automatically tells the user to add/remove weight after
+  set 1 unless an existing `ProgrammingSystem` rule already defines that
+  behavior (none currently does, per the engine audit in
+  `STRENGTH_EXECUTION_FLOW.md` §6) — Stage 6B does not add one.
+
+**Files updated:** `STRENGTH_EXECUTION_FLOW.md` §3/§6.
+
+### 1f. Benchmark Rx/Scaled comparison — RESOLVED (confirmed, architecture unchanged)
+
+**Decision:** preserve the existing compatibility rules exactly.
+
+**Confirmed, unchanged:** `ScoringEngine.bestRecord`'s `context` filter
+already guarantees Rx and Scaled never compete for the same
+`PersonalRecord`, for every modality. `BenchmarkDefinition` remains the
+canonical benchmark identity; Rx/Scaled context is never inferred from
+the score value alone, always from the explicit `resultContext` the
+recording call supplies. `FunctionalFitnessPerformedMovement` already
+retains per-movement scaling detail (`performedExercise`/`performedReps`/
+`performedLoadKilograms`/etc.), which is enough structured context to
+support a *finer*-grained "were these two Scaled attempts actually
+comparable" judgment later, without any schema change now — Stage 6B
+does not build that finer comparison, it only confirms the data needed
+for it already exists. No architecture is reopened.
+
+**Files updated:** `FUNCTIONAL_FITNESS_EXECUTION_FLOW.md` §7 (confirmed,
+no material change beyond noting this decision).
+
+### 1g. Missed-session scope boundary — RESOLVED (confirmed, one distinction sharpened)
+
+**Decision:** Workout Execution records **what happened**; the
+Scheduling Pipeline / Long-Term Planner decide **what happens next**.
+Execution never implements a second reflow engine.
+
+**Final model:**
+```
+Execution → records missed/partial/skipped state
+         → SchedulingPipeline/LongTermPlanner reads that state
+         → generates a reflow proposal
+         → user approves/rejects (existing approval-sheet pattern)
+```
+**The one sharpened distinction:** `SessionStatus` already has two
+separate cases for exactly the two situations that must never be
+merged — no new case is needed:
+- **`.skipped`** — the user explicitly tapped "Can't train today"
+  *before* starting. An intentional, structured fact.
+- **`.missed`** — a `.scheduled` Session's date passed with no action at
+  all. Never written by a background process; only written when the
+  user next opens the app and interacts with the missed-session prompt
+  (§7 of `SESSION_STATE_MACHINE.md`, unchanged).
+
+Stage 6B must never auto-write `.missed` onto every past-due Session
+indiscriminately, and must never write `.skipped` for a session the user
+simply never got to — these two cases stay driven by two different,
+explicit triggers.
+
+**Files updated:** `SESSION_STATE_MACHINE.md` §4/§7 (sharpened wording,
+no structural change).
+
+## 2. Final Stage 6B schema changes (confirmed, complete list)
+
+1. `Session.completionContext: SessionCompletionContext?` (`.full`/`.partial`).
+2. `WorkoutBlock.completionContext: BlockCompletionContext?` (`.full`/`.partial`).
+3. `WorkoutBlock.timerState: TimerState?` (`Codable` struct — `startedAt`/
+   `pausedAt`/`accumulatedPauseSeconds`/`targetDurationSeconds`/
+   `currentUnitIndex`).
+4. New use cases (mutation only, no `save()`): `RecordSteadyStateResultUseCase`,
+   `RecordIntervalResultUseCase`.
+5. New orchestrating use cases (own `save()`, one per meaningful action):
+   `LogSetUseCase`, `LogEnduranceResultUseCase`, `ApplySubstitutionUseCase`,
+   `CompleteBlockUseCase`, `ChangeSessionStatusUseCase`,
+   `CompleteSessionUseCase`, plus the not-yet-detailed
+   `ProposeMissedSessionReflowUseCase`/`AcceptMissedSessionReflowUseCase`
+   pair (§1g — state-writing only, no reflow logic of their own).
+6. Recording use cases' return values widen to also report whether
+   `existingBest == nil` (first-entry flag) — a function-signature
+   change, not a persisted schema change.
+7. **No new `SessionStatus` cases.** **No new `BlockStatus` cases.** **No
+   new `WorkoutBlockType` cases.** **No change to `ScoringEngine`/
+   `ResultContext`/`BenchmarkDefinition`.**
+
+## 3. Safe to implement (unchanged from before, still no further sign-off needed)
 
 - `Session`/`WorkoutBlock` reuse exactly as documented — zero new
   `WorkoutBlockType`/`BlockStatus` cases (`SESSION_STATE_MACHINE.md` §1/§5).
-- `TimerState` as a `Codable` struct on `WorkoutBlock` (`TIMER_ARCHITECTURE.md`
-  §2-3) — purely additive, no relationship/delete-rule questions.
+- `TimerState` as a `Codable` struct on `WorkoutBlock` — purely additive.
 - Suggested-load display, RIR chip logging, rest timer (non-blocking,
-  uncoupled from progression) — all directly specified by the already-
-  locked Handoff document (`STRENGTH_EXECUTION_FLOW.md` §2-5).
+  uncoupled from progression) — directly specified by the locked
+  Handoff document.
 - Exercise/activity substitution UX (Today only / Going forward) —
-  Stage 4C's existing use cases, unchanged, just given a UI.
+  Stage 4C's existing use cases, unchanged, now saved immediately (§1d).
 - Calibration flow — no new persisted type, a `SetResult` like any
-  other (`STRENGTH_EXECUTION_FLOW.md` §8).
+  other.
 - AMRAP/EMOM/For Time/Rounds For Time/Chipper/Ladder execution shells —
-  fully specified by existing `WorkoutFormat` cases plus the already-
-  approved design source (`FUNCTIONAL_FITNESS_EXECUTION_FLOW.md` §1-4).
-- Steady-state/interval manual completion without HealthKit
-  (`ENDURANCE_EXECUTION_FLOW.md` §1-2) — every field is already optional
-  exactly where it needs to be.
+  fully specified by existing `WorkoutFormat` cases.
+- Steady-state/interval manual completion without HealthKit.
 - Benchmark PR detection via `RecordFunctionalFitnessResultUseCase` —
   existing, unchanged, correct.
-- `RecordSteadyStateResultUseCase`/`RecordIntervalResultUseCase` — new
-  use cases, but a mechanical mirror of `RecordSetResultUseCase`'s
-  already-proven shape (`WORKOUT_COMPLETION_PIPELINE.md` §2).
+- `RecordSteadyStateResultUseCase`/`RecordIntervalResultUseCase` — a
+  mechanical mirror of `RecordSetResultUseCase`'s already-proven shape.
+- Every per-modality partial-result progression path (§1a) — no new
+  engine logic anywhere, only accurate reporting of actual results.
 
-## 3. Deferred (explicitly out of scope this stage)
+## 4. Deferred (explicitly out of scope this stage)
 
-- **Missed-session reflow UI** (approval sheet, frame 09) — state
-  contract only this stage (§1g above).
-- **Mid-session/intra-set autoregulation** — no existing engine
-  contract; a future, separately-designed engine feature (§1e above).
+- **Missed-session reflow UI** (approval sheet) — state contract only
+  this stage (§1g).
+- **Genuine intra-session/mid-set autoregulation** — no existing engine
+  contract; a future, separately-designed engine feature (§1e).
 - **"Remember my usual scaling" as a persisted override** — the
   existing exposure-history mechanism already informs future stimulus
-  variance without one; not built unless a real product need surfaces
-  (`FUNCTIONAL_FITNESS_EXECUTION_FLOW.md` §6).
-- **HealthKit read/write** — explicitly out of scope per the kickoff;
-  every manual-entry field this pass specifies is HealthKit's eventual
-  pre-fill target, never a blocking dependency.
-- **Full execution screens/SwiftUI implementation** — this stage is
-  analysis/design; Stage 6B builds the screens.
+  variance without one.
+- **HealthKit read/write** — explicitly out of scope.
+- **Full execution screens/SwiftUI implementation** — Stage 6B.
+- **A finer Scaled-vs-Scaled comparability rule** (§1f) — data already
+  supports it later; not built now.
 - **A seventh tactical-window regeneration trigger for "Session just
-  completed"** — plausible, but not in the locked
-  `TacticalWindowTrigger` list; flagged, not added
-  (`WORKOUT_COMPLETION_PIPELINE.md` §7).
+  completed"** — not in the locked `TacticalWindowTrigger` list; still
+  flagged, not added.
 
-## 4. Real schema/architecture gaps found during this pass (not decisions — facts)
+## 5. Non-blocking build-time verification (Stage 6B implementation detail, not a gate)
 
-1. `RecordSteadyStateResultUseCase`/`RecordIntervalResultUseCase` do not
-   exist — only test code attaches these results directly, with no
-   `PerformanceProfile` fold-in or PR detection
-   (`WORKOUT_EXECUTION.md` §1, `WORKOUT_COMPLETION_PIPELINE.md` §2).
-2. `FunctionalFitnessResult` has no dedicated "capped, not a clean
+1. `FunctionalFitnessResult` has no dedicated "capped, not a clean
    finish" field the way legacy `WorkoutResult.cappedAtSeconds` does —
-   needs either a new optional field or a documented decision that
-   `scoreValue`'s stored time alone is sufficient context
-   (`FUNCTIONAL_FITNESS_EXECUTION_FLOW.md` §3).
-3. EMOM "incomplete minute" tracking has no direct modern-path
-   equivalent to legacy `WorkoutResult.incompleteMinuteIndexes` —
-   `FunctionalFitnessPerformedMovement`'s per-minute performed-vs-
-   prescribed fields may already be sufficient, or may need one more
-   field; confirm during Stage 6B implementation
-   (`FUNCTIONAL_FITNESS_EXECUTION_FLOW.md` §2).
-4. `IntensityTranslation`'s exact activity-pair coverage was not
-   exhaustively audited this pass — verify it covers every substitution
-   pair the endurance substitution UX can actually offer before Stage
-   6B ships that screen (`ENDURANCE_EXECUTION_FLOW.md` §3).
+   add one if implementation reveals `scoreValue`'s stored time alone is
+   insufficient context (`FUNCTIONAL_FITNESS_EXECUTION_FLOW.md` §3).
+2. EMOM "incomplete minute" tracking — confirm
+   `FunctionalFitnessPerformedMovement`'s existing fields are sufficient
+   before adding anything new (`FUNCTIONAL_FITNESS_EXECUTION_FLOW.md` §2).
+3. `IntensityTranslation`'s exact activity-pair coverage — verify it
+   covers every substitution pair the endurance substitution UX offers
+   before shipping that screen (`ENDURANCE_EXECUTION_FLOW.md` §3).
+4. `IntervalProgressionEngine.evaluateSessionOutcome`'s exact
+   `totalCount` semantics (prescribed interval count vs. attempted-this-
+   session count) — confirm against its existing call sites so a
+   partial interval session genuinely maps to a conservative outcome,
+   not an inflated one computed only against what was attempted
+   (`ENDURANCE_EXECUTION_FLOW.md` §2c).

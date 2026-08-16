@@ -5,6 +5,11 @@ interval work/recovery) stays correct across backgrounding, locking and a
 force-quit, without ever depending on an in-memory `Timer` tick surviving.
 **Design pass — nothing here is implemented yet.**
 
+**Status: RESOLVED (confirmed as designed).** The product owner
+confirmed no catch-up/replay of missed transitions is wanted — §4 below
+is the final relaunch-recovery behavior. See `STAGE6A_DECISION_MEMO.md`
+§1c.
+
 ## 1. The one rule everything else follows
 
 > Timers are wall-clock anchored (`startedAt` + offset), never tick
@@ -102,7 +107,7 @@ timer is not a prescription/recommendation/result at all, just execution
 scaffolding, matching §7's own instruction: *"Do not couple rest timing
 to progression engine business logic."*)
 
-## 4. Recovery on relaunch
+## 4. Recovery on relaunch — resolved behavior, by scenario
 
 1. Read `Session.status == .inProgress`, find the current block
    (`SESSION_STATE_MACHINE.md` §6 — the first block not `.completed`/
@@ -111,13 +116,32 @@ to progression engine business logic."*)
    it — `elapsedSeconds`/`remainingSeconds` computed against `Date()` at
    the moment the view appears. No special "was this a crash or a normal
    background" branch exists; the exact same computation runs whether
-   the app was gone for 3 seconds or 3 hours.
-3. A timer whose `remainingSeconds` is already `<= 0` when recovered
-   (the countdown finished while the app was closed) renders in its
-   already-expired state immediately — an AMRAP/EMOM does not silently
-   replay the transitions that would have fired while backgrounded; it
-   simply shows "time's up" / the last scheduled minute, and the block's
-   own completion flow (§17/§20 execution flows) takes over from there.
+   the app was gone for 3 seconds or 3 hours, and regardless of *why*
+   (backgrounded, locked, force-quit, or the device itself restarted —
+   the only precondition is that the persisted store survived, an
+   ordinary SwiftData guarantee, nothing timer-specific).
+3. **Background** (app still running, not suspended): the timer simply
+   keeps counting per elapsed wall-clock time unless explicitly paused
+   (`pausedAt` set) — no special handling, this is `elapsedSeconds`'s
+   default behavior.
+4. **Expired while the app was closed** — resolved per execution mode,
+   never replayed:
+   - *Rest timer* — renders as completed/expired immediately.
+   - *AMRAP* — if `remainingSeconds <= 0`, the round-tap target is
+     disabled/locked and the screen moves directly to the post-cap
+     "extra reps" completion step (`FUNCTIONAL_FITNESS_EXECUTION_FLOW.md`
+     §1) — the user is **required** to complete the result; the screen
+     never silently sits at its last-rendered pre-cap state.
+   - *EMOM/interval* — the current unit index is **recomputed
+     deterministically** from elapsed time, never replayed step by
+     step: `currentUnitIndex = floor(elapsedSeconds / unitDurationSeconds)`,
+     clamped to the last valid unit if that exceeds the total. This
+     lands directly on the correct current minute/interval — e.g. the
+     app closed at minute 4 of EMOM 12 and reopened 5 minutes later
+     shows minute 9 immediately, never replaying minutes 5-8.
+5. **No missed haptic/sound cues are ever replayed** in a burst on
+   relaunch (§6) — only the *current* state needs to be correct; past
+   cues do not need to have "happened" for the state to be right.
 
 ## 5. Persistence cadence — promptly, not continuously
 
@@ -129,12 +153,23 @@ to progression engine business logic."*)
 - Once when `currentUnitIndex` advances (EMOM's minute change, an
   interval's work→recovery→work transition).
 
-Never on every UI tick. A `TimelineView`/periodic redraw needs no
-persistence at all — it only re-renders the pure function in §2 against
-a fresh `Date()`. This keeps the SwiftData write volume flat regardless
-of how long a timer runs, per the offline-first, no-network-dependency
-requirement (§29) and the general "views render state, they do not
-themselves decide when to persist" separation (§37).
+Never on every UI tick, and never for an unconfirmed in-progress edit
+(§1d of `STAGE6A_DECISION_MEMO.md`). A `TimelineView`/periodic redraw
+needs no persistence at all — it only re-renders the pure function in
+§2 against a fresh `Date()`. This keeps the SwiftData write volume flat
+regardless of how long a timer runs, per the offline-first, no-network-
+dependency requirement (§29) and the general "views render state, they
+do not themselves decide when to persist" separation (§37).
+
+Each of the three write events above is exactly one "meaningful
+action" in the resolved save-boundary convention
+(`WORKOUT_COMPLETION_PIPELINE.md` §1) — the ViewModel action that starts/
+pauses/resumes a timer, or advances its unit index, saves immediately
+through its own orchestrating use case. This is the concrete
+implementation of the locked invariant: *"timers derive truth from
+persisted wall-clock timestamps and explicit state transitions, never
+from in-memory ticks"* — the transition itself, not just the timer's
+displayed value, is what's durable.
 
 ## 6. Local notifications and haptic/sound cues — presentation, not state
 

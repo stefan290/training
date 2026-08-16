@@ -3,7 +3,10 @@
 Stage 6A: the execution architecture that turns a materialized `Session`
 into logged, permanent results — Today → Session → ordered `WorkoutBlock`s
 → per-block logging → Session completion. **Design pass — nothing here is
-implemented yet;** see `STAGE6A_DECISION_MEMO.md` for open items and
+implemented yet.**
+
+**Status: RESOLVED.** §5 reflects the final, resolved save-boundary
+convention — see `STAGE6A_DECISION_MEMO.md` §1d. See
 `SESSION_STATE_MACHINE.md`/`TIMER_ARCHITECTURE.md`/`STRENGTH_EXECUTION_FLOW.md`/
 `ENDURANCE_EXECUTION_FLOW.md`/`FUNCTIONAL_FITNESS_EXECUTION_FLOW.md`/
 `WORKOUT_COMPLETION_PIPELINE.md` for the detail one level down.
@@ -130,7 +133,7 @@ the six concepts are most tempting to conflate under time pressure:
 |---|---|---|
 | `ProgramDefinition` | Methodology (template graph) | Read it transitively via `ProgramInstance`, never write to it, never read it directly for a number to show — it holds no performance data by construction (CLAUDE.md rule 2) |
 | `ProgramInstance` | This user's active execution context (dates, substitution overrides, progress state) | Read `TrainingMixComponent`/slot overrides through it (`SubstituteExerciseUseCase.resolvedExercise`) |
-| Materialized `Session`/`WorkoutBlock`/`*Prescription` | A historical, already-resolved prescription snapshot | Read the target values; **never mutate a prescription's target fields to reflect what happened** — a substitution's THIS-SESSION-ONLY scope edits `ExercisePrescription.exercise` (an intentional, existing exception, §10), but `SetPrescription.repRangeLow/High`/`targetRir`/`targetWeight` are never rewritten by execution code once materialized |
+| Materialized `Session`/`WorkoutBlock`/`*Prescription` | A historical, already-resolved prescription snapshot, plus its own execution bookkeeping (`status`, `completionContext`, `timerState` — all new, additive fields owned by execution itself, `SESSION_STATE_MACHINE.md`/`TIMER_ARCHITECTURE.md`) | Read the target values; **never mutate a prescription's target fields to reflect what happened** — a substitution's THIS-SESSION-ONLY scope edits `ExercisePrescription.exercise` (an intentional, existing exception, §10), but `SetPrescription.repRangeLow/High`/`targetRir`/`targetWeight` are never rewritten by execution code once materialized |
 | `Recommendation` | A cached, reason-coded engine output tied to one `ExercisePrescription` | Create one when a suggested load is shown (so the Why sheet never re-runs the engine); never fabricate a `Recommendation` without a `reasonCode` (`Recommendation.swift`'s own doc comment: *"there is deliberately no way to construct one without it"*) |
 | `SetResult`/`SteadyStateResult`/`IntervalResult`/`FunctionalFitnessResult` | The actual, permanent performance fact | The only things execution code creates as "what happened" — always via the recording use case (`WORKOUT_COMPLETION_PIPELINE.md` §2), never constructed and left unattached |
 | `PerformanceProfile` (+ its 3 sub-profiles) | Permanent, program-independent history | Read for suggested-load/history display; written to exclusively through the recording use cases, never directly by a View or ViewModel |
@@ -138,15 +141,24 @@ the six concepts are most tempting to conflate under time pressure:
 ## 5. SwiftUI architecture — Views render state, they do not decide it
 
 Continuing this codebase's existing `Application/ViewModels`/
-`Application/UseCases` separation (CLAUDE.md rule 5), execution adds:
+`Application/UseCases` separation (CLAUDE.md rule 5), execution adds
+**two layers** of use case, per the resolved save-boundary convention
+(`STAGE6A_DECISION_MEMO.md` §1d):
 
-- **Use cases** (`Application/UseCases/`): `StartSessionUseCase`,
-  `LogSetUseCase` (wraps `RecordSetResultUseCase`), `RecordSteadyStateResultUseCase`,
-  `RecordIntervalResultUseCase`, `RecordFunctionalFitnessResultUseCase`
-  (existing), `CompleteBlockUseCase`, `CompleteSessionUseCase`
-  (`WORKOUT_COMPLETION_PIPELINE.md`), plus the existing
-  `SubstituteExerciseUseCase`/`SubstituteActivityUseCase` reused as-is.
-  Each is a plain function/enum, `ModelContext`-taking, no SwiftUI
+- **Low-level recording use cases** (`Application/UseCases/`) — pure
+  mutation, no `save()`, reused beyond live execution (seed data,
+  tests): the existing `RecordSetResultUseCase`/
+  `RecordFunctionalFitnessResultUseCase`, plus the two new ones this
+  stage identifies, `RecordSteadyStateResultUseCase`/
+  `RecordIntervalResultUseCase` (`WORKOUT_COMPLETION_PIPELINE.md` §2).
+- **Orchestrating use cases** — one per meaningful user action, each
+  wrapping exactly one low-level call and immediately saving:
+  `StartSessionUseCase`, `LogSetUseCase`, `LogEnduranceResultUseCase`,
+  `LogFunctionalFitnessResultUseCase`, `ApplySubstitutionUseCase`
+  (wraps `SubstituteExerciseUseCase`/`SubstituteActivityUseCase`),
+  `CompleteBlockUseCase`, `ChangeSessionStatusUseCase`,
+  `CompleteSessionUseCase` (`WORKOUT_COMPLETION_PIPELINE.md` §1).
+  Every one is a plain function/enum, `ModelContext`-taking, no SwiftUI
   import — directly unit-testable exactly like every existing use case
   in this codebase.
 - **ViewModels** (`Application/ViewModels/`): one per screen family
@@ -154,12 +166,11 @@ Continuing this codebase's existing `Application/ViewModels`/
   `FunctionalFitnessBlockViewModel`, …), `@Observable`, holding only
   *presentation* state (which set is "logging," which RIR chip is
   highlighted, the live timer read) — every state-changing action calls
-  a use case, never mutates a `@Model` object's business fields inline
-  in a View's button handler.
-  A ViewModel decides *when* to call `context.save()` — this stage's
-  single, explicit transaction boundary (`WORKOUT_COMPLETION_PIPELINE.md`
-  §1); use cases themselves never call `save()`, matching every existing
-  `RecordXResultUseCase`'s convention.
+  an **orchestrating** use case, never a low-level recording use case
+  directly, and never mutates a `@Model` object's business fields inline
+  in a View's button handler. ViewModels never call `context.save()`
+  themselves — that's the orchestrating use case's own job, once per
+  action, not the ViewModel's.
 - **Views**: render ViewModel output only. A timer's displayed value is
   computed from `TimerState` at render time (`TIMER_ARCHITECTURE.md` §2)
   — a View may recompute it every redraw, but it never owns or mutates

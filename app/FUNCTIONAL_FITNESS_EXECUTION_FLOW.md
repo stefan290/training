@@ -4,6 +4,10 @@ Stage 6A: execution for `.functionalFitness` `WorkoutBlock`s — every
 `WorkoutFormat` case, scaling, and benchmark completion/PR detection.
 **Design pass — nothing here is implemented yet.**
 
+**Status: RESOLVED.** §7/§8 reflect the product owner's confirmed
+benchmark Rx/Scaled and first-entry PR presentation decisions — see
+`STAGE6A_DECISION_MEMO.md` §1b/§1f.
+
 ## 0. One block type, nine formats — never a modality-specific block
 
 All of AMRAP/EMOM/For Time/Rounds For Time/Chipper/Ladder/Max Load/Max
@@ -58,7 +62,12 @@ Now: Cal Bike (15)                                    undo
 - **Extra reps are asked exactly once, after time expires** (not
   during) — a stepper for "reps completed in the unfinished round,"
   shown only once the countdown reaches zero (`a2Capped`-style
-  condition in the design source).
+  condition in the design source). **Resolved relaunch behavior**
+  (`TIMER_ARCHITECTURE.md` §4): if the cap already passed while the app
+  was closed, the round-tap target is disabled immediately on relaunch
+  and the flow goes straight to this extra-reps step — the user is
+  required to complete the result, never left sitting at a stale
+  pre-cap screen.
 - **Final score**: `ScoreValue.roundsAndReps(rounds:, partialReps:)` —
   "7 + 14," never a single collapsed number.
 - Scaling (§4) is decided once, before the first tap, and shown
@@ -95,9 +104,15 @@ Next          10 BURPEES
   for the modern `.functionalFitness` path, incomplete minutes are
   tracked per `FunctionalFitnessPerformedMovement` (e.g. a
   `performedReps` short of the prescribed `reps` for that minute's
-  movement) rather than a flat index array — see decision memo §6 for
-  the exact field shape to add if the existing `FunctionalFitnessPerformedMovement`
-  fields prove insufficient for "which minutes were incomplete."
+  movement) rather than a flat index array — non-blocking build-time
+  verification (`STAGE6A_DECISION_MEMO.md` §5) confirms whether the
+  existing fields are sufficient or one more field is needed for "which
+  minutes were incomplete."
+- **Resolved relaunch behavior** (`TIMER_ARCHITECTURE.md` §4): the
+  current minute is recomputed deterministically from elapsed time
+  (`floor(elapsed ÷ intervalSeconds)`), never replayed minute by minute
+  — the app closed at minute 4 and reopened during what would be minute
+  9 shows minute 9 immediately, with no burst of missed cues.
 - **Score**: `ScoreType.completedIntervals`/`ScoreValue.completedIntervals(_:)`
   — minutes actually completed as prescribed, out of the total.
 
@@ -131,11 +146,11 @@ Scaling: Rx                 [Rx]  [Scale pull-ups]
   eventual result stores `ScoreValue.time(seconds:)` at the moment
   Finish is actually tapped, with the capped context preserved via
   `FunctionalFitnessResult`'s own fields (a "capped, not a clean finish"
-  fact — see decision memo §4 for the exact field: today's
-  `FunctionalFitnessResult` has no dedicated `cappedAt` field the way
-  legacy `WorkoutResult.cappedAtSeconds` does; this is a genuine schema
-  gap to resolve before Stage 6B, not something to paper over with a
-  string).
+  fact). Today's `FunctionalFitnessResult` has no dedicated `cappedAt`
+  field the way legacy `WorkoutResult.cappedAtSeconds` does — add one if
+  Stage 6B implementation confirms `scoreValue`'s stored time alone is
+  insufficient context (non-blocking build-time verification,
+  `STAGE6A_DECISION_MEMO.md` §5).
 - **Scaling** (§4) is chosen and shown before the first rep, recorded
   with the result (`resultContext`).
 
@@ -210,19 +225,23 @@ deliberately left "remembered scaling, offered, never assumed" (the
 Handoff's own locked language) as informational history only
 (`FunctionalFitnessExposureHistoryBuilder` already reads exactly this
 history to inform future *stimulus variance* decisions, not to
-auto-apply a scaling choice) — flagged in the decision memo §8 if a
-"remember my usual scaling for this movement" affordance is wanted this
-stage; the recommendation is to defer it, since the exposure-history
-mechanism already gives the planner what it needs without a new
-override entity.
+auto-apply a scaling choice) — **deferred** (`STAGE6A_DECISION_MEMO.md`
+§4): a "remember my usual scaling for this movement" persisted override
+is not built this stage, since the exposure-history mechanism already
+gives the planner what it needs without one. Recorded via
+`LogFunctionalFitnessResultUseCase` (wrapping
+`RecordFunctionalFitnessResultUseCase`), saving immediately — identical
+convention to every other logged result (`WORKOUT_COMPLETION_PIPELINE.md`
+§1).
 
-## 7. Benchmark completion and PR detection (§24-25)
+## 7. Benchmark completion and PR detection (§24-25) — RESOLVED, architecture confirmed unchanged
 
 A `.functionalFitness` block whose `FunctionalFitnessResult.benchmark`
 is set (a `BenchmarkDefinition`, e.g. "Fran") is recorded through
 `RecordFunctionalFitnessResultUseCase.recordResult(_:for:benchmark:performanceProfile:modelContext:)`
 (existing, unchanged) — the **sole** path a Functional Fitness result
-becomes a `PersonalRecord`:
+becomes a `PersonalRecord`. **The product owner confirmed this
+architecture as-is; it is not reopened.**
 
 1. Get-or-create the `BenchmarkPerformanceProfile` for this
    `BenchmarkDefinition` (`PerformanceProfileStore.benchmarkProfile`).
@@ -244,6 +263,17 @@ becomes a `PersonalRecord`:
    own doc comment; §24's "do not make every generated WOD a benchmark"
    is already the existing, tested behavior).
 
+**Finer Scaled-vs-Scaled comparability — data already sufficient, not
+built now:** the resolved decision asks that, if two Scaled attempts are
+only meaningfully comparable when their scaling context matches, enough
+structured context exists to make that determination later.
+`FunctionalFitnessPerformedMovement` (§6) already retains exactly this —
+`performedExercise`/`performedReps`/`performedLoadKilograms`/etc. per
+movement — so a future, finer-grained "these two Scaled attempts aren't
+really comparable" rule could be built without any schema change. Stage
+6B does not build that finer rule; `ScoringEngine`'s existing binary
+Rx/Scaled `context` gate is confirmed sufficient for V1.
+
 Cross-modality PR detection (§25) is uniform because `ScoringEngine` is
 the single shared comparator everywhere:
 
@@ -253,25 +283,26 @@ the single shared comparator everywhere:
 | For Time (incl. Rounds For Time/Chipper/Ladder) | elapsed seconds | `lowerIsBetter` |
 | AMRAP / Max Reps | rounds+partial (proxy) / reps | `higherIsBetter` |
 | Max Load | load kilograms | `higherIsBetter` |
-| EMOM | completed intervals | `higherIsBetter` (informational — EMOM is completion-based by nature; whether it should ever produce a PR at all is a decision-memo item, §9) |
+| EMOM | completed intervals | `higherIsBetter` — informational only; EMOM is completion-based by nature and is not treated as a benchmark-style PR context unless a future benchmark explicitly defines one |
 
-## 8. First-entry PR semantics (§25) — data vs. presentation
+## 8. First-entry PR semantics (§25) — RESOLVED: data unchanged, presentation split
 
 `ScoringEngine.isNewPersonalRecord` already returns `true` for the
 **first-ever** result in a given (context, band) — `guard let existingBest
 else { return true }` — this is existing, tested, locked engine
 behavior and Stage 6 does not change it: a first-ever squat, a first-ever
 Fran attempt, both correctly become a real `PersonalRecord` row on day
-one. What the kickoff's "do not over-celebrate arbitrary first entries"
-(§25) actually asks for is a **presentation** distinction, not a data
-one:
+one. The resolved decision confirms the underlying data model stays
+exactly as-is; only the completion screen's copy changes:
 
 - The recording use case already computes `existingBest` before
-  deciding; Stage 6B should have it (or the completion pipeline calling
-  it) return whether `existingBest == nil` alongside the result, so the
-  completion screen (`WORKOUT_COMPLETION_PIPELINE.md` §4) can label a
-  true first-ever entry neutrally ("First recorded: Fran — 4:58") rather
-  than celebratory ("Personal record!") — while the underlying
-  `PersonalRecord`/`isPersonalRecord` data is identical either way.
-  Flagged as a decision-memo item (§9) since it changes a use case's
-  return shape, however slightly.
+  deciding; its return value now also reports whether `existingBest ==
+  nil` (`isFirstEverEntry`, `WORKOUT_COMPLETION_PIPELINE.md` §2), so the
+  completion screen (§4 of `WORKOUT_COMPLETION_PIPELINE.md`) labels a
+  true first-ever entry neutrally ("First recorded: Fran — 4:58") and
+  reserves "Personal record!" for an entry that actually beat a prior
+  compatible best. The underlying `PersonalRecord`/`isPersonalRecord`
+  data is identical in both cases — this is a presentation-only branch,
+  not a scoring-architecture change, and the benchmark Rx/Scaled
+  compatibility rule (§7) still governs what counts as "a prior
+  compatible best" either way.

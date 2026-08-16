@@ -1,26 +1,57 @@
 # Workout Completion Pipeline
 
 Stage 6A: what actually happens, and in what order, when a Session
-finishes — full or partial — plus the one real schema gap this pass
-found. **Design pass — nothing here is implemented yet.**
+finishes — full or partial — plus the save-boundary convention that
+makes logged work crash-safe throughout, not only at the end.
+**Design pass — nothing here is implemented yet.**
 
-## 1. The key finding: most of "completion" already happens live, per set/result
+**Status: RESOLVED.** §1's save-boundary convention supersedes this
+document's original "one save() at Session completion" proposal — see
+`STAGE6A_DECISION_MEMO.md` §1d for the decision record.
 
-`RecordSetResultUseCase.recordSet` and `RecordFunctionalFitnessResultUseCase.recordResult`
-are already called **the moment each set/result is logged**, not batched
-up and flushed at Session end — each one already, today:
+## 1. Save-boundary convention — incremental durability, resolved
 
-- Gets-or-creates the right permanent profile
-  (`ExercisePerformanceProfile`/`ActivityPerformanceProfile`/
-  `BenchmarkPerformanceProfile`) via `PerformanceProfileStore`.
-- Attaches the result and stamps `lastPerformedAt`.
-- Runs `ScoringEngine` PR detection and creates a `PersonalRecord` when
-  warranted.
+**A successfully logged set/result must never depend on completing the
+whole Session to become durable.** A single final `save()` is not the
+only persistence boundary.
 
-So `CompleteSessionUseCase` (Stage 6B, not yet built) is **not** where
-performance history gets written — that already happened, set by set,
-before Finish is ever tapped. What it actually needs to do, once, is
-much smaller than "commit everything":
+**Who saves, and when** — one orchestrating use case per meaningful
+user action, each owning its own `save()` as its final step:
+
+| Meaningful action | Orchestrating use case | Wraps (pure mutation, no `save()`) |
+|---|---|---|
+| Log a strength set | `LogSetUseCase` | `RecordSetResultUseCase` |
+| Log an endurance/interval result | `LogEnduranceResultUseCase` | `RecordSteadyStateResultUseCase`/`RecordIntervalResultUseCase` (§2 — new this stage) |
+| Log a Functional Fitness result | `LogFunctionalFitnessResultUseCase` | `RecordFunctionalFitnessResultUseCase` (existing) |
+| Apply a substitution/scaling choice | `ApplySubstitutionUseCase` | `SubstituteExerciseUseCase`/`SubstituteActivityUseCase` (existing) |
+| A block's status changes (start/complete/skip) | `CompleteBlockUseCase` (and its block-start equivalent) | Direct `WorkoutBlock.status`/`.completionContext` mutation |
+| A Session's status changes (start/finish-as-partial/finish-full) | `ChangeSessionStatusUseCase` / `CompleteSessionUseCase` | Direct `Session.status`/`.completionContext`/`.completedAt` mutation |
+
+**Why this shape, not the original "use cases never save" convention
+carried over unchanged:** every existing `RecordXResultUseCase` (Stage
+1-5) is reused outside live execution too (seed data, tests, future
+import) — those callers legitimately want to batch several inserts
+before one `save()`, so the low-level recording use cases correctly stay
+pure mutation. Live, interactive execution is different: a real person
+is tapping through a workout in real time, with real crash exposure
+(backgrounding, a call, a dying battery) between actions — so Stage 6
+introduces a **second, thin layer** of execution-specific orchestrating
+use cases that each wrap exactly one low-level mutation and immediately
+follow it with `try modelContext.save()`. ViewModels call only the
+orchestrating layer; they never call a low-level `RecordXResultUseCase`
+directly, and they never call `save()` themselves.
+
+**What never triggers a save:**
+- Every UI tick (a timer's periodic redraw — `TIMER_ARCHITECTURE.md` §2/§5).
+- Transient, unconfirmed input (a stepper mid-adjustment, text being
+  typed into a note field before it's submitted) — only a *confirmed*
+  action saves.
+
+**`CompleteSessionUseCase`'s own save is the final consistency/commit
+point, not the first durability point** — every result row logged
+earlier in the session, every block-status change, every substitution
+choice is already durable by the time Finish is tapped. What
+`CompleteSessionUseCase` still needs to do and save, once:
 
 ```
 CompleteSessionUseCase.complete(
@@ -40,27 +71,21 @@ CompleteSessionUseCase.complete(
    touched this session — read-only, nothing written back to any
    `SetPrescription`.
 4. Return a `CompletionSummary` (plain value, not persisted) bundling:
-   which results were logged this session, which (if any) were new
-   PRs — annotated with the first-entry distinction
-   (`FUNCTIONAL_FITNESS_EXECUTION_FLOW.md` §8) — and the progression
-   preview, so the completion screen renders from one call's output
-   rather than re-querying five different places.
-5. The **caller** (a ViewModel action) issues exactly one
-   `try modelContext.save()` after this call returns — the same
-   convention every existing `RecordXResultUseCase` already follows
-   (none of them call `save()` themselves). This one `save()` is the
-   transaction boundary the kickoff's §26 asks for: everything from
-   step 1-2 above either commits together or (on a thrown/interrupted
-   save) rolls back together, and it never partially double-writes
-   because nothing in steps 1-4 was ever written twice — status fields
-   are simple assignments, not increments or appends.
+   which results were logged this session, which (if any) were new PRs
+   — each annotated with whether it was a genuine improvement or a
+   first-ever entry (§4 — the resolved PR-presentation distinction) —
+   and the progression preview, so the completion screen renders from
+   one call's output rather than re-querying five different places.
+5. `try modelContext.save()` — `CompleteSessionUseCase`'s own final
+   step, not the caller's.
 
 **Nothing in `CompleteSessionUseCase` re-records a `SetResult`/
 `SteadyStateResult`/`IntervalResult`/`FunctionalFitnessResult`** — those
-already exist by the time Finish is tapped. This is the answer to §26's
-"avoid partial double-writing": there is only one writer per fact
-(the per-set/per-result recording use case), and completion never
-duplicates it.
+already exist, already durable, by the time Finish is tapped. This is
+the answer to "avoid partial double-writing": there is exactly one
+writer per fact (the per-action orchestrating use case), and completion
+never duplicates it — it only performs the small amount of session-level
+bookkeeping that couldn't have happened any earlier.
 
 ## 2. The one real gap: `RecordSteadyStateResultUseCase`/`RecordIntervalResultUseCase` don't exist yet
 
@@ -68,7 +93,8 @@ Confirmed by grep: only test code attaches `SteadyStateResult`/
 `IntervalResult` (`WorkoutBlock.attachSteadyStateResult`/
 `.attachIntervalResult`, directly, with no `PerformanceProfile`
 fold-in). Stage 6B must add both, mirroring `RecordSetResultUseCase`'s
-exact shape:
+exact shape — as pure, non-saving mutation, matching the low-level
+convention in §1's table:
 
 ```swift
 enum RecordSteadyStateResultUseCase {
@@ -80,9 +106,10 @@ enum RecordSteadyStateResultUseCase {
         scoringDirection: ScoringDirection,   // duration-at-intensity's own direction — see §5
         performanceProfile: PerformanceProfile,
         modelContext: ModelContext
-    ) -> SteadyStateResult
+    ) -> (result: SteadyStateResult, isFirstEverEntry: Bool)
     // get-or-create ActivityPerformanceProfile, attach, stamp lastPerformedAt,
     // ScoringEngine PR check exactly like RecordSetResultUseCase.
+    // isFirstEverEntry == (existingBest == nil at the moment of comparison) — §4.
 }
 
 enum RecordIntervalResultUseCase {
@@ -94,18 +121,26 @@ enum RecordIntervalResultUseCase {
         scoringDirection: ScoringDirection,
         performanceProfile: PerformanceProfile,
         modelContext: ModelContext
-    ) -> IntervalResult
+    ) -> (result: IntervalResult, isFirstEverEntry: Bool)
 }
 ```
 
 Both belong in `Application/UseCases/`, both are the **only** place
-`ENDURANCE_EXECUTION_FLOW.md`'s Finish action should call into — never a
-direct `attachSteadyStateResult`/`attachIntervalResult` call from a
-ViewModel.
+`LogEnduranceResultUseCase` (§1) should call into — never a direct
+`attachSteadyStateResult`/`attachIntervalResult` call from a ViewModel.
+
+**Existing recording use cases also widen their return value** the same
+way, non-breaking (an additional tuple member / return field): `RecordSetResultUseCase.recordSet`
+and `RecordFunctionalFitnessResultUseCase.recordResult` additionally
+report whether the just-recorded result's `existingBest` (computed
+internally, already, before deciding `isPersonalRecord`) was `nil` —
+this is what powers §4's first-entry-vs-genuine-PR presentation split,
+with zero change to the underlying `PersonalRecord`/`isPersonalRecord`
+data.
 
 ## 3. Progression preview — read-only, never a re-materialization
 
-"What changes next time" (§31, completion screen) calls the existing
+"What changes next time" (completion screen) calls the existing
 `ProgressionEngine`/`DoubleProgressionEngine` exactly as
 `STRENGTH_EXECUTION_FLOW.md` §2 does for the suggested-load display —
 same engine, same `ProgressionInput`/`ProgressionOutput` shape, just
@@ -118,15 +153,15 @@ of the prior session's. The output is **shown, never written**:
   path (`TacticalWindowPolicy`/`TACTICAL_PLANNING_HANDOFF.md`, Stage 5,
   already built) — which will see this session's results already sitting
   in `ExercisePerformanceProfile` whenever it next runs, because §1
-  already wrote them live. Stage 6 does not duplicate or trigger that
-  regeneration itself.
+  already wrote them live, incrementally, as each set was logged. Stage
+  6 does not duplicate or trigger that regeneration itself.
 - Displayed per exercise/activity as a plain reason-coded row
   (`ProgressionReasonCode` + the recommended value), matching frame 12's
   "What changes next time" list exactly — never implementation jargon,
   always the same reason-code-to-plain-language mapping the Why sheet
   already uses.
 
-## 4. Completion screen contents (design source, frame 12)
+## 4. Completion screen contents (design source, frame 12) — resolved PR presentation
 
 Assembled entirely from `CompletionSummary` (§1) plus the Session's own
 already-materialized data — no new persisted "completion record" type:
@@ -136,9 +171,13 @@ Session complete
 <Session.name>
 <elapsed> · <block count> · <working set count>     (computed from orderedBlocks)
 
-[if a genuine PR]  Personal record
-                   <Exercise/Benchmark> · <value>
-                   <plain-language comparison to the previous best>
+[if isFirstEverEntry]   First recorded result
+                        <Exercise/Benchmark> · <value>
+                        (neutral copy — a baseline, not a celebration)
+
+[if a genuine PR, existingBest != nil]   Personal record
+                        <Exercise/Benchmark> · <value>
+                        <plain-language comparison to the previous best>
 
 What changes next time                               (§3, read-only preview)
   <Exercise>   <ProgressionReasonCode, plain language>   <recommended value>
@@ -152,28 +191,42 @@ What changes next time                               (§3, read-only preview)
 [ Done ]   [ Add note ]
 ```
 
-## 5. Partial completion (§27) — same pipeline, smaller input
+The underlying data (`PersonalRecord`/`isPersonalRecord`) is identical
+in both branches — `isFirstEverEntry` (§2) only decides which of the two
+copy blocks renders. `ScoringEngine`'s Rx/Scaled compatibility rule
+(§7 of `FUNCTIONAL_FITNESS_EXECUTION_FLOW.md`) governs which prior
+results even count as "the previous best" in either branch, unchanged.
 
-A "Finish partial" completion runs **exactly** §1's pipeline, with
-`context: .partial` — no separate code path. The `CompletionSummary`
+## 5. Partial completion — same pipeline, resolved per-modality progression boundary
+
+A "Finish as Partial" completion runs **exactly** §1's pipeline, with
+`context: .partial` — no separate code path, and each affected block
+gets its own `completionContext` (`.full`/`.partial`, `SESSION_STATE_MACHINE.md`
+§2) set the moment it's individually finished. `CompletionSummary`
 naturally reflects fewer blocks/results because that's genuinely what
-happened; nothing about the pipeline branches on partial vs. full beyond
-step 1 (marking the remaining blocks `.skipped` instead of leaving them
-untouched) and the stored `completionContext`. Progression preview (§3)
-only ever covers exercises that actually got a result this session —
-an exercise whose block was skipped entirely simply has nothing to
-preview, not a fabricated "no change" row.
+happened.
 
-**Stage 6 does not invent progression policy for a partial session** —
-per the kickoff's explicit instruction, it exposes the structured
-`completionContext`/per-exercise result set to whatever calls
-`ProgressionEngine` next; if a future pass wants the engine itself to
-treat a partial session's results differently (e.g. discount a single
-logged set vs. a full prescribed set), that is a new, explicit engine
-decision, not something this pipeline silently encodes today by, say,
-omitting the preview or applying a discount factor.
+**Execution never computes a progression outcome itself — it only
+reports actual results honestly, and each `ProgrammingSystem`'s own
+engine already has (or structurally doesn't need) a conservative
+default for incomplete input:**
 
-## 6. Feeding downstream consumers (§26's remaining bullets)
+| System | Existing mechanism | Behavior on partial input |
+|---|---|---|
+| Strength | `DoubleProgressionEngine.recommend` | Already returns `.hold` the instant `targets.count != latestResults.count` — a partial strength block already gets the conservative outcome, no new code. |
+| Interval | `IntervalProgressionEngine.evaluateSessionOutcome(completedCount:totalCount:worstRpe:)` | Already graduated and deterministic: a completion fraction maps to `.progress`/`.hold`/`.repeatSession`/`.reduceIntensity`/`.reduceIntervalCount`; `totalCount == 0` (nothing attempted) already yields `.calibrationRequired`. Execution's only job is reporting accurate `completedCount`/`totalCount`/`worstRpe`. |
+| Steady state | `SteadyStateProgressionEngine`'s resolve functions | Do not consume actual results at all — next week's duration/distance/intensity is already a pure function of configured rules + week index. A partial steady-state session has no bearing on this engine's contract; there is nothing to make conservative because nothing here reads "how much happened" in the first place. |
+| Functional Fitness | `FunctionalFitnessDecisionEngine` + `FunctionalFitnessExposureHistoryBuilder` | Reasons over exposure history (already filtered to `Session.status == .completed`, unaffected by full-vs-partial), not a completion fraction — a partial FF result is still a real stimulus exposure and correctly continues to count toward variance-balancing decisions. |
+
+No new `ProgressionInput` field, no new engine parameter, no new reason
+code is introduced by partial-session support — every system's existing
+"insufficient information" branch already satisfies "default to a
+conservative outcome rather than pretending the Session was fully
+completed." An exercise/activity whose block was `.skipped` entirely
+(never attempted) simply has nothing to preview at all — never a
+fabricated "no change" row.
+
+## 6. Feeding downstream consumers
 
 All of these already work by construction, once §1/§2 above are wired —
 none need new plumbing beyond what's described:
@@ -183,34 +236,38 @@ none need new plumbing beyond what's described:
 - **`FunctionalFitnessProgrammingSystem`/`FunctionalFitnessDecisionEngine`**:
   `FunctionalFitnessExposureHistoryBuilder.build(fromCompletedSessionsIn:)`
   already filters on `Session.status == .completed` — a `.partial`
-  completion still satisfies `== .completed` (§1 of
-  `SESSION_STATE_MACHINE.md`: partial is a `completionContext`, not a
-  different `status`), so a partially-completed Functional Fitness block
-  that nonetheless has a real `FunctionalFitnessResult` attached
-  correctly contributes to variance-exposure history the moment §1 runs;
-  a block left `.skipped` (never attempted) correctly contributes
-  nothing, exactly matching the builder's own "never assume a scheduled
-  workout that was skipped counts as completed exposure" rule.
+  completion still satisfies `== .completed` (`completionContext` is a
+  separate field, never a different `status`), so a partially-completed
+  Functional Fitness block that nonetheless has a real
+  `FunctionalFitnessResult` attached correctly contributes to
+  variance-exposure history the moment §1 runs; a block left `.skipped`
+  (never attempted) correctly contributes nothing.
 - **Tactical/planner adherence**: `LongTermPlanner`/`PHASE_PLANNING_RULES.md`'s
   missed-progress signal already reads `Session.status` — `.completed`
-  (full or partial) vs. `.abandoned`/`.missed` is exactly the
-  distinction it needs, already available with no new reading code.
+  (full or partial) vs. `.missed`/`.skipped` is exactly the distinction
+  it needs, already available with no new reading code.
+- **Missed-session recording**: execution's role is limited to writing
+  `.skipped`/`.missed` (`SESSION_STATE_MACHINE.md` §7) — it never
+  computes a reflow proposal itself; that stays
+  `SchedulingPipeline`/`LongTermPlanner`'s job entirely.
 
 ## 7. What this pipeline explicitly does not do
 
-- Does not call `context.save()` itself (§1 — the caller's job, once).
+- Does not defer every write to one final `save()` — §1's incremental
+  convention is the resolved model; `CompleteSessionUseCase`'s own
+  `save()` is the last commit, not the only one.
 - Does not re-run or duplicate any per-set/per-result recording.
 - Does not write a new `SetPrescription`/materialize a future Session
   (§3 — that stays Stage 5's tactical-regeneration concern).
 - Does not fabricate a result for a block that was never attempted
   (`.skipped` blocks contribute nothing to `CompletionSummary` beyond
   their own status).
+- Does not compute a progression outcome itself for a partial result —
+  it reports facts; the relevant `ProgrammingSystem`'s own engine
+  decides (§5).
 - Does not decide *when* a tactical window regenerates — that remains
-  `TacticalWindowTriggerEvaluator`'s existing, separate concern
-  (`TACTICAL_PLANNING_HANDOFF.md` §2's event-driven trigger,
-  `.mixOrPreferenceChanged`-style — a Session completing is not itself
-  one of the six named triggers, and this pass does not add a seventh
-  without product sign-off; flagged in the decision memo §10 as a
-  genuinely open question worth asking the product owner, since "does
-  finishing today's session ever need a fresh tactical window" seems
-  plausible but is not in the locked trigger list).
+  `TacticalWindowTriggerEvaluator`'s existing, separate concern. A
+  Session completing is not itself one of the six locked
+  `TacticalWindowTrigger` cases, and this pass does not add a seventh
+  without product sign-off (still deferred, `STAGE6A_DECISION_MEMO.md` §4).
+- Does not implement missed-session reflow logic (§6's last bullet).

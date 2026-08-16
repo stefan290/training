@@ -1,16 +1,18 @@
 # Substitution Model
 
-**Stage 6A status:** `STRENGTH_EXECUTION_FLOW.md` §7 and
+**Stage 6A status: RESOLVED.** `STRENGTH_EXECUTION_FLOW.md` §7 and
 `ENDURANCE_EXECUTION_FLOW.md` §3 design the execution-side UI for the
 two scopes below (Today only / Going forward) — a design pass only,
 nothing implemented yet. No change to this document's own contract was
 needed: `SubstituteExerciseUseCase`/`SubstituteActivityUseCase`,
 `SubstitutionValidator`, `SlotSelectionOverride`/`ActivitySelectionOverride`
-are reused exactly as specified here. The one open question Stage 6A
-surfaced against this model is `IntensityTranslation`'s exact
-activity-pair coverage, not yet exhaustively audited against every
-substitution the endurance execution UI will actually offer
-(`STAGE6A_DECISION_MEMO.md` §4).
+are reused exactly as specified here, now invoked through the resolved
+`ApplySubstitutionUseCase` orchestration layer that saves immediately
+per substitution (`WORKOUT_COMPLETION_PIPELINE.md` §1). The one
+remaining open item is non-blocking, build-time-only:
+`IntensityTranslation`'s exact activity-pair coverage, to be confirmed
+against every substitution the endurance execution UI actually offers
+(`STAGE6A_DECISION_MEMO.md` §5).
 
 Stage 4C's Part B deliverable: exercise/activity substitution is a
 domain/programming requirement, not a future UI feature. Stage 4D

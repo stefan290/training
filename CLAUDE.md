@@ -120,3 +120,21 @@ UI looks right.
     new revision referencing what it replaced; a completed phase and an
     already-accepted tactical schedule are permanent historical
     snapshots that no later revision, of any size, may mutate.
+20. **A successfully logged set/result must never depend on completing
+    the whole Session to become durable.** Live workout execution
+    persists promptly at each meaningful action (a logged set, a
+    recorded endurance/interval/functional-fitness result, a
+    substitution/scaling choice, a block or Session status change) —
+    never deferred to a single final save at Session completion. A
+    crash must lose at most one unconfirmed, not-yet-logged edit, never
+    anything already confirmed. The final Session-completion save is the
+    last consistency/commit point, not the first durability point.
+21. **Timers derive truth from persisted wall-clock timestamps and
+    explicit state transitions, never from in-memory tick counts.** A
+    timer's displayed value is always a pure function of its persisted
+    state (start time, pause state, accumulated pause, current
+    unit index) and the current moment, recomputed at render time —
+    never accumulated by counting timer fire events. Recovery after
+    backgrounding, a force-quit, or a device restart must reproduce
+    exactly the state a continuously-running clock would show, with no
+    replay of transitions or cues that would have fired while closed.
