@@ -1,5 +1,15 @@
 # Prescription / Result Model Review
 
+**Stage 6A status:** `WORKOUT_EXECUTION.md` §1 confirms the typed
+`BlockPrescription`/`BlockResult` shape this document proposed is
+exactly what execution reads/writes through — no new case, no
+modality-specific `Session` subclass. It also confirms the migration
+this document once proposed and deferred (`WorkoutResult` →
+`SteadyStateResult`/`IntervalResult`/`FunctionalFitnessResult`) is now
+real and implemented for the modern path; the legacy `.amrap`/`.emom`/
+`.forTime`/`WorkoutResult` combination is Stage 1-2 seed-scenario-only
+and is not a target for Stage 6 execution.
+
 Stage 3B stress test of `ExercisePrescription` and `WorkoutResult`/
 `SetResult` against every modality validated in this document set. This
 is a **proposed migration, documented, not implemented** — per the
