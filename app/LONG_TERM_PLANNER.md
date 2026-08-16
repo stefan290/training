@@ -68,6 +68,43 @@ Nothing about the scheduler, `GoalAlignmentEvaluator`, or any
 this pass's own review, per the kickoff's instruction to stop and explain
 if a genuine incompatibility were found. None was.
 
+## 2a. The decision hierarchy (locked, resolves all four Stage 5A MUST RESOLVE items)
+
+Every candidate a caller ever asks the planner to rank — mixes,
+programs, or a revised roadmap — passes through the same five ordered
+stages, never in a different order and never with a later stage
+overriding an earlier one's rejection:
+
+```
+HARD FEASIBILITY
+  ↓   (can this even be scheduled? — ScheduleFeasibility/PROGRAM_RECOMMENDATION_MODEL.md §2a's
+       narrow, mechanical Infeasible definition. Fails here -> Infeasible, out, full stop.)
+GOAL ALIGNMENT
+  ↓   (given it's feasible, how well does it serve the phase's goal? — GoalAlignmentEvaluator,
+       unmodified. Produces the qualitative rating everything downstream reads.)
+CANDIDATE QUALITY / COMPATIBILITY GATE
+  ↓   (is this candidate's alignment at or above the compatibility threshold —
+       ADHERENCE_AWARE_PLANNING.md §5a? Below the gate -> shown only as Poor Fit,
+       never eligible for promotion, never Infeasible on this basis alone.)
+ADHERENCE / USER PREFERENCE
+  ↓   (among gated-in candidates only, does stated preference/variety/adherence
+       favor one enough to reorder — ADHERENCE_AWARE_PLANNING.md §5b's
+       tier-gap-bounded promotion rule?)
+RANKED RECOMMENDATION
+      (.recommended + .bestGoalAlignment (when different) + at most 2 further
+       alternatives — ADHERENCE_AWARE_PLANNING.md §5c. User choice remains final:
+       any candidate the user actually selects is scheduled, whatever its rank.)
+```
+
+**Hard constraints determine what is possible. `GoalAlignment` determines
+how well it serves the current phase. Preference/adherence can reorder
+viable, sufficiently compatible options. User choice remains final.**
+This is the single hierarchy every Stage 5A document now implements —
+`PHASE_PLANNING_RULES.md` §8 (protected-minimum shortfalls), 
+`PROGRAM_RECOMMENDATION_MODEL.md` §2a (Infeasible/Poor Fit), and
+`ADHERENCE_AWARE_PLANNING.md` §5 (candidate ranking) are three
+applications of it, not three separate rules.
+
 ## 3. Engine boundaries — what `LongTermPlanner` decides, and what it never touches
 
 **`LongTermPlanner` decides:**

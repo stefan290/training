@@ -65,6 +65,54 @@ new field, no new enum case, no third priority tier. This is the single
 most load-bearing finding in this document: **a phase's goal composition
 is entirely a property of its mix, not of the phase entity itself.**
 
+### 2a. "Protected" is a pattern, not a Fat-Loss-specific rule (Decision 1, resolved)
+
+The mechanism generalizes to any phase type, and TrainingOS must never
+hard-code *which* modality gets protected — that assignment is always
+phase/program-derived, never a global rule like "every Fat Loss phase
+requires at least 3 strength sessions." The same `.required`-flexibility
++ derived-minimum mechanism applies regardless of which tier carries it:
+
+| Phase | What's protected | Tier |
+|---|---|---|
+| Fat Loss | Resistance training (retain muscle) | `.secondary`+`.required` |
+| Muscle Gain | Aerobic/conditioning base (cardiovascular health), if the phase config calls for it | `.supporting`+`.required` |
+| Running Performance | Key running work (long run/threshold — `Session.isKeySession`, Stage 4G) | Can sit on the `.primary` component itself — "protected" here means the phase's *own* primary work has a firm floor, not that a lower tier is being protected |
+| Functional Fitness | Functional Fitness itself, as `.primary`+`.required` | `.primary`+`.required` |
+
+"Protected" is the natural word for a non-primary component whose
+minimum can't be dropped (§9's own framing), but the underlying
+mechanism — a phase/program-derived `SessionFrequency.minimum` on a
+`.required` component — is identical no matter which tier holds it.
+
+### 2b. Where the floor number comes from
+
+Never a hardcoded modality constant. The derivation reads, in order:
+
+1. **`TrainingPhase` goal/priorities** — the phase's own type and which
+   objective is primary/protected/supporting (§2 above) sets a coarse
+   starting point (e.g. a protected component defaults to whatever
+   `SessionFrequency` the phase-type's own recommendation logic
+   proposes).
+2. **The selected/recommended `ProgramConfiguration`** — if a specific
+   program is already chosen (Start From Program, or an accepted
+   recommendation), its own structure may impose a firmer number — see
+   §8 below and `PROGRAM_RECOMMENDATION_MODEL.md` §7 for when this
+   becomes a hard, non-negotiable floor rather than a recommendation.
+3. **The `TrainingMixComponent`'s own stated requirements** — an
+   explicit user- or planner-set `SessionFrequency.minimum`/`.maximum`
+   always wins over a coarser phase-level default once set.
+4. **Validated methodology, where available** — e.g. a `Strict` program
+   whose own generator/materializer structure implies a real minimum
+   (`PROGRAM_RECOMMENDATION_MODEL.md` §7). Where no validated methodology
+   exists, the number is TRAININGOS_DESIGNED and configurable
+   (`STRATEGIC_PLAN_MODEL.md` §4a's exact precedent for phase durations,
+   applied here to frequency instead).
+
+No step in this list is a fixed, cross-phase constant — every number is
+computed from the specific phase + program + component in front of the
+planner, never looked up from a table keyed only on modality.
+
 ## 3. Why this matters for conflict resolution
 
 Because "protected" resolves to `.secondary` + `.required`, the
@@ -162,3 +210,34 @@ hard single-day cutover — sized via the `transition` row in
 transition is the default; a hard switch is only what happens when a
 transition phase's duration is configured to zero, never the implicit
 default.
+
+## 8. When a user's mix falls below a protected minimum (Decision 1, resolved)
+
+If a user selects or edits a mix such that a protected component's own
+frequency sits below the phase/program-derived floor (§2a-2b), TrainingOS
+never silently adds sessions back — the user's own selection is always
+respected as data (`LONG_TERM_PLANNER.md` §1). Instead, the shortfall is
+classified into exactly one of two outcomes, and the classification rule
+is the same one `PROGRAM_RECOMMENDATION_MODEL.md` §2 defines for
+`GoalAlignmentRating`/`ScheduleFeasibility` generally — this section adds
+no third vocabulary:
+
+- **A goal-alignment compromise (the default case).** The phase's own
+  *recommended* floor is a strong suggestion, not a hard constraint —
+  falling below it surfaces as a `ScheduleIssue`/`GoalAlignmentFactor`
+  compromise (`requiredComponentSatisfaction`/`targetFrequencySatisfaction`
+  unsatisfied, Stage 4G), lowering the mix's `GoalAlignmentRating`. The
+  mix remains fully selectable and schedulable — this is "Poor Fit," not
+  "Infeasible" (`PROGRAM_RECOMMENDATION_MODEL.md` §2).
+- **A structural incompatibility with a specific Strict program.** When
+  the floor is instead a hard methodology requirement of an already-
+  selected `Strict` program (its generator's own structure genuinely
+  cannot run below N sessions/week and still be that program —
+  `PROGRAM_RECOMMENDATION_MODEL.md` §7), the combination of *this*
+  program with the user's stated availability/mix is a real hard-
+  constraint conflict, not a preference tradeoff — it is classified
+  `Infeasible` for that specific program choice, and the planner offers
+  the same kind of resolution options `ConflictResolutionOption` already
+  provides at the scheduling layer (allow more days, choose a different
+  program, reduce another component) rather than silently overriding
+  either the program or the user's availability.

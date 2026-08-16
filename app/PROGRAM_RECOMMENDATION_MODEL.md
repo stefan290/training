@@ -46,10 +46,46 @@ words for the same five-tier concept. This is the direct continuation of
 to programs instead of mixes: same tiers, same "never a fabricated
 percentage" discipline, same transparent-factors shape.
 
-`.infeasible` here means "structurally impossible or unsafe by explicit
-rule" (§18's own carve-out for when the app *may* block a choice — e.g.
-a program requiring more training days than `UserAvailability` can ever
-provide, not merely a poor thematic fit).
+### 2a. `Infeasible` vs. `Poor Fit` — the exact boundary (Decision 4, LOCKED)
+
+This distinction is locked and does not get revisited without an
+explicit new decision:
+
+**`Infeasible`** means the plan cannot be executed while satisfying
+required hard constraints — a narrow, mechanical definition, identical in
+spirit to `ScheduleFeasibility.infeasible`. Examples:
+
+- 6 required sessions requested against 3 available days with doubles
+  disallowed.
+- A required session's duration exceeds every available time window and
+  cannot be split.
+- Two `Strict` programs' own constraints cannot simultaneously be
+  satisfied (`PHASE_PLANNING_RULES.md` §8's structural-incompatibility
+  case).
+- A protected/required component's derived minimum frequency cannot
+  physically fit the available days at all.
+- A required, non-substitutable prescription depends on equipment/an
+  activity type the user does not have access to.
+
+**`Poor Fit`** means the plan *can* be executed but aligns poorly with
+the user's goal, experience, preferences, or current performance
+context. Examples: pure running programming selected during a
+Muscle-Gain-primary phase; an advanced 6-day Powerlifting program
+selected by a user with little relevant history; a Muscle Gain phase
+mix whose actual hypertrophy stimulus is very low. **Poor Fit always
+remains selectable** unless a *separately-defined* hard constraint (the
+`Infeasible` list above) also applies — a poor thematic or experience
+match is never, by itself, a reason to block a choice.
+
+**Neither rating is ever a safety judgment.** `Infeasible`/`Poor Fit`
+mean exactly what they say — scheduling impossibility and goal-fit
+quality respectively — and nothing else. TrainingOS does not currently
+implement, and this pass does not invent, any speculative training-
+science risk threshold (e.g. "this program is too advanced to be safe
+for this user"). If a validated safety/eligibility concept is added in a
+future stage, it must be modeled as a **separate, distinct concept**,
+never folded into `GoalAlignmentRating`/`ScheduleFeasibility` — see
+CLAUDE.md rule 18.
 
 ## 3. `ProgramFitFactorKind` — the 9 factors §17 names
 
@@ -140,6 +176,20 @@ of scope until explicitly requested") — this pass adds no new adaptive
 behavior, it only confirms the planner must check this field before ever
 proposing to touch a program's internals, which today means: never.
 
+**When a Strict program's own structure becomes a hard floor
+(Decision 1).** A `Strict` program's generated session count is not a
+suggestion — dropping one of "5-Day Full Body Hypertrophy"'s five weekly
+sessions would no longer be that program, faithfully executed. This
+generated count (already inferrable from the `ProgramDefinition`'s own
+materialized `TemplateSession`s — no new field required) *is* the
+program's implicit minimum-frequency requirement, feeding directly into
+`PHASE_PLANNING_RULES.md` §2b step 4 ("validated methodology, where
+available"). When the user's stated availability/mix genuinely cannot
+give a selected Strict program's component enough room to run at its own
+required count, that specific `(program, availability, mix)` combination
+is `Infeasible` (§2a) — not a Poor Fit, and not a reason to silently
+lighten the program's own structure.
+
 ## 8. Two selection paths, one evaluation
 
 **Planner-recommended program** (default Guided Planning path,
@@ -150,6 +200,7 @@ picks one (or accepts the top-ranked default).
 same section): the chosen program is evaluated with the *same*
 `ProgramFitFactor`/`fitRating` machinery as any recommended candidate —
 never a separate, looser path. A poor-fitting user choice still shows
-its real `fitRating` and factors (§18: never blocked unless
-`.infeasible` by an explicit structural/safety rule) so the planner can
-"evaluate and build surrounding modules/mix" (§56) around it honestly.
+its real `fitRating` and factors (§18/§2a: never blocked unless it meets
+the narrow, mechanical `.infeasible` definition — never merely a poor
+thematic or experience fit) so the planner can "evaluate and build
+surrounding modules/mix" (§56) around it honestly.

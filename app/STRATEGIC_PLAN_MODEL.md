@@ -187,6 +187,15 @@ future settings surface) without touching planner logic, exactly like
 `InterferenceAvoidanceRule.conservativeDefault` is a default a caller may
 override, not a baked-in rule.
 
+`typicalWeeks` has one further consumer beyond backward planning:
+`ADHERENCE_AWARE_PLANNING.md` §2a's temporary-preference materiality
+check reads the *enclosing* phase's `typicalWeeks` directly (proposed
+default trigger: a temporary block's cumulative duration reaching half of
+it) — one more reason this table's specific numbers remain **MUST
+RESOLVE** rather than settled, since they now also shape when a
+temporary switch gets flagged as materially changing the phase, not just
+how phases are sequenced.
+
 ## 5. Rolling planning — the strategic/tactical stability invariant
 
 The strategic roadmap (`TrainingPlan.phases`) is stable across tactical

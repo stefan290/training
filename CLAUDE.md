@@ -87,4 +87,18 @@ UI looks right.
     Planner must support explicit user preference (variety, modality,
     temporary style switches, custom mixes) as first-class planning
     input — it must never attempt to predict motivation or adherence
-    using an opaque model.
+    using an opaque model. Preference/adherence may promote an
+    alternative above the physiologically best recommendation only
+    among candidates that already clear an explicit goal-compatibility
+    gate; it must never promote a candidate with major goal
+    incompatibility, and the highest-alignment candidate must still be
+    shown, never hidden, when a promotion displaces it.
+18. **`Infeasible` and `Poor Fit` are never a safety judgment.**
+    `ScheduleFeasibility.infeasible`/`GoalAlignmentRating.infeasible`
+    mean only that required hard constraints cannot be satisfied;
+    `.poor` means only a bad-but-executable goal/preference fit. Neither
+    may be used, now or later, to encode a speculative training-science
+    risk or eligibility judgment. If a validated safety/eligibility
+    concept is ever added, it must be modeled as its own separate type —
+    overloading either of these two into "potentially unsafe" is a
+    correctness bug, not a shortcut.

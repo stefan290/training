@@ -230,3 +230,21 @@ compatibility (`PROGRAM_RECOMMENDATION_MODEL.md` §2, rendered as
 "Excellent/Good/Acceptable/Poor Fit" — same five-tier enum, different
 display words). Neither reuse adds a new scoring system; both are new
 *callers* of `GoalAlignmentEvaluator.evaluate`/`GoalAlignmentRating`.
+
+**The decision hierarchy (locked, `LONG_TERM_PLANNER.md` §2a)** is what
+sits on top of this reuse: `GoalAlignmentRating`'s existing `Comparable`
+ordering is read twice more by the planner — once as a compatibility gate
+(only `.acceptable`-or-above candidates are promotable,
+`ADHERENCE_AWARE_PLANNING.md` §5a) and once as a bounded tier-gap check
+for preference-based promotion (§5b). Both are new *comparisons* against
+the existing ordering, not new tiers or a new rating type — `GoalAlignmentRating`
+itself is unchanged by either use.
+
+**`Infeasible`/`Poor Fit` never mean "potentially unsafe" (Decision 4,
+locked, CLAUDE.md rule 18).** `GoalAlignmentRating.infeasible` and
+`ScheduleFeasibility.infeasible` both retain their existing, narrow,
+mechanical meaning — a real hard-constraint impossibility — and `.poor`
+retains its existing meaning of a bad-but-executable fit. Neither this
+document nor `PROGRAM_RECOMMENDATION_MODEL.md` §2a introduces or implies
+a safety/eligibility judgment; a future validated safety concept would be
+a distinct type, never a repurposing of either rating.

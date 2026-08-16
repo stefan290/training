@@ -6,6 +6,14 @@ gap — collected here so Stage 5B does not start on an unreviewed
 assumption. Per this stage's own instruction: **do not silently choose
 major strategic training policy.**
 
+**Status: the 4 product-policy decisions (§4) are RESOLVED** — protected-
+frequency floor policy, temporary-preference-block maximum duration,
+variety/adherence promotion, and the Poor Fit/Infeasible boundary are all
+locked and reflected throughout `LONG_TERM_PLANNER.md`,
+`PHASE_PLANNING_RULES.md`, `PROGRAM_RECOMMENDATION_MODEL.md`,
+`ADHERENCE_AWARE_PLANNING.md`, `GOAL_ALIGNMENT.md`, and `CLAUDE.md` (rules
+17-18). §1's 7 engineering MUST RESOLVE items remain open.
+
 ## 1. MUST RESOLVE before Stage 5B implementation
 
 These are architecture-shaping decisions this document recommends an
@@ -97,39 +105,92 @@ not just an absence of objection.
   weeks vs. completed-session count vs. program-journey position) isn't
   chosen.
 
-## 4. Product choices requiring explicit owner decision
+## 4. Product choices requiring explicit owner decision — ALL FOUR RESOLVED
 
 Strategic/training-policy calls, distinct from the engineering questions
 above — CLAUDE.md rule 10 territory ("do not invent ambiguous training
-rules... flag it").
+rules... flag it"). All four below were reviewed and decided by the
+product owner; the original question is preserved for the record,
+followed by the resolution actually locked in.
 
-1. **Should "protected" muscle-retention components have a
-   TRAININGOS_DESIGNED minimum-frequency floor** (e.g. "never below 2x/
-   week regardless of phase") **or be fully derived per-user with no
-   floor at all?** This document's examples assume the latter (the
-   floor is whatever `SessionFrequency.minimum` the recommendation
-   logic computes, no separate hardcoded floor) — worth explicit
-   confirmation before it becomes precedent.
-2. **Should a temporary preference block have a maximum allowed
-   duration** (e.g. capped at 8 weeks before the planner insists on a
-   full phase reconsideration instead of "just extend the temporary
-   window again")? Not addressed in `ADHERENCE_AWARE_PLANNING.md` §2 —
-   currently unbounded.
-3. **Should `.recommended` always mean strictly-highest-`GoalAlignment`,
-   with variety preference only ever affecting the *second* slot
-   (`.bestVarietyAlternative`)** — or should a strong `varietyPreference`
-   ever be allowed to promote a slightly-lower-alignment, higher-variety
-   mix to the top `.recommended` position itself? This document assumes
-   the former (`.recommended` is never variety-adjusted) — flagged
-   because it directly affects how "optimal" is defined in the UI's most
-   prominent slot.
-4. **Where exactly does "structurally impossible or unsafe" (§18) stop
-   and "just a poor fit" begin**, for blocking a user's own program
-   choice? This document treats it as identical to
-   `GoalAlignmentRating.infeasible`/`ScheduleFeasibility.infeasible`
-   (a real scheduling/availability impossibility) — confirm no
-   additional "unsafe" category (e.g. an experience-mismatch severe
-   enough to block outright) is wanted.
+1. **Protected-frequency floor policy (RESOLVED).** Original question:
+   should "protected" components have a TRAININGOS_DESIGNED global
+   minimum-frequency floor by modality, or be fully derived per-user
+   with no floor at all? **Decision: neither, as posed.** The floor must
+   always be phase/program-derived — never a global rule keyed on
+   modality (e.g. never "every Fat Loss phase requires 3 strength
+   sessions") — using the generic minimum/target/maximum hierarchy
+   `SessionFrequency` already provides, sourced from `TrainingPhase`
+   goal/priorities, the selected/recommended `ProgramConfiguration`, the
+   component's own stated requirements, and validated methodology where
+   available. Falling below the derived floor is a `GoalAlignment`
+   compromise (Poor Fit), never an automatic `Infeasible`, unless the
+   floor is a specific Strict program's own hard methodology requirement
+   — then it's a structural incompatibility with *that* program choice.
+   Sessions are never silently added back. Full model:
+   `PHASE_PLANNING_RULES.md` §2a-2b, §8;
+   `PROGRAM_RECOMMENDATION_MODEL.md` §7.
+2. **Temporary-preference-block maximum duration (RESOLVED).** Original
+   question: should a temporary block have a hard maximum duration?
+   **Decision: no universal hard maximum.** A block always carries a
+   start date, an intended review date/duration, and explicit temporary
+   status (`validFrom`/`validUntil`/`validUntil != nil`) — a
+   TrainingOS-recommended typical review window is configurable, not a
+   hard physiological rule. Instead of a cap, a **materiality check**
+   fires when a temporary block's cumulative duration/renewals would
+   materially change the phase's character, surfacing "this now looks
+   more like a phase change than a temporary block" with three explicit
+   options (continue / convert the phase / re-plan the roadmap) — never
+   silently converted, never silently reverted at plain expiry either.
+   Full model: `ADHERENCE_AWARE_PLANNING.md` §2-2a.
+3. **Can variety/adherence promote an alternative above the
+   physiologically best recommendation (RESOLVED — reverses this
+   document's original draft position).** **Decision: YES**, bounded by
+   a two-stage model. Stage one: a goal-compatibility gate
+   (`GoalAlignmentRating >= .acceptable`) — candidates that don't clear
+   it can never be promoted, no matter how strongly preferred (this is
+   what stops preference from erasing major goal incompatibility). Stage
+   two: among gated-in candidates, a preference-aligned candidate may be
+   promoted to `.recommended` when its alignment is within a bounded
+   tier gap (default 1 tier) of the best. The best-`GoalAlignment`
+   candidate is always still shown (`.bestGoalAlignment`), never hidden,
+   when it's displaced from the top slot. New reason code
+   `ADHERENCE_PREFERENCE_PROMOTED_ALTERNATIVE`. Deterministic and
+   explainable throughout — no numeric percentages. Full model:
+   `ADHERENCE_AWARE_PLANNING.md` §5-5d; `LONG_TERM_PLANNER.md` §2a.
+4. **Poor Fit vs. Infeasible boundary (RESOLVED — narrow definition
+   locked).** **Decision: `Infeasible` is narrow and mechanical** — a
+   real hard-constraint impossibility only (6 required sessions/3
+   available days with no doubles; a required duration that exceeds
+   every window and can't split; two Strict programs' constraints
+   conflicting; a required minimum that can't physically fit; a
+   required non-substitutable prescription needing unavailable
+   equipment/activity). **`Poor Fit` covers everything else** — a
+   thematic, experience, or preference mismatch that's still fully
+   executable (pure running during Muscle Gain; an advanced program
+   picked by a beginner; low hypertrophy stimulus in a Muscle Gain
+   phase) — and remains selectable. **Locked: neither rating may ever be
+   used, now or later, to encode a safety/eligibility judgment**; a
+   future validated safety concept must be a separate type. Full model:
+   `PROGRAM_RECOMMENDATION_MODEL.md` §2a; `CLAUDE.md` rule 18.
+
+### 4a. The resulting decision hierarchy
+
+Every ranking the planner produces — mixes, programs, or a revised
+roadmap — now flows through one fixed five-stage hierarchy (full detail
+in `LONG_TERM_PLANNER.md` §2a, the single canonical statement of it):
+
+```
+Hard Feasibility -> Goal Alignment -> Candidate Quality -> Adherence/User Preference -> Recommendation Ranking
+```
+
+Hard constraints determine what is possible (Decision 4). `GoalAlignment`
+determines how well a feasible candidate serves the phase (Decisions 1,
+4). The compatibility gate determines which candidates are even eligible
+to be promoted (Decision 3, stage one). Preference/adherence may reorder
+only among those (Decision 3, stage two; Decision 2's materiality check
+is the same principle applied to an already-running temporary choice).
+User choice remains final throughout.
 
 ## 5. Stage 5B test plan (§65 — specified now, written later)
 

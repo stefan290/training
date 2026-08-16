@@ -86,12 +86,24 @@ is defined once, here:
   `PROGRAM_RECOMMENDATION_MODEL.md` §3's factors was the deciding one.
 - `USER_SELECTED_ALTERNATIVE` — the accepted mix/program is not the
   top-ranked recommendation.
+- `ADHERENCE_PREFERENCE_PROMOTED_ALTERNATIVE` — a preference-aligned,
+  goal-compatible candidate was promoted to `.recommended` over the
+  highest-`GoalAlignment` candidate (`ADHERENCE_AWARE_PLANNING.md` §5b —
+  Decision 3). Always paired with `.bestGoalAlignment` remaining visible
+  on whichever candidate would otherwise have topped the list.
 
 **Temporary preference**
 - `TEMPORARY_PREFERENCE_APPLIED` — a bounded `TrainingMix` window
   (`ADHERENCE_AWARE_PLANNING.md` §2) was accepted.
 - `TEMPORARY_PREFERENCE_EXPIRED` — its `validUntil` passed; a return
   choice is being offered.
+- `TEMPORARY_PREFERENCE_MATERIALITY_THRESHOLD` — a temporary block (or
+  its cumulative renewals) crossed the materiality threshold
+  (`ADHERENCE_AWARE_PLANNING.md` §2a — Decision 2); the
+  continue/convert/re-plan choice is being offered.
+- `TEMPORARY_PREFERENCE_CONVERTED_TO_PHASE` — the user chose to make a
+  temporary mix the phase's own stable selected mix (`validUntil`
+  cleared).
 
 **Revision**
 - `PHASE_EXTENDED` / `PHASE_SHORTENED` (§4 below).
