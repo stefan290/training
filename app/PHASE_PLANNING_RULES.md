@@ -15,25 +15,41 @@ asks for typed goal/priorities instead. `TrainingPhase` (unchanged shape:
 `status`, `trainingMixes`, `programInstances`) already follows this — the
 kickoff's named phase concepts (Muscle Gain, Fat Loss, Maintenance,
 Strength, Aerobic Development, Running Performance, Functional Fitness,
-Hybrid, Recovery, Transition) do **not** each need a `PhaseType` case:
+Hybrid, Recovery, Transition) do **not** each need a `PhaseType` case, and
+**no new case is added at all** (Decision 3, resolved — `PhaseType.hybrid`
+withdrawn):
 
 - `muscleGain`, `fatLoss`, `strength`, `enduranceEvent`,
   `functionalFitness`, `recovery`, `transition`, `maintenance` already
-  exist and cover 8 of the 10.
+  cover all 10 named concepts, with zero additions.
 - "Aerobic Development" and "Running Performance" are **not** new
   `PhaseType` cases — both are `enduranceEvent`-typed phases whose
   `RecommendedTrainingMix`'s primary component names the specific system
   (`.steadyState`/`.interval`) and, via `ModalityPreference`
-  (`STRATEGIC_PLAN_MODEL.md` §1b), the specific `ActivityType` (running
+  (`STRATEGIC_PLAN_MODEL.md` §1d), the specific `ActivityType` (running
   vs. cycling). Adding a `PhaseType` case per activity would be exactly
   the combinatorial subclassing §8 warns against — the mix already
   carries that distinction.
-- **`.hybrid` is the one genuinely missing case** — it names a phase with
-  deliberately no single dominant adaptation (§43's transition target
-  state), which none of the existing 8 cases can express even
-  compositionally, since every existing case implies a specific primary
-  adaptation. Proposed addition, purely additive
-  (`STAGE5A_DECISION_MEMO.md`).
+- **`.hybrid` does not get added, on review — the objective/composition
+  distinction is stricter than this document's own earlier draft
+  treated it.** The original justification pointed at "a phase with
+  deliberately no single dominant adaptation" (the transition target
+  state, §7 below) — but that phase's actual objective is "transitioning
+  from one adaptation focus to the next," which is precisely what
+  `.transition` already names. A phase's **strategic objective** never
+  changes just because its `TrainingMix` happens to use several
+  modalities: a Muscle Gain phase using 3 Strength + 2 Functional Fitness
+  + 1 Running is still, entirely, a Muscle Gain phase — its `TrainingMix`
+  is diverse, its objective is not. "Hybrid" describes a mix's
+  composition (how many distinct `ProgrammingSystemKind`s it spans, a
+  fact already derivable from `orderedComponents` with zero new schema),
+  never a phase's objective. If a genuinely new strategic objective ever
+  emerges that means "Hybrid Performance" as its own adaptation goal
+  independent of any particular modality mix (not merely "this phase uses
+  several modalities"), that would be evaluated on its own merits as a
+  future `PhaseType` addition — a fundamentally different claim from "add
+  `.hybrid` because mixed modalities exist," which this document
+  explicitly does not do.
 
 `TrainingPriority` (`strength`/`endurance`/`mixedModal`) remains the
 coarse, UI-facing tag it already was in Stage 1-2 — it is not replaced by
@@ -136,7 +152,7 @@ outcome, and every transition produces a `PlannerDecision`
 | Trigger | Fires when | Reason code |
 |---|---|---|
 | Date-based | `endDate` reached | `PHASE_DATE_REACHED` |
-| Duration-based | The phase's own elapsed-weeks counter hits its `PhaseDurationPolicy.typicalWeeks` (or a user-set override) with no fixed `endDate` | `PHASE_DURATION_REACHED` |
+| Duration-based | The phase's own elapsed-weeks counter hits its `PhaseDurationKind.range`'s `typical` value (or a user-set override) with no fixed `endDate` | `PHASE_DURATION_REACHED` |
 | Milestone-based | The plan's `milestoneDate`-anchored phase completes | `MILESTONE_PHASE_COMPLETED` |
 | User-triggered | Explicit "I'm done with this phase" / "extend" / "shorten" action | `USER_REQUESTED_TRANSITION` |
 | Planner recommendation | `LongTermPlanner` detects the current phase's goal is better served by transitioning now (e.g. missed-progress handling, §6) — always surfaced for approval, never auto-applied (§29) | `PLANNER_RECOMMENDED_TRANSITION` |

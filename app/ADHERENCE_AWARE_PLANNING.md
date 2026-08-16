@@ -91,7 +91,7 @@ the plain expiry prompt (§2's own three-option prompt, which fires
 *at* `validUntil`): if a temporary block (including its own renewals) has
 run long enough to **materially change the character of the current
 strategic phase** — proposed default: cumulative temporary duration
-reaches half the enclosing phase's `PhaseDurationPolicy.typicalWeeks`
+reaches half the enclosing phase's `PhaseDurationKind.range`'s `typical` value
 (`STRATEGIC_PLAN_MODEL.md` §4a), or it has been renewed more than once
 consecutively without a stable resolution — the next tactical-window
 generation surfaces a distinct prompt (reason code
@@ -127,7 +127,7 @@ field:
 
 | | `validUntil` | Example |
 |---|---|---|
-| Stable preference | `nil` | "I generally prefer cycling to running" — captured in `LongTermGoal.preferredModalities` (`STRATEGIC_PLAN_MODEL.md` §1b), which shapes every `proposeTrainingMix` call going forward |
+| Stable preference | `nil` | "I generally prefer cycling to running" — captured in `Goal.preferences?.preferredModalities` (`STRATEGIC_PLAN_MODEL.md` §1b/1d), which shapes every `proposeTrainingMix` call going forward |
 | Temporary desire | set | "I want CrossFit this month" — a bounded `TrainingMix` window, §2 above |
 
 A temporary desire never silently becomes a stable preference (§50's own
@@ -211,7 +211,7 @@ Among candidates that clear the gate, a candidate is **preference-aligned**
 (a plain boolean, not a fabricated score) when:
 
 - it contains **zero** components whose modality is in
-  `LongTermGoal.dislikedModalities`, **and**
+  `Goal.preferences?.dislikedModalities`, **and**
 - it contains **at least one** component whose modality is in
   `preferredModalities`, **and**
 - when `varietyPreference == .high`, it represents strictly more

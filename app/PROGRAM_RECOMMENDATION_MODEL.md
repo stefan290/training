@@ -5,15 +5,19 @@ configuration for each `TrainingMixComponent`, how it rates a user's own
 choice, and why it never touches a program's internal methodology to do
 either.
 
-## 1. `ProgramCandidate` — the recommendation unit
+## 1. `ProgramCandidate` — the recommendation unit (non-optional definition, RESOLVED)
 
 ```swift
 struct ProgramCandidate {
     var componentLabel: String              // which TrainingMixComponent this fills
     var programmingSystem: ProgrammingSystemKind
-    var programDefinition: ProgramDefinition?  // nil when only a generator
-                                                // configuration is being proposed,
-                                                // not yet materialized — see §5
+    /// NOT optional (Decision 4, resolved). A `ProgramCandidate` is only
+    /// ever constructed once a real, instantiated `ProgramDefinition`
+    /// backs it — §5's `ProgramCapabilityRegistry` gate runs BEFORE this
+    /// type is ever created. There is no "aspirational" candidate; a
+    /// conceptually-good path TrainingOS cannot yet execute is a
+    /// `CapabilityGap` (§5b), never a `ProgramCandidate`.
+    var programDefinition: ProgramDefinition
     var fitRating: GoalAlignmentRating      // REUSED, not reinvented — see §2
     var factors: [ProgramFitFactor]
     var reasonCodes: [PlannerReasonCode]    // PLAN_REVISION_MODEL.md §3
@@ -32,7 +36,9 @@ struct ProgramFitFactor {
 `[ProgramCandidate]`, ranked by `fitRating` — never a single forced
 choice. 2-3 meaningful candidates is the target density, matching
 `ADHERENCE_AWARE_PLANNING.md` §5's "2-3 paths, not dozens" rule applied
-one level down, from mixes to programs.
+one level down, from mixes to programs. **Every entry is guaranteed
+executable — see §5's capability gate, which now runs first, before this
+list is even assembled.**
 
 ## 2. Compatibility rating — reusing `GoalAlignmentRating`, not a new vocabulary
 
@@ -99,10 +105,10 @@ exact shape:
 | `sessionDurationMatch` | Does a typical session fit `typicalSessionDurationMinutes`/`minutesAvailablePerDay`? |
 | `experienceMatch` | Does the program's demand suit the user's apparent experience level (derived, never asked as a blunt "beginner/advanced" label — see §4 below)? |
 | `performanceProfileMatch` | Does existing `ExercisePerformanceProfile`/`ActivityPerformanceProfile`/`BenchmarkPerformanceProfile` history support this program's assumptions (§6 below)? |
-| `musclePriorityMatch` | Does the program's split/emphasis serve `LongTermGoal.priorityMuscleGroups`? |
+| `musclePriorityMatch` | Does the program's split/emphasis serve `Goal.preferences?.priorityMuscleGroups`? |
 | `modalityMatch` | Does the program's `ProgrammingSystemKind`/`ActivityType` match preferred (and avoid disliked) modalities? |
 | `recoveryDemandMatch` | Is the program's aggregate `TrainingStressProfile` demand compatible with the phase's other protected/supporting components, given real recovery capacity? |
-| `programAvailabilityMatch` | Does a real, curated `ProgramDefinition`/generator configuration actually exist for this system in this phase context at all — see §5's V1 coverage gap. |
+| `programAvailabilityMatch` | Was this candidate backed by a named, curated V1 preset, or a freshly-derived generator configuration — a UX-honesty signal, never an executability question (every returned candidate is already guaranteed executable by §5's capability gate). |
 
 Reason codes (§17's own instruction: "return reason codes... do not use
 'AI thinks this program is best'") come from the shared `PlannerReasonCode`
@@ -121,23 +127,108 @@ exists across relevant exercises/activities) rather than a static
 "beginner/intermediate/advanced" tag a user would have to self-assess —
 avoiding both a new field and an unreliable self-report.
 
-## 5. The real coverage gap: only Hypertrophy/Powerlifting have a curated V1 library
+## 5. `ProgramCapabilityRegistry` — conceptually appropriate vs. currently executable (Decision 4, RESOLVED)
 
-`V1_PROGRAM_LIBRARY.md` curates 8 named, shippable configurations —
-**all Hypertrophy or Powerlifting.** SteadyState, Interval and Functional
-Fitness have real, tested generators (`SteadyStateProgramGenerator`,
-`IntervalProgramGenerator`, `FunctionalFitnessProgramGenerator`) but no
-equivalent "pick one of these named, curated configurations" list — a
-program recommendation for a Fat Loss/Aerobic Development/Running/
-Functional Fitness component can only propose a **generator parameter
-set** (e.g. "SteadyState, Zone 2 emphasis, 45min base duration"), not a
-named product-level configuration the way "5-Day Full Body Hypertrophy"
-is named. `programAvailabilityMatch` exists specifically to surface this
-distinction to a UI rather than hide it — a candidate backed by a real
-V1-curated config should visibly outrank one backed by a bare generator
-default. This gap is **MUST RESOLVE** in `STAGE5A_DECISION_MEMO.md`:
-Stage 5B program recommendation for non-strength phases is only as good
-as whatever curation (or lack of it) exists by then.
+**Resolution:** the Long-Term Planner never presents a conceptually good
+path as a normal, startable recommendation unless TrainingOS can actually
+instantiate it right now. This is enforced by a new, explicit gate — a
+required step *before* `GoalAlignment` is even computed, matching the
+locked hierarchy's own ordering (`LONG_TERM_PLANNER.md` §2:
+`CANDIDATE TRAINING MIXES → EXECUTABILITY/CAPABILITY CHECK → GOAL ALIGNMENT`).
+
+### 5a. Three distinct questions, previously conflated
+
+This document's earlier draft blurred these together. They are answered
+independently:
+
+1. **`ProgrammingSystem` availability** — does a real, tested engine +
+   generator exist for this `ProgrammingSystemKind` at all? **Yes, for
+   all 5** (`hypertrophy`, `powerlifting`, `steadyState`, `interval`,
+   `functionalFitness`) — full coverage, always true today.
+2. **`ProgramConfiguration`/curated-preset availability** — is there a
+   **named, pre-validated** configuration to pick from (`V1_PROGRAM_LIBRARY.md`'s
+   8 entries), or does the planner have to derive sensible generator
+   parameters itself? **Only Hypertrophy/Powerlifting have named
+   presets today** — this is a genuine gap, but it is a **curation/UX
+   gap, not an executability gap.**
+3. **Whether a candidate can actually be instantiated right now** — can
+   a real `ProgramDefinition` be produced, this moment, from either a
+   curated preset or freshly-derived generator parameters? **Yes for
+   every one of the 5 systems** — every existing generator
+   (`SteadyStateProgramGenerator`/`IntervalProgramGenerator`/
+   `FunctionalFitnessProgramGenerator` included) produces a real,
+   fully executable `ProgramDefinition` when called with parameters,
+   exactly like the curated Hypertrophy/Powerlifting path does. **There
+   is no code path today that would produce a recommendation backed by
+   nothing** — the risk this gate exists to prevent is a future-proofing
+   guarantee, not a fix for a currently-broken path.
+
+### 5b. `ProgramCapabilityRegistry`
+
+```swift
+struct ProgramSystemCapability {
+    var system: ProgrammingSystemKind
+    var hasGenerator: Bool                 // true for all 5 today
+    var hasCuratedConfigurations: Bool      // true only for hypertrophy/powerlifting today
+    var curatedConfigurationCount: Int
+}
+
+enum CapabilityGapReason: String, Codable, CaseIterable {
+    case noGeneratorForSystem        // never true today — reserved for a future
+                                      // system added without its engine yet
+    case noCuratedConfiguration      // true today for steadyState/interval/functionalFitness
+    case parametersNotInstantiable   // the derived parameters themselves don't resolve
+                                      // (e.g. missing required PerformanceProfile input)
+}
+
+/// A conceptually-good path the planner considered but TrainingOS cannot
+/// currently start — surfaced separately from `[ProgramCandidate]`,
+/// never disguised as one.
+struct CapabilityGap {
+    var desiredDescription: String     // e.g. "4-Day Strength Maintenance"
+    var reason: CapabilityGapReason
+    var suggestedExecutableAlternative: ProgramCandidate?
+}
+
+/// Read-only, deterministic query surface over what TrainingOS can
+/// actually instantiate today — never guessed or hard-coded by display
+/// name. Backed by the existing generator registrations and
+/// `V1_PROGRAM_LIBRARY.md`'s curated list; this is a query layer over
+/// already-existing code, not a new source of truth.
+enum ProgramCapabilityRegistry {
+    static func availableProgrammingSystems() -> Set<ProgrammingSystemKind>
+    static func capability(for system: ProgrammingSystemKind) -> ProgramSystemCapability
+    static func canInstantiate(system: ProgrammingSystemKind, parameters: GeneratorParameters) -> Bool
+}
+```
+
+### 5c. The rule this enforces
+
+`proposeProgram` calls `ProgramCapabilityRegistry` **before** constructing
+any `ProgramCandidate`. Two outcomes only:
+
+- **Instantiable** (true for all 5 systems today, whether via a curated
+  preset or freshly-derived parameters): a real `ProgramDefinition` is
+  produced and a `ProgramCandidate` is returned, ranked normally.
+  `programAvailabilityMatch` (§3) still distinguishes "backed by a named
+  V1 preset" from "freshly generated" for UI honesty — both are equally
+  real and equally startable; only the UX polish differs.
+- **Not instantiable** (reserved for a future system without an engine
+  yet, or parameters that genuinely can't resolve): a `CapabilityGap` is
+  returned instead — labeled **"Unavailable / not currently executable"**
+  — either alongside the best real `ProgramCandidate` alternative that
+  *is* instantiable, or alone if none exists. **Never a fabricated
+  `ProgramDefinition` invented to satisfy the planner's own
+  recommendation.**
+
+### 5d. The curation gap remains open, but does not block Stage 5B
+
+Only Hypertrophy/Powerlifting have `V1_PROGRAM_LIBRARY.md`'s named
+presets. Curating an equivalent list for SteadyState/Interval/Functional
+Fitness is real, valuable future work — tracked as an open backlog item,
+not a blocker, since `ProgramCapabilityRegistry` already guarantees every
+recommendation is real and startable regardless of whether it came from
+a curated preset or a freshly-derived configuration.
 
 ## 6. Never rewriting methodology to fit a phase
 

@@ -231,7 +231,7 @@ compatibility (`PROGRAM_RECOMMENDATION_MODEL.md` §2, rendered as
 display words). Neither reuse adds a new scoring system; both are new
 *callers* of `GoalAlignmentEvaluator.evaluate`/`GoalAlignmentRating`.
 
-**The decision hierarchy (locked, `LONG_TERM_PLANNER.md` §2a)** is what
+**The decision hierarchy (locked, `LONG_TERM_PLANNER.md` §2b)** is what
 sits on top of this reuse: `GoalAlignmentRating`'s existing `Comparable`
 ordering is read twice more by the planner — once as a compatibility gate
 (only `.acceptable`-or-above candidates are promotable,

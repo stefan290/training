@@ -7,41 +7,94 @@ of this document: **neither needs a new persisted container.**
 entities, and `LongTermGoal` is proposed as an additive extension of the
 existing `Goal` entity, not a new parallel type.
 
-## 1. `LongTermGoal` — extends `Goal`, does not replace it
+## 1. `LongTermGoal` — extends `Goal` compositionally (RESOLVED)
 
-`Goal` (Stage 1-2, unchanged shape today) already models exactly what
-§4 calls "primary outcome" (`primaryType: GoalType`), "secondary outcomes"
-(`secondaryTypes: [GoalType]`), "target/end date" (`targetDate: Date?`),
-and status. The richer inputs Stage 5 needs are proposed as new,
-optional fields on the same entity — following the identical pattern
-`Session.schedulerVersion`/`Session.isKeySession` already used to extend
-a Stage-1 entity without disturbing its existing meaning:
+**Resolution:** `Goal` gains a small number of typed value fields —
+never one giant object of unrelated nullable scalars, and never a
+proliferation of new `@Model` entities. One existing field changes shape
+(a justified, narrow migration); everything else is additive.
 
-| Field | Type | Maps to kickoff item |
-|---|---|---|
-| `milestoneDate` | `Date?` | §5 "important milestone date" — distinct from `targetDate` (see §3 below) |
-| `bodyCompositionDirection` | `BodyCompositionDirection?` (new: `.gainMuscle`/`.loseFat`/`.maintain`/`.recomposition`) | §3, §4 |
-| `performanceGoals` | `[String]` | §4 "performance goals" — see §1a below for why a plain label, not a typed metric, is this pass's recommendation |
-| `priorityMuscleGroups` | `[MuscleGroup]` (existing enum, reused directly) | §4 |
-| `preferredModalities` | `[ModalityPreference]` (new small struct, §1b) | §4 |
-| `dislikedModalities` | `[ModalityPreference]` | §4 |
-| `availableTrainingDaysPerWeek` | `Int?` | §4 — coarse, strategic-grain only; see §1c |
-| `typicalSessionDurationMinutes` | `Int?` | §4 |
-| `allowsDoubleSessions` | `Bool?` | §4 |
-| `varietyPreference` | `VarietyPreference` (new: `.low`/`.moderate`/`.high`, default `.moderate`) | §13, `ADHERENCE_AWARE_PLANNING.md` §1 |
+### 1a. Objectives — one primary, zero or more role-tagged secondaries
 
-Every field is optional (or has a safe default) — "do not require every
-field" (§4's own instruction) is satisfied the same way every other
-optional field in this schema satisfies it: a `LongTermPlanner` call with
-sparse input degrades to coarser recommendations, it never fails.
+`Goal.primaryType: GoalType` is unchanged — still exactly one primary
+objective. `secondaryTypes: [GoalType]` (an undifferentiated list) is
+replaced by `secondaryObjectives: [SecondaryObjective]`, a strict
+superset of the same information:
 
-This is the one genuinely foundational schema question this pass
-surfaces — extending `Goal` (a Stage-1 entity with no prior migration
-history to break) is low-risk, but it's still a core entity, so
-`STAGE5A_DECISION_MEMO.md` lists it as **MUST RESOLVE**, not a silent
-decision.
+```swift
+enum SecondaryObjectiveRole: String, Codable, CaseIterable {
+    /// Downstream, this becomes a `.secondary`+`.required`
+    /// `TrainingMixComponent` when the planner builds a phase's mix —
+    /// PHASE_PLANNING_RULES.md §2a's exact "protected" pattern, now
+    /// traceable back to the goal that asked for it.
+    case protected
+    case supporting
+}
 
-### 1a. Why `performanceGoals` stays a plain label for now
+struct SecondaryObjective: Codable, Equatable {
+    var type: GoalType
+    var role: SecondaryObjectiveRole
+}
+```
+
+**No new `GoalType` cases are needed.** Checking every required family
+against the existing enum (`muscleGain, fatLoss, generalStrength,
+enduranceEvent, functionalFitness, maintenance`) confirms full coverage:
+
+| Required family (kickoff) | Existing `GoalType` |
+|---|---|
+| Muscle Gain | `.muscleGain` |
+| Fat Loss | `.fatLoss` |
+| Maintenance | `.maintenance` |
+| Strength / Powerlifting performance | `.generalStrength` |
+| Running performance | `.enduranceEvent` + `ModalityPreference.activityType == .running` + a `performanceGoals` label |
+| Aerobic/endurance development | `.enduranceEvent` (undifferentiated from "running performance" at the objective level — the distinction is modality/intensity-focus detail, not a different strategic objective, per the same reasoning that removed `PhaseType.hybrid` — see `PHASE_PLANNING_RULES.md` §1) |
+| Functional Fitness performance | `.functionalFitness` |
+
+This mirrors Decision 3's own finding one layer up: **objective family
+and modality/performance detail are different concepts**, and collapsing
+"running" and "generic aerobic development" into two separate `GoalType`
+cases would repeat the exact mistake `PhaseType.hybrid` made.
+
+### 1b. Milestone, body-composition direction, and preferences
+
+Three more additions, none of them a new entity:
+
+| Field | Type |
+|---|---|
+| `milestoneDate` | `Date?` — §3 below |
+| `bodyCompositionDirection` | `BodyCompositionDirection?` (new: `.gainMuscle`/`.loseFat`/`.maintain`/`.recomposition`) — independent of `primaryType`/`secondaryObjectives`; body-composition direction and training modality are different concepts (a `.generalStrength` primary objective can still carry a `.loseFat` direction) |
+| `preferences` | `GoalPreferences?` — **one** bundled optional struct, not nine loose scalars |
+
+```swift
+struct GoalPreferences: Codable, Equatable {
+    var preferredModalities: [ModalityPreference] = []
+    var dislikedModalities: [ModalityPreference] = []
+    var varietyPreference: VarietyPreference = .moderate
+    var priorityMuscleGroups: [MuscleGroup] = []
+    var performanceGoals: [String] = []
+    var availableTrainingDaysPerWeek: Int?
+    var typicalSessionDurationMinutes: Int?
+    var allowsDoubleSessions: Bool?
+}
+```
+
+A `Goal` with `preferences == nil` simply has no stated preference
+context yet — every planner call degrades to coarser recommendations,
+never fails, satisfying "do not require every field" the same way every
+other optional field in this schema already does.
+
+**Net schema change to `Goal`:** one field changes shape
+(`secondaryTypes: [GoalType]` → `secondaryObjectives: [SecondaryObjective]`,
+a narrow, behavior-preserving migration — old call sites recover the
+prior list via `.map(\.type)`), and three fields are added
+(`milestoneDate`, `bodyCompositionDirection`, `preferences`). No new
+`@Model` entity. This resolves the prior "extend `Goal` directly vs. a
+companion entity" question in favor of direct extension, per explicit
+product-owner decision — reversing this document's own earlier
+recommendation of a separate `LongTermGoalProfile` entity.
+
+### 1c. Why `performanceGoals` stays a plain label for now
 
 A fully typed performance goal (e.g. "sub-20 5K" as a structured
 `ActivityType` + target duration, or "225kg deadlift" as a structured
@@ -57,7 +110,7 @@ explicitly **not** read by any structured comparison logic in this pass.
 Flagged as a deferred question, not silently decided as final —
 `STAGE5A_DECISION_MEMO.md`.
 
-### 1b. `ModalityPreference` — reusing existing vocabulary, not inventing new
+### 1d. `ModalityPreference` — reusing existing vocabulary, not inventing new
 
 ```swift
 struct ModalityPreference {
@@ -75,7 +128,7 @@ vocabulary — `ActivityType` already exists precisely so `ConcurrentScheduler`
 and now the planner never need to special-case running as *the* endurance
 activity, see `PROGRAM_RECOMMENDATION_MODEL.md` §6).
 
-### 1c. Why availability fields here are coarse, not a full `UserAvailability`
+### 1e. Why availability fields here are coarse, not a full `UserAvailability`
 
 `UserAvailability` (Stage 4F) already exists and remains the sole
 authority for tactical-time scheduling — its specific weekday sets and
@@ -151,50 +204,81 @@ everything before that boundary:
    own vocabulary) with a structured explanation — never a silently
    compressed, unrealistic plan.
 
-### 4a. Phase duration policy — TRAININGOS_DESIGNED, explicitly not validated
+### 4a. `PhaseDurationKind` — architecture locked, numbers explicitly not (RESOLVED)
 
-Reusing `SessionFrequency`'s exact target/minimum/maximum shape for
-duration instead of a single number, per this codebase's own established
-"smallest clean model, but ranges where useful" convention:
+**Resolution: the architecture below is locked now. The specific weeks
+in any table are not — they remain TRAININGOS_DESIGNED, configurable
+fixtures, never a claim of validated physiology, and are free to change
+without touching this shape.**
+
+A phase's duration is determined one of four distinct ways — richer than
+a single min/target/max range, since "runs until a specific/milestone
+date" and "a program's own fixed block length" are genuinely different
+*kinds* of duration, not different numbers within one range:
 
 ```swift
-struct PhaseDurationPolicy {
-    var typicalWeeks: Int
-    var minimumWeeks: Int?
-    var maximumWeeks: Int?
+enum PhaseDurationKind: Codable, Equatable {
+    /// An exact length — e.g. a selected program's own fixed mesocycle
+    /// (Strict programs commonly run in fixed 4-week blocks).
+    case fixed(weeks: Int)
+    /// The original min/target/max range shape (`SessionFrequency`'s own
+    /// convention, reused here) — the common case for a phase with no
+    /// externally-fixed length.
+    case range(typical: Int, minimum: Int?, maximum: Int?)
+    /// Runs until an explicit date (already resolved elsewhere — e.g. a
+    /// milestone-anchored phase whose end date backward-planning has
+    /// already computed).
+    case untilDate(Date)
+    /// Runs until `Goal.milestoneDate` — computed relative to the goal,
+    /// not a literal stored date, so it stays correct if the milestone
+    /// itself is later revised (`PLAN_REVISION_MODEL.md`).
+    case untilMilestone
 }
 ```
 
-Illustrative defaults, keyed by `PhaseType` — **every number below is
-TRAININGOS_DESIGNED and explicitly unvalidated against any source**; no
-literature search was performed this pass, matching this document's
-scope as a design pass, not a research pass. `STAGE5A_DECISION_MEMO.md`
-lists confirming/replacing these as **MUST RESOLVE**:
+**What's deliberately *not* in this type:** "planner-recommended" and
+"user-extended/shortened" are not separate `PhaseDurationKind` cases —
+they're `PlannerDecision`-level *provenance* (who chose this value and
+why, `PLAN_REVISION_MODEL.md` §2), not a different shape of the value
+itself. A user-extended phase still resolves to one of the four cases
+above (typically `.range` with an adjusted `typical`); the fact that it
+was user-extended is recorded as a `PHASE_EXTENDED`-reason-coded
+`PlannerDecision`, not encoded into the duration value. This keeps
+`PhaseDurationKind` a pure description of the value, never conflating
+data with audit trail.
 
-| `PhaseType` | typical | minimum | maximum |
-|---|---|---|---|
-| `muscleGain` | 12 weeks | 6 | 20 |
-| `fatLoss` | 8 weeks | 4 | 12 |
-| `maintenance` | 4 weeks | 2 | 8 |
-| `recovery` | 2 weeks | 1 | 4 |
-| `transition` | 2 weeks | 1 | 3 |
-| `strength` | 8 weeks | 4 | 12 |
-| `enduranceEvent` | varies with event date | — | — |
+`TrainingPhase.endDate` remains the single source of truth for the
+actual, concrete boundary once a `PhaseDurationKind` is resolved at
+proposal-construction time — no new persisted field is needed on
+`TrainingPhase` itself; `PhaseDurationKind` is planner-internal
+machinery, not new schema.
 
-These are **configurable**, not hardcoded per-plan constants — a single
-shared default table the planner consults, overridable centrally (a
-future settings surface) without touching planner logic, exactly like
-`InterferenceAvoidanceRule.conservativeDefault` is a default a caller may
-override, not a baked-in rule.
+**Where the default `.range` numbers live (architecture decided now):** a
+static Swift default table (mirroring `InterferenceAvoidanceRule
+.conservativeDefault`'s exact "real default, always overridable per-call"
+pattern) — deliberately built so the *source* of the default can migrate
+to a persisted, owner-editable settings surface later without any caller
+changing, since every consumer already takes the resolved policy as a
+parameter.
 
-`typicalWeeks` has one further consumer beyond backward planning:
+**Illustrative-only fixture numbers** (for Stage 5B's own deterministic
+tests, not a physiology claim, and not required to be finalized before
+implementation starts):
+
+| `PhaseType` | kind | typical | minimum | maximum |
+|---|---|---|---|---|
+| `muscleGain` | `.range` | 12 weeks | 6 | 20 |
+| `fatLoss` | `.range` | 8 weeks | 4 | 12 |
+| `maintenance` | `.range` | 4 weeks | 2 | 8 |
+| `recovery` | `.range` | 2 weeks | 1 | 4 |
+| `transition` | `.range` | 2 weeks | 1 | 3 |
+| `strength` | `.range` | 8 weeks | 4 | 12 |
+| `enduranceEvent` | `.untilMilestone` or `.range`, context-dependent | — | — | — |
+
 `ADHERENCE_AWARE_PLANNING.md` §2a's temporary-preference materiality
-check reads the *enclosing* phase's `typicalWeeks` directly (proposed
-default trigger: a temporary block's cumulative duration reaching half of
-it) — one more reason this table's specific numbers remain **MUST
-RESOLVE** rather than settled, since they now also shape when a
-temporary switch gets flagged as materially changing the phase, not just
-how phases are sequenced.
+check reads whichever `typical` value the enclosing phase's resolved
+`PhaseDurationKind` carries (when it's `.range`) — same non-blocking,
+configurable-fixture status applies there too.
 
 ## 5. Rolling planning — the strategic/tactical stability invariant
 

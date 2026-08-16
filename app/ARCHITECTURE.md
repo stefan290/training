@@ -623,36 +623,65 @@ differently), so an already-accepted Stage 4F `Session.schedulerVersion == 1`
 must never be silently reinterpreted under the new logic. Full account:
 `GOAL_ALIGNMENT.md`, `CONCURRENT_SCHEDULER.md` §4/§6/§14-16.
 
-## Long-Term Planner (Stage 5A — design pass, not yet implemented)
+## Long-Term Planner (Stage 5A — design pass, not yet implemented; all engineering + product decisions resolved)
 
-Stage 5A specified, but did not build, the layer that turns a
-`LongTermGoal` into a sequence of `TrainingPhase`s each carrying a
-`RecommendedTrainingMix` — everything from `RecommendedTrainingMix`
-downward (`ProgramGenerator`s → `Sessions` → `SchedulingPipeline` →
-`ScheduleProposal`/`GoalAlignment`) is already built and unchanged; the
-planner is a new *caller* of that pipeline, never a parallel one. Key
-findings, all detailed in `LONG_TERM_PLANNER.md` and its 6 companion
-documents:
+Stage 5A specified, but did not build, the layer that turns a long-term
+`Goal` into a sequence of `TrainingPhase`s each carrying a
+`RecommendedTrainingMix` — everything from `CANDIDATE TRAINING MIXES`
+downward in the locked pipeline (`ProgramGenerator`s → `Sessions` →
+`SchedulingPipeline` → `ScheduleProposal`/`GoalAlignment`) is already
+built and unchanged; the planner is a new *caller* of that pipeline,
+never a parallel one. Two review rounds resolved every open question —
+4 product-policy decisions, then 7 engineering decisions — all detailed
+in `LONG_TERM_PLANNER.md` and its 7 companion documents plus
+`STAGE5A_DECISION_MEMO.md`. Key findings:
 
 - **No new plan container.** `StrategicPlan` (the kickoff's own term) is
-  the existing `TrainingPlan`/`PlanStatus` — it already carries ordered
-  `TrainingPhase`s, each phase's recommended mix, and approximate
-  durations.
-- **No new phase-objective schema.** A phase's "primary/protected/
-  supporting" goal composition is entirely expressed through
-  `TrainingMixComponent.priority`/`.flexibility` (`.secondary`+
-  `.required` == "protected") — Stage 4G's two-dimension priority model
-  already carries this, one layer up from where it was designed.
-  `PHASE_PLANNING_RULES.md` §2-3.
+  the existing `TrainingPlan`/`PlanStatus`, extended with revision
+  lineage (`supersedes`/`lineageID`) — every re-plan creates a new
+  revision; completed phases and accepted tactical schedules are
+  permanent historical snapshots, never rewritten.
+  `PLAN_REVISION_MODEL.md` §4.
+- **No new phase-objective schema, and no `PhaseType.hybrid`.** A
+  phase's "primary/protected/supporting" goal composition is entirely
+  expressed through `TrainingMixComponent.priority`/`.flexibility`
+  (`.secondary`+`.required` == "protected") — Stage 4G's two-dimension
+  priority model already carries this. `PhaseType.hybrid` was proposed,
+  then explicitly withdrawn on review: a phase's strategic objective
+  (e.g. Muscle Gain) never changes just because its `TrainingMix` spans
+  several modalities — that's a mix-composition fact, not an objective.
+  `PHASE_PLANNING_RULES.md` §1-3.
+- **`Goal` is extended compositionally, not turned into one giant
+  nullable object.** One field is narrowly migrated
+  (`secondaryTypes: [GoalType]` → `secondaryObjectives: [SecondaryObjective]`,
+  adding a protected/supporting role tag); three fields are added
+  (`milestoneDate`, `bodyCompositionDirection`, and one bundled
+  `preferences: GoalPreferences?` struct). No new `GoalType` cases were
+  needed — every required objective family (Muscle Gain, Fat Loss,
+  Maintenance, Strength, Running, Aerobic Development, Functional
+  Fitness) already maps onto the existing enum. `STRATEGIC_PLAN_MODEL.md`
+  §1.
 - **Temporary modality switching reuses `TrainingMix.validFrom`/
-  `.validUntil`** (declared in Stage 4F, given real expiry behavior here
-  for the first time) rather than a new type. `ADHERENCE_AWARE_PLANNING.md`
-  §2-3.
-- **One new persisted type is proposed for Stage 5B:** `PlannerDecision`,
-  mirroring `Recommendation`'s existing "no reason code, no
-  recommendation" precedent, one layer up. `PLAN_REVISION_MODEL.md` §2.
-- **`Goal` extension, one new `PhaseType` case, and one new
-  `TrainingPlan.supersedes` field** are proposed, additive, and flagged
-  as MUST RESOLVE before Stage 5B — `STAGE5A_DECISION_MEMO.md` §1.
+  `.validUntil`** (declared in Stage 4F, given real expiry *and*
+  materiality-threshold behavior here for the first time) rather than a
+  new type. `ADHERENCE_AWARE_PLANNING.md` §2-2a.
+- **A new capability gate runs before any recommendation is ranked.**
+  `ProgramCapabilityRegistry` distinguishes "a `ProgrammingSystem` exists"
+  from "a curated preset exists" from "this specific candidate can be
+  instantiated right now" — a conceptually-good path TrainingOS can't yet
+  execute is a `CapabilityGap`, surfaced as "Unavailable," never
+  disguised as a normal recommendation. `PROGRAM_RECOMMENDATION_MODEL.md`
+  §5.
+- **One new persisted type:** `PlannerDecision` — reason-coded,
+  type-scoped to 6 strategically-meaningful events, records what was
+  chosen *and* what was considered and rejected — mirroring
+  `Recommendation`'s existing "no reason code, no recommendation"
+  precedent, one layer up. `PLAN_REVISION_MODEL.md` §2.
+- **Preference/adherence can promote an alternative to the top
+  recommendation** — bounded by a two-stage compatibility gate + tier-gap
+  rule, so preference can never erase major goal incompatibility.
+  `ADHERENCE_AWARE_PLANNING.md` §5.
 
-See `LONG_TERM_PLANNER.md` for the full pipeline and document map.
+Zero blocking open items remain. See `LONG_TERM_PLANNER.md` for the full
+16-stage pipeline and document map, and `STAGE5A_DECISION_MEMO.md` for
+the complete resolution record.

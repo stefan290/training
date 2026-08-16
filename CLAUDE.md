@@ -102,3 +102,21 @@ UI looks right.
     concept is ever added, it must be modeled as its own separate type —
     overloading either of these two into "potentially unsafe" is a
     correctness bug, not a shortcut.
+19. **Long-Term Planning keeps four concepts distinct, never conflated:**
+    (a) **phase objective vs. training modality** — `TrainingPhase.type`
+    names a strategic adaptation goal; a `TrainingMix`'s composition
+    (how many modalities it spans) is a separate, independent property,
+    and a diverse mix never implies or requires a different phase
+    objective; (b) **a conceptually good idea vs. a currently executable
+    program** — `ProgramCapabilityRegistry` gates every recommendation;
+    the planner must never fabricate a `ProgramDefinition` to satisfy its
+    own recommendation, and an inexecutable path is surfaced as a
+    `CapabilityGap`, never disguised as a normal option; (c) **a
+    strategic plan vs. tactical workout materialization** — strategic
+    phases span months, exact tactical prescriptions exist only for the
+    current rolling window, and a future performance-dependent number is
+    never fabricated ahead of the window it belongs to; (d) **a plan
+    revision vs. rewriting history** — revising a plan always creates a
+    new revision referencing what it replaced; a completed phase and an
+    already-accepted tactical schedule are permanent historical
+    snapshots that no later revision, of any size, may mutate.

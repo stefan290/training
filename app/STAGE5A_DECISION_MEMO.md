@@ -1,67 +1,119 @@
 # Stage 5A Decision Memo
 
 Every place this pass's design documents (`LONG_TERM_PLANNER.md` and its
-6 companions) made a judgment call, deferred a question, or found a real
+7 companions) made a judgment call, deferred a question, or found a real
 gap — collected here so Stage 5B does not start on an unreviewed
 assumption. Per this stage's own instruction: **do not silently choose
 major strategic training policy.**
 
-**Status: the 4 product-policy decisions (§4) are RESOLVED** — protected-
-frequency floor policy, temporary-preference-block maximum duration,
-variety/adherence promotion, and the Poor Fit/Infeasible boundary are all
-locked and reflected throughout `LONG_TERM_PLANNER.md`,
-`PHASE_PLANNING_RULES.md`, `PROGRAM_RECOMMENDATION_MODEL.md`,
-`ADHERENCE_AWARE_PLANNING.md`, `GOAL_ALIGNMENT.md`, and `CLAUDE.md` (rules
-17-18). §1's 7 engineering MUST RESOLVE items remain open.
+**Status: ALL ELEVEN Stage 5A decisions are RESOLVED** — the 4
+product-policy decisions (§4) and the 7 engineering MUST RESOLVE items
+(§1), across two review rounds. Zero blocking open items remain before
+Stage 5B implementation. What's left (§3) is explicitly non-blocking,
+configurable policy or backlog work, not a gate.
 
-## 1. MUST RESOLVE before Stage 5B implementation
+## 1. Engineering MUST RESOLVE items — ALL SEVEN RESOLVED
 
-These are architecture-shaping decisions this document recommends an
-answer for, but which touch core/foundational entities or previously
-out-of-scope territory (CLAUDE.md rule 11) — they need explicit sign-off,
-not just an absence of objection.
+Architecture-shaping decisions touching core/foundational entities or
+previously out-of-scope territory (CLAUDE.md rule 11) — each needed
+explicit sign-off, not just an absence of objection. Original question
+preserved for the record, followed by the resolution actually locked in.
 
-1. **Extend `Goal` directly, or introduce a new wrapping type for
-   `LongTermGoal`'s richer fields?** Recommendation:
-   extend `Goal` (`STRATEGIC_PLAN_MODEL.md` §1) — same additive-field
-   pattern as every prior stage's schema evolution, no duplicate-entity
-   smell. Risk: `Goal` is a Stage-1 foundational entity; confirm before
-   touching it.
-2. **The illustrative `PhaseDurationPolicy` numbers
-   (`STRATEGIC_PLAN_MODEL.md` §4a) are entirely TRAININGOS_DESIGNED —
-   no source research was performed this pass.** They need either
-   explicit product-owner sign-off as reasonable defaults, or a research
-   pass (mirroring how Stage 4C/4D verified endurance protocols) before
-   any real user sees a plan built from them.
-3. **Add `PhaseType.hybrid`.** Purely additive, but it's the one new
-   case on a core enum this pass recommends (`PHASE_PLANNING_RULES.md`
-   §1) — confirm "Aerobic Development"/"Running Performance" really
-   should stay expressed via `enduranceEvent` + mix composition rather
-   than getting their own cases too.
-4. **No curated V1 program library exists for SteadyState, Interval, or
-   Functional Fitness** — only Hypertrophy/Powerlifting have the 8
-   named, shippable configurations `V1_PROGRAM_LIBRARY.md` curates
-   (`PROGRAM_RECOMMENDATION_MODEL.md` §5). Any Fat Loss/Aerobic
-   Development/Running/Functional Fitness phase's program recommendation
-   quality is capped by this gap until it's closed — decide whether
-   Stage 5B blocks on curating that library first, or ships with
-   generator-parameter-only recommendations for those systems and
-   flags it visibly (`programAvailabilityMatch`) in the meantime.
-5. **`TrainingPlan.supersedes: TrainingPlan?`** (`PLAN_REVISION_MODEL.md`
-   §5) is a new field on a core entity, needed for the major-revision
-   (long-term-goal-change) path. Confirm the nullify-delete-rule shape
-   before it's built.
-6. **`PlannerDecision`'s persistence shape** — multiple optional
-   one-to-one back-references (`phase`/`trainingMix`/`programInstance`),
-   mirroring `WorkoutBlock`'s established pattern
-   (`PLAN_REVISION_MODEL.md` §2). Confirm this is preferred over
-   alternatives (e.g. a generic subject-description string) before
-   building it — it's the one new `@Model` type this whole design
-   depends on for explainability.
-7. **Rolling-window trigger defaults** — the 7-day scheduling buffer and
-   "tactical horizon = primary component's natural block length,
-   fallback 4 weeks" rule (`TACTICAL_PLANNING_HANDOFF.md` §1-2) are
-   proposed, not validated against any real usage pattern.
+1. **Goal extension (RESOLVED).** Original question: extend `Goal`
+   directly, or introduce a new wrapping entity? **Decision: extend
+   `Goal` compositionally** — never one giant object of unrelated
+   nullable fields. One field is narrowly migrated
+   (`secondaryTypes: [GoalType]` → `secondaryObjectives: [SecondaryObjective]`,
+   adding a `.protected`/`.supporting` role tag); three fields are added
+   (`milestoneDate: Date?`, `bodyCompositionDirection: BodyCompositionDirection?`,
+   one bundled `preferences: GoalPreferences?` struct — not nine loose
+   scalars). **No new `GoalType` cases were needed** — every required
+   objective family (Muscle Gain, Fat Loss, Maintenance, Strength/
+   Powerlifting, Running, Aerobic Development, Functional Fitness)
+   already maps onto the existing enum; body-composition direction and
+   training modality are kept as independent fields, never conflated.
+   No new `@Model` entity. Full model: `STRATEGIC_PLAN_MODEL.md` §1.
+2. **`PhaseDurationKind` (RESOLVED — architecture locked, numbers are
+   not).** Original question: what shape does a phase's duration take?
+   **Decision:** a 4-case value type — `.fixed(weeks:)`,
+   `.range(typical:minimum:maximum:)`, `.untilDate(_:)`, `.untilMilestone`
+   — richer than a single range, since "runs until a milestone" and "a
+   program's own fixed block" are different *kinds* of duration, not
+   different numbers. Planner-recommended vs. user-extended/shortened is
+   `PlannerDecision` provenance, not a separate case. **The specific
+   week-counts remain explicitly non-blocking, configurable
+   TRAININGOS_DESIGNED fixtures** — sensible for Stage 5B's deterministic
+   tests, never a physiology claim, tunable without touching this shape.
+   Full model: `STRATEGIC_PLAN_MODEL.md` §4a.
+3. **`PhaseType.hybrid` (RESOLVED — WITHDRAWN).** Original proposal: add
+   a `.hybrid` case for phases mixing several modalities. **Decision: do
+   not add it, on review.** A phase's strategic objective and its
+   `TrainingMix`'s composition are separate concepts — a Muscle Gain
+   phase using 3 Strength + 2 Functional Fitness + 1 Running is still
+   entirely a Muscle Gain phase; "hybrid" describes the mix, never the
+   objective. The original justification (the transition target state)
+   is already `.transition`. Zero new `PhaseType` cases. If a genuinely
+   new *objective* independent of any specific mix ever emerges, that is
+   a distinct future question, not this one. Full model:
+   `PHASE_PLANNING_RULES.md` §1.
+4. **`ProgramCapabilityRegistry` (RESOLVED).** Original question: how
+   does the planner avoid recommending something it can't execute?
+   **Decision:** a new, required gate — `EXECUTABILITY/CAPABILITY CHECK`
+   — runs *before* `GoalAlignment` in the locked pipeline. Three
+   previously-conflated questions are now answered independently:
+   `ProgrammingSystem` availability (all 5 exist), curated-preset
+   availability (only Hypertrophy/Powerlifting today — a UX gap, not an
+   executability one), and real instantiability right now (true for all
+   5 systems, since every generator produces a real `ProgramDefinition`).
+   `ProgramCandidate.programDefinition` is **non-optional** — a
+   conceptually-good, not-yet-executable path is a `CapabilityGap`
+   ("Unavailable / not currently executable"), never a `ProgramCandidate`,
+   never a fabricated definition. Curating named presets for
+   SteadyState/Interval/Functional Fitness remains open **as non-blocking
+   backlog**, not a Stage 5B gate. Full model:
+   `PROGRAM_RECOMMENDATION_MODEL.md` §5.
+5. **Revision lineage (RESOLVED).** Original question: how does
+   `TrainingPlan.supersedes` preserve historical truth? **Decision:**
+   every re-plan — extend, shorten, milestone change, or a full
+   long-term-goal change — creates a **new** `TrainingPlan` revision,
+   never an in-place mutation (this generalizes the original "minor vs.
+   major" split into one uniform mechanism). Two new fields:
+   `supersedes: TrainingPlan?` (nullify, the immediately-prior revision)
+   and `lineageID: UUID` (shared across ordinary revisions; a fresh UUID
+   only when a genuinely new strategic intent begins, e.g. a full goal
+   change). A revision's own `phases` holds only its new/future phases —
+   completed phases and accepted tactical schedules stay permanently on
+   whichever revision they actually happened under, never moved,
+   duplicated, or rewritten. Full model: `PLAN_REVISION_MODEL.md` §4.
+6. **`PlannerDecision` shape (RESOLVED).** Original question: is the
+   original `{reasonCode, factors, explanation, decidedAt}` shape
+   sufficient? **Decision: extended, not replaced** — added
+   `decisionType` (a closed, 6-case enum scoping this to strategically-
+   meaningful events only: phase selected, program/mix selected, user
+   chose alternative, temporary preference applied, phase extended/
+   shortened, roadmap revised — never a debug log of every low-level
+   comparison), `source` (`systemRecommended`/`userSelected`/
+   `userOverride`/`planRevision`), and `alternativesConsidered:
+   [ConsideredAlternative]` (label + rating summary + rejection reason
+   for what wasn't chosen). `goal`/`planRevision` back-references added
+   alongside the existing `phase`/`trainingMix`/`programInstance`.
+   `explanation` remains generated display copy, never business source
+   of truth. Full model: `PLAN_REVISION_MODEL.md` §2.
+7. **Rolling tactical window (RESOLVED — architecture locked, numbers
+   are not).** Original question: when does the next window generate,
+   and how far can it reach? **Decision:** tactical horizon is bounded,
+   in order, by (a) the phase's primary component's own natural
+   mesocycle block, (b) the current phase's own remaining time, (c) any
+   known upcoming transition/milestone date, (d) a configurable fallback
+   (illustrative: 4 weeks) only when no natural block exists — never a
+   bare constant in isolation, and never reaching into what will become
+   a different mix under the next phase. 6 explicit, deterministic
+   triggers regenerate the window (approaching end, already completed,
+   phase change, material mix/preference change, pause/resume, plan
+   revision) — never a bare timer. A previously accepted window is a
+   permanent historical snapshot. **The specific "7 days"/"4 weeks"
+   numbers remain non-blocking, configurable policy.** Full model:
+   `TACTICAL_PLANNING_HANDOFF.md` §1-2.
 
 ## 2. Safe assumptions (low-risk, reversible, used without separate approval)
 
@@ -69,23 +121,23 @@ not just an absence of objection.
   parallel rating enum (`PROGRAM_RECOMMENDATION_MODEL.md` §2).
 - `ModalityPreference` reuses `ProgrammingSystemKind`+`ActivityType`
   directly rather than a new modality vocabulary
-  (`STRATEGIC_PLAN_MODEL.md` §1b).
+  (`STRATEGIC_PLAN_MODEL.md` §1d).
 - `performanceGoals: [String]` (freeform labels) rather than a typed
-  metric system, for V1 (`STRATEGIC_PLAN_MODEL.md` §1a).
+  metric system, for V1 (`STRATEGIC_PLAN_MODEL.md` §1c).
 - `[CandidateTrainingMix]`/`[ProgramCandidate]` cap at ~3 entries
-  (`ADHERENCE_AWARE_PLANNING.md` §5).
+  (`ADHERENCE_AWARE_PLANNING.md` §5c).
 - One flat, additive `PlannerReasonCode` enum shared across every
   decision kind, rather than a separate enum per concern
   (`PLAN_REVISION_MODEL.md` §3).
-- `LongTermGoal`'s availability fields stay coarse (day count, typical
-  duration, doubles allowed) — the real, detailed `UserAvailability`
-  remains supplied fresh at tactical time, never duplicated
-  (`STRATEGIC_PLAN_MODEL.md` §1c).
-- Minor revisions (extend/shorten within the same goal) mutate the
-  current plan in place; only a long-term-goal change supersedes the
-  whole plan (`PLAN_REVISION_MODEL.md` §4 vs. §5).
+- `Goal.preferences`'s availability fields stay coarse (day count,
+  typical duration, doubles allowed) — the real, detailed
+  `UserAvailability` remains supplied fresh at tactical time, never
+  duplicated (`STRATEGIC_PLAN_MODEL.md` §1e).
+- Every re-plan creates a new `TrainingPlan` revision (uniform mechanism,
+  §1 item 5 above) — superseded from the original draft's "minor
+  revisions mutate in place" position.
 
-## 3. Deferred questions (explicitly not answered this pass)
+## 3. Deferred questions (explicitly not answered this pass — non-blocking)
 
 - **Typed `PerformanceGoal`** (structured target metric, not a label) —
   real value, real design work, not attempted this pass.
@@ -97,21 +149,28 @@ not just an absence of objection.
   out of scope indefinitely, not just for Stage 5A/5B
   (`ADHERENCE_AWARE_PLANNING.md` §4).
 - **A planned-vs-actual analytics surface** — confirmed representable
-  from existing relationships (`PLAN_REVISION_MODEL.md` §6), no UI or
+  from existing relationships (`PLAN_REVISION_MODEL.md` §5), no UI or
   aggregation engine designed.
 - **Exact phase-progress computation** ("week 6 of 12") for the current-
   phase UI contract — referenced conceptually
   (`TACTICAL_PLANNING_HANDOFF.md` §4) but the precise formula (calendar
   weeks vs. completed-session count vs. program-journey position) isn't
   chosen.
+- **Curating a named V1 preset library for SteadyState/Interval/
+  Functional Fitness** — real, valuable future work, explicitly tracked
+  as backlog, not a Stage 5B blocker (`PROGRAM_RECOMMENDATION_MODEL.md`
+  §5d).
+- **The illustrative `PhaseDurationKind.range`/rolling-window numbers**
+  (§1 items 2 and 7) — configurable by design, free to tune from real
+  usage without any architecture change.
 
 ## 4. Product choices requiring explicit owner decision — ALL FOUR RESOLVED
 
 Strategic/training-policy calls, distinct from the engineering questions
 above — CLAUDE.md rule 10 territory ("do not invent ambiguous training
 rules... flag it"). All four below were reviewed and decided by the
-product owner; the original question is preserved for the record,
-followed by the resolution actually locked in.
+product owner in the first review round; the original question is
+preserved for the record, followed by the resolution actually locked in.
 
 1. **Protected-frequency floor policy (RESOLVED).** Original question:
    should "protected" components have a TRAININGOS_DESIGNED global
@@ -128,8 +187,8 @@ followed by the resolution actually locked in.
    floor is a specific Strict program's own hard methodology requirement
    — then it's a structural incompatibility with *that* program choice.
    Sessions are never silently added back. Full model:
-   `PHASE_PLANNING_RULES.md` §2a-2b, §8;
-   `PROGRAM_RECOMMENDATION_MODEL.md` §7.
+   `PHASE_PLANNING_RULES.md` §2a-2b, §8; `PROGRAM_RECOMMENDATION_MODEL.md`
+   §7.
 2. **Temporary-preference-block maximum duration (RESOLVED).** Original
    question: should a temporary block have a hard maximum duration?
    **Decision: no universal hard maximum.** A block always carries a
@@ -157,7 +216,7 @@ followed by the resolution actually locked in.
    when it's displaced from the top slot. New reason code
    `ADHERENCE_PREFERENCE_PROMOTED_ALTERNATIVE`. Deterministic and
    explainable throughout — no numeric percentages. Full model:
-   `ADHERENCE_AWARE_PLANNING.md` §5-5d; `LONG_TERM_PLANNER.md` §2a.
+   `ADHERENCE_AWARE_PLANNING.md` §5-5d; `LONG_TERM_PLANNER.md` §2b.
 4. **Poor Fit vs. Infeasible boundary (RESOLVED — narrow definition
    locked).** **Decision: `Infeasible` is narrow and mechanical** — a
    real hard-constraint impossibility only (6 required sessions/3
@@ -174,25 +233,29 @@ followed by the resolution actually locked in.
    future validated safety concept must be a separate type. Full model:
    `PROGRAM_RECOMMENDATION_MODEL.md` §2a; `CLAUDE.md` rule 18.
 
-### 4a. The resulting decision hierarchy
+## 5. The locked decision hierarchy (final)
 
 Every ranking the planner produces — mixes, programs, or a revised
-roadmap — now flows through one fixed five-stage hierarchy (full detail
-in `LONG_TERM_PLANNER.md` §2a, the single canonical statement of it):
+roadmap — flows through one fixed pipeline (full detail in
+`LONG_TERM_PLANNER.md` §2, the single canonical statement of it):
 
 ```
-Hard Feasibility -> Goal Alignment -> Candidate Quality -> Adherence/User Preference -> Recommendation Ranking
+LONG-TERM GOAL → STRATEGIC PLAN REVISION → TRAINING PHASE (objective, not modality)
+  → CANDIDATE TRAINING MIXES → EXECUTABILITY/CAPABILITY CHECK → GOAL ALIGNMENT
+  → PROGRAM/MIX QUALITY → ADHERENCE/USER PREFERENCE → RANKED RECOMMENDATION
+  → USER SELECTION → PROGRAM GENERATORS/DEFINITIONS → ROLLING TACTICAL WINDOW
+  → SCHEDULING PIPELINE → USER APPROVAL → EXECUTION/PERFORMANCE PROFILE
 ```
 
-Hard constraints determine what is possible (Decision 4). `GoalAlignment`
-determines how well a feasible candidate serves the phase (Decisions 1,
-4). The compatibility gate determines which candidates are even eligible
-to be promoted (Decision 3, stage one). Preference/adherence may reorder
-only among those (Decision 3, stage two; Decision 2's materiality check
-is the same principle applied to an already-running temporary choice).
-User choice remains final throughout.
+Two independent feasibility gates exist, never conflated (`LONG_TERM_PLANNER.md`
+§2a): **executability** (can TrainingOS instantiate this at all — early)
+and **scheduling feasibility** (can it be placed on the calendar given
+real availability — late, inside Scheduling Pipeline, Stage 4G,
+unchanged). Between them, `GoalAlignment` determines fit, a compatibility
+gate determines promotion eligibility, and preference/adherence reorders
+only among gated-in candidates. User choice remains final throughout.
 
-## 5. Stage 5B test plan (§65 — specified now, written later)
+## 6. Stage 5B test plan (§65 — specified now, written later)
 
 None of these exist yet; this is the list Stage 5B's own test-writing
 task should work from, matching each to the proof case that motivates it:
@@ -220,41 +283,49 @@ task should work from, matching each to the proof case that motivates it:
     strength/hypertrophy tradeoff and never resets prior hypertrophy
     history (kickoff §49).
 11. Phase extension recalculates only future phases; completed phases
-    are byte-identical before/after.
-12. Phase shortening redistributes freed time per
-    `PhaseDurationPolicy` without violating any phase's `minimumWeeks`.
+    are byte-identical before/after, on whichever revision they belong to.
+12. Phase shortening redistributes freed time per `PhaseDurationKind`
+    without violating any phase's `minimum`.
 13. An important-date (milestone) change re-runs backward planning from
-    today, preserving history.
-14. A long-term-goal change supersedes the plan (`PLAN_REVISION_MODEL.md`
-    §5) — old plan `.superseded`, new plan `.active`, `Goal.plans` holds
-    both.
+    today as a new revision, preserving history.
+14. A long-term-goal change starts a new lineage
+    (`PLAN_REVISION_MODEL.md` §4c) — old revision `.superseded`, new
+    revision `.active`, `lineageID` differs, `Goal.plans` holds both.
 15. Program selected manually (Start From Program) evaluates with the
-    same `ProgramFitFactor` machinery as a recommended candidate.
+    same `ProgramFitFactor` machinery as a recommended candidate, after
+    passing the same capability gate.
 16. Recommended-program path (Guided Planning) produces a ranked
-    `[ProgramCandidate]` with reason codes.
+    `[ProgramCandidate]` (all executable) plus any `[CapabilityGap]`,
+    with reason codes.
 17. No historical `PerformanceProfile`/`ExercisePerformanceProfile`/
     `ActivityPerformanceProfile`/`BenchmarkPerformanceProfile` row is
     ever deleted or reset by any planner operation in this suite.
 18. No test ever asserts an exact set/load/pace more than one tactical
     window ahead — a structural test of the boundary itself (grep-style
     check that materialization never runs past the current window).
-19. Identical `LongTermGoal`/`asOf` inputs produce identical
+19. Identical `Goal`/`asOf` inputs produce identical
     `StrategicPlanProposal`/`[CandidateTrainingMix]` output — determinism,
     matching every existing engine's own proof pattern.
 20. Every `PlannerDecision` constructed anywhere in the suite has a
-    non-empty `reasonCode` and `explanation` — structural, mirroring
-    `Recommendation`'s "no reason code, no recommendation" invariant.
+    non-empty `reasonCode`, `decisionType`, `source`, and `explanation` —
+    structural, mirroring `Recommendation`'s "no reason code, no
+    recommendation" invariant.
+21. A `ProgramCandidate` is never constructed with an uninstantiable
+    `programDefinition` — every candidate in every test is genuinely
+    executable; a deliberately-unavailable system produces a
+    `CapabilityGap`, never a candidate.
 
-## 6. What this pass confirmed needs no change
+## 7. What this pass confirmed needs no change
 
 Per the kickoff's own instruction (§66/§37): "do not duplicate existing
 systems... if planner analysis reveals a genuine incompatibility, stop
-and explain rather than workaround." None was found. Specifically
-confirmed unchanged: `HypertrophyProgramGenerator`/`PowerliftingProgramGenerator`/
+and explain rather than workaround." None was found across either review
+round. Specifically confirmed unchanged:
+`HypertrophyProgramGenerator`/`PowerliftingProgramGenerator`/
 `SteadyStateProgramGenerator`/`IntervalProgramGenerator`/
 `FunctionalFitnessProgramGenerator` and their engines, `ConcurrentScheduler`,
 `GoalAlignmentEvaluator`, `SchedulingPipeline`, `TrainingMix`/
 `TrainingMixComponent`, `AcceptScheduleProposalUseCase`. Every new concept
-in this pass's 7 documents is additive (a new optional field, a new
-enum case, or a wholly new plain-value type) — nothing existing is
-redefined.
+across this pass's 8 documents is additive (a new optional/migrated
+field, zero new `PhaseType`/`GoalType` cases, or a wholly new plain-value
+type) — nothing existing is redefined.

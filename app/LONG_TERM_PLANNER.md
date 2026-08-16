@@ -27,62 +27,97 @@ subject to explicit user training preferences and adherence. User-selected
 training modalities must not be silently replaced by theoretically more
 optimal modalities."*
 
-## 2. The required pipeline
+## 2. The required pipeline (locked, final)
 
 ```
-LongTermGoal                              (extended Goal — STRATEGIC_PLAN_MODEL.md §1)
+LONG-TERM GOAL                  (primary + secondary/protected objectives + milestone
+                                  — extended Goal, STRATEGIC_PLAN_MODEL.md §1)
   ↓
-LongTermPlanner                           (new Application-layer engine — §5)
+STRATEGIC PLAN REVISION          (= existing TrainingPlan, revision-lineage-aware
+                                  — STRATEGIC_PLAN_MODEL.md §2, PLAN_REVISION_MODEL.md §4)
   ↓
-StrategicPlan                             (= existing TrainingPlan — STRATEGIC_PLAN_MODEL.md §2)
+TRAINING PHASE                   (strategic objective, NOT modality composition
+                                  — existing entity, unchanged shape, PHASE_PLANNING_RULES.md §1)
   ↓
-TrainingPhase                             (existing entity, unchanged shape — PHASE_PLANNING_RULES.md §1)
+CANDIDATE TRAINING MIXES         (existing TrainingMix/TrainingMixComponent, kind == .recommended
+                                  — ADHERENCE_AWARE_PLANNING.md §5)
   ↓
-RecommendedTrainingMix                    (existing TrainingMix, kind == .recommended)
+EXECUTABILITY / CAPABILITY CHECK (NEW gate — ProgramCapabilityRegistry,
+                                  PROGRAM_RECOMMENDATION_MODEL.md §5 — runs BEFORE alignment)
   ↓
-ProgramGenerator(s)                       (existing: Hypertrophy/Powerlifting/SteadyState/Interval/FunctionalFitness)
+GOAL ALIGNMENT                   (existing GoalAlignmentEvaluator, Stage 4G, unmodified)
   ↓
-ProgramDefinition / ProgramInstance       (existing, unchanged)
+PROGRAM / MIX QUALITY            (ProgramFitFactor/ProgramCandidate ranking,
+                                  PROGRAM_RECOMMENDATION_MODEL.md §1-3)
   ↓
-Sessions                                  (existing, unchanged — materializer-produced, naive dates)
+ADHERENCE / USER PREFERENCE      (bounded promotion among compatible candidates only
+                                  — ADHERENCE_AWARE_PLANNING.md §5a-5b)
   ↓
-SchedulingPipeline                        (existing, Stage 4G)
+RANKED RECOMMENDATION            (.recommended + .bestGoalAlignment + ≤2 alternatives
+                                  — ADHERENCE_AWARE_PLANNING.md §5c)
   ↓
-ScheduleProposal + GoalAlignment          (existing, Stage 4G)
+USER SELECTION                   (any candidate the user actually picks is honored,
+                                  whatever its rank — §1 above)
   ↓
-User approval                             (existing pattern: Engine recommendation -> Explanation -> User approval)
+PROGRAM GENERATORS / DEFINITIONS (existing: Hypertrophy/Powerlifting/SteadyState/Interval/FunctionalFitness)
   ↓
-TacticalPlan / accepted schedule          (= accepted Sessions via AcceptScheduleProposalUseCase — TACTICAL_PLANNING_HANDOFF.md)
+ROLLING TACTICAL WINDOW          (existing materializers, naive dates
+                                  — TACTICAL_PLANNING_HANDOFF.md §1-2)
+  ↓
+SCHEDULING PIPELINE               (existing, Stage 4G)
+  ↓
+USER APPROVAL                     (existing pattern: Engine recommendation -> Explanation -> User approval)
+  ↓
+EXECUTION / PERFORMANCE PROFILE  (accepted Sessions via AcceptScheduleProposalUseCase;
+                                  PerformanceProfile accrues permanently, unchanged)
 ```
 
-**Validated: every downstream stage from `RecommendedTrainingMix` onward
+**Validated: every stage from PROGRAM GENERATORS / DEFINITIONS onward
 already exists and is already tested (298 tests through Stage 4F, 310
-through Stage 4G).** `LongTermPlanner`'s entire job is producing the
-first four boxes — a `TrainingPlan` with ordered `TrainingPhase`s, each
-carrying a `RecommendedTrainingMix` — and handing the *current* phase's
-mix into the exact same `ScheduledProgramInput`/`SchedulingConstraints`/
-`SchedulingPipeline.propose` contract any test in
+through Stage 4G).** `LongTermPlanner`'s entire job is everything above
+that line — producing a `TrainingPlan` revision with ordered
+`TrainingPhase`s, ranking candidate mixes/programs through the
+capability/alignment/preference gates, and handing the *selected*
+mix/program into the exact same `ScheduledProgramInput`/
+`SchedulingConstraints`/`SchedulingPipeline.propose` contract any test in
 `ConcurrentSchedulerTests`/`SchedulerHardeningTests` already exercises.
 Nothing about the scheduler, `GoalAlignmentEvaluator`, or any
 `ProgrammingSystem` needs to change to support this — confirmed during
 this pass's own review, per the kickoff's instruction to stop and explain
 if a genuine incompatibility were found. None was.
 
-## 2a. The decision hierarchy (locked, resolves all four Stage 5A MUST RESOLVE items)
+## 2a. Two distinct feasibility gates — never conflated
 
-Every candidate a caller ever asks the planner to rank — mixes,
-programs, or a revised roadmap — passes through the same five ordered
-stages, never in a different order and never with a later stage
-overriding an earlier one's rejection:
+The pipeline above has **two** different "can this even happen" checks,
+at two different stages, answering two different questions — collapsing
+them into one "Hard Feasibility" concept (this document's own earlier
+draft) was itself a conflation worth correcting:
+
+1. **EXECUTABILITY / CAPABILITY CHECK** (early, right after candidate
+   mixes are proposed) — can TrainingOS actually *instantiate* a real
+   `ProgramDefinition` for this candidate at all?
+   `ProgramCapabilityRegistry`, `PROGRAM_RECOMMENDATION_MODEL.md` §5. A
+   candidate that fails this never becomes a `ProgramCandidate` — it
+   becomes a `CapabilityGap`, surfaced as "Unavailable / not currently
+   executable," never disguised as a normal recommendation.
+2. **Scheduling feasibility** (late, inside SCHEDULING PIPELINE) — given
+   an executable, alignment-ranked, user-approved mix, can it actually
+   be *placed on the calendar* within real availability?
+   `ScheduleFeasibility`/`GoalAlignmentRating.infeasible`,
+   `PROGRAM_RECOMMENDATION_MODEL.md` §2a's narrow, mechanical definition
+   — unchanged from Stage 4G.
+
+A candidate can pass (1) and still fail (2) later (conceptually
+buildable, but this user's specific availability can't fit it) — the two
+gates are independent, and neither is a stand-in for the other.
+
+## 2b. The ranking hierarchy (locked) — the middle five stages, zoomed in
 
 ```
-HARD FEASIBILITY
-  ↓   (can this even be scheduled? — ScheduleFeasibility/PROGRAM_RECOMMENDATION_MODEL.md §2a's
-       narrow, mechanical Infeasible definition. Fails here -> Infeasible, out, full stop.)
 GOAL ALIGNMENT
-  ↓   (given it's feasible, how well does it serve the phase's goal? — GoalAlignmentEvaluator,
+  ↓   (given it's executable, how well does it serve the phase's goal? — GoalAlignmentEvaluator,
        unmodified. Produces the qualitative rating everything downstream reads.)
-CANDIDATE QUALITY / COMPATIBILITY GATE
+PROGRAM / MIX QUALITY / COMPATIBILITY GATE
   ↓   (is this candidate's alignment at or above the compatibility threshold —
        ADHERENCE_AWARE_PLANNING.md §5a? Below the gate -> shown only as Poor Fit,
        never eligible for promotion, never Infeasible on this basis alone.)
@@ -91,19 +126,22 @@ ADHERENCE / USER PREFERENCE
        favor one enough to reorder — ADHERENCE_AWARE_PLANNING.md §5b's
        tier-gap-bounded promotion rule?)
 RANKED RECOMMENDATION
-      (.recommended + .bestGoalAlignment (when different) + at most 2 further
-       alternatives — ADHERENCE_AWARE_PLANNING.md §5c. User choice remains final:
-       any candidate the user actually selects is scheduled, whatever its rank.)
+  ↓   (.recommended + .bestGoalAlignment (when different) + at most 2 further
+       alternatives — ADHERENCE_AWARE_PLANNING.md §5c.)
+USER SELECTION
+      (User choice remains final: any candidate the user actually selects is
+       scheduled, whatever its rank.)
 ```
 
-**Hard constraints determine what is possible. `GoalAlignment` determines
-how well it serves the current phase. Preference/adherence can reorder
-viable, sufficiently compatible options. User choice remains final.**
-This is the single hierarchy every Stage 5A document now implements —
-`PHASE_PLANNING_RULES.md` §8 (protected-minimum shortfalls), 
-`PROGRAM_RECOMMENDATION_MODEL.md` §2a (Infeasible/Poor Fit), and
-`ADHERENCE_AWARE_PLANNING.md` §5 (candidate ranking) are three
-applications of it, not three separate rules.
+**Executability determines what can be built. `GoalAlignment` determines
+how well it serves the current phase. The compatibility gate determines
+which candidates are even eligible to be promoted. Preference/adherence
+can reorder only among those. User choice remains final.** This is the
+single hierarchy every Stage 5A document now implements —
+`PHASE_PLANNING_RULES.md` §8 (protected-minimum shortfalls),
+`PROGRAM_RECOMMENDATION_MODEL.md` §2a/§5 (Infeasible/Poor Fit,
+capability), and `ADHERENCE_AWARE_PLANNING.md` §5 (candidate ranking) are
+four applications of it, not four separate rules.
 
 ## 3. Engine boundaries — what `LongTermPlanner` decides, and what it never touches
 
@@ -190,11 +228,19 @@ codes" shape every engine in this codebase already uses
 surface is expected to be:
 
 ```
-LongTermPlanner.proposeStrategicPlan(goal: LongTermGoal, asOf: Date) -> StrategicPlanProposal
-LongTermPlanner.proposeTrainingMix(phase: TrainingPhase, goal: LongTermGoal) -> [CandidateTrainingMix]
-LongTermPlanner.proposeProgram(component: TrainingMixComponent, profile: PerformanceProfile, equipment: EquipmentProfile) -> [ProgramCandidate]
+LongTermPlanner.proposeStrategicPlan(goal: Goal, asOf: Date) -> StrategicPlanProposal
+LongTermPlanner.proposeTrainingMix(phase: TrainingPhase, goal: Goal) -> [CandidateTrainingMix]
+LongTermPlanner.proposeProgram(component: TrainingMixComponent, profile: PerformanceProfile, equipment: EquipmentProfile)
+    -> (candidates: [ProgramCandidate], gaps: [CapabilityGap])
 LongTermPlanner.reviseStrategicPlan(current: TrainingPlan, revision: PlanRevisionRequest, asOf: Date) -> StrategicPlanProposal
 ```
+
+`proposeProgram`'s two-part return is deliberate, not incidental: a
+`ProgramCandidate` is always executable (§2a); a `CapabilityGap` never is
+— returning them as two separate collections, rather than one list mixing
+both, makes it structurally impossible for a UI to accidentally render a
+gap as if it were a normal, startable option
+(`PROGRAM_RECOMMENDATION_MODEL.md` §5).
 
 Every one of these is a **proposal-producing, non-mutating** call,
 continuing the Engine-recommendation → Explanation → User-approval
@@ -209,24 +255,27 @@ caller everywhere a "how far are we into the plan" computation is needed
 `SchedulingWindow.startDate`'s identical discipline (CLAUDE.md rule 4,
 extended to planning).
 
-## 6. What already exists vs. what Stage 5B would add
+## 6. What already exists vs. what Stage 5B would add (final, all 7 engineering items resolved)
 
 | Concept | Status |
 |---|---|
-| `TrainingPlan`, `PlanStatus` | Exists (Stage 1-2), unchanged |
-| `TrainingPhase`, `PhaseType`, `PhaseStatus`, `TrainingPriority` | Exists (Stage 1-2/3C), unchanged shape |
-| `Goal`, `GoalType`, `GoalStatus` | Exists (Stage 1-2); extension proposed, not a new type — `STRATEGIC_PLAN_MODEL.md` §1 |
+| `TrainingPlan`, `PlanStatus` | Exists (Stage 1-2); **+2 new fields** (`supersedes: TrainingPlan?`, `lineageID: UUID`) — `PLAN_REVISION_MODEL.md` §4 |
+| `TrainingPhase`, `PhaseType`, `PhaseStatus`, `TrainingPriority` | Exists (Stage 1-2/3C), **unchanged shape, zero new `PhaseType` cases** (`PhaseType.hybrid` explicitly withdrawn — `PHASE_PLANNING_RULES.md` §1) |
+| `Goal`, `GoalType`, `GoalStatus` | Exists (Stage 1-2); extended in place — `secondaryTypes: [GoalType]` → `secondaryObjectives: [SecondaryObjective]`, plus new `milestoneDate`/`bodyCompositionDirection`/`preferences` — `STRATEGIC_PLAN_MODEL.md` §1 |
+| `SecondaryObjective`, `SecondaryObjectiveRole`, `BodyCompositionDirection`, `GoalPreferences`, `ModalityPreference`, `VarietyPreference` | **New in Stage 5B** — small `Codable` value types on `Goal`, no new `@Model` entity — `STRATEGIC_PLAN_MODEL.md` §1 |
 | `TrainingMix`/`TrainingMixComponent`, `GoalPriority`, `ComponentFlexibility` | Exists (Stage 4F/4G), unchanged — this pass reuses them directly for phase goal composition |
 | `ScheduledProgramInput`/`SchedulingConstraints`/`SchedulingPipeline` | Exists (Stage 4F/4G), unchanged |
 | `LongTermPlanner` engine | **New in Stage 5B** — proposed shape only, §5 |
-| `PlannerDecision` (reason-coded provenance) | **New in Stage 5B** — `PLAN_REVISION_MODEL.md` §2 |
+| `PlannerDecision`, `PlannerDecisionType`, `DecisionSource`, `ConsideredAlternative` | **New in Stage 5B** — `PLAN_REVISION_MODEL.md` §2 |
+| `PhaseDurationKind` | **New in Stage 5B** — planner-internal value type, no new `TrainingPhase` field — `STRATEGIC_PLAN_MODEL.md` §4a |
+| `ProgramCapabilityRegistry`, `ProgramSystemCapability`, `CapabilityGap`, `CapabilityGapReason` | **New in Stage 5B** — read-only query layer over existing generators/`V1_PROGRAM_LIBRARY.md`, no new persistence — `PROGRAM_RECOMMENDATION_MODEL.md` §5 |
 | `StrategicPlanProposal`/`CandidateTrainingMix`/`ProgramCandidate`/`PlanRevisionRequest` | **New in Stage 5B** — plain value types, mirroring `ScheduleProposal`'s own "transient, non-persisted" shape |
 | Program recommendation reasoning | **New in Stage 5B** — `PROGRAM_RECOMMENDATION_MODEL.md` |
 
-No existing type's *meaning* changes. Every new type is additive, and
-every new persisted field (if any survive `STAGE5A_DECISION_MEMO.md`'s
-open questions) is optional, matching this codebase's established
-migration discipline throughout Stage 3C-4G.
+No existing type's *meaning* changes; `TrainingPlan`/`Goal` each gain a
+small, additive/narrowly-migrated set of fields (detailed above), every
+other type is wholly new and additive. Zero blocking open questions
+remain — see `STAGE5A_DECISION_MEMO.md`'s final status.
 
 ## 7. Document map
 

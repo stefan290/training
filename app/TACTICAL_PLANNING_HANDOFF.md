@@ -6,51 +6,80 @@ Where the strategic layer (`STRATEGIC_PLAN_MODEL.md`,
 it rolls forward, how a phase actually starts, and what a UI needs to
 render any of this.
 
-## 1. Tactical horizon length — 4 weeks, and why that's not arbitrary
+## 1. Tactical horizon length — architecture locked, numbers are not (Decision 7, RESOLVED)
 
 §38 asks for a recommended initial horizon, defaulting to 4 weeks unless
-the architecture suggests otherwise. It doesn't — **4 weeks is already
-the natural block length this codebase's own generators use**: every
-`StrengthProgressionEngine`/`PowerliftingProgramGenerator`-backed program
-in this repository runs 4-week blocks with `TrainingWeek.isDeload` marking
-week 4 (the "Week-4 autoregulation" behavior `STAGE3_DECISION_MEMO.md`/
-`PowerliftingRegressionTests` already exercise). A tactical window
-therefore defaults to **one full mesocycle block** of whichever program
-is primary for the current phase, not a fixed "28 days" detached from
-program structure — for a 4-week-block program that's 4 weeks; Stage 5A
-proposes this as the general rule (tactical horizon = the primary
-component's own natural block length, falling back to 4 weeks when a
-system has no such natural block, e.g. a single steady-state week
-repeated) rather than hardcoding 4 weeks as a universal constant.
+the architecture suggests otherwise. **The architecture is locked now;
+the specific "4 weeks"/"7 days" numbers below remain configurable
+TrainingOS policy, never presented as scientifically validated** — the
+same distinction `STRATEGIC_PLAN_MODEL.md` §4a draws for phase durations,
+applied here to the tactical window.
 
-No exact workout is ever generated more than one tactical window ahead
-(§6/§38's explicit constraint) — materialization for week 5 does not
-exist until the next tactical window is generated.
+**Locked now:** a tactical window's length is derived, in order, from
+whichever of these bounds it, never a bare constant in isolation:
 
-## 2. Rolling window triggers — deterministic, never a bare timer
+1. **Program/mesocycle boundaries** — the phase's primary component's own
+   natural block length (every `StrengthProgressionEngine`/
+   `PowerliftingProgramGenerator`-backed program already runs 4-week
+   blocks with `TrainingWeek.isDeload` marking week 4 — the "Week-4
+   autoregulation" behavior `STAGE3_DECISION_MEMO.md`/
+   `PowerliftingRegressionTests` already exercise).
+2. **The current `TrainingPhase`'s own remaining time** — a window is
+   never generated longer than the phase has left; if a phase transition
+   is expected in 2 weeks, the window is capped at 2 weeks even if the
+   program's natural block is longer, so tactical materialization never
+   reaches into what will become a *different* mix under the next phase.
+3. **Upcoming transition dates** — same rule as (2), generalized to any
+   known future boundary (a milestone-anchored phase end, an accepted
+   revision's new phase start).
+4. **A configurable fallback** (illustrative default: 4 weeks) — used
+   only when a system has no natural block length of its own (e.g. a
+   single repeating steady-state week).
 
-A new tactical window is generated only when one of these fires — never
-merely because calendar time passed, and never on an implicit background
-timer:
+**Performance-dependent progression is never fabricated ahead of the
+window it belongs to** — materialization for week 5 does not exist
+until the next tactical window is generated, regardless of how long the
+current one is; a longer natural block does not mean more weeks get
+real numbers sooner, only that fewer separate windows are needed to
+cover it.
 
-1. **Scheduled**: today is within a configured buffer (proposed default:
-   7 days) of the current window's last placed day — leaving enough lead
-   time to review and approve the next window before the current one
-   runs out.
-2. **Phase transition accepted** (`PHASE_PLANNING_RULES.md` §4) — the new
-   phase's mix needs its own first tactical window immediately.
-3. **Plan revision accepted** (`PLAN_REVISION_MODEL.md` §4/§5) — an
-   extension, shortening, or goal change invalidates the premise of
+## 2. Rolling window triggers — deterministic, never a bare timer (Decision 7, RESOLVED)
+
+**Architecture locked now; the 7-day scheduling-buffer default is a
+configurable number, not locked.** A new tactical window is generated
+only when one of these fires — never merely because calendar time
+passed, and never on an implicit background timer:
+
+1. **Current window approaches its end** — today is within a configured
+   buffer (illustrative default: 7 days) of the window's last placed day,
+   leaving lead time to review/approve the next one.
+2. **Current window completes** — a fallback catch-up trigger for when
+   (1)'s lead time was missed entirely (e.g. the app wasn't opened) and
+   the window has already fully elapsed with no successor generated yet.
+3. **Phase changes** (`PHASE_PLANNING_RULES.md` §4) — the new phase's
+   mix needs its own first tactical window immediately.
+4. **User changes `TrainingMix`/preferences materially** — a bounded
+   temporary mix accepted or its expiry/materiality prompt resolved
+   (`ADHERENCE_AWARE_PLANNING.md` §2/§2a), or a stable preference/mix
+   swap accepted directly — any of these invalidate the premise of
    whatever window was previously planned.
-4. **Temporary preference change** — a bounded mix accepted or its expiry
-   resolved (`ADHERENCE_AWARE_PLANNING.md` §2).
-5. **Explicit pause/resume** — the user pauses training (no new window
-   generated while paused) and later resumes (a fresh window is
-   generated from the resume date, not backfilled for missed time).
+5. **Pause/return causes tactical reflow** — the user pauses training
+   (no new window generated while paused) and later resumes (a fresh
+   window is generated from the resume date, not backfilled for missed
+   time).
+6. **Strategic plan is revised** (`PLAN_REVISION_MODEL.md` §4) — any
+   accepted revision, minor or major, invalidates the premise of
+   whatever window was previously planned.
 
 Every trigger is an explicit event or an explicit date comparison against
 a caller-supplied "now" (mirroring `SchedulingWindow.startDate`'s own
 discipline — the planner is never the one reading the system clock).
+
+**A previously accepted tactical window is a historical snapshot** —
+generating window N+1 never mutates window N's already-materialized
+`Session`/`Day` placements, by construction
+(`PLAN_REVISION_MODEL.md` §4d states the same invariant for strategic
+revisions; this is its tactical-layer counterpart).
 
 ## 3. Starting a new phase — orchestration only, no new mechanism
 
@@ -103,7 +132,7 @@ already carry everything a tradeoff explanation needs.
 **Current phase screen** (§60):
 ```
 purpose            <- PlannerDecision(reasonCode: PHASE_SELECTED_FOR_GOAL).explanation
-weekProgress        <- elapsed weeks / PhaseDurationPolicy.typicalWeeks (or endDate)
+weekProgress        <- elapsed weeks / PhaseDurationKind's resolved typical value (or endDate)
 currentMix          <- selectedTrainingMix ?? recommendedTrainingMix
 primaryProgram      <- primary component's ProgramInstance
 supportingModules   <- non-primary components' ProgramInstances

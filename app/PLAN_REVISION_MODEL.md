@@ -19,45 +19,97 @@ portion is equally frozen). This is the same discipline
 established for template/scheduling history — extended here to strategic
 history.
 
-## 2. `PlannerDecision` — the audit trail, mirroring `Recommendation`
+## 2. `PlannerDecision` — the audit trail, mirroring `Recommendation` (RESOLVED)
 
 `Recommendation` (Stage 1-2) already established the exact shape a
 persisted, reason-coded engine output needs: *"A Recommendation without
 a reason code is a bug — there is deliberately no way to construct one
 without it."* `PlannerDecision` (new, Stage 5B) is that same shape one
-layer up:
+layer up — extended per Decision 6 with a scope-limiting decision type,
+an explicit source, and the alternatives that were *not* chosen:
 
 ```swift
+/// The fixed, closed set of strategically-meaningful events worth an
+/// audit record — deliberately narrow. Every low-level scheduler
+/// comparison, every `ConcurrentScheduler` placement decision, and every
+/// intermediate ranking step stays exactly where it already lives
+/// (`ScheduleIssue`/`SchedulingReasonCode`, Stage 4G) — none of that is
+/// duplicated here.
+enum PlannerDecisionType: String, Codable, CaseIterable {
+    case phaseSelected
+    case programOrMixSelected
+    case userChoseAlternative
+    case temporaryPreferenceApplied
+    case phaseExtendedOrShortened
+    case roadmapRevised
+}
+
+/// Who/what actually made this decision — distinct from *why*
+/// (`reasonCode`). A system recommendation that the user then overrides
+/// produces two different `PlannerDecision`s, each with its own honest
+/// `source`, never one row with an ambiguous origin.
+enum DecisionSource: String, Codable, CaseIterable {
+    case systemRecommended
+    case userSelected
+    case userOverride
+    case planRevision
+}
+
+/// One option that was on the table and not chosen — enough to answer
+/// "why not X" later without needing to persist the full transient
+/// proposal it came from. An array of a small struct — already a
+/// proven-safe SwiftData persistence shape in this codebase
+/// (`Stimulus.movementModalityMix: [ModalityCount]`, Stage 4E).
+struct ConsideredAlternative: Codable, Equatable {
+    var label: String
+    var ratingSummary: GoalAlignmentRating?
+    var rejectionReasonCode: PlannerReasonCode?
+}
+
 @Model
 final class PlannerDecision {
+    @Attribute(.unique) var id: UUID
+    var decidedAt: Date
+    var decisionType: PlannerDecisionType
+    var source: DecisionSource
     var reasonCode: PlannerReasonCode
     /// Small structured extras — mirrors `ScheduleIssue.metadata`'s exact
     /// shape and the exact same rule: never parsed back by any logic,
     /// display-generation input only.
     var factors: [String: String]
-    /// Display copy only, generated FROM `reasonCode`/`factors` — CLAUDE.md
-    /// rule 16's discipline extended to planning, one layer up from
-    /// scheduling.
+    /// What else was considered and why it wasn't chosen — omitted
+    /// (empty) when there was only ever one option, e.g. a temporary
+    /// preference application.
+    var alternativesConsidered: [ConsideredAlternative]
+    /// Display copy only, generated FROM the structured fields above —
+    /// CLAUDE.md rule 16's discipline extended to planning, one layer up
+    /// from scheduling. Never business source of truth.
     var explanation: String
-    var decidedAt: Date
 
-    // Optional one-to-one back-references — at most one is ever set,
+    // Optional back-references — as many as are relevant are set (e.g.
+    // a `.roadmapRevised` decision sets `goal`+`planRevision` but no
+    // `phase`; a `.phaseSelected` decision sets `planRevision`+`phase`),
     // mirroring `WorkoutBlock`'s own established "multiple optional
     // typed children" pattern rather than an unsafe enum-with-payload
     // holding a `@Model` reference.
+    var goal: Goal?
+    var planRevision: TrainingPlan?
     var phase: TrainingPhase?
     var trainingMix: TrainingMix?
     var programInstance: ProgramInstance?
 }
 ```
 
-Every strategic recommendation — a phase transition, a mix recommendation,
-a program recommendation, an extension, a temporary-preference expiry
-choice — produces exactly one `PlannerDecision`, persisted at acceptance
-time (mirroring `AcceptScheduleProposalUseCase`'s own "only accept
-mutates" pattern — proposing a revision never persists a `PlannerDecision`
-by itself; only `AcceptPlanRevisionUseCase`, Stage 5B's counterpart, does,
-alongside whatever phase/mix rows the revision actually changes).
+One `PlannerDecision` is persisted per strategically-meaningful event —
+`PlannerDecisionType`'s own 6 cases are the exhaustive list; nothing else
+produces one. Persisted at acceptance time only (mirroring
+`AcceptScheduleProposalUseCase`'s "only accept mutates" pattern —
+proposing something never persists a `PlannerDecision` by itself; only
+`AcceptPlanRevisionUseCase`, Stage 5B's counterpart, does, alongside
+whatever phase/mix/plan rows the decision actually changes). This is
+deliberately **not** a debug log: no per-comparison scheduler internals,
+no low-level candidate-scoring intermediate state — those already have a
+home (`ScheduleIssue`, Stage 4G) and are not duplicated here.
 
 ## 3. `PlannerReasonCode` — the authoritative vocabulary
 
@@ -117,52 +169,100 @@ they're still `PlannerReasonCode` values): `PHASE_DATE_REACHED`,
 `USER_REQUESTED_TRANSITION`, `PLANNER_RECOMMENDED_TRANSITION`,
 `PROGRAM_JOURNEY_COMPLETED`.
 
-## 4. Minor revision: extend/shorten in place
+## 4. Revision lineage — every re-plan creates a new `TrainingPlan` revision (Decision 5, RESOLVED)
 
-Extending or shortening a phase that hasn't completed yet, within the
-*same* long-term goal, is an in-place recalculation — no new
-`TrainingPlan` needed, since nothing "completed" is being rewritten:
+**Resolution:** re-planning always creates a **new** `TrainingPlan`
+revision — extend, shorten, a milestone change, and a full long-term
+goal change are all the same mechanism, differing only in how much of
+the roadmap the new revision actually changes. This replaces this
+document's own earlier draft (which mutated minor revisions in place) —
+"Old strategic plans are not rewritten to make history appear as if the
+new plan was always intended" applies uniformly, not just to major
+pivots.
 
-1. `LongTermPlanner.reviseStrategicPlan` with a `PlanRevisionRequest`
-   (`.extendPhase(phase:additionalWeeks:)`/`.shortenPhase(phase:reduceWeeks:)`)
-   returns a `StrategicPlanProposal` showing the recalculated remaining
-   phase boundaries (`PHASE_PLANNING_RULES.md` §5's redistribution rule).
-2. On acceptance, `AcceptPlanRevisionUseCase` updates only the affected
-   `TrainingPhase.endDate`/subsequent phases' `startDate`/`endDate` (all
-   `.planned` or the current phase's own future boundary) and persists
-   one `PlannerDecision` (`PHASE_EXTENDED`/`PHASE_SHORTENED`).
-3. Every already-`.completed` phase is untouched, by construction — the
-   use case never targets one.
+```swift
+// Two new fields on the existing TrainingPlan entity:
+var supersedes: TrainingPlan?   // nullify — the immediately-prior revision;
+                                 // nil for the first revision of a lineage
+var lineageID: UUID              // shared by every revision of "the same
+                                  // evolving roadmap"; a fresh UUID only
+                                  // when a genuinely new strategic intent
+                                  // begins (§4c)
+```
 
-## 5. Major revision: a long-term goal change supersedes the plan
+`supersedes` reconstructs *order* (a linked chain); `lineageID` gives an
+O(1) *grouping* query ("every revision of this roadmap") without walking
+the chain. Both are cheap, additive, nullify/plain fields — no new
+entity.
+
+```
+Plan Revision 1  (lineageID: L, supersedes: nil)
+      ↓ superseded by
+Plan Revision 2  (lineageID: L, supersedes: Revision 1)
+      ↓ superseded by
+Plan Revision 3  (lineageID: L, supersedes: Revision 2)
+```
+
+### 4a. What a new revision actually contains
+
+A revision's own `phases: [TrainingPhase]` holds **only its own
+new/future phases** — it never copies or re-parents phases that already
+belong to a prior revision:
+
+- Every `.completed` phase, and the currently-`.active` phase's own
+  already-elapsed portion, stays exactly where it is, on whichever
+  revision it actually happened under. **Never moved, never duplicated.**
+- The prior revision's own `.planned` (not-yet-lived) future phases
+  become `.abandoned` (existing `PhaseStatus` case) — inert historical
+  record, never deleted.
+- The prior revision's `status` becomes `.superseded` (existing
+  `PlanStatus` case); the new revision is `.active`.
+- The new revision's phases start from today's state, generated via the
+  ordinary `proposeStrategicPlan`/`reviseStrategicPlan` path.
+
+"The full history of this roadmap," when needed, is the union of every
+revision-in-the-lineage's own phases, walked via `lineageID` — never one
+mutated, unified phase list.
+
+### 4b. Minor revision (extend/shorten, milestone change) — same lineage
+
+`LongTermPlanner.reviseStrategicPlan` with a `PlanRevisionRequest`
+(`.extendPhase`/`.shortenPhase`/`.changeMilestoneDate`) returns a
+`StrategicPlanProposal` for the recalculated remaining phases
+(`PHASE_PLANNING_RULES.md` §5's redistribution rule). On acceptance,
+`AcceptPlanRevisionUseCase` creates Revision N+1 with the **same
+`lineageID`**, `supersedes: <Revision N>`, containing the recalculated
+future phases; Revision N's completed/elapsed history stays untouched
+per §4a. One `PlannerDecision` (`decisionType: .phaseExtendedOrShortened`
+or `.roadmapRevised`, reason code `PHASE_EXTENDED`/`PHASE_SHORTENED`/
+`MILESTONE_DATE_CHANGED`) records it, `planRevision` pointing at the new
+revision.
+
+### 4c. Major revision (long-term goal change) — new lineage
 
 Example (§33): a full year targeting Muscle Gain + summer leanness
-becomes "run a half marathon." This is not an in-place recalculation —
-the entire remaining roadmap's premise changed. The existing
-`PlanStatus`/`PhaseStatus` vocabulary already models exactly what this
-needs, with one new optional field:
+becomes "run a half marathon." The new revision gets a **fresh
+`lineageID`** (this is a new strategic intent, not a refinement of the
+old one) while `supersedes` still points at the old revision for full
+traceability — a lineage boundary, not a history gap. `PerformanceProfile`
+history is untouched either way — CLAUDE.md rule 1's own invariant,
+restated at the strategic layer: changing the long-term goal is not a
+new user, and it must never look like one. One `PlannerDecision`
+(`decisionType: .roadmapRevised`, reason code `LONG_TERM_GOAL_CHANGED`)
+records the pivot.
 
-- `TrainingPlan.supersedes: TrainingPlan?` (new, nullify delete rule,
-  purely for traceability — `goal.plans` already holds every plan a
-  `Goal` ever had, so this is a convenience back-reference, not the only
-  path to history).
-- The current plan's status becomes `.superseded` (already exists).
-- Its `.planned` (not-yet-lived) future phases become `.abandoned`
-  (already exists as a `PhaseStatus` case) — inert historical record,
-  never deleted.
-- Its `.completed`/currently-`.active`-up-to-today phases are **left
-  exactly as they are** — real history of what was actually trained,
-  untouched.
-- A new `TrainingPlan` (`.active`, `supersedes` pointing at the old one)
-  is created from today's state via the ordinary `proposeStrategicPlan`
-  path (`STRATEGIC_PLAN_MODEL.md` §4), using the new `LongTermGoal`.
-  `PerformanceProfile` history is untouched — CLAUDE.md rule 1's own
-  invariant, restated at the strategic layer: changing the long-term
-  goal is not a new user, and it must never look like one.
-- One `PlannerDecision` (`LONG_TERM_GOAL_CHANGED`) records the pivot,
-  attached to the new plan's first phase.
+### 4d. Accepted tactical schedules are permanent, unaffected by any revision
 
-## 6. Planned vs. actual — no new schema, a derivable comparison
+Once a `ScheduleProposal` is accepted (`AcceptScheduleProposalUseCase`),
+the resulting `Session`/`Day` placements are real, materialized execution
+data — a historical snapshot no later plan revision, of any size, ever
+touches. Revisions only ever affect planning-layer `TrainingPhase`/
+`TrainingMix` rows for *future* time; this was already true by
+construction (Stage 4F/4G's `AcceptScheduleProposalUseCase` has no path
+back into `TrainingPlan`/`TrainingPhase` at all), stated explicitly here
+as a locked invariant rather than an incidental fact.
+
+## 5. Planned vs. actual — no new schema, a derivable comparison
 
 §54 wants "Planned: 5 Hypertrophy / Actual: 3 Hypertrophy + 2 Functional
 Fitness" comparable without losing either side. Both sides already exist
