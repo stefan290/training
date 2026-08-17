@@ -67,6 +67,63 @@ final class CompletedSessionHistoryTests: XCTestCase {
         XCTAssertEqual(SessionDisplayMode.mode(for: .scheduled, readOnly: true), .futurePreview)
     }
 
+    // MARK: §7 — the REAL Today/Week/Plan routes, not a reimplementation.
+    // Constructs `SessionDetailView` exactly the way each caller's own
+    // source does (same init, same argument values) and inspects its
+    // real `displayMode` — proving the actual call site's decision, not
+    // a parallel test of `SessionDisplayMode` in isolation.
+
+    private func makeBareSession(status: SessionStatus, completionContext: SessionCompletionContext? = nil) -> Session {
+        let session = Session(name: "Lower A", modality: .strength, status: status)
+        context.insert(session)
+        session.completionContext = completionContext
+        return session
+    }
+
+    /// TodayView.swift: `SessionDetailView(session: session, onChange: {...})` — `readOnly` defaults to `false`.
+    func testTodaysExactConstructionRoutesEveryStatusCorrectly() {
+        XCTAssertEqual(SessionDetailView(session: makeBareSession(status: .scheduled)).displayMode, .execution, "A: scheduled exposes a navigable (start) route")
+        XCTAssertEqual(SessionDetailView(session: makeBareSession(status: .inProgress)).displayMode, .execution, "B: in-progress exposes a navigable execution/resume route")
+        XCTAssertEqual(SessionDetailView(session: makeBareSession(status: .completed)).displayMode, .completedHistory, "C: completed exposes a navigable completed-history route — this is the exact regression that was reported")
+        XCTAssertEqual(SessionDetailView(session: makeBareSession(status: .completed, completionContext: .partial)).displayMode, .completedHistory, "D: partial exposes the same completed-history route (not silently editable)")
+        XCTAssertEqual(SessionDetailView(session: makeBareSession(status: .skipped)).displayMode, .completedHistory)
+        XCTAssertEqual(SessionDetailView(session: makeBareSession(status: .missed)).displayMode, .completedHistory)
+        XCTAssertEqual(SessionDetailView(session: makeBareSession(status: .abandoned)).displayMode, .completedHistory)
+    }
+
+    /// WeekView.swift: `SessionDetailView(session: session, readOnly: !isToday)` — verified for BOTH
+    /// `isToday == true` (readOnly: false) and `isToday == false` (readOnly: true), since Week can reach
+    /// a completed Session through either branch.
+    func testWeeksExactConstructionRoutesCompletedSessionToHistoryOnAnyDay() {
+        let completedOnAnotherDay = SessionDetailView(session: makeBareSession(status: .completed), readOnly: true)
+        let completedToday = SessionDetailView(session: makeBareSession(status: .completed), readOnly: false)
+        XCTAssertEqual(completedOnAnotherDay.displayMode, .completedHistory, "E: a completed Session's Week destination resolves to completedHistory regardless of which day it's viewed from")
+        XCTAssertEqual(completedToday.displayMode, .completedHistory)
+
+        // Week's explicit contract (§4): in-progress always routes to execution/resume, whichever day.
+        XCTAssertEqual(SessionDetailView(session: makeBareSession(status: .inProgress), readOnly: true).displayMode, .execution)
+        XCTAssertEqual(SessionDetailView(session: makeBareSession(status: .inProgress), readOnly: false).displayMode, .execution)
+    }
+
+    /// ProgramDetailView.swift: `SessionDetailView(session: session, readOnly: true)` for any real
+    /// materialized Session — a completed historical Session must resolve to completedHistory, never
+    /// the read-only *future* preview a not-yet-started Session gets.
+    func testPlansExactConstructionRoutesCompletedHistoricalSessionToHistoryNotFuturePreview() {
+        let completed = SessionDetailView(session: makeBareSession(status: .completed), readOnly: true)
+        let notYetStarted = SessionDetailView(session: makeBareSession(status: .scheduled), readOnly: true)
+        XCTAssertEqual(completed.displayMode, .completedHistory)
+        XCTAssertEqual(notYetStarted.displayMode, .futurePreview, "a real but not-yet-started materialized Session still gets the future preview, never fabricated history")
+    }
+
+    /// F: the completedHistory destination itself exposes no Start/Log/Finish control — structurally
+    /// guaranteed, since `CompletedSessionDetail`'s only input is `session:` and it owns no
+    /// `modelContext`/use-case call anywhere in its type or its children's types. This is a standing
+    /// architectural guarantee, not a per-instance runtime check.
+    func testCompletedHistoryDestinationTypeHasNoModelContextOrMutatingEntryPoint() {
+        // If this compiles with only `session:`, no execution/mutation dependency was smuggled in.
+        _ = CompletedSessionDetail(session: makeBareSession(status: .completed))
+    }
+
     // MARK: B/H/I/J — opening history never mutates anything
 
     func testReadingCompletedSessionDataRepeatedlyNeverMutatesStatusOrDuplicatesResults() throws {

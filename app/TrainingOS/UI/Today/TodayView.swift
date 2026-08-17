@@ -133,10 +133,37 @@ private struct SessionCard: View {
                 Button("Start", action: onStart)
                     .buttonStyle(.borderedProminent)
                     .tint(Theme.primary)
+            } else {
+                // Stage 6E fix: every other status (in progress/
+                // completed/skipped/missed/abandoned) has no button of
+                // its own, so it must never rely on incidental "the
+                // background happens to be tappable" behavior — an
+                // explicit, unmissable affordance instead.
+                HStack {
+                    Spacer()
+                    Text(navigationAffordanceLabel)
+                    Image(systemName: "chevron.right")
+                }
+                .font(Theme.label)
+                .foregroundStyle(Theme.primary)
             }
         }
         .padding(14)
         .background(Theme.surfacePrimary, in: RoundedRectangle(cornerRadius: 12))
+        // Stage 6E fix: a custom NavigationLink label with .buttonStyle(.plain)
+        // otherwise only reliably registers taps on rendered content
+        // (text/icon glyphs), not on the background/padding around it —
+        // this guarantees the entire card, including empty space, is
+        // one tap target, never dependent on where a finger happens to land.
+        .contentShape(Rectangle())
+    }
+
+    private var navigationAffordanceLabel: String {
+        switch session.status {
+        case .inProgress: "Resume"
+        case .completed, .skipped, .missed, .abandoned: "View Workout"
+        case .scheduled: ""
+        }
     }
 
     private func compactList(_ names: [String]) -> String {

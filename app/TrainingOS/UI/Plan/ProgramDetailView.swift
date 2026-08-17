@@ -76,6 +76,9 @@ struct ProgramDetailView: View {
                 Text(SessionPresentation.statusLabel(session.status))
                     .font(Theme.label)
                     .foregroundStyle(SessionPresentation.statusColor(session.status))
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(Theme.textSecondary)
             }
             ForEach(session.orderedBlocks) { block in
                 if let detail = BlockPresentation.compactDetail(for: block) {
@@ -88,6 +91,8 @@ struct ProgramDetailView: View {
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Theme.surfacePrimary, in: RoundedRectangle(cornerRadius: 10))
+        // Stage 6E fix: guarantees the whole row is one tap target.
+        .contentShape(Rectangle())
     }
 
     private func templateSessionRow(_ templateSession: TemplateSession) -> some View {

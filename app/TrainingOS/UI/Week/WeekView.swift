@@ -102,6 +102,9 @@ struct WeekView: View {
                 Label(SessionPresentation.weekStatusLabel(for: session.status, isToday: isToday), systemImage: SessionPresentation.statusIcon(session.status))
                     .font(Theme.label)
                     .foregroundStyle(SessionPresentation.statusColor(session.status))
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(Theme.textSecondary)
             }
             ForEach(session.orderedBlocks) { block in
                 HStack(spacing: 6) {
@@ -119,6 +122,10 @@ struct WeekView: View {
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Theme.surfaceSecondary, in: RoundedRectangle(cornerRadius: 10))
+        // Stage 6E fix: guarantees the whole row — not just its rendered
+        // text glyphs — is one tap target, matching the same fix applied
+        // to Today's SessionCard.
+        .contentShape(Rectangle())
     }
 
     private func weekdayLabel(_ date: Date) -> String {

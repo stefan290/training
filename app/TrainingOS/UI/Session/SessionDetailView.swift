@@ -32,7 +32,12 @@ struct SessionDetailView: View {
     /// one vs. a future one inspected from Week/Plan). Computed from the
     /// same pure, independently-tested `SessionDisplayMode.mode` every
     /// caller already relies on implicitly.
-    private var displayMode: SessionDisplayMode {
+    ///
+    /// Internal (not `private`) so a test can construct this exact type
+    /// the same way `TodayView`/`WeekView`/`ProgramDetailView` do and
+    /// inspect the real decision — never re-implement the routing logic
+    /// in the test instead of exercising the actual call site.
+    var displayMode: SessionDisplayMode {
         SessionDisplayMode.mode(for: session.status, readOnly: readOnly)
     }
 
