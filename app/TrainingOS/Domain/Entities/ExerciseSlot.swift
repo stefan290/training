@@ -71,6 +71,16 @@ final class ExerciseSlot {
     @Relationship(deleteRule: .nullify, inverse: \SlotSelectionOverride.templateSlot)
     var slotSelectionOverrides: [SlotSelectionOverride] = []
 
+    /// Stage 6B addition: `ExercisePrescription.sourceExerciseSlot`'s
+    /// required inverse — nothing reads this collection. Same reasoning as
+    /// `slotSelectionOverrides` above: lets a live execution's Change
+    /// Exercise flow trace a materialized movement back to the slot it
+    /// came from, while `.nullify` keeps that movement (and every
+    /// SetResult logged against it) intact if this slot's `ProgramDefinition`
+    /// is later deleted (CLAUDE.md rule 1).
+    @Relationship(deleteRule: .nullify, inverse: \ExercisePrescription.sourceExerciseSlot)
+    var materializedPrescriptions: [ExercisePrescription] = []
+
     init(
         id: UUID = UUID(),
         name: String,

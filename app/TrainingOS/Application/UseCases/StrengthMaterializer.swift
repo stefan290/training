@@ -162,6 +162,7 @@ enum StrengthMaterializer {
                     }
 
                     let prescription = ExercisePrescription(exercise: SubstituteExerciseUseCase.resolvedExercise(for: slot, in: instance))
+                    prescription.sourceExerciseSlot = slot
                     context.insert(prescription)
                     block.addPrescription(prescription)
 

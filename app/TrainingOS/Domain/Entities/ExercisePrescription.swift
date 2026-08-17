@@ -31,6 +31,18 @@ final class ExercisePrescription {
     /// entity; see `SlotSelectionOverride`'s doc comment for why GOING
     /// FORWARD needs a different mechanism and this one doesn't.
     var substitutionReason: SubstitutionReason?
+    /// Stage 6B addition: the `ExerciseSlot` this movement was
+    /// materialized from, when known — lets the live Change Exercise flow
+    /// validate/rank alternatives through the same `SubstitutionValidator`/
+    /// `SlotSelectionOverride` machinery Stage 4C already built, without
+    /// re-deriving slot identity from anything else. `nil` for a
+    /// prescription created outside the slot-based materializer path (an
+    /// ad hoc/seed-authored movement) — Change Exercise stays unavailable
+    /// for those rather than inventing an unconstrained substitution
+    /// (CLAUDE.md rule 10). The delete rule lives on
+    /// `ExerciseSlot.materializedPrescriptions` — this is a plain inverse
+    /// property, same pattern as `SlotSelectionOverride.templateSlot`.
+    var sourceExerciseSlot: ExerciseSlot?
 
     @Relationship(deleteRule: .cascade, inverse: \SetPrescription.exercisePrescription)
     var setPrescriptions: [SetPrescription] = []
