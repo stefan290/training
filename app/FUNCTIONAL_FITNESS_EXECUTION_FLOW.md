@@ -306,3 +306,31 @@ exactly as-is; only the completion screen's copy changes:
   not a scoring-architecture change, and the benchmark Rx/Scaled
   compatibility rule (§7) still governs what counts as "a prior
   compatible best" either way.
+
+## Implementation status (Stage 6B)
+
+`FunctionalFitnessExecutionView` covers every typed `WorkoutFormat` —
+AMRAP (large countdown + large "+ROUND" tap target + end-of-time
+remaining-reps entry, no live rep logging), EMOM (auto-advancing
+current/next station via `WorkoutTimer.currentUnitIndex`, a true fit here
+since every minute shares one duration), For Time/Chipper/Ladder (running
+clock to an explicit Finish/time-cap), Rounds For Time (the same round
+counter as AMRAP plus a running clock), Max Load/Max Reps (single-entry
+forms, the latter behind its own countdown), and Intervals (reusing
+`IntervalTimerResolution` unchanged). One real gap this doc's own scoring
+model didn't fully specify: a live, *non-benchmark* result still needs a
+`ScoreDirection` to construct its `FunctionalFitnessResult`, and no field
+anywhere on `FunctionalFitnessPrescription` carries one (only
+`BenchmarkDefinition` does). `FunctionalFitnessScoring.scoreDirection(for:)`
+supplies it deterministically from the format's own definition (an AMRAP
+is definitionally higher-is-better; a For Time is definitionally
+lower-is-better) — `ScoreType` itself is never re-derived, always read
+from `Stimulus.scoreType`.
+
+**Known gap, not a defect:** tagging a generated result as an attempt at
+a specific `BenchmarkDefinition` (so it can qualify for "First recorded"/
+"New PR") has no UI yet — the Finish flow always logs with
+`benchmark: nil`. Per this doc's own §14 ("generated workouts are never
+automatically a tracked benchmark"), the safe default is simply no
+benchmark/no PR-eligibility until that picker is built, not an incorrect
+one.

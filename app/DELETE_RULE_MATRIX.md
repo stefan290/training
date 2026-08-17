@@ -386,3 +386,34 @@ since SwiftData never cascades across an undeclared relationship.
 - `TrainingMix.validFrom`/`.validUntil` (existing Stage 4F fields, given
   real behavior this stage) remain plain optional `Date`s — no schema or
   delete-rule change.
+
+## Stage 6B additions
+
+Live execution's Change Exercise/Change Activity flows (Part E) needed a
+way to trace an already-*materialized* `ExercisePrescription`/
+`SteadyStatePrescription`/`IntervalPrescription` back to the template-graph
+object (`ExerciseSlot`/`WorkoutBlockTemplate`) `SubstituteExerciseUseCase`/
+`SubstituteActivityUseCase` require — a real gap `StrengthMaterializer`/
+`SteadyStateMaterializer`/`IntervalMaterializer` never needed to close
+before, since nothing previously read that link back at execution time.
+
+| Parent | Child | Relationship | Delete rule | Expected behaviour | Why |
+|---|---|---|---|---|---|
+| `ExerciseSlot` | `ExercisePrescription` | `materializedPrescriptions: [ExercisePrescription]`, inverse `ExercisePrescription.sourceExerciseSlot` | `.nullify` | Deleting the slot's `ProgramDefinition` nullifies `sourceExerciseSlot` on every prescription it materialized; the prescription, its `SetPrescription`s and every logged `SetResult` survive untouched. | Rule 1 — a live movement's history must never depend on the template that originally produced it. |
+| `WorkoutBlockTemplate` | `SteadyStatePrescription` | `materializedSteadyStatePrescriptions: [SteadyStatePrescription]`, inverse `SteadyStatePrescription.sourceWorkoutBlockTemplate` | `.nullify` | Same reasoning, Steady State. | Rule 1. |
+| `WorkoutBlockTemplate` | `IntervalPrescription` | `materializedIntervalPrescriptions: [IntervalPrescription]`, inverse `IntervalPrescription.sourceWorkoutBlockTemplate` | `.nullify` | Same reasoning, Interval. | Rule 1. |
+
+All three are additive, `nil`-default fields — an ad hoc/seed-authored
+prescription (never materialized through a slot/template) simply has no
+value, and Change Exercise/Change Activity correctly stay unavailable for
+it rather than validating against nothing (`SUBSTITUTION_MODEL.md`'s own
+Stage 6B section). Round-trip and delete-rule coverage:
+`ExecutionStatePersistenceTests.testDeletingExerciseSlotNullifiesSourceExerciseSlotWithoutDeletingThePrescription`/
+`.testDeletingWorkoutBlockTemplateNullifiesSteadyStateAndIntervalSourceTemplateWithoutDeletingThePrescriptions`.
+
+No other Stage 6B addition touches a relationship: `SessionCompletionContext`/
+`BlockCompletionContext`/`TimerState` (on `Session`/`WorkoutBlock`) and
+`PersonalRecord.sourceSteadyStateResult`/`.sourceIntervalResult` (mirroring
+the pre-existing `.sourceSetResult`/`.sourceWorkoutResult`/
+`.sourceFunctionalFitnessResult` nullify pattern exactly) are the only
+other schema changes this stage made.

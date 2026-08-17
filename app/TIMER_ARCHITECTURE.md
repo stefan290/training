@@ -202,3 +202,22 @@ nil) have no running clock during the work portion at all in V1 — per
 §18's explicit instruction, distance completion is a manual "mark done"
 action, not a timer. Only `recoveryDurationSeconds` (still a duration)
 gets a `TimerState` between reps.
+
+## Implementation status (Stage 6B)
+
+`WorkoutTimer` (`Engines/WorkoutTimer.swift`) implements the shared
+elapsed/remaining/expiry/pause/resume/`currentUnitIndex` contract exactly
+as designed, with 17 tests including the EMOM catch-up scenario this doc
+itself specifies (closed mid-minute, reopened later, lands on the
+correct minute with no replay). One real addition this doc's own
+`currentUnitIndex` couldn't cover: it assumes every unit shares one
+duration (true for EMOM), but a work leg and its recovery leg are
+usually different lengths for both Endurance Intervals and the
+Functional Fitness `.intervals` format. `IntervalTimerResolution`
+(`Engines/IntervalTimerResolution.swift`) is the alternating-duration
+sibling — same derive-from-elapsed-time-never-replay contract, generalized
+to two leg lengths — shared unchanged by both `IntervalExecutionViewModel`
+and `FunctionalFitnessExecutionViewModel`. `UpdateBlockTimerUseCase` is
+the orchestrating, save-owning layer above `WorkoutTimer`'s pure
+functions (start/pause/resume/advanceUnit/clear, one `modelContext.save()`
+per transition, never per tick).

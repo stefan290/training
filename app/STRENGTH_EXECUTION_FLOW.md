@@ -292,3 +292,17 @@ worth naming: a paired/backoff slot's "Suggested" card (§2) reads its
 the pairing relationship is resolved entirely at materialization time
 (`StrengthProgressionEngine.resolveWeight`'s `.linkedToPairedSlot` case),
 never re-derived live in the execution UI.
+
+## Implementation status (Stage 6B)
+
+Built as designed (`StrengthExecutionView`/`StrengthExecutionViewModel`):
+target sets-reps/RIR/suggested load, a fixed previous-performance
+snapshot (captured once per visit, never recomputed as new sets are
+logged the same visit), current-set logging, RIR quick-select
+pre-selected to the target, and a rest timer (`RestTimerView`, built on
+the shared `WorkoutTimer`/`UpdateBlockTimerUseCase`). Change Exercise
+(`ChangeExerciseView`) needed one real addition beyond this doc's own
+scope: a materialized `ExercisePrescription` had no stored path back to
+its `ExerciseSlot`, so `ExercisePrescription.sourceExerciseSlot` was
+added (`ARCHITECTURE.md`/`SUBSTITUTION_MODEL.md`'s Stage 6B sections) —
+additive, `nil`-safe, and the one deviation from this doc worth flagging.

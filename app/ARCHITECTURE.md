@@ -703,3 +703,60 @@ in `LONG_TERM_PLANNER.md` and its 7 companion documents plus
 Zero blocking open items remain. See `LONG_TERM_PLANNER.md` for the full
 16-stage pipeline and document map, and `STAGE5A_DECISION_MEMO.md` for
 the complete resolution record.
+
+## Stage 6B: live workout execution
+
+Turns the materialized template/tactical graph (Stage 4/5's job) into a
+real, tappable workout the user can run — Today shows executable
+Sessions; a Session opens into per-`WorkoutBlockType` execution screens
+(Strength/Steady State/Interval/Functional Fitness); a block's own result
+gets logged and immediately saved; the Session finishes into a concise
+completion summary. See `WORKOUT_EXECUTION.md`,
+`SESSION_STATE_MACHINE.md`, `TIMER_ARCHITECTURE.md` and the four
+modality-specific `*_EXECUTION_FLOW.md` docs for the full behavioral
+design; `STAGE6B_IMPLEMENTATION_REPORT.md` for the complete build record.
+
+**Two-layer use-case convention (CLAUDE.md rules 20-21), locked in Stage
+6A and followed throughout:** every low-level `RecordXResultUseCase`
+stays pure mutation, no `save()`, reused by seed data and tests
+unchanged; a new **orchestrating** use case (`LogSetUseCase`,
+`LogEnduranceResultUseCase`, `LogFunctionalFitnessResultUseCase`,
+`ApplySubstitutionUseCase`, `StartSessionUseCase`, `CompleteBlockUseCase`,
+`ChangeSessionStatusUseCase`, `CompleteSessionUseCase`,
+`UpdateBlockTimerUseCase`) wraps exactly one low-level call (or a small
+group of them) and calls `modelContext.save()` immediately after.
+Views/ViewModels only ever call an orchestrating use case — never
+`save()`, never a low-level use case, directly.
+
+**New Engines** (pure, deterministic, no `SwiftData` import — same
+discipline as every existing engine): `WorkoutTimer` (elapsed/remaining/
+expiry/pause/resume/unit-index math shared by every timer);
+`IntervalTimerResolution` (the alternating-work/recovery-duration sibling
+`WorkoutTimer.currentUnitIndex` can't express, since that function
+assumes one uniform per-unit duration — true for EMOM, false for most
+Interval/work-rest prescriptions); `SubstitutionCandidateRanking`
+(Change Exercise's tiered candidate list, reusing existing engines, no
+new scoring mechanism); `FunctionalFitnessScoring` (the one deterministic
+`ScoreDirection` mapping a generated, non-benchmark Functional Fitness
+result needs — `ScoreType` itself is never re-derived, `Stimulus.scoreType`
+is always the source).
+
+**Schema, all additive:** `SessionCompletionContext`/
+`BlockCompletionContext`/`TimerState` (`Domain/ValueTypes/ExecutionState.swift`)
+on `Session`/`WorkoutBlock`; `ExercisePrescription.sourceExerciseSlot`/
+`SteadyStatePrescription.sourceWorkoutBlockTemplate`/
+`IntervalPrescription.sourceWorkoutBlockTemplate` (live execution's only
+path back to the template graph for Change Exercise/Change Activity,
+`SUBSTITUTION_MODEL.md`'s Stage 6B section); `PersonalRecord.sourceSteadyStateResult`/
+`.sourceIntervalResult` (the endurance results' PR source pointers,
+mirroring every other result type's existing pattern).
+
+**Incremental persistence split for Interval** (`ENDURANCE_EXECUTION_FLOW.md`'s
+own Stage 6B section has the full reasoning): `LogIntervalRepUseCase`
+persists one completed work/recovery leg the instant it's known to be
+done; `FinalizeIntervalResultUseCase` is the later, idempotent
+consistency point that fills in the session summary and runs PR
+detection on the same, already-durable `IntervalResult`. Every other
+modality's result (Strength set, Steady State activity, Functional
+Fitness format) logs atomically in one call at its own natural
+completion point — there is no smaller meaningful durable unit for those.

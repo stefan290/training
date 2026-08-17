@@ -271,3 +271,26 @@ none need new plumbing beyond what's described:
   `TacticalWindowTrigger` cases, and this pass does not add a seventh
   without product sign-off (still deferred, `STAGE6A_DECISION_MEMO.md` §4).
 - Does not implement missed-session reflow logic (§6's last bullet).
+
+## Implementation status (Stage 6B)
+
+`CompleteSessionUseCase` is the final consistency point exactly as
+designed — idempotent against a double-tapped Finish
+(`OrchestratingUseCaseTests.testCompleteSessionCalledTwiceNeverReMutatesOrDuplicates`),
+its progression preview reads the existing `DoubleProgressionEngine`
+output unchanged, and it never re-records anything already logged.
+`CompletionSummaryView` (§4) shows completed work, PR/baseline
+highlights, and that progression preview — never a second progression
+mechanism, never analytics beyond what's specified.
+
+One real design decision this doc left to Stage 6B's discretion: since
+`isFirstEverEntry` is intentionally never persisted (it's derivable only
+at the moment a result is logged, not reliably afterward), the
+completion screen needs it carried forward from whenever it happened
+during the Session. `SessionExecutionState` — a plain, in-memory,
+per-Session-visit accumulator, shared by every modality's execution
+ViewModel — collects only the PR/first-entry highlights as they occur
+and is handed to `CompleteSessionUseCase.complete(..., highlights:)` at
+Finish time. It holds nothing durable itself; every highlight it
+contains was already saved by its own `LogXResultUseCase` call the
+instant it happened.

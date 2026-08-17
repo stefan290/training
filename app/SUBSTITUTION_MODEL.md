@@ -249,3 +249,33 @@ proven end-to-end by
 candidate can actually be checked against these new dimensions, closing
 the same "canonical Exercise metadata, never parsed names" gap
 `primaryTargets` closed for strength substitution in Stage 4C.
+
+## Stage 6B: live execution's Change Exercise / Change Activity
+
+Building the actual Change Exercise (Strength) and Change Activity
+(Steady State/Interval) screens surfaced one real gap: every prior
+substitution test/call site had the `ExerciseSlot`/`WorkoutBlockTemplate`
+in hand already (a materializer, or a test that just built one). Live
+execution starts from an already-materialized `ExercisePrescription`/
+`SteadyStatePrescription`/`IntervalPrescription` with no stored path back
+to it — `SubstituteExerciseUseCase`/`SubstituteActivityUseCase` both
+require it as a parameter. Closed additively (`DELETE_RULE_MATRIX.md`'s
+own Stage 6B section): `ExercisePrescription.sourceExerciseSlot`/
+`SteadyStatePrescription.sourceWorkoutBlockTemplate`/
+`IntervalPrescription.sourceWorkoutBlockTemplate`, populated by
+`StrengthMaterializer`/`SteadyStateMaterializer`/`IntervalMaterializer` at
+the exact line each prescription is created. `nil` for anything
+materialized outside that path — Change Exercise/Change Activity
+correctly stay unavailable rather than validating against nothing.
+
+**Ranking candidates** (Change Exercise only — Change Activity's pool is
+just `template.allowedActivityTypes`, small enough to list unranked):
+`SubstitutionCandidateRanking` filters via the existing
+`SubstitutionValidator.isValid`, then tiers each eligible candidate by
+re-running the existing `SubstitutionAwareRecommendation.resolve` with
+that candidate as the "selected exercise" — no new scoring engine, reusing
+exactly the tiering Stage 4C already built for the load-estimate flow.
+Ties break alphabetically by `canonicalName` for determinism. Both
+scopes route through the already-built `ApplySubstitutionUseCase` — no
+new persistence code, only the new slot/template trace-back and the
+ranking view.

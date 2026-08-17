@@ -188,3 +188,19 @@ status, `PersonalRecord`) is a local SwiftData insert. HealthKit (write
 of a completed workout, read of body metrics) is strictly additive and
 never gates any of the above — see §14/§15's own "V1 must work without
 HealthKit" instruction, expanded in `ENDURANCE_EXECUTION_FLOW.md`.
+
+## Implementation status (Stage 6B)
+
+Built as designed, across ten slices — see `STAGE6B_IMPLEMENTATION_REPORT.md`
+for the complete build record. Today (`TodayView`/`TodayViewModel`) shows
+every Session for the day independently (never a Day-level rollup);
+Session Detail (`SessionDetailView`) is the shared execution shell that
+routes each block to its `WorkoutBlockType`'s real screen
+(`StrengthExecutionView`/`SteadyStateExecutionView`/`IntervalExecutionView`/
+`FunctionalFitnessExecutionView`) and owns Start/Finish/Finish-as-Partial/
+Resume-Later/Can't-train-today. One deviation worth naming: this design
+doc's execution screens all assumed the materialized prescription could
+resolve back to its template-graph slot for substitution; that link
+didn't exist and was added additively (`ARCHITECTURE.md`'s Stage 6B
+section, `SUBSTITUTION_MODEL.md`'s Stage 6B section) rather than
+guessed around.

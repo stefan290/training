@@ -198,3 +198,35 @@ convention to the strength side (`STRENGTH_EXECUTION_FLOW.md` §7).
   has no contract for.
 - Does not translate a numeric target across modalities without an
   existing `IntensityTranslation` rule (§3).
+
+## Implementation status (Stage 6B)
+
+Steady State (`SteadyStateExecutionView`) is a plain elapsed clock plus a
+completion form covering whichever metrics the activity can supply
+(duration/distance/avgHR/avgPower/RPE) — no single unambiguous PR metric
+exists for this type, so `prCandidateValue` stays `nil` rather than
+guessing one (§10 of the top-level CLAUDE.md rules).
+
+Interval (`IntervalExecutionView`) auto-progresses Work -> Recovery ->
+Work for time-based prescriptions via `IntervalTimerResolution`
+(`TIMER_ARCHITECTURE.md`'s Stage 6B section); distance-based prescriptions
+are logged by hand, one interval at a time, exactly as this doc
+specifies. One real addition beyond the original design: per-interval
+persistence (§2c's "never one session average") means an `IntervalResult`
+must exist and accept new `IntervalRepResult`s *during* the block, not
+only once at the end — `RecordIntervalResultUseCase`'s original
+"construct everything, then log once" contract couldn't express that.
+`LogIntervalRepUseCase` now creates/attaches the `IntervalResult` shell on
+the first rep and appends every subsequent rep immediately (each its own
+`modelContext.save()`); `FinalizeIntervalResultUseCase` is the later,
+idempotent step that fills in the session summary and runs PR detection
+on that same, already-durable result. `RecordIntervalResultUseCase`
+itself is unchanged and still correct for any caller (seed data, a
+future import path) that already has the full result built upfront.
+
+Change Activity (`ChangeActivityView`) needed the same kind of addition
+Change Exercise did: `SteadyStatePrescription`/`IntervalPrescription`
+gained `sourceWorkoutBlockTemplate` so live execution can resolve the
+`ActivitySubstitutionTemplate`/`WorkoutBlockTemplate`
+`SubstituteActivityUseCase` requires (`SUBSTITUTION_MODEL.md`'s Stage 6B
+section).

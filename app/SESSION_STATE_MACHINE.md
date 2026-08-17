@@ -278,3 +278,17 @@ instruction. Once written (`.skipped` or `.missed`), the existing
 `ScheduleIssue` exactly as they already do for any other scheduling
 signal — no new reading mechanism, only the two narrowly-scoped writers
 described above.
+
+## Implementation status (Stage 6B)
+
+Every transition described above is wired to a real UI action, never a
+background process: `StartSessionUseCase` (Start, idempotent),
+`CompleteSessionUseCase` (Finish/Finish-as-Partial, idempotent against a
+double tap — `OrchestratingUseCaseTests.testCompleteSessionCalledTwiceNeverReMutatesOrDuplicates`),
+`ChangeSessionStatusUseCase.skip`/`.markMissed` (Can't-train-today from
+Session Detail; the missed-session prompt on Today's own card, written
+only if the user taps "Mark Missed" — never inferred just because
+`scheduledTime` has passed). "Resume Later" for a stopped-halfway Session
+is a true no-op — dismissing the screen without calling any use case
+leaves the Session exactly as `.inProgress` as it already was, exactly
+as designed.
