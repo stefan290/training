@@ -16,7 +16,16 @@ struct PlanView: View {
                         GoalCard(goal: goal)
                     }
                     ForEach(viewModel.phases) { phase in
-                        PhaseCard(phase: phase)
+                        if let instance = phase.programInstances.first, let definition = instance.programDefinition {
+                            NavigationLink {
+                                ProgramDetailView(instance: instance, definition: definition)
+                            } label: {
+                                PhaseCard(phase: phase, programName: definition.name)
+                            }
+                            .buttonStyle(.plain)
+                        } else {
+                            PhaseCard(phase: phase, programName: nil)
+                        }
                     }
                 }
                 .padding(16)
@@ -34,7 +43,7 @@ private struct GoalCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("GOAL").font(Theme.label).foregroundStyle(Theme.primary)
-            Text(goal.primaryType.rawValue.replacingOccurrences(of: "([a-z])([A-Z])", with: "$1 $2", options: .regularExpression))
+            Text(PlanPresentation.goalTypeLabel(goal.primaryType))
                 .font(Theme.heading)
                 .foregroundStyle(Theme.textPrimary)
         }
@@ -46,24 +55,35 @@ private struct GoalCard: View {
 
 private struct PhaseCard: View {
     let phase: TrainingPhase
+    /// `nil` when this Phase has no `ProgramInstance` yet — shown plainly,
+    /// never a tappable dead end.
+    let programName: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("PHASE").font(Theme.label).foregroundStyle(Theme.primary)
+                Text(phase.status == .active ? "ACTIVE PHASE" : phase.status == .completed ? "COMPLETED PHASE" : "PHASE")
+                    .font(Theme.label)
+                    .foregroundStyle(Theme.primary)
                 Spacer()
-                Text(phase.status.rawValue.uppercased())
+                Text(PlanPresentation.phaseStatusLabel(phase.status))
                     .font(Theme.label)
                     .foregroundStyle(Theme.textSecondary)
             }
-            Text(phase.type.rawValue)
+            Text(PlanPresentation.phaseTypeLabel(phase.type))
                 .font(Theme.heading)
                 .foregroundStyle(Theme.textPrimary)
 
-            if let instance = phase.programInstances.first, let definition = instance.programDefinition {
-                Text("PROGRAM · \(definition.name)")
-                    .font(Theme.numeric)
-                    .foregroundStyle(Theme.textSecondary)
+            if let programName {
+                HStack {
+                    Text("PROGRAM · \(programName)")
+                        .font(Theme.numeric)
+                        .foregroundStyle(Theme.textSecondary)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(Theme.textSecondary)
+                }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
