@@ -19,4 +19,15 @@ final class TodayViewModel {
         }
         sessions = today.orderedSessions
     }
+
+    /// Starts (or, if already in progress, no-ops via
+    /// `StartSessionUseCase`'s own idempotency guard) a Session directly
+    /// from its Today card, then reloads so the card's status reflects
+    /// the change immediately (Part C: "Morning: Completed / Evening:
+    /// Ready" without marking the whole Day complete prematurely — each
+    /// Session's own status drives its own card, independent of siblings).
+    func start(_ session: Session, modelContext: ModelContext) {
+        try? StartSessionUseCase.start(session, asOf: Date(), modelContext: modelContext)
+        load(modelContext: modelContext)
+    }
 }
