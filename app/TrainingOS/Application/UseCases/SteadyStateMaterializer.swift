@@ -77,6 +77,7 @@ enum SteadyStateMaterializer {
                         primaryIntensity: intensityResult.intensity,
                         secondaryIntensity: steadyStateTemplate.secondaryIntensity
                     )
+                    prescription.sourceWorkoutBlockTemplate = blockTemplate
                     context.insert(prescription)
                     block.attachSteadyStatePrescription(prescription)
                 }

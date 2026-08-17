@@ -142,6 +142,7 @@ enum IntervalMaterializer {
                     recoveryDurationSeconds: recoveryResult.recoveryDurationSeconds,
                     recoveryIntensity: intervalTemplate.recoveryIntensity
                 )
+                prescription.sourceWorkoutBlockTemplate = blockTemplate
                 context.insert(prescription)
                 block.attachIntervalPrescription(prescription)
             }

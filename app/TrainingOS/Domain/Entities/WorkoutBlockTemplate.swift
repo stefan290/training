@@ -49,6 +49,23 @@ final class WorkoutBlockTemplate {
     @Relationship(deleteRule: .nullify, inverse: \ActivitySelectionOverride.templateBlock)
     var activitySelectionOverrides: [ActivitySelectionOverride] = []
 
+    /// Stage 6B addition: `SteadyStatePrescription.sourceWorkoutBlockTemplate`'s
+    /// required inverse — nothing reads this collection. Lets a live
+    /// execution's Change Activity flow trace a materialized steady-state
+    /// block back to the template it came from (both its
+    /// `ActivitySubstitutionTemplate` for THIS SESSION ONLY validation and
+    /// this `WorkoutBlockTemplate` itself for GOING FORWARD), while
+    /// `.nullify` keeps the materialized prescription (and any logged
+    /// result) intact if this template's `ProgramDefinition` is later
+    /// deleted (CLAUDE.md rule 1).
+    @Relationship(deleteRule: .nullify, inverse: \SteadyStatePrescription.sourceWorkoutBlockTemplate)
+    var materializedSteadyStatePrescriptions: [SteadyStatePrescription] = []
+
+    /// Stage 6B addition — the interval sibling of
+    /// `materializedSteadyStatePrescriptions` above, same reasoning.
+    @Relationship(deleteRule: .nullify, inverse: \IntervalPrescription.sourceWorkoutBlockTemplate)
+    var materializedIntervalPrescriptions: [IntervalPrescription] = []
+
     init(id: UUID = UUID(), type: WorkoutBlockType) {
         self.id = id
         self.sortIndex = 0

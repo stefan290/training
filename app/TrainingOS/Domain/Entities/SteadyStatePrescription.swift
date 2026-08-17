@@ -36,6 +36,17 @@ final class SteadyStatePrescription {
     /// entity, same reasoning as the strength side.
     var substitutionUsed: Bool
     var substitutionReason: SubstitutionReason?
+    /// Stage 6B addition: the `WorkoutBlockTemplate` this block was
+    /// materialized from, when known — lets the live Change Activity flow
+    /// validate/persist a substitution through the same
+    /// `SubstituteActivityUseCase`/`ActivitySelectionOverride` machinery
+    /// Stage 4C/4D already built, without re-deriving template identity
+    /// from anything else. `nil` for a prescription created outside the
+    /// materializer path (ad hoc/seed-authored). The delete rule lives on
+    /// `WorkoutBlockTemplate.materializedSteadyStatePrescriptions` — a
+    /// plain inverse property here, same pattern as
+    /// `ActivitySelectionOverride.templateBlock`.
+    var sourceWorkoutBlockTemplate: WorkoutBlockTemplate?
 
     init(
         id: UUID = UUID(),

@@ -29,6 +29,11 @@ final class IntervalPrescription {
     /// `.substitutionReason` exactly.
     var substitutionUsed: Bool
     var substitutionReason: SubstitutionReason?
+    /// Stage 6B addition — the interval sibling of
+    /// `SteadyStatePrescription.sourceWorkoutBlockTemplate`, same
+    /// reasoning. Plain inverse property; the delete rule lives on
+    /// `WorkoutBlockTemplate.materializedIntervalPrescriptions`.
+    var sourceWorkoutBlockTemplate: WorkoutBlockTemplate?
 
     init(
         id: UUID = UUID(),
