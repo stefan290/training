@@ -163,15 +163,27 @@ enum StrengthMaterializer {
 
                     let prescription = ExercisePrescription(exercise: SubstituteExerciseUseCase.resolvedExercise(for: slot, in: instance))
                     prescription.sourceExerciseSlot = slot
+                    prescription.sourcePrescriptionTemplate = template
                     context.insert(prescription)
                     block.addPrescription(prescription)
 
                     let setCount = setResult.sets ?? 0
+                    // Stage 6D: `RepGoal.toFailure` is already resolved
+                    // here — "to failure" is definitionally RIR 0, a
+                    // direct translation of data the engine already
+                    // produces, never an invented target. No family spec
+                    // defines a target for `toFailure == false` (RP's own
+                    // notation only ever specifies "X reps to failure" or
+                    // a plain rep count — PROGRAM_LOGIC_SPEC.md never
+                    // states a non-failure RIR), so that case stays `nil`
+                    // rather than guessing one (CLAUDE.md rule 10).
+                    let targetRir = (repResult.repGoal?.toFailure == true) ? 0 : nil
                     for _ in 0..<setCount {
                         let setPrescription = SetPrescription(
                             repRangeLow: repResult.repGoal?.reps ?? 0,
                             repRangeHigh: repResult.repGoal?.reps ?? 0,
-                            targetWeight: weightResult.weightKg
+                            targetWeight: weightResult.weightKg,
+                            targetRir: targetRir
                         )
                         context.insert(setPrescription)
                         prescription.addSetPrescription(setPrescription)

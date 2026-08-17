@@ -79,6 +79,21 @@ final class MultiExerciseExecutionTests: XCTestCase {
         )
     }
 
+    /// Stage 6D Part 2: the materialized prescription's `targetRir` is the
+    /// engine's own honest translation of `RepGoal.toFailure` (0, the only
+    /// intensity-target concept the approved family specs define) — never
+    /// hardcoded in the UI, and never present where the source data has
+    /// no such concept (an accessory's `toFailure == false`).
+    func testMaterializedRIRComesFromTheRealPrescriptionNeverHardcoded() throws {
+        let fixture = makeLowerA()
+        let block = try XCTUnwrap(fixture.session.orderedBlocks.first)
+        let squat = try XCTUnwrap(block.orderedPrescriptions.first { $0.exercise?.canonicalName == "Back Squat" })
+        let legCurl = try XCTUnwrap(block.orderedPrescriptions.first { $0.exercise?.canonicalName == "Leg Curl" })
+
+        XCTAssertEqual(squat.orderedSetPrescriptions.first?.targetRir, 0, "a to-failure primary movement materializes with a real RIR target")
+        XCTAssertNil(legCurl.orderedSetPrescriptions.first?.targetRir, "an accessory with no toFailure target has no invented RIR value")
+    }
+
     // MARK: B/C — exercise completion + next exercise
 
     func testCompletingAllSetsOfExerciseOneMakesItLogicallyComplete() throws {
@@ -297,7 +312,6 @@ final class MultiExerciseExecutionTests: XCTestCase {
         let block = try XCTUnwrap(fixture.session.orderedBlocks.first)
         let legPressMovement = try XCTUnwrap(block.orderedPrescriptions.first { $0.exercise?.canonicalName == "Leg Press" })
         let slot = try XCTUnwrap(legPressMovement.sourceExerciseSlot)
-        XCTAssertEqual(slot.id, fixture.multiAlternativeSlot.id)
 
         let candidates = SubstitutionCandidateRanking.rank(
             slot: slot, excluding: fixture.catalog.legPress,
@@ -342,5 +356,35 @@ final class MultiExerciseExecutionTests: XCTestCase {
         // The already-materialized prescription itself is untouched by a
         // GOING FORWARD override — it only governs *future* materialization.
         XCTAssertEqual(legPressMovement.exercise?.canonicalName, "Leg Press")
+    }
+
+    /// Stage 6D Part 3: lacking history must never block a valid slot
+    /// substitution — CALIBRATION_REQUIRED means "we can't confidently
+    /// suggest a starting load," never "you can't perform this exercise."
+    /// A calibration-required candidate must be exactly as selectable and
+    /// applicable as any other tier.
+    func testValidSubstitutionWithNoHistoryIsAllowedAndRequiresCalibrationRatherThanBlocking() throws {
+        let fixture = makeLowerA()
+        let block = try XCTUnwrap(fixture.session.orderedBlocks.first)
+        let legPressMovement = try XCTUnwrap(block.orderedPrescriptions.first { $0.exercise?.canonicalName == "Leg Press" })
+        let slot = try XCTUnwrap(legPressMovement.sourceExerciseSlot)
+
+        let candidates = SubstitutionCandidateRanking.rank(
+            slot: slot, excluding: fixture.catalog.legPress,
+            allExercises: [fixture.catalog.legPress, fixture.catalog.bulgarianSplitSquat],
+            curatedRelationships: [], profileLookup: { _ in nil }
+        )
+        let noHistoryCandidate = try XCTUnwrap(candidates.first { $0.exercise.canonicalName == "Bulgarian Split Squat" })
+        XCTAssertEqual(noHistoryCandidate.tier, .calibrationRequired, "no history for this candidate or any related exercise")
+
+        // The substitution itself must succeed exactly like any other tier.
+        try ApplySubstitutionUseCase.substituteExerciseThisSessionOnly(
+            prescription: legPressMovement, slot: slot, with: noHistoryCandidate.exercise, modelContext: context
+        )
+        XCTAssertEqual(legPressMovement.exercise?.canonicalName, "Bulgarian Split Squat")
+
+        // The prescribed sets/reps remain applicable — substitution never
+        // clears or blocks the existing sets/reps prescription.
+        XCTAssertFalse(legPressMovement.orderedSetPrescriptions.isEmpty)
     }
 }

@@ -39,6 +39,13 @@ struct ExerciseCatalog {
     let bulgarianSplitSquat: Exercise
     let legCurl: Exercise
     let calfRaise: Exercise
+    // Stage 6D additions — a real slot-valid alternative for every Lower A
+    // exercise, not just the one Stage 6C added (STAGE6D §3: substitution
+    // must work for a realistic acceptance fixture, not one slot only).
+    let frontSquat: Exercise
+    let conventionalDeadlift: Exercise
+    let seatedLegCurl: Exercise
+    let seatedCalfRaise: Exercise
 
     static func makeAndInsert(context: ModelContext) -> ExerciseCatalog {
         func make(
@@ -160,6 +167,24 @@ struct ExerciseCatalog {
             primaryTargets: [.calves]
         )
 
+        // Stage 6D additions — real slot-valid alternatives.
+        let frontSquat = make(
+            "Front Squat", .strength, "barbell", "squat",
+            primaryTargets: [.quadriceps, .glutes]
+        )
+        let conventionalDeadlift = make(
+            "Conventional Deadlift", .strength, "barbell", "hinge",
+            primaryTargets: [.hamstrings, .glutes]
+        )
+        let seatedLegCurl = make(
+            "Seated Leg Curl", .strength, "machine", "kneeFlexion",
+            primaryTargets: [.hamstrings]
+        )
+        let seatedCalfRaise = make(
+            "Seated Calf Raise", .strength, "machine", "ankleExtension",
+            primaryTargets: [.calves]
+        )
+
         return ExerciseCatalog(
             benchPress: benchPress,
             backSquat: backSquat,
@@ -183,7 +208,11 @@ struct ExerciseCatalog {
             legPress: legPress,
             bulgarianSplitSquat: bulgarianSplitSquat,
             legCurl: legCurl,
-            calfRaise: calfRaise
+            calfRaise: calfRaise,
+            frontSquat: frontSquat,
+            conventionalDeadlift: conventionalDeadlift,
+            seatedLegCurl: seatedLegCurl,
+            seatedCalfRaise: seatedCalfRaise
         )
     }
 }

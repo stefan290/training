@@ -469,10 +469,13 @@ enum SeedScenarios {
     /// `.resolveSetCount`, `SubstituteExerciseUseCase.resolvedExercise`)
     /// inline, attached to the caller-supplied `day` instead.
     ///
-    /// One slot ("Unilateral/Machine Squat") deliberately allows two
-    /// exercises (`Leg Press`/`Bulgarian Split Squat`) so Change
-    /// Exercise has a real, slot-validated alternative to test — returned
-    /// separately so acceptance tests/manual QA can target it directly.
+    /// Stage 6D: every slot now allows a real second exercise (Stage 6C
+    /// left only one slot substitutable, which manual testing correctly
+    /// flagged as reading like a hard "no history, no substitution" block
+    /// on the other four) — `multiAlternativeSlot` returns the last one
+    /// found (currently Calf's), kept only because existing acceptance
+    /// tests/manual QA already reference *a* known-multi-alternative slot
+    /// directly; any slot in this fixture now qualifies equally.
     ///
     /// **Known architectural fact, not a Stage 6C bug:** `RepGoal` has no
     /// low/high range (only a single `reps` count), and
@@ -498,6 +501,18 @@ enum SeedScenarios {
             let weekOneFactor: Double
             let sets: Int
             let reps: Int
+            /// Mirrors `HypertrophyProgramGenerator`'s own primary-vs-
+            /// paired-accessory split (`repGoalSchedule` all `toFailure`,
+            /// `pairedRepGoalSchedule` never): a primary compound
+            /// materializes with a real RIR target (0 — "to failure" is
+            /// the only intensity-target concept the approved family
+            /// specs define, `STAGE6D` audit); an accessory materializes
+            /// with none, exactly like real Family A data.
+            let toFailure: Bool
+            /// Stage 6D: at least one real `.autoregulated` slot, so the
+            /// hypertrophy feedback loop (Part 6) has a genuine engine
+            /// input to feed, exactly like real Family A primary slots.
+            let isAutoregulated: Bool
         }
 
         let equipment = EquipmentProfile(equipmentType: .barbell, smallestIncrementKg: 2.5)
@@ -506,28 +521,28 @@ enum SeedScenarios {
         let specs: [SlotSpec] = [
             SlotSpec(
                 name: "Squat Pattern", allowedTargets: [.quadriceps, .glutes],
-                allowedExercises: [catalog.backSquat], defaultExercise: catalog.backSquat,
-                rmKilograms: 140, weekOneFactor: 0.85, sets: 3, reps: 6
+                allowedExercises: [catalog.backSquat, catalog.frontSquat], defaultExercise: catalog.backSquat,
+                rmKilograms: 140, weekOneFactor: 0.85, sets: 3, reps: 6, toFailure: true, isAutoregulated: true
             ),
             SlotSpec(
                 name: "Hip Hinge", allowedTargets: [.hamstrings, .glutes],
-                allowedExercises: [catalog.romanianDeadlift], defaultExercise: catalog.romanianDeadlift,
-                rmKilograms: 120, weekOneFactor: 0.7, sets: 3, reps: 9
+                allowedExercises: [catalog.romanianDeadlift, catalog.conventionalDeadlift], defaultExercise: catalog.romanianDeadlift,
+                rmKilograms: 120, weekOneFactor: 0.7, sets: 3, reps: 9, toFailure: true, isAutoregulated: false
             ),
             SlotSpec(
                 name: "Unilateral/Machine Squat", allowedTargets: [.quadriceps, .glutes],
                 allowedExercises: [catalog.legPress, catalog.bulgarianSplitSquat], defaultExercise: catalog.legPress,
-                rmKilograms: 180, weekOneFactor: 0.75, sets: 3, reps: 11
+                rmKilograms: 180, weekOneFactor: 0.75, sets: 3, reps: 11, toFailure: false, isAutoregulated: false
             ),
             SlotSpec(
                 name: "Hamstring Isolation", allowedTargets: [.hamstrings],
-                allowedExercises: [catalog.legCurl], defaultExercise: catalog.legCurl,
-                rmKilograms: 60, weekOneFactor: 0.7, sets: 3, reps: 12
+                allowedExercises: [catalog.legCurl, catalog.seatedLegCurl], defaultExercise: catalog.legCurl,
+                rmKilograms: 60, weekOneFactor: 0.7, sets: 3, reps: 12, toFailure: false, isAutoregulated: false
             ),
             SlotSpec(
                 name: "Calf", allowedTargets: [.calves],
-                allowedExercises: [catalog.calfRaise], defaultExercise: catalog.calfRaise,
-                rmKilograms: 80, weekOneFactor: 0.7, sets: 4, reps: 12
+                allowedExercises: [catalog.calfRaise, catalog.seatedCalfRaise], defaultExercise: catalog.calfRaise,
+                rmKilograms: 80, weekOneFactor: 0.7, sets: 4, reps: 12, toFailure: false, isAutoregulated: false
             ),
         ]
 
@@ -565,14 +580,19 @@ enum SeedScenarios {
         session.addBlock(block)
 
         var multiAlternativeSlot: ExerciseSlot?
+        var templatesByName: [String: PrescriptionTemplate] = [:]
 
         for spec in specs {
+            let setCountRule: SetCountRule = spec.isAutoregulated
+                ? .autoregulated(AutoregulatedSetCount(baselineSets: spec.sets))
+                : .fixed(setsByWeek: [spec.sets, spec.sets, spec.sets, spec.sets])
             let template = PrescriptionTemplate(rules: StrengthProgressionRules(
                 loadRule: .rmBased(RMBasedLoad(rmType: .rm10, weekOneFactor: spec.weekOneFactor, laterWeekMultipliers: laterWeekMultipliers)),
-                setCountRule: .fixed(setsByWeek: [spec.sets, spec.sets, spec.sets, spec.sets]),
-                repGoalSchedule: Array(repeating: RepGoal(reps: spec.reps), count: 4)
+                setCountRule: setCountRule,
+                repGoalSchedule: Array(repeating: RepGoal(reps: spec.reps, toFailure: spec.toFailure), count: 4)
             ))
             modelContext.insert(template)
+            templatesByName[spec.name] = template
 
             let slot = ExerciseSlot(
                 name: spec.name, allowedTargets: spec.allowedTargets,
@@ -596,6 +616,7 @@ enum SeedScenarios {
 
             let prescription = ExercisePrescription(exercise: SubstituteExerciseUseCase.resolvedExercise(for: slot, in: instance))
             prescription.sourceExerciseSlot = slot
+            prescription.sourcePrescriptionTemplate = template
             modelContext.insert(prescription)
             block.addPrescription(prescription)
 
@@ -604,12 +625,21 @@ enum SeedScenarios {
                 let setPrescription = SetPrescription(
                     repRangeLow: repResult.repGoal?.reps ?? 0,
                     repRangeHigh: repResult.repGoal?.reps ?? 0,
-                    targetWeight: weightResult.weightKg
+                    targetWeight: weightResult.weightKg,
+                    // Mirrors StrengthMaterializer's own toFailure -> RIR
+                    // translation exactly (Stage 6D Part 2).
+                    targetRir: (repResult.repGoal?.toFailure == true) ? 0 : nil
                 )
                 modelContext.insert(setPrescription)
                 prescription.addSetPrescription(setPrescription)
             }
         }
+
+        // Squat Pattern's (Back Squat's) set count autoregulates off
+        // Unilateral/Machine Squat's (Leg Press's) own completion rating —
+        // mirroring Family A's real primary/paired-accessory shape
+        // exactly (`PROGRAM_LOGIC_SPEC.md` §FAMILY_A_SET_AUTOREGULATION).
+        templatesByName["Squat Pattern"]?.pairedSlot = templatesByName["Unilateral/Machine Squat"]
 
         guard let multiAlternativeSlot else {
             fatalError("materializedLowerASession's own fixed spec list always includes one multi-exercise slot")

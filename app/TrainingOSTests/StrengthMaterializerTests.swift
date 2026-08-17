@@ -62,6 +62,35 @@ final class StrengthMaterializerTests: XCTestCase {
         }
     }
 
+    /// Stage 6D Part 2: `RepGoal.toFailure` (already resolved by
+    /// `StrengthProgressionEngine.resolveRepGoal`) is translated onto the
+    /// materialized `SetPrescription.targetRir` — 0 for the primary
+    /// (Family A's own `repGoalSchedule` is `toFailure: true` for every
+    /// week), absent for the paired accessory (`pairedRepGoalSchedule` is
+    /// never `toFailure`) — never hardcoded, never invented for the case
+    /// the source data doesn't define.
+    func testMaterializeWeekTranslatesToFailureIntoRIRNeverInventingOneForNonFailureSets() throws {
+        let definition = HypertrophyProgramGenerator.generate(
+            configuration: HypertrophyProgramConfiguration(dayCount: 1, split: .fullBody, phaseType: .basicHypertrophy),
+            provenance: .constructed(reason: "test fixture"),
+            context: context
+        )
+        let instance = makeInstance(definition: definition)
+
+        let result = StrengthMaterializer.materializeWeek(
+            definition: definition, instance: instance, weekIndex: 0, isDeload: false,
+            startDate: Date(timeIntervalSince1970: 0), ownerUserID: ownerUserID, equipmentProfile: equipment,
+            slotContext: { _ in .init(rmKilograms: 100) }, context: context
+        )
+
+        let block = try XCTUnwrap(result.sessions.first?.orderedBlocks.first)
+        let primary = try XCTUnwrap(block.orderedPrescriptions.first { $0.orderedSetPrescriptions.count == 3 })
+        let paired = try XCTUnwrap(block.orderedPrescriptions.first { $0.orderedSetPrescriptions.count == 2 })
+
+        XCTAssertTrue(primary.orderedSetPrescriptions.allSatisfy { $0.targetRir == 0 })
+        XCTAssertTrue(paired.orderedSetPrescriptions.allSatisfy { $0.targetRir == nil })
+    }
+
     /// The paired accessory's `.linkedToPairedSlot` load must be a
     /// fraction of the primary's weight *resolved in this same
     /// materialization pass*, not some other value.
