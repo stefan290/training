@@ -802,3 +802,42 @@ without inventing one. Browsing Previous/Next Week only ever changes
 which already-persisted week is displayed; it never creates a `Day`,
 `Session`, or triggers materialization
 (`WeekViewModelTests.testNavigatingForwardRepeatedlyNeverTriggersMaterialization`).
+
+## Stage 6D: progression-loop audit, RIR display, substitution-without-history, Plan hierarchy
+
+A focused correctness pass on top of Stage 6C, triggered by manually
+completing a real workout. Full detail: `STAGE6D_ACCEPTANCE_REPORT.md`.
+Traced the real load/reps/set-count/RIR path end to end and found no
+architecture defect — only integration gaps: `StrengthMaterializer` never
+translated `RepGoal.toFailure` into `SetPrescription.targetRir` (fixed,
+definitional translation, no invented RIR concept); RP-style set-count
+autoregulation (`StrengthProgressionEngine.resolveSetCount`'s
+`.autoregulated` case) was fully implemented at the engine level but
+had no UI collecting the rating it always accepted (closed with one
+lightweight prompt, reusing `PrescriptionTemplate.pairedSlot`/
+`referencedAsPairedSlotBy` rather than a new grouping concept); and
+`ExercisePrescription` never persisted the `StrengthReasonCode` the
+engine already computes for each decision (closed with three additive,
+nullable fields — `appliedLoadReasonCode`/`appliedSetCountReasonCode`/
+`appliedRepGoalReasonCode`). Plan (`PlanView`) became a real 3-level
+navigable hierarchy (Goal/Phase -> week-by-week -> read-only session
+preview) — a template-only future session shows known structure
+(exercise slots, rep-goal schedule) but never a load, since load is
+RM-dependent and doesn't exist until real materialization
+(`TemplateSessionPreviewView`).
+
+## Stage 6E: completed Sessions are read-only, permanently reopenable history
+
+Manual Simulator acceptance found a completed Session could not be
+reopened at all — full detail: `STAGE6E_ACCEPTANCE_REPORT.md`. Two
+distinct defects, both in the presentation layer, no domain/schema
+change: `SessionDetailView` routed a completed Session into the *live*
+execution block list (fixed by `SessionDisplayMode`, which maps every
+terminal `SessionStatus` to `.completedHistory` unconditionally,
+`SESSION_STATE_MACHINE.md`'s own Stage 6E section); and, found only by
+the product owner's own manual tap-through after the first fix already
+passed 544/544 automated tests, Today/Week/Plan's session cards had no
+`.contentShape()` and no explicit affordance for any status without its
+own button, so a completed card's tap target was unreliable. Both fixed;
+neither required touching the new `CompletedSessionDetail` view tree
+itself, which reads only already-persisted results and mutates nothing.

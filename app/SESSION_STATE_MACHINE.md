@@ -307,3 +307,17 @@ Completing one block in a multi-block Session never mutates a sibling
 block's status (`testStrengthPlusFunctionalFitnessSessionDoesNotFinishEarlyAfterStrengthCompletes`)
 — the Session only becomes finish-normally-eligible once every block
 independently reaches `.completed`.
+
+## Stage 6E: a completed/skipped/missed/abandoned Session is always inspectable history
+
+A terminal `SessionStatus` (`.completed`, `.skipped`, `.missed`,
+`.abandoned`) now maps to exactly one display mode —
+`SessionDisplayMode.completedHistory` — regardless of which screen opened
+it or what `readOnly` value that screen happened to pass. This is a
+presentation-layer addition only; no new `SessionStatus` case, no new
+transition. Read-only means the contents cannot mutate execution state —
+it never means the Session cannot be opened
+(`STAGE6E_ACCEPTANCE_REPORT.md`). Every terminal status remains fully
+navigable, in `CompletedSessionDetail`'s modality-specific read-only
+detail, from Today, Week, and Plan alike
+(`CompletedSessionHistoryTests.swift`).
