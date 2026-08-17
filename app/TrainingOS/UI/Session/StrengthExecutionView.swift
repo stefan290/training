@@ -4,11 +4,12 @@ import SwiftData
 /// Strength/Hypertrophy/Accessory/Powerlifting execution
 /// (`STRENGTH_EXECUTION_FLOW.md`, Part D/G — reused unmodified for
 /// Powerlifting, since nothing here branches on programming methodology).
-/// One movement at a time: target sets-reps/RIR/suggested load, previous
-/// performance, current-set logging, a rest timer, and Change Exercise.
-/// Editing the weight/reps fields before logging changes only what gets
-/// recorded as this set's actual result — it never writes back to the
-/// set's own prescription (CLAUDE.md rule 3).
+/// Continuous progression through the block's complete ordered exercise
+/// list (Stage 6C Part F/G): target sets-reps/RIR/suggested load, previous
+/// performance, current-set logging, a rest timer, Previous/Next Exercise
+/// navigation, and Change Exercise. Editing the weight/reps fields before
+/// logging changes only what gets recorded as this set's actual result —
+/// it never writes back to the set's own prescription (CLAUDE.md rule 3).
 struct StrengthExecutionView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
@@ -31,19 +32,11 @@ struct StrengthExecutionView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                if viewModel.movements.count > 1 {
-                    Picker("Movement", selection: Binding(
-                        get: { viewModel.movementIndex },
-                        set: { viewModel.selectMovement($0, modelContext: modelContext); resetInputsForCurrentSet() }
-                    )) {
-                        ForEach(Array(viewModel.movements.enumerated()), id: \.offset) { index, movement in
-                            Text(movement.exercise?.canonicalName ?? "Exercise").tag(index)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                }
+                progressHeader
 
-                if let movement = viewModel.currentMovement, let exercise = movement.exercise {
+                if viewModel.isBlockComplete {
+                    blockCompleteContent
+                } else if let movement = viewModel.currentMovement, let exercise = movement.exercise {
                     header(exercise: exercise)
 
                     if !viewModel.previousResults.isEmpty {
@@ -55,15 +48,15 @@ struct StrengthExecutionView: View {
                     }
 
                     if viewModel.isMovementComplete {
-                        ContentUnavailableView("All sets logged", systemImage: "checkmark.circle")
+                        exerciseCompleteContent
                     } else {
                         currentSetCard
 
                         RestTimerView(block: viewModel.block)
                     }
 
-                    Button("Change Exercise") { showingChangeExercise = true }
-                        .buttonStyle(.bordered)
+                    navigationBar
+                    changeExerciseControl(for: movement)
                 }
             }
             .padding(16)
@@ -81,6 +74,102 @@ struct StrengthExecutionView: View {
             viewModel.loadPreviousPerformance(modelContext: modelContext)
             resetInputsForCurrentSet()
         }
+    }
+
+    /// Part H: position + lightweight overall progress — never a
+    /// dashboard, just the two numbers the kickoff's own example shows.
+    private var progressHeader: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            if !viewModel.isBlockComplete {
+                Text("Exercise \(viewModel.movementIndex + 1) of \(viewModel.movementCount)")
+                    .font(Theme.label)
+                    .foregroundStyle(Theme.textSecondary)
+            }
+            Text("\(viewModel.completedMovementCount) / \(viewModel.movementCount) exercises completed")
+                .font(Theme.label)
+                .foregroundStyle(Theme.textSecondary)
+        }
+    }
+
+    /// Part J: every prescribed movement is satisfied, so the block has
+    /// already auto-transitioned to `.completed`
+    /// (`StrengthExecutionViewModel.logCurrentSet`) — this just reflects
+    /// that back and returns the user to Session Detail, where "Finish
+    /// Session" is now the correct normal action, never "Finish as
+    /// Partial" for genuinely full work (Part L).
+    private var blockCompleteContent: some View {
+        VStack(spacing: 14) {
+            ContentUnavailableView("Strength block complete", systemImage: "checkmark.seal.fill")
+            Button("Return to Session") { dismiss() }
+                .buttonStyle(.borderedProminent)
+                .tint(Theme.primary)
+                .frame(maxWidth: .infinity)
+        }
+    }
+
+    /// Part F: shown the instant the current exercise's last set is
+    /// logged — names the next exercise so the forward path is obvious,
+    /// without requiring the user to back out to Session Detail first.
+    private var exerciseCompleteContent: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            ContentUnavailableView("Exercise Complete", systemImage: "checkmark.circle")
+            if let nextName = viewModel.nextMovementName {
+                Text("Next: \(nextName)")
+                    .font(Theme.body)
+                    .foregroundStyle(Theme.textSecondary)
+            }
+        }
+    }
+
+    /// Part G: Previous/Next Exercise, always available, ordering always
+    /// from `WorkoutBlock.orderedPrescriptions` — inspecting an earlier or
+    /// later exercise never mutates completion state. The forward button
+    /// becomes the prominent action once the current exercise is done, so
+    /// the natural next step is always obvious.
+    private var navigationBar: some View {
+        HStack {
+            if viewModel.hasPreviousMovement {
+                Button("Previous Exercise") { advance(.previous) }
+                    .buttonStyle(.bordered)
+            }
+            Spacer()
+            if viewModel.hasNextMovement {
+                if viewModel.isMovementComplete {
+                    Button("Next Exercise") { advance(.next) }
+                        .buttonStyle(.borderedProminent)
+                        .tint(Theme.primary)
+                } else {
+                    Button("Next Exercise") { advance(.next) }
+                        .buttonStyle(.bordered)
+                }
+            }
+        }
+    }
+
+    /// Part M: Change Exercise is only ever presented as available when
+    /// there's a real `ExerciseSlot` to validate alternatives against —
+    /// never an enabled button that leads to a dead end.
+    @ViewBuilder
+    private func changeExerciseControl(for movement: ExercisePrescription) -> some View {
+        if movement.sourceExerciseSlot != nil {
+            Button("Change Exercise") { showingChangeExercise = true }
+                .buttonStyle(.bordered)
+        } else {
+            Text("Change Exercise unavailable — this movement wasn't materialized from a slot.")
+                .font(Theme.label)
+                .foregroundStyle(Theme.textSecondary)
+        }
+    }
+
+    private enum NavigationDirection { case next, previous }
+
+    private func advance(_ direction: NavigationDirection) {
+        switch direction {
+        case .next: viewModel.goToNextMovement(modelContext: modelContext)
+        case .previous: viewModel.goToPreviousMovement(modelContext: modelContext)
+        }
+        lastHighlight = nil
+        resetInputsForCurrentSet()
     }
 
     private func header(exercise: Exercise) -> some View {

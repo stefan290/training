@@ -32,6 +32,13 @@ struct ExerciseCatalog {
     let handstandPushUp: Exercise
     let deadlift: Exercise
     let dumbbellSnatch: Exercise
+    // Stage 6C additions — the realistic multi-exercise Lower A acceptance
+    // fixture (STAGE6C_ACCEPTANCE_REPORT.md).
+    let romanianDeadlift: Exercise
+    let legPress: Exercise
+    let bulgarianSplitSquat: Exercise
+    let legCurl: Exercise
+    let calfRaise: Exercise
 
     static func makeAndInsert(context: ModelContext) -> ExerciseCatalog {
         func make(
@@ -131,6 +138,28 @@ struct ExerciseCatalog {
             primaryTargets: [.shoulders, .glutes], movementFunctions: [.hingeLoaded, .pressLoaded], functionalModality: .weightlifting
         )
 
+        // Stage 6C additions — realistic Lower A acceptance fixture.
+        let romanianDeadlift = make(
+            "Romanian Deadlift", .strength, "barbell", "hinge",
+            primaryTargets: [.hamstrings, .glutes]
+        )
+        let legPress = make(
+            "Leg Press", .strength, "machine", "squat",
+            primaryTargets: [.quadriceps, .glutes]
+        )
+        let bulgarianSplitSquat = make(
+            "Bulgarian Split Squat", .strength, "dumbbell", "squat",
+            primaryTargets: [.quadriceps, .glutes]
+        )
+        let legCurl = make(
+            "Leg Curl", .strength, "machine", "kneeFlexion",
+            primaryTargets: [.hamstrings]
+        )
+        let calfRaise = make(
+            "Calf Raise", .strength, "machine", "ankleExtension",
+            primaryTargets: [.calves]
+        )
+
         return ExerciseCatalog(
             benchPress: benchPress,
             backSquat: backSquat,
@@ -149,7 +178,12 @@ struct ExerciseCatalog {
             pushUp: pushUp,
             handstandPushUp: handstandPushUp,
             deadlift: deadlift,
-            dumbbellSnatch: dumbbellSnatch
+            dumbbellSnatch: dumbbellSnatch,
+            romanianDeadlift: romanianDeadlift,
+            legPress: legPress,
+            bulgarianSplitSquat: bulgarianSplitSquat,
+            legCurl: legCurl,
+            calfRaise: calfRaise
         )
     }
 }

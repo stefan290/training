@@ -15,7 +15,7 @@ struct SeedResult {
     let programDefinitionB: ProgramDefinition
     let programInstanceA: ProgramInstance
     let programInstanceB: ProgramInstance
-    let todaySessions: (morning: Session, evening: Session)
+    let todaySessions: (morning: Session, evening: Session, programInstance: ProgramInstance, multiAlternativeSlot: ExerciseSlot)
 }
 
 /// Builds the fixed development dataset described in the Stage 2 brief:
@@ -160,8 +160,25 @@ enum SeedDataProvider {
         let todaySessions = SeedScenarios.twoSessionsSameDay(
             day: makeDay(offset: 0, ownerUserID: user.id, context: context),
             catalog: catalog,
+            ownerUserID: user.id,
             modelContext: context
         )
+
+        // Stage 6C: a real, scheduled (not yet performed) future Session
+        // within the current week, so Week's read-only future-Session
+        // inspection (Part R) has genuine materialized data to show —
+        // never a fabricated exact prescription beyond what's actually
+        // materialized. Renamed after creation, distinct from the
+        // historical "Zone 2 Run" scenario above, so name-based test/UI
+        // lookups never collide between the two.
+        let upcomingZone2 = SeedScenarios.zone2Session(
+            day: makeDay(offset: 1, ownerUserID: user.id, context: context),
+            catalog: catalog,
+            programInstance: programInstanceB,
+            modelContext: context,
+            status: .scheduled
+        )
+        upcomingZone2.name = "Upcoming Zone 2"
 
         return SeedResult(
             user: user,

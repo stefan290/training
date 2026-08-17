@@ -10,18 +10,30 @@ import Observation
 @Observable
 final class StrengthExecutionViewModel {
     let block: WorkoutBlock
-    private(set) var movementIndex: Int = 0
+    private(set) var movementIndex: Int
     /// Captured once when a movement loads — what the user did last time,
     /// never recomputed as new sets are logged this same visit (a "you
     /// just did this a second ago" previous-performance line would be
     /// useless and confusing).
     private(set) var previousResults: [SetResult] = []
 
+    /// Stage 6C: resumes at the first not-yet-complete movement rather
+    /// than always index 0 — this is re-derived from persisted
+    /// prescription/result state every time the view model is created
+    /// (fresh app launch included), never a separately persisted
+    /// "current exercise" flag (Part H/Y: completed exercises stay
+    /// completed and logically resumable without redundant state).
     init(block: WorkoutBlock) {
         self.block = block
+        let ordered = block.orderedPrescriptions
+        self.movementIndex = ordered.firstIndex(where: { !StrengthExecutionViewModel.isComplete($0) }) ?? max(0, ordered.count - 1)
     }
 
+    /// Canonical exercise order — `ExercisePrescription.sortIndex` via
+    /// `WorkoutBlock.orderedPrescriptions`, never any transient SwiftUI
+    /// ordering (Part G).
     var movements: [ExercisePrescription] { block.orderedPrescriptions }
+    var movementCount: Int { movements.count }
 
     var currentMovement: ExercisePrescription? {
         movements.indices.contains(movementIndex) ? movements[movementIndex] : nil
@@ -35,15 +47,48 @@ final class StrengthExecutionViewModel {
         return ordered.indices.contains(currentSetIndex) ? ordered[currentSetIndex] : nil
     }
 
-    var isMovementComplete: Bool {
-        guard let movement = currentMovement else { return true }
-        return !movement.orderedSetPrescriptions.isEmpty
+    /// Deterministic from authoritative persisted state alone (Part I):
+    /// every required `SetPrescription` has a logged `SetResult`. No
+    /// separate "ExerciseCompleted" entity — this is always recomputed,
+    /// never cached.
+    static func isComplete(_ movement: ExercisePrescription) -> Bool {
+        !movement.orderedSetPrescriptions.isEmpty
             && movement.loggedSetResults.count >= movement.orderedSetPrescriptions.count
     }
 
-    func selectMovement(_ index: Int, modelContext: ModelContext) {
-        guard movements.indices.contains(index) else { return }
-        movementIndex = index
+    var isMovementComplete: Bool {
+        guard let movement = currentMovement else { return true }
+        return StrengthExecutionViewModel.isComplete(movement)
+    }
+
+    var completedMovementCount: Int { movements.filter(StrengthExecutionViewModel.isComplete).count }
+
+    /// Every prescribed movement satisfied — never true for an empty
+    /// block (Part J: completing exercise 1 of 5 must never complete the
+    /// block; a block with zero movements has nothing to be "complete").
+    var isBlockComplete: Bool {
+        !movements.isEmpty && movements.allSatisfy(StrengthExecutionViewModel.isComplete)
+    }
+
+    var hasPreviousMovement: Bool { movementIndex > 0 }
+    var hasNextMovement: Bool { movementIndex + 1 < movements.count }
+
+    var nextMovementName: String? {
+        hasNextMovement ? movements[movementIndex + 1].exercise?.canonicalName : nil
+    }
+
+    /// Inspecting an earlier/later exercise never corrupts completion
+    /// state (Part G) — this only moves a transient view index; nothing
+    /// here mutates any persisted status.
+    func goToNextMovement(modelContext: ModelContext) {
+        guard hasNextMovement else { return }
+        movementIndex += 1
+        loadPreviousPerformance(modelContext: modelContext)
+    }
+
+    func goToPreviousMovement(modelContext: ModelContext) {
+        guard hasPreviousMovement else { return }
+        movementIndex -= 1
         loadPreviousPerformance(modelContext: modelContext)
     }
 
@@ -89,6 +134,15 @@ final class StrengthExecutionViewModel {
             completedAt: Date(),
             modelContext: modelContext
         ) else { return nil }
+
+        // Part J: derived completion and persisted state must agree —
+        // the moment every movement's required sets are all logged, the
+        // block itself transitions, automatically, to `.completed`.
+        // Never left "In Progress" indefinitely waiting for a separate
+        // confirmation the user has no way to give.
+        if isBlockComplete {
+            try? CompleteBlockUseCase.complete(block, context: .full, modelContext: modelContext)
+        }
 
         return LoggedResultHighlight(
             label: exercise.canonicalName,
