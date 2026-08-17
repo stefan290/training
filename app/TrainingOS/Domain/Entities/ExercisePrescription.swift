@@ -64,6 +64,27 @@ final class ExercisePrescription {
     /// user answers the one lightweight prompt this exercise triggers;
     /// never collected for an exercise nothing's set count depends on.
     var autoregulationRating: Int?
+    /// Stage 6D Part 7 addition: the `StrengthReasonCode` `StrengthProgressionEngine`
+    /// actually produced for THIS prescription's weight/set-count/rep-goal
+    /// decision, captured at materialization time rather than re-derived
+    /// later. Before this field existed, `StrengthMaterializer`/
+    /// `SeedScenarios` computed a reason code alongside every decision and
+    /// then discarded it — by the time a user viewed next week's
+    /// prescription, this week's "why" was already gone. Populated at the
+    /// same two call sites that already compute the value
+    /// (`StrengthMaterializer.materializeWeek`,
+    /// `SeedScenarios.materializedLowerASession`); `nil` for a prescription
+    /// materialized outside that pipeline. This is provenance for an
+    /// already-applied decision, never a second decision engine —
+    /// `DoubleProgressionEngine`'s own `ProgressionReasonCode` vocabulary
+    /// stays untouched and unrelated.
+    var appliedLoadReasonCode: StrengthReasonCode?
+    /// See `appliedLoadReasonCode` — the reason code for this
+    /// prescription's resolved set count.
+    var appliedSetCountReasonCode: StrengthReasonCode?
+    /// See `appliedLoadReasonCode` — the reason code for this
+    /// prescription's resolved rep goal.
+    var appliedRepGoalReasonCode: StrengthReasonCode?
 
     @Relationship(deleteRule: .cascade, inverse: \SetPrescription.exercisePrescription)
     var setPrescriptions: [SetPrescription] = []

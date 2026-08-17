@@ -94,6 +94,30 @@ final class MultiExerciseExecutionTests: XCTestCase {
         XCTAssertNil(legCurl.orderedSetPrescriptions.first?.targetRir, "an accessory with no toFailure target has no invented RIR value")
     }
 
+    /// Stage 6D Part 7: the seed fixture's own parallel materialization
+    /// loop must capture the same reason-code provenance the real
+    /// `StrengthMaterializer` does — any fix to one must mirror the other.
+    func testMaterializedReasonCodesMatchWhatTheEngineActuallyComputed() throws {
+        let fixture = makeLowerA()
+        let block = try XCTUnwrap(fixture.session.orderedBlocks.first)
+        let squat = try XCTUnwrap(block.orderedPrescriptions.first { $0.exercise?.canonicalName == "Back Squat" })
+        let squatTemplate = try XCTUnwrap(squat.sourcePrescriptionTemplate)
+        let squatRules = try XCTUnwrap(squatTemplate.rules)
+
+        let expectedWeight = StrengthProgressionEngine.resolveWeight(
+            rules: squatRules, weekIndex: 0, rmKilograms: 140, weekOneResolvedWeightKg: nil,
+            pairedSlotResolvedWeightKg: nil, equipmentProfile: EquipmentProfile(equipmentType: .barbell, smallestIncrementKg: 2.5)
+        )
+        let expectedRepGoal = StrengthProgressionEngine.resolveRepGoal(rules: squatRules, weekIndex: 0)
+        let expectedSetCount = StrengthProgressionEngine.resolveSetCount(
+            rules: squatRules, weekIndex: 0, previousWeekSetCount: nil, autoregulationRating: nil
+        )
+
+        XCTAssertEqual(squat.appliedLoadReasonCode, expectedWeight.reasonCode)
+        XCTAssertEqual(squat.appliedRepGoalReasonCode, expectedRepGoal.reasonCode)
+        XCTAssertEqual(squat.appliedSetCountReasonCode, expectedSetCount.reasonCode)
+    }
+
     // MARK: B/C — exercise completion + next exercise
 
     func testCompletingAllSetsOfExerciseOneMakesItLogicallyComplete() throws {

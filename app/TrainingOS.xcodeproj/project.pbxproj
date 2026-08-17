@@ -116,7 +116,6 @@
 		94B16BD5E84E43A89CEC8290 /* PlanHierarchyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF3AD5B7F198450890ABC119 /* PlanHierarchyTests.swift */; };
 		DD4059D072B44A1EB2090522 /* HypertrophyFeedbackTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC5688EE20314C90818014A3 /* HypertrophyFeedbackTests.swift */; };
 		088A8647BA3542EB84037C83 /* EndToEndProgressionLoopTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E99C0F8B5FA4C32B38652ED /* EndToEndProgressionLoopTests.swift */; };
-		C0F105FFD3CD4DED8E563C7A /* EndToEndProgressionLoopTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDFFD1E9D0034EFEA3F63E0C /* EndToEndProgressionLoopTests.swift */; };
 		9016EB9237EA459999749E43 /* RecordEnduranceResultUseCaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2327185FDBD04486B2715F34 /* RecordEnduranceResultUseCaseTests.swift */; };
 		246EBBEEC0F24B01AAB82557 /* WorkoutTimerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F04D9ED653204C10B88A2D23 /* WorkoutTimerTests.swift */; };
 		EAC26DC9D5FA453BB0459663 /* OrchestratingUseCaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 821F86C0738E4D5BBF958B49 /* OrchestratingUseCaseTests.swift */; };
@@ -381,7 +380,6 @@
 		DF3AD5B7F198450890ABC119 /* PlanHierarchyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PlanHierarchyTests.swift; path = PlanHierarchyTests.swift; sourceTree = "<group>"; };
 		EC5688EE20314C90818014A3 /* HypertrophyFeedbackTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HypertrophyFeedbackTests.swift; path = HypertrophyFeedbackTests.swift; sourceTree = "<group>"; };
 		4E99C0F8B5FA4C32B38652ED /* EndToEndProgressionLoopTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = EndToEndProgressionLoopTests.swift; path = EndToEndProgressionLoopTests.swift; sourceTree = "<group>"; };
-		CDFFD1E9D0034EFEA3F63E0C /* EndToEndProgressionLoopTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = EndToEndProgressionLoopTests.swift; path = EndToEndProgressionLoopTests.swift; sourceTree = "<group>"; };
 		2327185FDBD04486B2715F34 /* RecordEnduranceResultUseCaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RecordEnduranceResultUseCaseTests.swift; path = RecordEnduranceResultUseCaseTests.swift; sourceTree = "<group>"; };
 		F04D9ED653204C10B88A2D23 /* WorkoutTimerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WorkoutTimerTests.swift; path = WorkoutTimerTests.swift; sourceTree = "<group>"; };
 		821F86C0738E4D5BBF958B49 /* OrchestratingUseCaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OrchestratingUseCaseTests.swift; path = OrchestratingUseCaseTests.swift; sourceTree = "<group>"; };
@@ -850,7 +848,6 @@
 				DF3AD5B7F198450890ABC119 /* PlanHierarchyTests.swift */,
 				EC5688EE20314C90818014A3 /* HypertrophyFeedbackTests.swift */,
 				4E99C0F8B5FA4C32B38652ED /* EndToEndProgressionLoopTests.swift */,
-				CDFFD1E9D0034EFEA3F63E0C /* EndToEndProgressionLoopTests.swift */,
 				2327185FDBD04486B2715F34 /* RecordEnduranceResultUseCaseTests.swift */,
 				F04D9ED653204C10B88A2D23 /* WorkoutTimerTests.swift */,
 				821F86C0738E4D5BBF958B49 /* OrchestratingUseCaseTests.swift */,
@@ -1120,7 +1117,6 @@
 				94B16BD5E84E43A89CEC8290 /* PlanHierarchyTests.swift in Sources */,
 				DD4059D072B44A1EB2090522 /* HypertrophyFeedbackTests.swift in Sources */,
 				088A8647BA3542EB84037C83 /* EndToEndProgressionLoopTests.swift in Sources */,
-				C0F105FFD3CD4DED8E563C7A /* EndToEndProgressionLoopTests.swift in Sources */,
 				9016EB9237EA459999749E43 /* RecordEnduranceResultUseCaseTests.swift in Sources */,
 				246EBBEEC0F24B01AAB82557 /* WorkoutTimerTests.swift in Sources */,
 				EAC26DC9D5FA453BB0459663 /* OrchestratingUseCaseTests.swift in Sources */,

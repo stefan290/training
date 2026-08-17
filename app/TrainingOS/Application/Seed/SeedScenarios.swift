@@ -617,6 +617,11 @@ enum SeedScenarios {
             let prescription = ExercisePrescription(exercise: SubstituteExerciseUseCase.resolvedExercise(for: slot, in: instance))
             prescription.sourceExerciseSlot = slot
             prescription.sourcePrescriptionTemplate = template
+            // Mirrors StrengthMaterializer's own reason-code capture
+            // exactly (Stage 6D Part 7).
+            prescription.appliedLoadReasonCode = weightResult.reasonCode
+            prescription.appliedSetCountReasonCode = setResult.reasonCode
+            prescription.appliedRepGoalReasonCode = repResult.reasonCode
             modelContext.insert(prescription)
             block.addPrescription(prescription)
 

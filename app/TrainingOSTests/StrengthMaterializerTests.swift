@@ -91,6 +91,49 @@ final class StrengthMaterializerTests: XCTestCase {
         XCTAssertTrue(paired.orderedSetPrescriptions.allSatisfy { $0.targetRir == nil })
     }
 
+    /// Stage 6D Part 7: the reason code the engine actually produced for
+    /// this prescription's weight/set-count/rep-goal decision is captured
+    /// onto the movement itself, at materialization time — never
+    /// re-derived later, never discarded.
+    func testMaterializeWeekPersistsTheReasonCodesTheEngineActuallyProduced() throws {
+        let definition = HypertrophyProgramGenerator.generate(
+            configuration: HypertrophyProgramConfiguration(dayCount: 1, split: .fullBody, phaseType: .basicHypertrophy),
+            provenance: .constructed(reason: "test fixture"),
+            context: context
+        )
+        let instance = makeInstance(definition: definition)
+
+        let result = StrengthMaterializer.materializeWeek(
+            definition: definition, instance: instance, weekIndex: 0, isDeload: false,
+            startDate: Date(timeIntervalSince1970: 0), ownerUserID: ownerUserID, equipmentProfile: equipment,
+            slotContext: { _ in .init(rmKilograms: 100) }, context: context
+        )
+
+        let block = try XCTUnwrap(result.sessions.first?.orderedBlocks.first)
+        for prescription in block.orderedPrescriptions {
+            let template = try XCTUnwrap(prescription.sourcePrescriptionTemplate)
+            let rules = try XCTUnwrap(template.rules)
+
+            // Independently recompute what the engine SHOULD have produced
+            // for this exact template/week — not a hardcoded literal.
+            let pairedResolvedWeight = template.pairedSlot.flatMap { paired in
+                block.orderedPrescriptions.first { $0.sourcePrescriptionTemplate?.id == paired.id }?.orderedSetPrescriptions.first?.targetWeight
+            }
+            let expectedWeight = StrengthProgressionEngine.resolveWeight(
+                rules: rules, weekIndex: 0, rmKilograms: 100, weekOneResolvedWeightKg: nil,
+                pairedSlotResolvedWeightKg: pairedResolvedWeight, equipmentProfile: equipment
+            )
+            let expectedRepGoal = StrengthProgressionEngine.resolveRepGoal(rules: rules, weekIndex: 0)
+            let expectedSetCount = StrengthProgressionEngine.resolveSetCount(
+                rules: rules, weekIndex: 0, previousWeekSetCount: nil, autoregulationRating: nil
+            )
+
+            XCTAssertEqual(prescription.appliedLoadReasonCode, expectedWeight.reasonCode)
+            XCTAssertEqual(prescription.appliedRepGoalReasonCode, expectedRepGoal.reasonCode)
+            XCTAssertEqual(prescription.appliedSetCountReasonCode, expectedSetCount.reasonCode)
+        }
+    }
+
     /// The paired accessory's `.linkedToPairedSlot` load must be a
     /// fraction of the primary's weight *resolved in this same
     /// materialization pass*, not some other value.

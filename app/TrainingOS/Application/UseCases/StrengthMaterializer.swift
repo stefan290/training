@@ -164,6 +164,12 @@ enum StrengthMaterializer {
                     let prescription = ExercisePrescription(exercise: SubstituteExerciseUseCase.resolvedExercise(for: slot, in: instance))
                     prescription.sourceExerciseSlot = slot
                     prescription.sourcePrescriptionTemplate = template
+                    // Stage 6D Part 7: capture the reason codes the engine
+                    // already computed for this decision, at the one
+                    // moment they're available — never re-derived later.
+                    prescription.appliedLoadReasonCode = weightResult.reasonCode
+                    prescription.appliedSetCountReasonCode = setResult.reasonCode
+                    prescription.appliedRepGoalReasonCode = repResult.reasonCode
                     context.insert(prescription)
                     block.addPrescription(prescription)
 

@@ -161,39 +161,52 @@ answers "what am I doing now"; Plan answers "what program am I on, what
 comes next" — kept as two separate views, never collapsed, per the
 explicit instruction.
 
-## 11. Explainability / reason-code audit (read-only — no code changed)
+## 11. Explainability / reason-code audit — now closed
 
 Audited `StrengthReasonCode` (`StrengthProgressionRules.swift`) —
 already a complete, additive vocabulary covering every real decision
 `StrengthProgressionEngine` produces (`rmBasedLoad`,
 `linkedToPairedSlotLoad`, `fixedSetSchedule`,
 `autoregulatedSetIncrease`/`Hold`/`Decrease`, `repGoalSchedule`,
-`calibrationRequired`, deload variants). Confirmed the genuine
-structural gap: `StrengthMaterializer.swift` computes a `reasonCode`
-alongside every weight/set/rep decision but **discards it** — nothing on
-`ExercisePrescription`/`SetPrescription` persists it, so by the time a
-user views next week's prescription, this week's "why" is already gone.
-This is a pre-existing, self-documented gap (the materializer's own
-top-of-file comment already flagged a `Recommendation.strengthReasonCode`
-sibling field as "a reasonable follow-up... not a defect of this pass").
-Separately, `DoubleProgressionEngine`'s `ProgressionOutput.inputsSummary`
-*is* already surfaced today, verbatim, on the completion screen
-(`CompletionSummaryView.swift`'s "Next Time" section) — but that engine
-never touches real materialization, so it explains nothing about what
-was actually prescribed next. **No code was written for Part 7**: this
-is exactly the case the kickoff called out — report the gap rather than
-build a parallel explanation mechanism. Smallest additive fix, for a
-future pass: add `ExercisePrescription.appliedLoadReasonCode`/
-`appliedSetCountReasonCode`/`appliedRepGoalReasonCode: StrengthReasonCode?`
-(mirroring the `sourcePrescriptionTemplate` pattern), populated at the
-same two call sites (`StrengthMaterializer.swift`,
-`SeedScenarios.materializedLowerASession`) that already compute the
-values being discarded.
+`calibrationRequired`, deload variants). The audit confirmed a genuine
+structural gap: `StrengthMaterializer.swift` computed a `reasonCode`
+alongside every weight/set/rep decision but **discarded it** — nothing on
+`ExercisePrescription` persisted it, so by the time a user viewed next
+week's prescription, this week's "why" was already gone. This was a
+pre-existing, self-documented gap (the materializer's own top-of-file
+comment already flagged a `Recommendation.strengthReasonCode` sibling
+field as "a reasonable follow-up... not a defect of this pass").
+
+**Closed this pass**, per explicit instruction to extend the existing
+architecture rather than leave it as a follow-up: added three additive,
+nullable fields to `ExercisePrescription` —
+`appliedLoadReasonCode`/`appliedSetCountReasonCode`/`appliedRepGoalReasonCode:
+StrengthReasonCode?` — populated at the exact moment each value is
+already computed, at both real call sites
+(`StrengthMaterializer.materializeWeek`,
+`SeedScenarios.materializedLowerASession`'s parallel loop). This is
+provenance for an already-applied decision, not a second decision
+engine: no new reason-code vocabulary, no new resolution logic, nothing
+re-derived. `DoubleProgressionEngine`'s own `ProgressionReasonCode`
+vocabulary (the completion-screen preview) stays untouched and
+unrelated — `CompletionSummaryView.swift`'s "Next Time" section still
+explains only what a completed session's own results imply, never what
+was actually prescribed next; the two `.appliedReasonCode` fields on
+`ExercisePrescription` are what a next-week UI would read to explain
+*that* number, without parsing or re-deriving anything.
+`testMaterializeWeekPersistsTheReasonCodesTheEngineActuallyProduced`
+(`StrengthMaterializerTests.swift`) and
+`testMaterializedReasonCodesMatchWhatTheEngineActuallyComputed`
+(`MultiExerciseExecutionTests.swift`) independently recompute the
+expected reason code from the same rules/inputs and assert the
+persisted value matches — never a hardcoded literal.
 
 ## 12. Schema changes
 
 - `ExercisePrescription`: `sourcePrescriptionTemplate: PrescriptionTemplate?`,
-  `autoregulationRating: Int?` (both additive, nullable).
+  `autoregulationRating: Int?`, `appliedLoadReasonCode: StrengthReasonCode?`,
+  `appliedSetCountReasonCode: StrengthReasonCode?`,
+  `appliedRepGoalReasonCode: StrengthReasonCode?` (all additive, nullable).
 - `PrescriptionTemplate`: `materializedPrescriptions: [ExercisePrescription]`
   (inverse of the above, `.nullify`).
 - No changes to any existing initializer; no field removed or repurposed.
@@ -204,11 +217,15 @@ values being discarded.
 (5 — Tests A/B/C/D/F), `PlanHierarchyTests.swift` (5, from the prior
 segment of this pass), plus targeted additions to
 `MultiExerciseExecutionTests.swift` and `StrengthMaterializerTests.swift`
-for the RIR translation and no-history substitution behavior.
+for the RIR translation, no-history substitution behavior, and (added
+during independent review of this pass) the Part 7 reason-code
+provenance fields.
 
 ## 14. Full test count / result
 
-**529 passed, 0 failed** (`xcodebuild test`, full suite, no filter).
+**532 passed, 0 failed** (`xcodebuild test`, full suite, no filter,
+independently re-run after closing the Part 7 gap and after an
+independent review of every pushed commit).
 
 ## 15. Simulator result
 
@@ -234,10 +251,11 @@ no STOP was triggered.
 
 ## 17. Known remaining gaps
 
-- Reason-code provenance is not persisted on `ExercisePrescription`/
-  `SetPrescription` (§11) — explainability beyond the completion-screen
-  `DoubleProgressionEngine` preview needs that field before it can be
-  built without parsing/re-deriving.
+- Reason-code provenance is now persisted (§11, closed during this
+  pass's review), but no UI yet reads
+  `appliedLoadReasonCode`/`appliedSetCountReasonCode`/`appliedRepGoalReasonCode`
+  to show the user a "why" — the data exists; the explanatory copy layer
+  is a future pass's work.
 - No application-level caller materializes week N from week N-1's actual
   results yet (§1) — the autoregulation wiring this pass built is ready
   for that caller, but building the caller itself is out of scope (rule
