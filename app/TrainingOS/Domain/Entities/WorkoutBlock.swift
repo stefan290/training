@@ -22,6 +22,16 @@ final class WorkoutBlock {
     var sortIndex: Int
     var type: WorkoutBlockType
     var status: BlockStatus
+    /// Stage 6B addition: `nil` until `status == .completed`. Refines
+    /// `.completed` with "was every prescribed unit actually logged" —
+    /// `BlockStatus` itself gains no new case (`SESSION_STATE_MACHINE.md`
+    /// §5).
+    var completionContext: BlockCompletionContext?
+    /// Stage 6B addition: this block's own running clock, when it has
+    /// one (rest timer, AMRAP, EMOM, an interval leg, a capped For
+    /// Time-family block) — wall-clock anchored, never a tick count
+    /// (`TIMER_ARCHITECTURE.md`).
+    var timerState: TimerState?
 
     /// AMRAP / For Time (legacy path only — see type doc comment).
     var timeCapSeconds: Int?

@@ -21,6 +21,10 @@ final class Session {
     var status: SessionStatus
     var startedAt: Date?
     var completedAt: Date?
+    /// Stage 6B addition: `nil` until `status == .completed`. Distinct
+    /// question from `status` itself — "is this Session finished" vs.
+    /// "was it the whole thing" — `SESSION_STATE_MACHINE.md` §2.
+    var completionContext: SessionCompletionContext?
     /// Stage 3C addition (`SessionRole.swift`): programming semantics
     /// (Easy/Tempo/Interval/etc.), orthogonal to which `ProgrammingSystem`
     /// produced this Session's blocks and orthogonal to `modality` above
