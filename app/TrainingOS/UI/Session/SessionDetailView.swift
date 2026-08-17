@@ -23,6 +23,8 @@ struct SessionDetailView: View {
 
     @State private var executionState = SessionExecutionState()
     @State private var completionSummary: CompletionSummary?
+    @State private var pendingFinishContext: SessionCompletionContext?
+    @State private var pendingFeedbackPrompts: [ExercisePrescription] = []
 
     var body: some View {
         ScrollView {
@@ -64,6 +66,16 @@ struct SessionDetailView: View {
                 }
             }
         }
+        .fullScreenCover(isPresented: Binding(
+            get: { pendingFinishContext != nil },
+            set: { if !$0 { pendingFinishContext = nil } }
+        )) {
+            HypertrophyFeedbackView(prescriptions: pendingFeedbackPrompts) {
+                let context = pendingFinishContext
+                pendingFinishContext = nil
+                if let context { finish(context: context) }
+            }
+        }
     }
 
     private var header: some View {
@@ -98,11 +110,11 @@ struct SessionDetailView: View {
                 && session.orderedBlocks.allSatisfy { $0.status == .completed }
 
             if allCompleted {
-                Button("Finish Session") { finish(context: .full) }
+                Button("Finish Session") { beginFinish(context: .full) }
                     .buttonStyle(.borderedProminent)
                     .tint(Theme.primary)
             } else {
-                Button("Finish as Partial") { finish(context: .partial) }
+                Button("Finish as Partial") { beginFinish(context: .partial) }
                     .buttonStyle(.borderedProminent)
                     .tint(Theme.primary)
 
@@ -131,6 +143,20 @@ struct SessionDetailView: View {
         default:
             BlockExecutionPlaceholderView(block: block)
         }
+    }
+
+    /// Part 6: before finalizing, collect the one lightweight rating any
+    /// completed exercise needs (only those some other slot's next-week
+    /// set count actually depends on — never every exercise). Skips
+    /// straight to `finish` when nothing is pending.
+    private func beginFinish(context: SessionCompletionContext) {
+        let prompts = HypertrophyFeedbackPrompts.pending(for: session)
+        guard !prompts.isEmpty else {
+            finish(context: context)
+            return
+        }
+        pendingFeedbackPrompts = prompts
+        pendingFinishContext = context
     }
 
     /// `CompleteSessionUseCase` is the final consistency point — every

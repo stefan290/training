@@ -43,6 +43,27 @@ final class ExercisePrescription {
     /// `ExerciseSlot.materializedPrescriptions` — this is a plain inverse
     /// property, same pattern as `SlotSelectionOverride.templateSlot`.
     var sourceExerciseSlot: ExerciseSlot?
+    /// Stage 6D addition: the `PrescriptionTemplate` this movement was
+    /// materialized from, when known — lets live execution resolve
+    /// `template.pairedSlot`/`template.referencedAsPairedSlotBy` to know
+    /// (a) whether this exercise's own next-week set count is
+    /// `.autoregulated` and (b) whether *this* exercise IS some other
+    /// slot's paired-slot rating source (`PROGRAM_LOGIC_SPEC.md`
+    /// §FAMILY_A/B/C_AUTOREGULATION). `nil` for a prescription
+    /// materialized outside the template pipeline (ad hoc/seed-authored),
+    /// exactly mirroring `sourceExerciseSlot`'s own reasoning. The delete
+    /// rule lives on `PrescriptionTemplate.materializedPrescriptions` —
+    /// this is a plain inverse property.
+    var sourcePrescriptionTemplate: PrescriptionTemplate?
+    /// Stage 6D addition: the -1/0/+1 soreness/difficulty rating the user
+    /// reports for this exercise once it's the completed "paired slot" for
+    /// some other autoregulated slot — the exact, already-designed engine
+    /// input `StrengthProgressionEngine.resolveSetCount`'s `.autoregulated`
+    /// case has always accepted (`autoregulationRating`), just never
+    /// collected anywhere in Stage 6 execution until now. `nil` until the
+    /// user answers the one lightweight prompt this exercise triggers;
+    /// never collected for an exercise nothing's set count depends on.
+    var autoregulationRating: Int?
 
     @Relationship(deleteRule: .cascade, inverse: \SetPrescription.exercisePrescription)
     var setPrescriptions: [SetPrescription] = []

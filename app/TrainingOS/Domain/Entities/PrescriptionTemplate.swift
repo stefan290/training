@@ -99,6 +99,18 @@ final class PrescriptionTemplate {
     @Relationship(deleteRule: .nullify, inverse: \PrescriptionTemplate.pairedSlot)
     var referencedAsPairedSlotBy: [PrescriptionTemplate] = []
 
+    /// Stage 6D addition: `ExercisePrescription.sourcePrescriptionTemplate`'s
+    /// required inverse — nothing reads this collection directly (the
+    /// resolver walks it via a fetch, not this relationship, since it
+    /// needs the *instance*-scoped, chronologically-latest match — but a
+    /// real inverse is still required for `.nullify` to work cleanly on
+    /// delete, same reasoning as `referencedAsPairedSlotBy`). `.nullify`
+    /// keeps every materialized movement (and its logged history) intact
+    /// if this template's `ProgramDefinition` is later deleted (CLAUDE.md
+    /// rule 1).
+    @Relationship(deleteRule: .nullify, inverse: \ExercisePrescription.sourcePrescriptionTemplate)
+    var materializedPrescriptions: [ExercisePrescription] = []
+
     init(id: UUID = UUID(), rules: StrengthProgressionRules? = nil) {
         self.id = id
         self.sortIndex = 0
