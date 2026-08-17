@@ -34,6 +34,15 @@ enum IntensityPresentation {
         return String(format: "%d:%02d", total / 60, total % 60)
     }
 
+    /// Stage 6E: the identical mm:ss/km formatting above, exposed for an
+    /// *actual* logged pace (a plain `Double`, not a prescribed `Pace`
+    /// range) — completed history reuses this rather than a second
+    /// formatter.
+    static func paceLabel(secondsPerKilometer: Double) -> String {
+        let total = Int(secondsPerKilometer.rounded())
+        return String(format: "%d:%02d", total / 60, total % 60)
+    }
+
     private static func metricLabel(_ metric: ReferenceMetric) -> String {
         switch metric {
         case .ftp: "FTP"

@@ -53,7 +53,12 @@ enum CompleteSessionUseCase {
     /// actually have a logged result this session — a block left
     /// `.skipped` entirely has nothing to preview, never a fabricated
     /// "no change" row.
-    private static func progressionPreview(for session: Session, userProfile: UserProfile?) -> [ProgressionPreviewItem] {
+    // Stage 6E: exposed (was `private`) so completed-history views can
+    // recompute this same, purely-derived preview on demand — it reads
+    // only session.orderedBlocks...loggedSetResults, mutates nothing, and
+    // is idempotent, so calling it again later for a completed Session is
+    // exactly as safe as the original call at completion time.
+    static func progressionPreview(for session: Session, userProfile: UserProfile?) -> [ProgressionPreviewItem] {
         let engine = DoubleProgressionEngine()
         var items: [ProgressionPreviewItem] = []
 

@@ -26,33 +26,50 @@ struct SessionDetailView: View {
     @State private var pendingFinishContext: SessionCompletionContext?
     @State private var pendingFeedbackPrompts: [ExercisePrescription] = []
 
+    /// Stage 6E: a completed/skipped/missed/abandoned Session is ALWAYS
+    /// history, regardless of the caller's `readOnly` flag — that flag
+    /// only disambiguates a `.scheduled` Session (Today's own actionable
+    /// one vs. a future one inspected from Week/Plan). Computed from the
+    /// same pure, independently-tested `SessionDisplayMode.mode` every
+    /// caller already relies on implicitly.
+    private var displayMode: SessionDisplayMode {
+        SessionDisplayMode.mode(for: session.status, readOnly: readOnly)
+    }
+
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                header
+        Group {
+            if displayMode == .completedHistory {
+                CompletedSessionDetail(session: session)
+            } else {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        header
 
-                if readOnly || session.status == .scheduled {
-                    // Part E/R: the complete workout, read-only, before
-                    // any block can be entered — never the compact
-                    // per-block row list a scheduled Session used to jump
-                    // straight into execution from.
-                    SessionPreviewContent(session: session)
-                } else {
-                    ForEach(session.orderedBlocks) { block in
-                        NavigationLink {
-                            destination(for: block)
-                        } label: {
-                            BlockRow(block: block)
+                        if displayMode == .futurePreview {
+                            // Part E/R: the complete workout, read-only,
+                            // before any block can be entered — never the
+                            // compact per-block row list a scheduled
+                            // Session used to jump straight into execution
+                            // from.
+                            SessionPreviewContent(session: session)
+                        } else {
+                            ForEach(session.orderedBlocks) { block in
+                                NavigationLink {
+                                    destination(for: block)
+                                } label: {
+                                    BlockRow(block: block)
+                                }
+                                .buttonStyle(.plain)
+                            }
                         }
-                        .buttonStyle(.plain)
-                    }
-                }
 
-                if !readOnly {
-                    actions
+                        if displayMode == .execution {
+                            actions
+                        }
+                    }
+                    .padding(16)
                 }
             }
-            .padding(16)
         }
         .background(Theme.ground)
         .navigationTitle(session.name)

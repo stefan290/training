@@ -59,4 +59,11 @@ enum HypertrophyFeedbackCopy {
             .programDefinition?
             .programmingSystem
     }
+
+    /// Stage 6E: the reverse lookup completed history needs — a recorded
+    /// `Int` rating back to the exact framed copy the user was actually
+    /// shown when they answered, never a second wording table.
+    static func label(forRating rating: Int, system: ProgrammingSystemKind?) -> String? {
+        options(for: system).first { $0.rating == rating }?.label
+    }
 }
