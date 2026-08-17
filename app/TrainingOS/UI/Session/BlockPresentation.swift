@@ -24,6 +24,49 @@ enum BlockPresentation {
         }
     }
 
+    /// Stage 6C: a short "what kind of work, how much" line — "5
+    /// exercises," "40 min," "6 intervals," "20 min AMRAP" — never the
+    /// full exercise-name list `summary(for:)` returns, so a multi-
+    /// exercise Strength block never reads as if its first exercise were
+    /// the entire workout (Part D). `nil` only when nothing is
+    /// derivable at all (an empty/unprescribed block).
+    ///
+    /// Duration is shown only when it's a real prescribed value (Steady
+    /// State's own `durationSeconds`, a Functional Fitness format's own
+    /// cap) or a direct arithmetic derivation from prescribed values
+    /// (Interval's work+recovery × count) — never invented for Strength,
+    /// which has no per-set duration model anywhere in this app
+    /// (Part W; see `STAGE6C_ACCEPTANCE_REPORT.md`).
+    static func compactDetail(for block: WorkoutBlock) -> String? {
+        switch block.blockPrescription {
+        case .exercise(let prescriptions):
+            guard !prescriptions.isEmpty else { return nil }
+            return "\(prescriptions.count) exercise\(prescriptions.count == 1 ? "" : "s")"
+        case .steadyState(let prescription):
+            if let seconds = prescription.durationSeconds { return "\(seconds / 60) min" }
+            if let meters = prescription.distanceMeters { return "\(Int(meters)) m" }
+            return activityLabel(prescription.activityType)
+        case .intervals(let prescription):
+            if let work = prescription.workDurationSeconds, let recovery = prescription.recoveryDurationSeconds {
+                let totalMinutes = (work + recovery) * prescription.intervalCount / 60
+                return "\(prescription.intervalCount) x \(activityLabel(prescription.activityType)) · ~\(totalMinutes) min"
+            }
+            return "\(prescription.intervalCount) intervals"
+        case .functionalFitness(let prescription):
+            return formatLabel(prescription.format)
+        case nil:
+            return nil
+        }
+    }
+
+    /// The first few exercise names in canonical order, for Today's
+    /// compact "Back Squat, Romanian Deadlift, +3 more" preview line —
+    /// `nil` for any block whose prescription isn't exercise-based.
+    static func exerciseNames(for block: WorkoutBlock) -> [String]? {
+        guard case .exercise(let prescriptions) = block.blockPrescription else { return nil }
+        return prescriptions.compactMap { $0.exercise?.canonicalName }
+    }
+
     static func statusLabel(_ block: WorkoutBlock) -> String {
         switch block.status {
         case .pending: "Pending"

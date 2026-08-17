@@ -39,6 +39,16 @@ enum SessionPresentation {
         }
     }
 
+    /// Stage 6C, Part P: Week's status label — "Upcoming" is the one
+    /// presentation-only addition on top of the canonical `SessionStatus`
+    /// (a `.scheduled` Session on a day other than today), never a second
+    /// persisted status system. Every other case maps straight through
+    /// `statusLabel`.
+    static func weekStatusLabel(for status: SessionStatus, isToday: Bool) -> String {
+        if status == .scheduled && !isToday { return "Upcoming" }
+        return statusLabel(status)
+    }
+
     static func roleLabel(_ role: SessionRole) -> String {
         switch role {
         case .strength: "Strength"

@@ -15,6 +15,11 @@ struct SessionDetailView: View {
     /// changes, so a finished morning Session shows "Completed" while an
     /// evening Session still shows "Ready" — never a whole-Day rollup.
     var onChange: () -> Void = {}
+    /// Part R: a future Session opened from Week is READ-ONLY —
+    /// inspecting it must never start it, create a result, alter its
+    /// status, or touch a PerformanceProfile. `false` (the default) is
+    /// Today's own actionable Session.
+    var readOnly: Bool = false
 
     @State private var executionState = SessionExecutionState()
     @State private var completionSummary: CompletionSummary?
@@ -24,16 +29,26 @@ struct SessionDetailView: View {
             VStack(alignment: .leading, spacing: 16) {
                 header
 
-                ForEach(session.orderedBlocks) { block in
-                    NavigationLink {
-                        destination(for: block)
-                    } label: {
-                        BlockRow(block: block)
+                if readOnly || session.status == .scheduled {
+                    // Part E/R: the complete workout, read-only, before
+                    // any block can be entered — never the compact
+                    // per-block row list a scheduled Session used to jump
+                    // straight into execution from.
+                    SessionPreviewContent(session: session)
+                } else {
+                    ForEach(session.orderedBlocks) { block in
+                        NavigationLink {
+                            destination(for: block)
+                        } label: {
+                            BlockRow(block: block)
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
                 }
 
-                actions
+                if !readOnly {
+                    actions
+                }
             }
             .padding(16)
         }
@@ -66,7 +81,7 @@ struct SessionDetailView: View {
     private var actions: some View {
         switch session.status {
         case .scheduled:
-            Button("Start Session") {
+            Button("Start Workout") {
                 try? StartSessionUseCase.start(session, asOf: Date(), modelContext: modelContext)
                 onChange()
             }

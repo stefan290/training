@@ -29,6 +29,18 @@ struct TodayView: View {
                             }
                             .buttonStyle(.plain)
                         }
+
+                        // Part D/U: Today's simple route to the full
+                        // training week — never itself becoming the
+                        // planner.
+                        NavigationLink {
+                            WeekView()
+                        } label: {
+                            Label("View Week", systemImage: "calendar")
+                                .font(Theme.body)
+                                .foregroundStyle(Theme.primary)
+                        }
+                        .padding(.top, 4)
                     }
                     .padding(16)
                 }
@@ -81,15 +93,28 @@ private struct SessionCard: View {
             StatusPill(status: session.status)
 
             ForEach(session.orderedBlocks) { block in
-                HStack {
-                    Text(block.type.rawValue.uppercased())
-                        .font(Theme.label)
-                        .foregroundStyle(Theme.primary)
-                    Text(BlockPresentation.summary(for: block))
-                        .font(Theme.body)
-                        .foregroundStyle(Theme.textSecondary)
-                        .lineLimit(1)
-                    Spacer()
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack {
+                        Text(block.type.rawValue.uppercased())
+                            .font(Theme.label)
+                            .foregroundStyle(Theme.primary)
+                        if let detail = BlockPresentation.compactDetail(for: block) {
+                            Text(detail)
+                                .font(Theme.body)
+                                .foregroundStyle(Theme.textSecondary)
+                        }
+                        Spacer()
+                    }
+                    // Part D: a compact preview of which exercises, never
+                    // the full workout — a multi-exercise Strength block
+                    // must never read as if its first exercise were the
+                    // entire session.
+                    if let names = BlockPresentation.exerciseNames(for: block), !names.isEmpty {
+                        Text(compactList(names))
+                            .font(Theme.label)
+                            .foregroundStyle(Theme.textSecondary)
+                            .lineLimit(1)
+                    }
                 }
             }
 
@@ -112,6 +137,13 @@ private struct SessionCard: View {
         }
         .padding(14)
         .background(Theme.surfacePrimary, in: RoundedRectangle(cornerRadius: 12))
+    }
+
+    private func compactList(_ names: [String]) -> String {
+        let shown = names.prefix(3)
+        let remaining = names.count - shown.count
+        let base = shown.joined(separator: ", ")
+        return remaining > 0 ? "\(base), +\(remaining) more" : base
     }
 }
 
