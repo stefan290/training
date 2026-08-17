@@ -106,6 +106,7 @@
 		77785A7B033D4D168030CAEA /* IntervalExecutionUseCaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9826F30C3B374B0881C189D6 /* IntervalExecutionUseCaseTests.swift */; };
 		AFCE265E072643E8AA45A00D /* FunctionalFitnessScoringTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E10D2E8468C46E6AA150282 /* FunctionalFitnessScoringTests.swift */; };
 		17E0347478584819A5700C0D /* SessionExecutionStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 824122BD15B0440FBAAE83E4 /* SessionExecutionStateTests.swift */; };
+		8D3DDB68C8D84A6EB9F198DF /* StageSixBEndToEndFlowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20576E30E6864CF98C00C040 /* StageSixBEndToEndFlowTests.swift */; };
 		9016EB9237EA459999749E43 /* RecordEnduranceResultUseCaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2327185FDBD04486B2715F34 /* RecordEnduranceResultUseCaseTests.swift */; };
 		246EBBEEC0F24B01AAB82557 /* WorkoutTimerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F04D9ED653204C10B88A2D23 /* WorkoutTimerTests.swift */; };
 		EAC26DC9D5FA453BB0459663 /* OrchestratingUseCaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 821F86C0738E4D5BBF958B49 /* OrchestratingUseCaseTests.swift */; };
@@ -353,6 +354,7 @@
 		9826F30C3B374B0881C189D6 /* IntervalExecutionUseCaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = IntervalExecutionUseCaseTests.swift; path = IntervalExecutionUseCaseTests.swift; sourceTree = "<group>"; };
 		1E10D2E8468C46E6AA150282 /* FunctionalFitnessScoringTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FunctionalFitnessScoringTests.swift; path = FunctionalFitnessScoringTests.swift; sourceTree = "<group>"; };
 		824122BD15B0440FBAAE83E4 /* SessionExecutionStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SessionExecutionStateTests.swift; path = SessionExecutionStateTests.swift; sourceTree = "<group>"; };
+		20576E30E6864CF98C00C040 /* StageSixBEndToEndFlowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = StageSixBEndToEndFlowTests.swift; path = StageSixBEndToEndFlowTests.swift; sourceTree = "<group>"; };
 		2327185FDBD04486B2715F34 /* RecordEnduranceResultUseCaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RecordEnduranceResultUseCaseTests.swift; path = RecordEnduranceResultUseCaseTests.swift; sourceTree = "<group>"; };
 		F04D9ED653204C10B88A2D23 /* WorkoutTimerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WorkoutTimerTests.swift; path = WorkoutTimerTests.swift; sourceTree = "<group>"; };
 		821F86C0738E4D5BBF958B49 /* OrchestratingUseCaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OrchestratingUseCaseTests.swift; path = OrchestratingUseCaseTests.swift; sourceTree = "<group>"; };
@@ -792,6 +794,7 @@
 				9826F30C3B374B0881C189D6 /* IntervalExecutionUseCaseTests.swift */,
 				1E10D2E8468C46E6AA150282 /* FunctionalFitnessScoringTests.swift */,
 				824122BD15B0440FBAAE83E4 /* SessionExecutionStateTests.swift */,
+				20576E30E6864CF98C00C040 /* StageSixBEndToEndFlowTests.swift */,
 				2327185FDBD04486B2715F34 /* RecordEnduranceResultUseCaseTests.swift */,
 				F04D9ED653204C10B88A2D23 /* WorkoutTimerTests.swift */,
 				821F86C0738E4D5BBF958B49 /* OrchestratingUseCaseTests.swift */,
@@ -1051,6 +1054,7 @@
 				77785A7B033D4D168030CAEA /* IntervalExecutionUseCaseTests.swift in Sources */,
 				AFCE265E072643E8AA45A00D /* FunctionalFitnessScoringTests.swift in Sources */,
 				17E0347478584819A5700C0D /* SessionExecutionStateTests.swift in Sources */,
+				8D3DDB68C8D84A6EB9F198DF /* StageSixBEndToEndFlowTests.swift in Sources */,
 				9016EB9237EA459999749E43 /* RecordEnduranceResultUseCaseTests.swift in Sources */,
 				246EBBEEC0F24B01AAB82557 /* WorkoutTimerTests.swift in Sources */,
 				EAC26DC9D5FA453BB0459663 /* OrchestratingUseCaseTests.swift in Sources */,
