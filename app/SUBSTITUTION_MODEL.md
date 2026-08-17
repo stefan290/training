@@ -14,6 +14,18 @@ remaining open item is non-blocking, build-time-only:
 against every substitution the endurance execution UI actually offers
 (`STAGE6A_DECISION_MEMO.md` §5).
 
+**Stage 6D confirmation:** manual Simulator testing reported Change
+Exercise as "unavailable because history is required." Audited the real
+`ChangeExerciseView`/`SubstitutionCandidateRanking` code: no path there
+ever blocks a substitution on missing history — `.calibrationRequired`
+was always a fully selectable tier, exactly as this document specifies.
+The observed failure was a seed-data completeness gap (4 of 5 Stage 6C
+acceptance-fixture slots had only one `allowedExercises` entry each, so
+"No valid alternatives" showed instead), fixed by giving every slot a
+real second exercise in `SeedScenarios.swift`/`ExerciseCatalog.swift` —
+no change to the substitution architecture itself. See
+`STAGE6D_ACCEPTANCE_REPORT.md` §6.
+
 Stage 4C's Part B deliverable: exercise/activity substitution is a
 domain/programming requirement, not a future UI feature. Stage 4D
 extended the activity-substitution half to cover `IntervalPrescriptionTemplate`

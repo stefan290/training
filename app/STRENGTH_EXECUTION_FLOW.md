@@ -10,6 +10,16 @@ implemented yet.**
 decisions on save-boundary, within-session autoregulation, and
 first-entry PR presentation — see `STAGE6A_DECISION_MEMO.md` §1b/§1d/§1e.
 
+**Stage 6D confirmation:** manual Simulator testing found prescribed RIR
+missing from execution. Root cause: `StrengthMaterializer`/
+`SeedScenarios` never translated `RepGoal.toFailure` into
+`SetPrescription.targetRir` — this document's own §4/§6 RIR contract was
+never wrong, the materialization code simply never populated the field it
+describes. Fixed by translating `toFailure == true` -> `targetRir = 0`
+(the only intensity-target concept the approved family specs define;
+`toFailure == false` stays `nil`, never an invented default) at both real
+call sites. See `STAGE6D_ACCEPTANCE_REPORT.md` §5.
+
 ## 1. Screen anatomy (per `Training OS.dc.html` frames 03/07, "live" fidelity)
 
 One exercise (`ExercisePrescription`) on screen at a time, its
