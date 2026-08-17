@@ -26,11 +26,16 @@ final class PersonalRecord {
     var achievedAt: Date
 
     /// The delete rule lives on `SetResult.personalRecord` /
-    /// `WorkoutResult.personalRecord` / `FunctionalFitnessResult.personalRecord`
+    /// `WorkoutResult.personalRecord` / `FunctionalFitnessResult.personalRecord` /
+    /// `SteadyStateResult.personalRecord` / `IntervalResult.personalRecord`
     /// (see DELETE_RULE_MATRIX.md) — these are plain inverse properties.
     var sourceSetResult: SetResult?
     var sourceWorkoutResult: WorkoutResult?
     var sourceFunctionalFitnessResult: FunctionalFitnessResult?
+    /// Stage 6B addition — the endurance siblings of the above, added
+    /// alongside `RecordSteadyStateResultUseCase`/`RecordIntervalResultUseCase`.
+    var sourceSteadyStateResult: SteadyStateResult?
+    var sourceIntervalResult: IntervalResult?
 
     init(
         id: UUID = UUID(),

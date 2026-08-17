@@ -28,7 +28,7 @@ enum RecordSetResultUseCase {
         performanceProfile: PerformanceProfile,
         completedAt: Date,
         modelContext: ModelContext
-    ) -> SetResult {
+    ) -> (result: SetResult, isFirstEverEntry: Bool) {
         let exerciseProfile = PerformanceProfileStore.exerciseProfile(
             for: exercise,
             in: performanceProfile,
@@ -56,6 +56,12 @@ enum RecordSetResultUseCase {
             context: resultContext,
             repBand: prBand
         )
+        // Stage 6B, `STAGE6A_DECISION_MEMO.md` §1b: a first-ever entry
+        // still creates a real PersonalRecord below (unchanged, tested
+        // behavior) — `isFirstEverEntry` only lets the caller choose
+        // presentation copy ("First recorded" vs. "Personal record!")
+        // without re-deriving this same lookup.
+        let isFirstEverEntry = existingBest == nil
         if ScoringEngine.isNewPersonalRecord(
             candidateValue: weight,
             direction: scoringDirection,
@@ -77,6 +83,6 @@ enum RecordSetResultUseCase {
             exerciseProfile.addPersonalRecord(record)
         }
 
-        return result
+        return (result, isFirstEverEntry)
     }
 }

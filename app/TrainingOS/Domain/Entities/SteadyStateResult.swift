@@ -19,6 +19,15 @@ final class SteadyStateResult {
     var resultContext: ResultContext
     var completedAt: Date
 
+    /// Stage 6B addition, mirroring `WorkoutResult.personalRecord`/
+    /// `FunctionalFitnessResult.personalRecord` exactly: nullify, not
+    /// cascade — a PersonalRecord must survive the deletion of the
+    /// SteadyStateResult that produced it. `inverse:` is required for
+    /// the same reason it is on every sibling result type (see
+    /// DELETE_RULE_MATRIX.md's "One-directional references" section).
+    @Relationship(deleteRule: .nullify, inverse: \PersonalRecord.sourceSteadyStateResult)
+    var personalRecord: PersonalRecord?
+
     var actualDurationSeconds: Int
     var actualDistanceMeters: Double?
     var averageHeartRate: Int?

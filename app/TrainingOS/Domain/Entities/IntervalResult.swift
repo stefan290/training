@@ -17,6 +17,11 @@ final class IntervalResult {
     var resultContext: ResultContext
     var completedAt: Date
 
+    /// Stage 6B addition — same reasoning and mechanics as
+    /// `SteadyStateResult.personalRecord`.
+    @Relationship(deleteRule: .nullify, inverse: \PersonalRecord.sourceIntervalResult)
+    var personalRecord: PersonalRecord?
+
     @Relationship(deleteRule: .cascade, inverse: \IntervalRepResult.intervalResult)
     var repResults: [IntervalRepResult] = []
 

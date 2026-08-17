@@ -16,11 +16,11 @@ enum RecordFunctionalFitnessResultUseCase {
         benchmark: BenchmarkDefinition?,
         performanceProfile: PerformanceProfile?,
         modelContext: ModelContext
-    ) -> FunctionalFitnessResult {
+    ) -> (result: FunctionalFitnessResult, isFirstEverEntry: Bool) {
         modelContext.insert(result)
         workoutBlock.attachFunctionalFitnessResult(result)
 
-        guard let benchmark, let performanceProfile else { return result }
+        guard let benchmark, let performanceProfile else { return (result, false) }
         result.benchmark = benchmark
 
         let benchmarkProfile = PerformanceProfileStore.benchmarkProfile(
@@ -37,6 +37,9 @@ enum RecordFunctionalFitnessResultUseCase {
         let existingBest = ScoringEngine.bestRecord(
             among: benchmarkProfile.personalRecords, context: result.resultContext, repBand: nil
         )
+        // Stage 6B, `STAGE6A_DECISION_MEMO.md` §1b: same first-entry
+        // presentation flag as `RecordSetResultUseCase` — data unchanged.
+        let isFirstEverEntry = existingBest == nil
         if ScoringEngine.isNewPersonalRecord(candidateValue: candidateValue, direction: scoringDirection, existingBest: existingBest) {
             let record = PersonalRecord(
                 value: candidateValue, repBand: nil, scoringDirection: scoringDirection,
@@ -51,7 +54,7 @@ enum RecordFunctionalFitnessResultUseCase {
             benchmarkProfile.addPersonalRecord(record)
         }
 
-        return result
+        return (result, isFirstEverEntry)
     }
 
     /// `ScoreValue` stays a structured, typed union everywhere else in
