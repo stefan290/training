@@ -43,7 +43,10 @@ struct ProgressionPreviewItem: Equatable {
 /// completion screen needs from one call, rather than re-querying five
 /// different places (`WORKOUT_COMPLETION_PIPELINE.md` §1/§4). Plain,
 /// non-persisted.
-struct CompletionSummary {
+struct CompletionSummary: Identifiable {
+    /// `Session.id` — stable enough for SwiftUI's `.fullScreenCover(item:)`
+    /// identity, and there is at most one completion summary per Session.
+    var id: UUID { session.id }
     var session: Session
     var completionContext: SessionCompletionContext
     var highlights: [LoggedResultHighlight]

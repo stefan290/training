@@ -21,9 +21,11 @@ struct TodayView: View {
                                     viewModel.load(modelContext: modelContext)
                                 })
                             } label: {
-                                SessionCard(session: session) {
-                                    viewModel.start(session, modelContext: modelContext)
-                                }
+                                SessionCard(
+                                    session: session,
+                                    onStart: { viewModel.start(session, modelContext: modelContext) },
+                                    onMarkMissed: { viewModel.markMissed(session, modelContext: modelContext) }
+                                )
                             }
                             .buttonStyle(.plain)
                         }
@@ -46,6 +48,14 @@ struct TodayView: View {
 private struct SessionCard: View {
     let session: Session
     let onStart: () -> Void
+    let onMarkMissed: () -> Void
+
+    /// Purely a display check — a scheduled Session whose time has
+    /// passed is *shown* as possibly missed, but nothing is written until
+    /// the user actually taps a button (SESSION_STATE_MACHINE.md §7).
+    private var isPastDueUnstarted: Bool {
+        session.status == .scheduled && (session.scheduledTime.map { $0 < Date() } ?? false)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -83,7 +93,18 @@ private struct SessionCard: View {
                 }
             }
 
-            if session.status == .scheduled {
+            if isPastDueUnstarted {
+                Text("This was scheduled earlier today — still want to do it?")
+                    .font(Theme.label)
+                    .foregroundStyle(Theme.attention)
+                HStack {
+                    Button("Start Anyway", action: onStart)
+                        .buttonStyle(.borderedProminent)
+                        .tint(Theme.primary)
+                    Button("Mark Missed", action: onMarkMissed)
+                        .buttonStyle(.bordered)
+                }
+            } else if session.status == .scheduled {
                 Button("Start", action: onStart)
                     .buttonStyle(.borderedProminent)
                     .tint(Theme.primary)

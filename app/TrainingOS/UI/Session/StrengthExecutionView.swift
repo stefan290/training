@@ -14,6 +14,7 @@ struct StrengthExecutionView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var viewModel: StrengthExecutionViewModel
     let session: Session
+    let executionState: SessionExecutionState
 
     @State private var weightText: String = ""
     @State private var reps: Int = 0
@@ -21,9 +22,10 @@ struct StrengthExecutionView: View {
     @State private var lastHighlight: LoggedResultHighlight?
     @State private var showingChangeExercise = false
 
-    init(block: WorkoutBlock, session: Session) {
+    init(block: WorkoutBlock, session: Session, executionState: SessionExecutionState) {
         _viewModel = State(initialValue: StrengthExecutionViewModel(block: block))
         self.session = session
+        self.executionState = executionState
     }
 
     var body: some View {
@@ -170,6 +172,7 @@ struct StrengthExecutionView: View {
     private func logSet() {
         guard let weight = Double(weightText) else { return }
         lastHighlight = viewModel.logCurrentSet(weight: weight, reps: reps, actualRir: actualRir, modelContext: modelContext)
+        executionState.record(lastHighlight)
         resetInputsForCurrentSet()
     }
 

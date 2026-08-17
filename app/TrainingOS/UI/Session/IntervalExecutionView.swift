@@ -11,6 +11,7 @@ struct IntervalExecutionView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var viewModel: IntervalExecutionViewModel
     let session: Session
+    let executionState: SessionExecutionState
 
     @State private var showingFinish = false
     @State private var showingChangeActivity = false
@@ -18,9 +19,10 @@ struct IntervalExecutionView: View {
     @State private var manualCompleted = true
     @State private var lastHighlight: LoggedResultHighlight?
 
-    init(block: WorkoutBlock, session: Session) {
+    init(block: WorkoutBlock, session: Session, executionState: SessionExecutionState) {
         _viewModel = State(initialValue: IntervalExecutionViewModel(block: block))
         self.session = session
+        self.executionState = executionState
     }
 
     var body: some View {
@@ -57,6 +59,7 @@ struct IntervalExecutionView: View {
         .sheet(isPresented: $showingFinish) {
             IntervalFinishForm(viewModel: viewModel) { highlight in
                 lastHighlight = highlight
+                executionState.record(highlight)
                 try? CompleteBlockUseCase.complete(viewModel.block, context: .full, modelContext: modelContext)
             }
         }

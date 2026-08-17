@@ -30,4 +30,13 @@ final class TodayViewModel {
         try? StartSessionUseCase.start(session, asOf: Date(), modelContext: modelContext)
         load(modelContext: modelContext)
     }
+
+    /// Written only when the user actually taps this on the missed-
+    /// session prompt — never a background process, never auto-applied
+    /// just because `scheduledTime` has passed (`SESSION_STATE_MACHINE.md`
+    /// §7, CLAUDE.md rule on not silently deciding facts for the user).
+    func markMissed(_ session: Session, modelContext: ModelContext) {
+        try? ChangeSessionStatusUseCase.markMissed(session, modelContext: modelContext)
+        load(modelContext: modelContext)
+    }
 }

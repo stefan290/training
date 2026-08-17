@@ -16,6 +16,9 @@ struct SessionDetailView: View {
     /// evening Session still shows "Ready" — never a whole-Day rollup.
     var onChange: () -> Void = {}
 
+    @State private var executionState = SessionExecutionState()
+    @State private var completionSummary: CompletionSummary?
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
@@ -37,6 +40,15 @@ struct SessionDetailView: View {
         .background(Theme.ground)
         .navigationTitle(session.name)
         .navigationBarTitleDisplayMode(.inline)
+        .fullScreenCover(item: $completionSummary) { summary in
+            NavigationStack {
+                CompletionSummaryView(summary: summary) {
+                    completionSummary = nil
+                    onChange()
+                    dismiss()
+                }
+            }
+        }
     }
 
     private var header: some View {
@@ -67,39 +79,55 @@ struct SessionDetailView: View {
                 dismiss()
             }
         case .inProgress:
-            Button("Finish Session") {
-                let allCompleted = !session.orderedBlocks.isEmpty
-                    && session.orderedBlocks.allSatisfy { $0.status == .completed }
-                let context: SessionCompletionContext = allCompleted ? .full : .partial
-                try? CompleteSessionUseCase.complete(session, context: context, asOf: Date(), modelContext: modelContext)
-                onChange()
-                dismiss()
+            let allCompleted = !session.orderedBlocks.isEmpty
+                && session.orderedBlocks.allSatisfy { $0.status == .completed }
+
+            if allCompleted {
+                Button("Finish Session") { finish(context: .full) }
+                    .buttonStyle(.borderedProminent)
+                    .tint(Theme.primary)
+            } else {
+                Button("Finish as Partial") { finish(context: .partial) }
+                    .buttonStyle(.borderedProminent)
+                    .tint(Theme.primary)
+
+                Button("Resume Later") { dismiss() }
+                    .buttonStyle(.bordered)
             }
-            .buttonStyle(.borderedProminent)
-            .tint(Theme.primary)
         case .completed, .skipped, .missed, .abandoned:
             EmptyView()
         }
     }
 
-    /// Slice 6 replaces the exercise-based placeholder with the real
-    /// Strength/Hypertrophy/Accessory/Powerlifting execution screen;
-    /// Slice 7/8 will do the same for `.steadyState`/`.intervals`/
-    /// `.functionalFitness` without this routing changing shape.
+    /// Every modality's execution screen shares this Session's one
+    /// `SessionExecutionState`, so a PR/first-entry logged anywhere in
+    /// the Session survives to the completion screen at Finish time.
     @ViewBuilder
     private func destination(for block: WorkoutBlock) -> some View {
         switch block.blockPrescription {
         case .exercise:
-            StrengthExecutionView(block: block, session: session)
+            StrengthExecutionView(block: block, session: session, executionState: executionState)
         case .steadyState:
-            SteadyStateExecutionView(block: block, session: session)
+            SteadyStateExecutionView(block: block, session: session, executionState: executionState)
         case .intervals:
-            IntervalExecutionView(block: block, session: session)
+            IntervalExecutionView(block: block, session: session, executionState: executionState)
         case .functionalFitness:
-            FunctionalFitnessExecutionView(block: block, session: session)
+            FunctionalFitnessExecutionView(block: block, session: session, executionState: executionState)
         default:
             BlockExecutionPlaceholderView(block: block)
         }
+    }
+
+    /// `CompleteSessionUseCase` is the final consistency point — every
+    /// result behind `executionState.highlights` is already durable by
+    /// now. Presents the completion screen rather than dismissing
+    /// straight back to Today, so the user sees what just happened
+    /// before returning (Part N).
+    private func finish(context: SessionCompletionContext) {
+        guard let summary = try? CompleteSessionUseCase.complete(
+            session, context: context, asOf: Date(), highlights: executionState.highlights, modelContext: modelContext
+        ) else { return }
+        completionSummary = summary
     }
 }
 

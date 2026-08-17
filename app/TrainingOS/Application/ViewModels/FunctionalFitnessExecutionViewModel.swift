@@ -13,6 +13,10 @@ import Observation
 @Observable
 final class FunctionalFitnessExecutionViewModel {
     let block: WorkoutBlock
+    /// Shared with every other block in this Session — accumulates
+    /// PR/first-entry highlights so the eventual completion screen can
+    /// show them (`SessionExecutionState`'s own doc comment).
+    let executionState: SessionExecutionState?
     /// AMRAP / Rounds For Time's live round counter — a plain in-memory
     /// tap count (the whole result is logged atomically at Finish, unlike
     /// Interval's per-rep persistence, since there is no meaningful
@@ -21,8 +25,9 @@ final class FunctionalFitnessExecutionViewModel {
     private(set) var roundsCompleted: Int = 0
     private(set) var incompleteMinuteIndices: Set<Int> = []
 
-    init(block: WorkoutBlock) {
+    init(block: WorkoutBlock, executionState: SessionExecutionState? = nil) {
         self.block = block
+        self.executionState = executionState
     }
 
     var prescription: FunctionalFitnessPrescription? { block.functionalFitnessPrescription }
@@ -92,11 +97,13 @@ final class FunctionalFitnessExecutionViewModel {
 
         try? CompleteBlockUseCase.complete(block, context: completionContext, modelContext: modelContext)
 
-        return LoggedResultHighlight(
+        let highlight = LoggedResultHighlight(
             label: benchmark?.name ?? "Functional Fitness",
             value: describeScore(scoreValue),
             isPersonalRecord: outcome.result.personalRecord != nil,
             isFirstEverEntry: outcome.isFirstEverEntry
         )
+        executionState?.record(highlight)
+        return highlight
     }
 }

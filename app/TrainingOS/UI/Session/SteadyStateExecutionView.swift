@@ -10,14 +10,16 @@ struct SteadyStateExecutionView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var viewModel: SteadyStateExecutionViewModel
     let session: Session
+    let executionState: SessionExecutionState
 
     @State private var showingCompletion = false
     @State private var showingChangeActivity = false
     @State private var lastHighlight: LoggedResultHighlight?
 
-    init(block: WorkoutBlock, session: Session) {
+    init(block: WorkoutBlock, session: Session, executionState: SessionExecutionState) {
         _viewModel = State(initialValue: SteadyStateExecutionViewModel(block: block))
         self.session = session
+        self.executionState = executionState
     }
 
     var body: some View {
@@ -55,6 +57,7 @@ struct SteadyStateExecutionView: View {
         .sheet(isPresented: $showingCompletion) {
             SteadyStateCompletionForm(viewModel: viewModel) { highlight in
                 lastHighlight = highlight
+                executionState.record(highlight)
                 try? CompleteBlockUseCase.complete(viewModel.block, context: .full, modelContext: modelContext)
             }
         }

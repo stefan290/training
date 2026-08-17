@@ -18,9 +18,9 @@ struct FunctionalFitnessExecutionView: View {
     @State private var repsEntry = 0
     @State private var lastHighlight: LoggedResultHighlight?
 
-    init(block: WorkoutBlock, session: Session) {
+    init(block: WorkoutBlock, session: Session, executionState: SessionExecutionState) {
         self.session = session
-        _viewModel = State(initialValue: FunctionalFitnessExecutionViewModel(block: block))
+        _viewModel = State(initialValue: FunctionalFitnessExecutionViewModel(block: block, executionState: executionState))
     }
 
     var body: some View {
