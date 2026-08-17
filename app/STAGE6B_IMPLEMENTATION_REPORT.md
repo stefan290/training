@@ -274,6 +274,19 @@ them — both closed additively, never by redesigning anything:
   introduced by this stage, but wasn't root-caused further given the
   scripted-UI-automation constraint above.
 
+**Stage 6C addendum (historical clarification):** subsequent manual
+Simulator acceptance testing found that the "Lower A" Session this
+report's own §14 screenshot and §12 test suite validated against was a
+single-exercise, hand-assembled `ExercisePrescription`, never
+materialized through a slot — meaning multi-exercise navigation, block/
+Session completion for a genuinely multi-exercise workout, and real
+slot-based Change Exercise had never actually been proven end-to-end,
+despite every individual piece (timer, persistence, substitution
+validator) being correctly unit-tested in isolation. This was a real
+acceptance gap this report did not catch, since its own 475-test suite
+never exercised more than one exercise per block. Root cause, fix, and
+new realistic acceptance fixture: `STAGE6C_ACCEPTANCE_REPORT.md`.
+
 ## 19. Commits / hashes
 
 All ten slices plus their Xcode-project registrations, in order (this

@@ -204,3 +204,34 @@ resolve back to its template-graph slot for substitution; that link
 didn't exist and was added additively (`ARCHITECTURE.md`'s Stage 6B
 section, `SUBSTITUTION_MODEL.md`'s Stage 6B section) rather than
 guessed around.
+
+## Stage 6C: manual acceptance hardening
+
+Manual Simulator testing of Stage 6B found a real acceptance gap Stage
+6B's own automated suite never exercised: the seeded "Lower A" was a
+single-exercise, hand-assembled `ExercisePrescription` (never
+materialized through a slot), so multi-exercise navigation and
+slot-based Change Exercise had nothing real to prove themselves against.
+Root cause and full fix: `STAGE6C_ACCEPTANCE_REPORT.md`. In short —
+
+- The acceptance fixture now goes through the real production
+  materialization path (`SeedScenarios.materializedLowerASession`):
+  `ProgramDefinition` -> `TemplateSession` -> `WorkoutBlockTemplate` ->
+  `PrescriptionTemplate`/`ExerciseSlot` -> `StrengthProgressionEngine` ->
+  `ExercisePrescription`/`SetPrescription`, five real exercises, one slot
+  with two valid alternatives.
+- `StrengthExecutionView` now supports continuous progression through a
+  block's complete ordered exercise list (Previous/Next Exercise,
+  position, lightweight overall progress) instead of one hand-picked
+  movement with no forward path.
+- A `WorkoutBlock` now auto-transitions to `.completed` the instant its
+  last required set is logged — the "all required work done, block stuck
+  In Progress forever" bug is fixed at the source (`StrengthExecutionViewModel.logCurrentSet`),
+  not worked around in the UI.
+- `SessionDetailView` shows the complete, read-only workout
+  (`SessionPreviewContent`) before Start is ever pressed, and the same
+  component now backs Week's read-only future-Session inspection.
+- A new `WeekView`/`WeekViewModel` reads the real `Day`/`Session` graph
+  for "what does my training look like" — never a parallel dataset,
+  never a fabricated prescription beyond the tactical materialization
+  boundary.

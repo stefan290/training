@@ -279,3 +279,30 @@ Ties break alphabetically by `canonicalName` for determinism. Both
 scopes route through the already-built `ApplySubstitutionUseCase` — no
 new persistence code, only the new slot/template trace-back and the
 ranking view.
+
+## Stage 6C: real slot-materialized substitution, proven end-to-end
+
+The Stage 6B acceptance Session had never actually been materialized
+through a slot (it was a hand-assembled `ExercisePrescription`), so
+Change Exercise's "unavailable" message — while technically correct —
+had never been proven against a *real* alternative either. The Stage 6C
+acceptance fixture (`SeedScenarios.materializedLowerASession`) includes
+one slot with two genuine `allowedExercises` (Leg Press/Bulgarian Split
+Squat, resolved by default to Leg Press), materialized with
+`sourceExerciseSlot` set exactly as `StrengthMaterializer` does it. This
+proves, with real data instead of a synthetic fixture:
+
+- `SubstitutionCandidateRanking.rank` surfaces the real alternative for a
+  real slot-materialized movement.
+- **THIS SESSION ONLY** edits only the intended `ExercisePrescription` —
+  every other movement in the same block is untouched, and the slot's
+  own `resolvedExercise` (the template default) is never mutated.
+- **GOING FORWARD** writes a real `SlotSelectionOverride` for
+  `(instance, slot)`; `SubstituteExerciseUseCase.resolvedExercise`
+  correctly prefers it over the template default, while the template
+  default itself and the already-materialized prescription stay exactly
+  as they were — an override only ever governs *future* materialization.
+
+No new substitution mechanism was needed — `MultiExerciseExecutionTests`'
+`M`/`N`/`O`/`P` tests exercise the existing Stage 4C architecture
+directly against this realistic fixture.

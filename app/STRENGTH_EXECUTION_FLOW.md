@@ -306,3 +306,36 @@ scope: a materialized `ExercisePrescription` had no stored path back to
 its `ExerciseSlot`, so `ExercisePrescription.sourceExerciseSlot` was
 added (`ARCHITECTURE.md`/`SUBSTITUTION_MODEL.md`'s Stage 6B sections) —
 additive, `nil`-safe, and the one deviation from this doc worth flagging.
+
+## Stage 6C: continuous multi-exercise progression
+
+Manual acceptance testing found the execution screen had no forward path
+past a single exercise: after logging a movement's final set there was
+no Next Exercise, no block completion, and no normal Finish Workout —
+only "Finish as Partial," even for fully-completed work. Fixed in
+`StrengthExecutionViewModel`/`StrengthExecutionView`
+(`STAGE6C_ACCEPTANCE_REPORT.md` has the full root-cause writeup):
+
+- **Position and navigation.** "Exercise N of M" plus Previous/Next
+  Exercise, ordering always from `WorkoutBlock.orderedPrescriptions` —
+  never a transient SwiftUI index. Inspecting an earlier/later exercise
+  never mutates completion state.
+- **Resume point is derived, never separately persisted.** `StrengthExecutionViewModel.init`
+  resumes at the first not-yet-complete movement (`orderedPrescriptions.firstIndex(where:)`
+  over `isComplete`, itself computed from `loggedSetResults.count >=
+  orderedSetPrescriptions.count`) — a fresh app launch reconstructs the
+  exact same position with no dedicated "current exercise" field.
+- **Block auto-completion.** The moment every movement satisfies
+  `isComplete`, `logCurrentSet` calls `CompleteBlockUseCase.complete`
+  itself — derived completion and persisted state can never disagree,
+  closing Part J's exact bug.
+- **Change Exercise is truthful.** Only rendered as an enabled action
+  when `movement.sourceExerciseSlot != nil`; otherwise a plain
+  explanatory line, never a button that leads to a dead end (Part M).
+
+One known, pre-existing architectural fact this pass did not touch:
+`RepGoal` has no low/high range (a single `reps` count only), and
+`StrengthMaterializer` never sets `SetPrescription.targetRir` — true for
+every Family A/B/C materialized prescription today. The realistic
+acceptance fixture reflects this honestly rather than hand-patching a
+nicer-looking range/RIR after materialization.

@@ -760,3 +760,45 @@ detection on the same, already-durable `IntervalResult`. Every other
 modality's result (Strength set, Steady State activity, Functional
 Fitness format) logs atomically in one call at its own natural
 completion point — there is no smaller meaningful durable unit for those.
+
+## Stage 6C: manual acceptance hardening — multi-exercise execution + Week
+
+Manual Simulator testing of Stage 6B surfaced a real acceptance gap:
+individual pieces worked, but a realistic multi-exercise workout had
+never been proven start-to-finish, and there was no way to see the
+training week as a whole. Full root cause and fix:
+`STAGE6C_ACCEPTANCE_REPORT.md`.
+
+**Realistic acceptance fixture, real materialization path.**
+`SeedScenarios.materializedLowerASession` builds a genuine
+`ProgramDefinition` (`TemplateSession` -> `WorkoutBlockTemplate` -> five
+`PrescriptionTemplate`/`ExerciseSlot` pairs, one with two valid
+alternatives) and a real `ProgramInstance`, then resolves each
+exercise's weight/reps/sets through `StrengthProgressionEngine`'s own
+functions — never a hand-assembled single-`ExercisePrescription` stand-in.
+It deliberately does not call `StrengthMaterializer.materializeWeek`
+itself (that function creates its own `Day` per `TemplateSession`, which
+would collide with the "one `Day` per user per date" invariant this
+fixture must share with a same-day Steady State Session) — it reuses the
+same engine calls inline, attached to the caller-supplied `Day` instead.
+
+**Session Preview, shared by two contexts.** `SessionPreviewContent`
+renders a Session's complete, real prescriptions — every block, every
+exercise/activity/format — and is purely read-only (no `modelContext`
+parameter, calls no use case). `SessionDetailView` shows it before Start
+is ever pressed; `WeekView` reuses the exact same component (via
+`SessionDetailView(session:readOnly:)`) for future-Session inspection,
+so there is exactly one workout-preview rendering path, never two.
+
+**Week** (`WeekViewModel`/`WeekView`) answers "what does my training look
+like" by reading the real `Day`/`Session` graph for the requested
+calendar week — never a parallel UI dataset. A week where every one of
+the seven days is empty is presented as "not yet planned" (the signal
+this week hasn't been materialized at all); a week with some real
+Sessions and some empty days presents the empty ones as ordinary Rest
+Days — there is no separate "planned rest day" domain concept to read
+instead, and this heuristic is the only way to represent that distinction
+without inventing one. Browsing Previous/Next Week only ever changes
+which already-persisted week is displayed; it never creates a `Day`,
+`Session`, or triggers materialization
+(`WeekViewModelTests.testNavigatingForwardRepeatedlyNeverTriggersMaterialization`).

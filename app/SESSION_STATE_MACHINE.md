@@ -292,3 +292,18 @@ only if the user taps "Mark Missed" — never inferred just because
 is a true no-op — dismissing the screen without calling any use case
 leaves the Session exactly as `.inProgress` as it already was, exactly
 as designed.
+
+## Stage 6C: completion semantics for a genuinely multi-exercise block
+
+Part L's exact rule now holds by construction: a `WorkoutBlock` whose
+every `ExercisePrescription` has every required `SetResult` transitions
+to `.completed` the instant the last one is logged
+(`StrengthExecutionViewModel.logCurrentSet` ->
+`CompleteBlockUseCase.complete`), and `SessionDetailView`'s own
+"all blocks completed?" check then offers normal "Finish Session,"
+never "Finish as Partial," for genuinely full work
+(`MultiExerciseExecutionTests.testFullyCompletedSessionIsNotForcedThroughFinishAsPartial`).
+Completing one block in a multi-block Session never mutates a sibling
+block's status (`testStrengthPlusFunctionalFitnessSessionDoesNotFinishEarlyAfterStrengthCompletes`)
+— the Session only becomes finish-normally-eligible once every block
+independently reaches `.completed`.
