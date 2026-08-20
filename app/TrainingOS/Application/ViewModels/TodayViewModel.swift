@@ -10,14 +10,25 @@ import Observation
 final class TodayViewModel {
     private(set) var sessions: [Session] = []
 
-    func load(modelContext: ModelContext) {
+    /// `referenceDate` defaults to the real current moment for every
+    /// existing caller (`TodayView`'s own call site is unaffected) — the
+    /// injection point exists solely so a deterministic date can be
+    /// supplied in tests, never so business logic itself reads an
+    /// implicit, untestable `Date()` (mirrors CLAUDE.md rule 4's
+    /// discipline for progression logic, applied here too).
+    func load(modelContext: ModelContext, referenceDate: Date = Date()) {
         let days = (try? modelContext.fetch(FetchDescriptor<Day>())) ?? []
-        let startOfToday = Calendar.current.startOfDay(for: Date())
-        guard let today = days.first(where: { Calendar.current.isDate($0.date, inSameDayAs: startOfToday) }) else {
-            sessions = []
-            return
-        }
-        sessions = today.orderedSessions
+        let startOfToday = Calendar.current.startOfDay(for: referenceDate)
+        // More than one `Day` row can legitimately share a calendar date:
+        // `AcceptScheduleProposalUseCase.accept` re-parents a Session from
+        // its naive materialized Day onto its real scheduled Day, leaving
+        // the old Day behind, empty but not deleted (nullify, never
+        // cascade — CLAUDE.md rule 1). Reading only the first matching Day
+        // risked silently picking an emptied one while a sibling Day for
+        // the same date held the real Session. Aggregating every matching
+        // Day's Sessions is correct regardless of which one is which.
+        let todaysDays = days.filter { Calendar.current.isDate($0.date, inSameDayAs: startOfToday) }
+        sessions = todaysDays.flatMap(\.orderedSessions).sorted { $0.sortIndex < $1.sortIndex }
     }
 
     /// Starts (or, if already in progress, no-ops via

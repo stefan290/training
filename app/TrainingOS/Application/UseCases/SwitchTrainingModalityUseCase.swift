@@ -21,6 +21,12 @@ enum SwitchTrainingModalityUseCase {
         reasonCode: PlannerReasonCode,
         source: DecisionSource,
         explanation: String,
+        /// `.temporaryPreferenceApplied` is correct for every existing
+        /// caller (a mid-phase modality switch); `StartPhaseUseCase`
+        /// passes `.programOrMixSelected` for a phase's very first mix
+        /// attachment, which is a different kind of decision, not a
+        /// switch away from anything.
+        decisionType: PlannerDecisionType = .temporaryPreferenceApplied,
         context: ModelContext
     ) -> PlannerDecision {
         // Close out whichever mix was active immediately before this
@@ -37,7 +43,7 @@ enum SwitchTrainingModalityUseCase {
 
         let decision = PlannerDecision(
             decidedAt: asOf,
-            decisionType: .temporaryPreferenceApplied,
+            decisionType: decisionType,
             source: source,
             reasonCode: reasonCode,
             factors: ["mixName": mix.name],

@@ -52,6 +52,14 @@ enum ScheduleIssueCode: String, Codable, CaseIterable {
     /// candidate days was already occupied, so doubling was not a
     /// preference, it was the only option.
     case doubleSessionRequired
+    /// A candidate day fell before the calendar week this session's own
+    /// naive, materializer-assigned date belongs to. A component that
+    /// materializes several weeks in one call (Steady State's whole
+    /// natural block, for instance) produces sessions whose own week of
+    /// origin is real, already-known data — a later week's session must
+    /// never be pulled into an earlier week just because an earlier day
+    /// happens to be free. See `ConcurrentScheduler.originWeekFloorOffset`.
+    case earlierThanOriginWeek
 }
 
 /// Hard = a constraint was violated outright (a session or an entire

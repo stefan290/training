@@ -124,7 +124,10 @@ enum ConcurrentScheduler {
         for input in inputs {
             let component = input.component
             let ownOrder = input.sessions.enumerated()
-                .map { index, session in makeSchedulable(session, component, index) }
+                .map { index, session -> SchedulableSession in
+                    let previousNaiveDate = index > 0 ? input.sessions[index - 1].day?.date : nil
+                    return makeSchedulable(session, component, index, previousNaiveDate: previousNaiveDate)
+                }
                 .sorted { lhs, rhs in
                     // isKeySession promoted first (factor 5's one exception
                     // to plain sequence order); componentSortIndex breaks
@@ -155,8 +158,18 @@ enum ConcurrentScheduler {
         return (phase1, phase2)
     }
 
-    private static func makeSchedulable(_ session: Session, _ component: TrainingMixComponent, _ index: Int) -> SchedulableSession {
-        SchedulableSession(
+    private static func makeSchedulable(
+        _ session: Session, _ component: TrainingMixComponent, _ index: Int, previousNaiveDate: Date?
+    ) -> SchedulableSession {
+        let naiveGap: Int? = {
+            guard let previousNaiveDate, let naiveDate = session.day?.date else { return nil }
+            let calendar = Calendar.current
+            let days = calendar.dateComponents(
+                [.day], from: calendar.startOfDay(for: previousNaiveDate), to: calendar.startOfDay(for: naiveDate)
+            ).day ?? 0
+            return max(0, days)
+        }()
+        return SchedulableSession(
             session: session,
             component: component,
             componentLabel: component.label,
@@ -167,7 +180,8 @@ enum ConcurrentScheduler {
             requiredSpacingDays: component.requiredSpacingDays,
             stressProfile: SessionStressComposer.compose(session),
             componentSortIndex: index,
-            isKeySession: session.isKeySession
+            isKeySession: session.isKeySession,
+            naiveGapFromPreviousSameComponentSession: naiveGap
         )
     }
 
@@ -359,12 +373,56 @@ enum ConcurrentScheduler {
         }
     }
 
+    /// Structural floor: a session's own already-known, materializer-
+    /// assigned naive date (`session.day?.date` — still intact at
+    /// scheduling time, since `AcceptScheduleProposalUseCase.accept` only
+    /// re-parents the Session onto its real scheduled Day AFTER a proposal
+    /// is accepted, never before) tells us which week of the window it was
+    /// originally generated for. A component whose materializer produces
+    /// several weeks in one call (Steady State's whole natural block) must
+    /// never have a later week's session slide into an earlier week just
+    /// because an earlier day happens to be free — the always-decisive
+    /// earliest-day tie-break (`PlacementScore.dayOffset`) may still pick
+    /// the earliest available day *within* that same week. A `nil` naive
+    /// date (no Day assigned yet) imposes no floor, unchanged from prior
+    /// behavior.
+    private static func originWeekFloorOffset(for session: Session, window: SchedulingWindow) -> Int {
+        guard let naiveDate = session.day?.date else { return 0 }
+        let calendar = Calendar.current
+        let start = calendar.startOfDay(for: window.startDate)
+        let daysSinceStart = calendar.dateComponents([.day], from: start, to: calendar.startOfDay(for: naiveDate)).day ?? 0
+        guard daysSinceStart > 0 else { return 0 }
+        return (daysSinceStart / 7) * 7
+    }
+
+    /// Prevents "training debt": if an earlier session of this same
+    /// component was itself delayed past its own natural offset (e.g. it
+    /// lost a day-capacity contest to a higher-priority component during
+    /// a phase's shortened first week), this session must inherit that
+    /// same delay rather than snapping back to its own uncontested
+    /// earliest offset — otherwise two of the same component's sessions
+    /// can cluster close together (silently overloading whichever
+    /// calendar week absorbs both) while an earlier calendar week goes
+    /// without. Returns 0 (no additional floor) for a component's first
+    /// session, or when the naive materializer cadence between
+    /// consecutive sessions isn't known.
+    private static func spacingFloorOffset(for item: SchedulableSession, state: PlacementState) -> Int {
+        guard let gap = item.naiveGapFromPreviousSameComponentSession,
+              let previousOffset = state.lastPlacedOffset[ObjectIdentifier(item.component)] else { return 0 }
+        return previousOffset + gap
+    }
+
     private static func hardCheck(
         offset: Int,
         item: SchedulableSession,
         state: PlacementState,
         constraints: SchedulingConstraints
     ) -> HardCheckResult {
+        let floor = max(originWeekFloorOffset(for: item.session, window: constraints.window), spacingFloorOffset(for: item, state: state))
+        guard offset >= floor else {
+            return .invalid(.earlierThanOriginWeek)
+        }
+
         let date = constraints.window.date(forDayOffset: offset)
         let dayWeekday = weekday(for: date)
         guard constraints.availability.isUsable(dayWeekday) else { return .invalid(.unavailableDay) }
@@ -391,7 +449,7 @@ enum ConcurrentScheduler {
     }
 
     private static let hardExclusionPrecedence: [ScheduleIssueCode] = [
-        .unavailableDay, .maxSessionsExceeded, .insufficientTime, .recoverySpacingCompromise,
+        .earlierThanOriginWeek, .unavailableDay, .maxSessionsExceeded, .insufficientTime, .recoverySpacingCompromise,
     ]
 
     private static func representativeIssueCode(from tally: [ScheduleIssueCode: Int]) -> ScheduleIssueCode {

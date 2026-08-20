@@ -27,6 +27,30 @@ enum AutoregulationRatingResolver {
         return prescription.orderedSetPrescriptions.count
     }
 
+    /// Stage 7 (Tactical Planning Orchestration): week 0's own resolved
+    /// weight for this template — `StrengthProgressionEngine.resolveWeight`'s
+    /// own contract requires exactly this value for every later week's
+    /// multiplier ("the multiplier always applies to the resolved Week 1
+    /// value, never a recomputation from the raw RM"), never the
+    /// immediately-previous week's own resolved value. `nil` only when
+    /// week 0 itself never resolved a weight (e.g. `.calibrationRequired`
+    /// at week 0, or genuinely not yet materialized).
+    static func weekZeroResolvedWeight(for template: PrescriptionTemplate, in instance: ProgramInstance) -> Double? {
+        let candidates = instance.sessions
+            .flatMap { $0.orderedBlocks }
+            .flatMap { $0.orderedPrescriptions }
+            .filter { $0.sourcePrescriptionTemplate?.id == template.id }
+
+        let earliest = candidates.min { lhs, rhs in
+            materializedDate(of: lhs) < materializedDate(of: rhs)
+        }
+        return earliest?.orderedSetPrescriptions.first?.targetWeight
+    }
+
+    private static func materializedDate(of prescription: ExercisePrescription) -> Date {
+        prescription.workoutBlock?.session?.day?.date ?? .distantFuture
+    }
+
     private static func mostRecentlyCompletedPrescription(
         for template: PrescriptionTemplate, in instance: ProgramInstance
     ) -> ExercisePrescription? {

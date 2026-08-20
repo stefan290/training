@@ -71,7 +71,7 @@ final class HypertrophyBuiltInLibraryTests: XCTestCase {
             )
             let firstSession = try XCTUnwrap(definition.orderedTemplateSessions.first)
             let block = try XCTUnwrap(firstSession.orderedBlockTemplates.first)
-            let primary = try XCTUnwrap(block.orderedPrescriptionTemplates.first { $0.pairedSlot == nil })
+            let primary = try XCTUnwrap(block.orderedPrescriptionTemplates.first { $0.exerciseSlot?.name != "Chest Isolation or Triceps" })
             guard case .rmBased(let payload) = try XCTUnwrap(primary.rules?.loadRule) else {
                 return XCTFail("expected .rmBased")
             }

@@ -7,6 +7,20 @@ import Foundation
 /// none). Business logic belongs here, not in `ProgramDetailView`
 /// (CLAUDE.md rule 5).
 enum ProgramWeekGrouping {
+    /// The smallest `weekIndex` with no real materialized Sessions yet —
+    /// "which week is next to roll forward," and equally, for read-only
+    /// display, "which week is currently in progress." Moved here from
+    /// `RollTacticalWindowUseCase` (Stage 7) so a read-only UI can show
+    /// honest tactical-window status without a second week-counting
+    /// mechanism.
+    static func nextWeekIndex(for instance: ProgramInstance) -> Int {
+        var week = 0
+        while !realSessions(in: instance, forWeek: week).isEmpty {
+            week += 1
+        }
+        return week
+    }
+
     static func realSessions(in instance: ProgramInstance, forWeek weekIndex: Int) -> [Session] {
         let calendar = Calendar.current
         let start = calendar.startOfDay(for: instance.startDate)

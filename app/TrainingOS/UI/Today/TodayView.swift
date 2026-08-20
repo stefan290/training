@@ -64,9 +64,10 @@ private struct SessionCard: View {
 
     /// Purely a display check — a scheduled Session whose time has
     /// passed is *shown* as possibly missed, but nothing is written until
-    /// the user actually taps a button (SESSION_STATE_MACHINE.md §7).
+    /// the user actually taps a button (SESSION_STATE_MACHINE.md §7). See
+    /// `SessionPresentation.isPastDueUnstarted` for the actual decision.
     private var isPastDueUnstarted: Bool {
-        session.status == .scheduled && (session.scheduledTime.map { $0 < Date() } ?? false)
+        SessionPresentation.isPastDueUnstarted(status: session.status, scheduledTime: session.scheduledTime)
     }
 
     var body: some View {
@@ -84,7 +85,7 @@ private struct SessionCard: View {
                 }
                 Spacer()
                 if let time = session.scheduledTime {
-                    Text(time, style: .time)
+                    Text(SessionPresentation.scheduledTimeLabel(time))
                         .font(Theme.numeric)
                         .foregroundStyle(Theme.textSecondary)
                 }

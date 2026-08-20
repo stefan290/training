@@ -54,6 +54,27 @@ enum TacticalWindowPolicy {
         let days = Calendar.current.dateComponents([.day], from: start, to: end).day ?? 0
         return days / 7
     }
+
+    /// `windowLengthInDays` only ever reflects the mix's *primary*
+    /// component's own cadence — a mix's other components (e.g. a Steady
+    /// State system, whose materializer produces its whole natural block
+    /// in one call regardless of the primary system's block length) can
+    /// legitimately materialize sessions further out than that. Widens
+    /// the policy window just enough to cover every already-materialized
+    /// session actually being scheduled — never shortens it, and never
+    /// materializes or schedules anything itself; a pure recomputation
+    /// over data the caller already has.
+    static func effectiveWindowDays(policyWindowDays: Int, materializedDates: [Date], windowStartDate: Date) -> Int {
+        let calendar = Calendar.current
+        let start = calendar.startOfDay(for: windowStartDate)
+        let maxOffset = materializedDates
+            .map { calendar.dateComponents([.day], from: start, to: calendar.startOfDay(for: $0)).day ?? 0 }
+            .filter { $0 > 0 }
+            .max() ?? 0
+        guard maxOffset > 0 else { return policyWindowDays }
+        let neededDays = ((maxOffset / 7) + 1) * 7
+        return max(policyWindowDays, neededDays)
+    }
 }
 
 /// `TACTICAL_PLANNING_HANDOFF.md` §2 — the two purely date-driven

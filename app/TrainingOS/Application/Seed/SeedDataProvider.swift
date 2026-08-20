@@ -26,9 +26,24 @@ struct SeedResult {
 /// RecordWorkoutResultUseCase — and every relationship is established from
 /// exactly one side via the owning model's `addX` method. See CLAUDE.md
 /// and DELETE_RULE_MATRIX.md.
+/// Everything `seedAll`'s own scenario-building needs before it starts —
+/// broken out so the app's own bootstrap (`TrainingOSApp`) can seed these
+/// shared prerequisites WITHOUT also rendering `seedAll`'s 8 hand-built
+/// demo scenarios into the same user's Today/Week (Stage 7 Slice 4
+/// acceptance finding: a Simulator user should see ONE coherent training
+/// universe — the real, use-case-driven `SeedAnnualPlanJourney` — never
+/// `seedAll`'s own scenario Sessions mixed in alongside it). `seedAll`
+/// itself calls this internally so every existing test/preview that
+/// depends on its exact return shape is completely unaffected.
+struct SeedPrerequisites {
+    let user: User
+    let performanceProfile: PerformanceProfile
+    let catalog: ExerciseCatalog
+}
+
 enum SeedDataProvider {
     @discardableResult
-    static func seedAll(in context: ModelContext) -> SeedResult {
+    static func seedPrerequisites(in context: ModelContext) -> SeedPrerequisites {
         let user = User(displayName: "Alex Rivera")
         context.insert(user)
 
@@ -41,6 +56,16 @@ enum SeedDataProvider {
         user.attachPerformanceProfile(performanceProfile)
 
         let catalog = ExerciseCatalog.makeAndInsert(context: context)
+
+        return SeedPrerequisites(user: user, performanceProfile: performanceProfile, catalog: catalog)
+    }
+
+    @discardableResult
+    static func seedAll(in context: ModelContext) -> SeedResult {
+        let prerequisites = seedPrerequisites(in: context)
+        let user = prerequisites.user
+        let performanceProfile = prerequisites.performanceProfile
+        let catalog = prerequisites.catalog
 
         let goal = Goal(ownerUserID: user.id, primaryType: .muscleGain, status: .active)
         context.insert(goal)

@@ -82,8 +82,8 @@ final class HypertrophyProgramGeneratorTests: XCTestCase {
         let definition = generate(dayCount: 3, split: .fullBody, phaseType: .metaboliteFocus)
         let session = try XCTUnwrap(definition.orderedTemplateSessions.first)
         let block = try XCTUnwrap(session.orderedBlockTemplates.first)
-        let primary = try XCTUnwrap(block.orderedPrescriptionTemplates.first { $0.pairedSlot == nil })
-        let paired = try XCTUnwrap(block.orderedPrescriptionTemplates.first { $0.pairedSlot != nil })
+        let primary = try XCTUnwrap(block.orderedPrescriptionTemplates.first { $0.exerciseSlot?.name != "Chest Isolation or Triceps" })
+        let paired = try XCTUnwrap(block.orderedPrescriptionTemplates.first { $0.exerciseSlot?.name == "Chest Isolation or Triceps" })
 
         guard case .rmBased(let primaryPayload) = try XCTUnwrap(primary.rules?.loadRule) else {
             return XCTFail("expected primary .rmBased")
@@ -103,9 +103,28 @@ final class HypertrophyProgramGeneratorTests: XCTestCase {
         let definition = generate(dayCount: 3, split: .fullBody, phaseType: .basicHypertrophy)
         let session = try XCTUnwrap(definition.orderedTemplateSessions.first)
         let block = try XCTUnwrap(session.orderedBlockTemplates.first)
-        let paired = try XCTUnwrap(block.orderedPrescriptionTemplates.first { $0.pairedSlot != nil })
+        let paired = try XCTUnwrap(block.orderedPrescriptionTemplates.first { $0.exerciseSlot?.name == "Chest Isolation or Triceps" })
         XCTAssertEqual(paired.rules?.loadRule, .linkedToPairedSlot(fractionOfSourceResult: 0.6))
         XCTAssertNotNil(paired.pairedSlot, "linkedResultReference's pairing must be the structural, authoring-time PrescriptionTemplate reference (decision A5), not resolved dynamically.")
+    }
+
+    /// `pairedSlot` is legitimately set on *both* rows in the same pair,
+    /// for two different rules: `paired.pairedSlot` is its own
+    /// `linkedToPairedSlot` load source (asserted above), while
+    /// `primary.pairedSlot` is separately its own `autoregulated` set
+    /// count's rating source (`AutoregulationRatingResolver.rating`'s
+    /// contract) — the field is reused per-row for whichever rule that
+    /// row itself owns, never both purposes on the same row at once here.
+    func testPrimarysPairedSlotIsItsOwnAutoregulationRatingSourceNotJustPairedsLoadLink() throws {
+        let definition = generate(dayCount: 3, split: .fullBody, phaseType: .basicHypertrophy)
+        let session = try XCTUnwrap(definition.orderedTemplateSessions.first)
+        let block = try XCTUnwrap(session.orderedBlockTemplates.first)
+        let primary = try XCTUnwrap(block.orderedPrescriptionTemplates.first { $0.exerciseSlot?.name != "Chest Isolation or Triceps" })
+        let paired = try XCTUnwrap(block.orderedPrescriptionTemplates.first { $0.exerciseSlot?.name == "Chest Isolation or Triceps" })
+
+        XCTAssertEqual(primary.rules?.setCountRule, .autoregulated(AutoregulatedSetCount(baselineSets: 3)))
+        XCTAssertEqual(primary.pairedSlot?.id, paired.id, "primary's own rating source must be the paired accessory")
+        XCTAssertEqual(paired.pairedSlot?.id, primary.id, "paired's own load-link source must still be the primary — unaffected by primary also having its own pairedSlot")
     }
 
     /// The confirmed Family-A-Mesocycle-2 superset-partner deload case
@@ -116,7 +135,7 @@ final class HypertrophyProgramGeneratorTests: XCTestCase {
         let primary = try primaryTemplate(in: definition)
         let session = try XCTUnwrap(definition.orderedTemplateSessions.first)
         let block = try XCTUnwrap(session.orderedBlockTemplates.first)
-        let paired = try XCTUnwrap(block.orderedPrescriptionTemplates.first { $0.pairedSlot != nil })
+        let paired = try XCTUnwrap(block.orderedPrescriptionTemplates.first { $0.exerciseSlot?.name == "Chest Isolation or Triceps" })
 
         XCTAssertEqual(primary.rules?.deloadWeightAction, .standard)
         XCTAssertEqual(paired.rules?.deloadWeightAction, .omit)
@@ -161,6 +180,6 @@ final class HypertrophyProgramGeneratorTests: XCTestCase {
     private func primaryTemplate(in definition: ProgramDefinition) throws -> PrescriptionTemplate {
         let session = try XCTUnwrap(definition.orderedTemplateSessions.first)
         let block = try XCTUnwrap(session.orderedBlockTemplates.first)
-        return try XCTUnwrap(block.orderedPrescriptionTemplates.first { $0.pairedSlot == nil })
+        return try XCTUnwrap(block.orderedPrescriptionTemplates.first { $0.exerciseSlot?.name != "Chest Isolation or Triceps" })
     }
 }

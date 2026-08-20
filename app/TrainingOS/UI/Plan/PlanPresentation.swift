@@ -36,4 +36,48 @@ enum PlanPresentation {
         case .abandoned: "Abandoned"
         }
     }
+
+    /// Stage 7 (Slice 4) addition: `.planned` is deliberately relabelled
+    /// "Upcoming" specifically for Annual Plan's own status chip — every
+    /// other Plan/Program surface keeps `phaseStatusLabel` above
+    /// unchanged (a `.planned` `TrainingPhase` elsewhere in the app is
+    /// not necessarily "upcoming" in the annual-plan-timeline sense).
+    static func annualPlanStatusLabel(_ status: PhaseStatus) -> String {
+        switch status {
+        case .planned: "Upcoming"
+        default: phaseStatusLabel(status)
+        }
+    }
+
+    static func programmingSystemLabel(_ system: ProgrammingSystemKind?) -> String {
+        switch system {
+        case .hypertrophy: "Hypertrophy"
+        case .powerlifting: "Powerlifting"
+        case .steadyState: "Steady State"
+        case .interval: "Intervals"
+        case .functionalFitness: "Functional Fitness"
+        case nil: "Unresolved"
+        }
+    }
+
+    static func priorityLabel(_ priority: GoalPriority) -> String {
+        switch priority {
+        case .primary: "Primary"
+        case .secondary: "Secondary"
+        case .supporting: "Supporting"
+        }
+    }
+
+    /// e.g. "4× Hypertrophy" — the compact per-component summary used
+    /// throughout Annual Plan/Current Phase, never a raw
+    /// `programmingSystem` case name.
+    static func componentSummary(_ component: TrainingMixComponent) -> String {
+        "\(component.frequency.target)× \(component.label)"
+    }
+
+    /// e.g. "3× Strength + 2× Functional Fitness + 1× Run" — a whole
+    /// mix's components in their stable `sortIndex` order.
+    static func mixSummary(_ mix: TrainingMix) -> String {
+        mix.orderedComponents.map(componentSummary).joined(separator: " + ")
+    }
 }

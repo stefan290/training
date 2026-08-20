@@ -49,6 +49,46 @@ enum SessionPresentation {
         return statusLabel(status)
     }
 
+    /// Stage 7 (Tactical Planning Orchestration), Slice 4 acceptance
+    /// finding: `scheduledTime` is genuinely non-nil real Date data
+    /// (`AcceptScheduleProposalUseCase.accept` always writes one), but
+    /// the real scheduling model has no time-of-day concept anywhere —
+    /// every production-scheduled Session's `scheduledTime` is exactly
+    /// midnight on its own date (inherited from `phase.startDate`'s own
+    /// start-of-day anchoring). Presenting that midnight value as if
+    /// TrainingOS deliberately chose "00:00" would misrepresent a value
+    /// the system never actually decided to schedule at that hour —
+    /// render it as "Anytime" instead. `nil` (never resolved through the
+    /// scheduler at all) keeps its own existing meaning — the caller
+    /// simply shows nothing, unchanged. A hand-authored fixture's own
+    /// deliberately-chosen time (e.g. 07:00) still renders normally.
+    static func scheduledTimeLabel(_ scheduledTime: Date) -> String {
+        guard hasGenuineTimeOfDay(scheduledTime) else { return "Anytime" }
+        return scheduledTime.formatted(date: .omitted, time: .shortened)
+    }
+
+    /// The single shared definition of "this `scheduledTime` is a real,
+    /// meaningfully-assigned clock time, not just the date-only midnight
+    /// anchor the real scheduler always produces" — used identically by
+    /// `scheduledTimeLabel` above and `isPastDueUnstarted` below, so the
+    /// two can never silently disagree on what counts as "genuinely
+    /// timed."
+    static func hasGenuineTimeOfDay(_ scheduledTime: Date) -> Bool {
+        scheduledTime != Calendar.current.startOfDay(for: scheduledTime)
+    }
+
+    /// A date-only/"Anytime" Session (no genuine time-of-day ever
+    /// assigned) is never "late" merely because the clock has passed
+    /// midnight — it stays normally startable for its whole calendar day.
+    /// Only a genuinely time-specific `scheduledTime` can make a Session
+    /// late, and only once that specific time has passed. `asOf` defaults
+    /// to the real current moment for `TodayView`'s own call site;
+    /// injectable for deterministic tests.
+    static func isPastDueUnstarted(status: SessionStatus, scheduledTime: Date?, asOf: Date = Date()) -> Bool {
+        guard status == .scheduled, let scheduledTime, hasGenuineTimeOfDay(scheduledTime) else { return false }
+        return scheduledTime < asOf
+    }
+
     static func roleLabel(_ role: SessionRole) -> String {
         switch role {
         case .strength: "Strength"

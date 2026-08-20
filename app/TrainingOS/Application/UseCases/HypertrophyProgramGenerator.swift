@@ -113,6 +113,18 @@ enum HypertrophyProgramGenerator {
             paired.attachExerciseSlot(pairedSlot)
             paired.pairedSlot = primary
             block.addPrescriptionTemplate(paired)
+
+            // `primary.setCountRule` is always `.autoregulated`, whose
+            // rating source is `pairedSlot` (`StrengthProgressionRules.swift`'s
+            // `SetCountRule.autoregulated` doc comment: "mirroring
+            // `LoadRule.linkedToPairedSlot`'s pattern, not duplicated
+            // here") — the same field `paired` above uses for its own load
+            // link, just read for a different rule on a different row.
+            // Without this, `AutoregulationRatingResolver.rating(for: primary)`
+            // can never find a rating source and week 1+ set counts stay
+            // permanently `.calibrationRequired`, regardless of any real
+            // feedback collected on `paired`.
+            primary.pairedSlot = paired
         }
 
         return definition

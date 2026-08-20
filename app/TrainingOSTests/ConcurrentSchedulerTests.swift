@@ -622,4 +622,103 @@ final class ConcurrentSchedulerTests: XCTestCase {
         XCTAssertEqual(naiveDay.sessions.count, 1, "an infeasible proposal must never mutate the calendar")
         XCTAssertNil(session.schedulerVersion)
     }
+
+    // MARK: - Origin-week floor (Slice 4 acceptance fix: multi-week compression)
+
+    private func attachNaiveDay(_ session: Session, offsetDaysFromMonday: Int, ownerUserID: UUID = UUID()) {
+        let date = Calendar.current.date(byAdding: .day, value: offsetDaysFromMonday, to: mondayStart())!
+        let day = Day(ownerUserID: ownerUserID, date: date)
+        context.insert(day)
+        day.addSession(session)
+    }
+
+    /// A component whose materializer produces several weeks in one call
+    /// (Steady State's whole natural block) must never have a later
+    /// week's own naive-dated session pulled into an earlier calendar
+    /// week just because an earlier day happens to be free within a wide
+    /// window — this is the exact "Running compressed into one calendar
+    /// week" bug this fix addresses.
+    func testLaterWeeksNaiveDatedSessionIsNeverCompressedIntoAnEarlierWeek() throws {
+        let mix = TrainingMix(kind: .selected, name: "Origin Week Floor")
+        context.insert(mix)
+        let runningComponent = makeComponent(
+            label: "Running", priority: .primary, frequency: SessionFrequency(target: 5), mix: mix
+        )
+
+        // 5 sessions materialized up front, naively 7 days apart (weeks 0-4).
+        let sessions = (0..<5).map { week -> Session in
+            let session = makeSession("Run Week \(week)", modality: .conditioning)
+            attachNaiveDay(session, offsetDaysFromMonday: week * 7)
+            return session
+        }
+
+        let availability = UserAvailability(trainingDaysPerWeek: 7, allowsDoubleSessions: false, maxSessionsPerDay: 1)
+        // A wide-open 35-day window: with no origin-week floor, the
+        // scheduler's "earliest offset" tie-break would happily place
+        // every one of these 5 sessions on days 0-4 of week 0.
+        let constraints = SchedulingConstraints(
+            availability: availability,
+            window: SchedulingWindow(startDate: mondayStart(), numberOfDays: 35)
+        )
+
+        let proposal = ConcurrentScheduler.schedule(
+            [ScheduledProgramInput(component: runningComponent, sessions: sessions)], constraints: constraints
+        )
+
+        XCTAssertEqual(proposal.feasibility, .feasible)
+        let placementsByName = Dictionary(uniqueKeysWithValues: proposal.placements.map { ($0.session.name, $0.date) })
+        for week in 0..<5 {
+            let placedDate = try XCTUnwrap(placementsByName["Run Week \(week)"])
+            let daysSincePlacementWindowStart = Calendar.current.dateComponents([.day], from: mondayStart(), to: placedDate).day ?? -1
+            XCTAssertEqual(daysSincePlacementWindowStart / 7, week, "Week \(week)'s own naive-dated session must land in calendar week \(week), never an earlier one")
+        }
+    }
+
+    /// A session pulled into an earlier week when the window is too
+    /// narrow to reach its own naive week is reported as a structured
+    /// hard conflict — never silently squeezed into someone else's week.
+    func testNarrowWindowThatCannotReachALaterNaiveWeekReportsAConflictRatherThanCompressing() throws {
+        let mix = TrainingMix(kind: .selected, name: "Origin Week Floor Narrow")
+        context.insert(mix)
+        let runningComponent = makeComponent(
+            label: "Running", priority: .primary, frequency: SessionFrequency(target: 2), mix: mix
+        )
+        let week0Session = makeSession("Run Week 0", modality: .conditioning)
+        attachNaiveDay(week0Session, offsetDaysFromMonday: 0)
+        let week1Session = makeSession("Run Week 1", modality: .conditioning)
+        attachNaiveDay(week1Session, offsetDaysFromMonday: 7)
+
+        let availability = UserAvailability(trainingDaysPerWeek: 7, allowsDoubleSessions: false, maxSessionsPerDay: 1)
+        // Only 7 days — physically cannot reach week 1's own naive date.
+        let constraints = SchedulingConstraints(
+            availability: availability,
+            window: SchedulingWindow(startDate: mondayStart(), numberOfDays: 7)
+        )
+
+        let proposal = ConcurrentScheduler.schedule(
+            [ScheduledProgramInput(component: runningComponent, sessions: [week0Session, week1Session])], constraints: constraints
+        )
+
+        XCTAssertEqual(proposal.feasibility, .infeasible)
+        XCTAssertEqual(proposal.placements.map(\.session.name), ["Run Week 0"], "week 0's session places normally; week 1's must never be silently squeezed into week 0's calendar days")
+        XCTAssertTrue(proposal.conflicts.contains { $0.unplacedSessions.contains { $0.session.name == "Run Week 1" } })
+    }
+
+    /// A freshly-authored Session with no naive Day yet (never previously
+    /// materialized/dated) must remain entirely unconstrained by the
+    /// origin-week floor — `nil` means "no floor," not "week 0 only,"
+    /// preserving every existing scheduler test's behavior unchanged.
+    func testSessionWithNoNaiveDayIsUnconstrainedByTheOriginWeekFloor() throws {
+        let mix = TrainingMix(kind: .selected, name: "No Naive Day")
+        context.insert(mix)
+        let component = makeComponent(label: "Strength", priority: .primary, frequency: SessionFrequency(target: 1), mix: mix)
+        let session = makeSession("Bare Session")
+
+        let availability = UserAvailability(trainingDaysPerWeek: 7, allowsDoubleSessions: false, maxSessionsPerDay: 1)
+        let constraints = SchedulingConstraints(availability: availability, window: SchedulingWindow(startDate: mondayStart(), numberOfDays: 7))
+        let proposal = ConcurrentScheduler.schedule([ScheduledProgramInput(component: component, sessions: [session])], constraints: constraints)
+
+        XCTAssertEqual(proposal.feasibility, .feasible)
+        XCTAssertEqual(proposal.placements.first?.date, mondayStart(), "with no naive Day at all, the earliest offset remains free to win, exactly as before this fix")
+    }
 }

@@ -119,11 +119,17 @@ enum StrengthMaterializer {
                 context.insert(block)
                 session.addBlock(block)
 
-                // Primary slots (no `pairedSlot`) resolved before paired
-                // slots, so a paired slot's `.linkedToPairedSlot` can read
-                // the primary's just-resolved weight in this same pass.
+                // Templates whose *load* actually depends on another
+                // slot's just-resolved weight (`loadRuleKind == .linkedToPairedSlot`)
+                // are resolved last, so that dependency is always available
+                // in this same pass. Keyed on `loadRuleKind` specifically —
+                // NOT on `pairedSlot == nil` — because `pairedSlot` is also
+                // legitimately set on a *primary* template purely as its
+                // own autoregulation rating source (see
+                // `HypertrophyProgramGenerator`), which carries no load-
+                // resolution-order requirement at all.
                 let orderedTemplates = blockTemplate.orderedPrescriptionTemplates
-                    .sorted { ($0.pairedSlot == nil ? 0 : 1) < ($1.pairedSlot == nil ? 0 : 1) }
+                    .sorted { ($0.loadRuleKind == .linkedToPairedSlot ? 1 : 0) < ($1.loadRuleKind == .linkedToPairedSlot ? 1 : 0) }
 
                 for template in orderedTemplates {
                     guard let rules = template.rules, let slot = template.exerciseSlot else { continue }

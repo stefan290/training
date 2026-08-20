@@ -22,6 +22,26 @@ final class WeekViewModel {
 
     var isCurrentWeek: Bool { weekOffset == 0 }
 
+    /// A deterministic label for the "return to the current week"
+    /// control — derived purely from `weekOffset`, never from which
+    /// direction the last navigation happened to come from. Only
+    /// `weekOffset == 0` is ever "This Week"; exactly one step away is
+    /// unambiguously "Next"/"Previous Week"; anything further shows the
+    /// real calendar date range instead of a relative word that would
+    /// otherwise misdescribe which week is actually on screen (e.g.
+    /// calling week 3 "Current Week" merely because the user arrived via
+    /// the forward arrow).
+    var weekNavigationLabel: String {
+        switch weekOffset {
+        case 0: return "This Week"
+        case 1: return "Next Week"
+        case -1: return "Previous Week"
+        default:
+            guard let start = days.first?.date, let end = days.last?.date else { return "" }
+            return "\(start.formatted(.dateTime.month(.abbreviated).day())) – \(end.formatted(.dateTime.month(.abbreviated).day()))"
+        }
+    }
+
     /// True only when every one of the seven days is empty — the signal
     /// this week hasn't been materialized at all yet, as opposed to an
     /// ordinary week that legitimately has one or more rest days mixed in
@@ -29,9 +49,13 @@ final class WeekViewModel {
     /// day" marker in the domain model to read instead).
     var weekHasNoMaterializedData: Bool { days.allSatisfy { $0.sessions.isEmpty } }
 
-    func load(modelContext: ModelContext) {
+    /// `referenceDate` defaults to the real current moment for every
+    /// existing caller — the injection point exists solely so a
+    /// deterministic date can be supplied in tests (mirrors
+    /// `TodayViewModel.load`'s identical discipline).
+    func load(modelContext: ModelContext, referenceDate now: Date = Date()) {
         let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
+        let today = calendar.startOfDay(for: now)
         guard let referenceDate = calendar.date(byAdding: .weekOfYear, value: weekOffset, to: today),
               let weekStart = calendar.dateInterval(of: .weekOfYear, for: referenceDate)?.start else {
             days = []
@@ -42,8 +66,14 @@ final class WeekViewModel {
         var result: [WeekDay] = []
         for offset in 0..<7 {
             guard let date = calendar.date(byAdding: .day, value: offset, to: weekStart) else { continue }
-            let matchingDay = allDays.first { calendar.isDate($0.date, inSameDayAs: date) }
-            result.append(WeekDay(date: date, sessions: matchingDay?.orderedSessions ?? []))
+            // More than one `Day` row can legitimately share a calendar
+            // date — see `TodayViewModel.load`'s identical fix/rationale
+            // (`AcceptScheduleProposalUseCase.accept` empties a Session's
+            // naive materialized Day without deleting it). Aggregate every
+            // matching Day's Sessions, never just the first found.
+            let matchingDays = allDays.filter { calendar.isDate($0.date, inSameDayAs: date) }
+            let sessions = matchingDays.flatMap(\.orderedSessions).sorted { $0.sortIndex < $1.sortIndex }
+            result.append(WeekDay(date: date, sessions: sessions))
         }
         days = result
     }

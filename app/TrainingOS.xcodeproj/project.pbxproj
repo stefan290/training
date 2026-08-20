@@ -46,6 +46,10 @@
 		8C34A2A050F2424695BBD979 /* IntervalTimerResolution.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10CD7CEFC7F14311B3C11E68 /* IntervalTimerResolution.swift */; };
 		61BB21D4D95A4E8C99D753F2 /* FunctionalFitnessScoring.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A4AFDE8D6E543EFBE5EEBBF /* FunctionalFitnessScoring.swift */; };
 		C62101883CC340C5B1066C55 /* RecordAutoregulationFeedbackUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 891261D50FDB4230AAA0A045 /* RecordAutoregulationFeedbackUseCase.swift */; };
+		DAC6AE0EE29D42C9A46A7D9F /* StartPhaseUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 138F71F8ABBE4E84ADA1DFE4 /* StartPhaseUseCase.swift */; };
+		4830DA1573124F4A89F80EB7 /* RollTacticalWindowUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06B0147E3A684A29BFEE7EBB /* RollTacticalWindowUseCase.swift */; };
+		ED357995A908EC607179502D /* ResolveProgramInstanceExerciseSlotsUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 007E9E88C8519C95FE83AE1D /* ResolveProgramInstanceExerciseSlotsUseCase.swift */; };
+		883F56948B8F74975934F595 /* TransitionPhaseUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = F918DEE916BD1D1887C4A159 /* TransitionPhaseUseCase.swift */; };
 		53BF188E79C74E57B147A6A0 /* ProgramWeekGrouping.swift in Sources */ = {isa = PBXBuildFile; fileRef = C976566C00E645E1A45848A2 /* ProgramWeekGrouping.swift */; };
 		955632AEC59249A2A2DAEEB7 /* AutoregulationRatingResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71CF8B5DD20546918800C48E /* AutoregulationRatingResolver.swift */; };
 		B98BC5662FAB42929AAAB101 /* CompletedHistoryPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7B1CE4E11D4488488940A7A /* CompletedHistoryPresentation.swift */; };
@@ -118,6 +122,16 @@
 		DD4059D072B44A1EB2090522 /* HypertrophyFeedbackTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC5688EE20314C90818014A3 /* HypertrophyFeedbackTests.swift */; };
 		088A8647BA3542EB84037C83 /* EndToEndProgressionLoopTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E99C0F8B5FA4C32B38652ED /* EndToEndProgressionLoopTests.swift */; };
 		C0AECD23000A46DC9B40B8D8 /* CompletedSessionHistoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1750BE8D344473EB34B0B37 /* CompletedSessionHistoryTests.swift */; };
+		3F56B04128564DA4AB8F13D5 /* TacticalPlanningOrchestrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B86E1087B9234796B5B9D232 /* TacticalPlanningOrchestrationTests.swift */; };
+		204685DACD85B14969D78146 /* TacticalPlacementBoundaryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E56E90C63AB20EC556DB6EFA /* TacticalPlacementBoundaryTests.swift */; };
+		4C18D2906D33D4D75F53B66E /* WeekNavigationAndUpcomingPhasePreviewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 548555B1729E665AC98063B5 /* WeekNavigationAndUpcomingPhasePreviewTests.swift */; };
+		E29B16736615C80422CE3F7F /* MaintenancePlanningContextTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30201204894403D77BA34EA7 /* MaintenancePlanningContextTests.swift */; };
+		67CA5EBA7F99A723EC052F26 /* ProgramInstanceExerciseSlotResolutionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9BA50FDB38331DE711DD6E2 /* ProgramInstanceExerciseSlotResolutionTests.swift */; };
+		A781BC89D3269D430CB96C76 /* MixedModalityOrchestrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E60D1784792F2DEB5315A66 /* MixedModalityOrchestrationTests.swift */; };
+		C0EAB0737AB01D7EBC60D62C /* PhaseTransitionOrchestrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CF51CDD1896E15653E18789 /* PhaseTransitionOrchestrationTests.swift */; };
+		A33327DC683DB1B3E3B66CCF /* AnnualPlanOrchestrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 153ECE010B6C54C7C3947982 /* AnnualPlanOrchestrationTests.swift */; };
+		CBC43A59193D50A551E42143 /* AnnualPlanSeedDateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA03FC7311E8C7DEF56EE7E4 /* AnnualPlanSeedDateTests.swift */; };
+		0D3B0E76BAB571AE9B7763DC /* SeedBootstrapAndPresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A192E13A9A3D258BBE1AE006 /* SeedBootstrapAndPresentationTests.swift */; };
 		9016EB9237EA459999749E43 /* RecordEnduranceResultUseCaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2327185FDBD04486B2715F34 /* RecordEnduranceResultUseCaseTests.swift */; };
 		246EBBEEC0F24B01AAB82557 /* WorkoutTimerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F04D9ED653204C10B88A2D23 /* WorkoutTimerTests.swift */; };
 		EAC26DC9D5FA453BB0459663 /* OrchestratingUseCaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 821F86C0738E4D5BBF958B49 /* OrchestratingUseCaseTests.swift */; };
@@ -139,6 +153,7 @@
 		165842D2A2FE5C291D6AA431 /* ProgramDefinition.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7E74926ABDD6C8E79E85D8F /* ProgramDefinition.swift */; };
 		184A43448A3535A19258B9D4 /* ScoringEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA9540D3938B5FCBDB7E46EF /* ScoringEngineTests.swift */; };
 		19A84DD2B076029285474FCD /* PlanViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 338F413189BA70F30B6518DE /* PlanViewModel.swift */; };
+		707CFA9E1A3ED8B9F58C949D /* PhaseDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3D1ADE8538361C49C4E75BA /* PhaseDetailViewModel.swift */; };
 		1EB640A1AF129B7A2BD34E7D /* FunctionalFitnessResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21AA4C0C9052D7770FEB104C /* FunctionalFitnessResult.swift */; };
 		1EB7495791753B1CA69AFC21 /* ExercisePrescription.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD8F48DE83B5042E1CF35A00 /* ExercisePrescription.swift */; };
 		2F2B496199DF8687BAE97ACB /* Exercise.swift in Sources */ = {isa = PBXBuildFile; fileRef = A84043D297D699E9B910A0A6 /* Exercise.swift */; };
@@ -218,6 +233,7 @@
 		BC954381882996F2E7176E7E /* PerformanceProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9B34CC8A8AECF7AFE6EF20B /* PerformanceProfile.swift */; };
 		BF384E4EBC21DE0698934299 /* DoubleProgressionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C74461AA0E1D6FDDC442680 /* DoubleProgressionEngine.swift */; };
 		C1094D1684704135A0056249 /* SeedDataProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 961D418E8A3F58DE37C29D67 /* SeedDataProvider.swift */; };
+		3F6472F0B7D130861C2BE05D /* SeedAnnualPlanJourney.swift in Sources */ = {isa = PBXBuildFile; fileRef = 644E60F7C01B06C9C9FBC852 /* SeedAnnualPlanJourney.swift */; };
 		C4124A9BABBE0095D5AF640E /* SteadyStateResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0C640FB894DE1E8D17183AB /* SteadyStateResult.swift */; };
 		C6654285BE5C49C320C03953 /* WorkoutBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7B64E2D860E385FC7EDCB1B /* WorkoutBlock.swift */; };
 		C941457B8BEE324C10EF160C /* DomainModelScenarioTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 781B494FA06A7F0745ACDE8B /* DomainModelScenarioTests.swift */; };
@@ -253,6 +269,7 @@
 		AD4F6E6585354F6499FC2EAE /* PlanPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A355E4AB7B14E1D9472BF9A /* PlanPresentation.swift */; };
 		76987EF448DE4FA1A070E757 /* TemplateSessionPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC8803845AE248AF80D2BA1D /* TemplateSessionPreviewView.swift */; };
 		14FE2A9B9A1441A69BE6CF07 /* ProgramDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FE0FFCA13024C1AB23160AC /* ProgramDetailView.swift */; };
+		F7C3EE0B5EE21DB907682359 /* PhaseDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3D150AD03C8492E1FF8D00B /* PhaseDetailView.swift */; };
 		F2104C698605C0A1991E3260 /* ExerciseCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 822A4709B48D41F2F190CB89 /* ExerciseCatalog.swift */; };
 		F722416DAB84DBA157BBCF2F /* ModalityPersistenceRoundTripTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B341C8944D07EB6D80553D /* ModalityPersistenceRoundTripTests.swift */; };
 		FA334A52AA8CE4F7E4B15A91 /* TodayViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCFA48EE8EA729613F37D526 /* TodayViewModel.swift */; };
@@ -316,6 +333,10 @@
 		10CD7CEFC7F14311B3C11E68 /* IntervalTimerResolution.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = IntervalTimerResolution.swift; path = IntervalTimerResolution.swift; sourceTree = "<group>"; };
 		3A4AFDE8D6E543EFBE5EEBBF /* FunctionalFitnessScoring.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FunctionalFitnessScoring.swift; path = FunctionalFitnessScoring.swift; sourceTree = "<group>"; };
 		891261D50FDB4230AAA0A045 /* RecordAutoregulationFeedbackUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RecordAutoregulationFeedbackUseCase.swift; path = RecordAutoregulationFeedbackUseCase.swift; sourceTree = "<group>"; };
+		138F71F8ABBE4E84ADA1DFE4 /* StartPhaseUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = StartPhaseUseCase.swift; path = StartPhaseUseCase.swift; sourceTree = "<group>"; };
+		007E9E88C8519C95FE83AE1D /* ResolveProgramInstanceExerciseSlotsUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ResolveProgramInstanceExerciseSlotsUseCase.swift; path = ResolveProgramInstanceExerciseSlotsUseCase.swift; sourceTree = "<group>"; };
+		F918DEE916BD1D1887C4A159 /* TransitionPhaseUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TransitionPhaseUseCase.swift; path = TransitionPhaseUseCase.swift; sourceTree = "<group>"; };
+		06B0147E3A684A29BFEE7EBB /* RollTacticalWindowUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RollTacticalWindowUseCase.swift; path = RollTacticalWindowUseCase.swift; sourceTree = "<group>"; };
 		C976566C00E645E1A45848A2 /* ProgramWeekGrouping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ProgramWeekGrouping.swift; path = ProgramWeekGrouping.swift; sourceTree = "<group>"; };
 		71CF8B5DD20546918800C48E /* AutoregulationRatingResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AutoregulationRatingResolver.swift; path = AutoregulationRatingResolver.swift; sourceTree = "<group>"; };
 		C7B1CE4E11D4488488940A7A /* CompletedHistoryPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CompletedHistoryPresentation.swift; path = CompletedHistoryPresentation.swift; sourceTree = "<group>"; };
@@ -388,6 +409,16 @@
 		EC5688EE20314C90818014A3 /* HypertrophyFeedbackTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HypertrophyFeedbackTests.swift; path = HypertrophyFeedbackTests.swift; sourceTree = "<group>"; };
 		4E99C0F8B5FA4C32B38652ED /* EndToEndProgressionLoopTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = EndToEndProgressionLoopTests.swift; path = EndToEndProgressionLoopTests.swift; sourceTree = "<group>"; };
 		C1750BE8D344473EB34B0B37 /* CompletedSessionHistoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CompletedSessionHistoryTests.swift; path = CompletedSessionHistoryTests.swift; sourceTree = "<group>"; };
+		B86E1087B9234796B5B9D232 /* TacticalPlanningOrchestrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TacticalPlanningOrchestrationTests.swift; path = TacticalPlanningOrchestrationTests.swift; sourceTree = "<group>"; };
+		E56E90C63AB20EC556DB6EFA /* TacticalPlacementBoundaryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TacticalPlacementBoundaryTests.swift; path = TacticalPlacementBoundaryTests.swift; sourceTree = "<group>"; };
+		548555B1729E665AC98063B5 /* WeekNavigationAndUpcomingPhasePreviewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WeekNavigationAndUpcomingPhasePreviewTests.swift; path = WeekNavigationAndUpcomingPhasePreviewTests.swift; sourceTree = "<group>"; };
+		30201204894403D77BA34EA7 /* MaintenancePlanningContextTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MaintenancePlanningContextTests.swift; path = MaintenancePlanningContextTests.swift; sourceTree = "<group>"; };
+		C9BA50FDB38331DE711DD6E2 /* ProgramInstanceExerciseSlotResolutionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ProgramInstanceExerciseSlotResolutionTests.swift; path = ProgramInstanceExerciseSlotResolutionTests.swift; sourceTree = "<group>"; };
+		3E60D1784792F2DEB5315A66 /* MixedModalityOrchestrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MixedModalityOrchestrationTests.swift; path = MixedModalityOrchestrationTests.swift; sourceTree = "<group>"; };
+		9CF51CDD1896E15653E18789 /* PhaseTransitionOrchestrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PhaseTransitionOrchestrationTests.swift; path = PhaseTransitionOrchestrationTests.swift; sourceTree = "<group>"; };
+		153ECE010B6C54C7C3947982 /* AnnualPlanOrchestrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AnnualPlanOrchestrationTests.swift; path = AnnualPlanOrchestrationTests.swift; sourceTree = "<group>"; };
+		EA03FC7311E8C7DEF56EE7E4 /* AnnualPlanSeedDateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AnnualPlanSeedDateTests.swift; path = AnnualPlanSeedDateTests.swift; sourceTree = "<group>"; };
+		A192E13A9A3D258BBE1AE006 /* SeedBootstrapAndPresentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SeedBootstrapAndPresentationTests.swift; path = SeedBootstrapAndPresentationTests.swift; sourceTree = "<group>"; };
 		2327185FDBD04486B2715F34 /* RecordEnduranceResultUseCaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RecordEnduranceResultUseCaseTests.swift; path = RecordEnduranceResultUseCaseTests.swift; sourceTree = "<group>"; };
 		F04D9ED653204C10B88A2D23 /* WorkoutTimerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WorkoutTimerTests.swift; path = WorkoutTimerTests.swift; sourceTree = "<group>"; };
 		821F86C0738E4D5BBF958B49 /* OrchestratingUseCaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OrchestratingUseCaseTests.swift; path = OrchestratingUseCaseTests.swift; sourceTree = "<group>"; };
@@ -420,6 +451,7 @@
 		29274932924C1ADD6FDF7699 /* SetResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SetResult.swift; path = SetResult.swift; sourceTree = "<group>"; };
 		2C74461AA0E1D6FDDC442680 /* DoubleProgressionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DoubleProgressionEngine.swift; path = DoubleProgressionEngine.swift; sourceTree = "<group>"; };
 		338F413189BA70F30B6518DE /* PlanViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PlanViewModel.swift; path = PlanViewModel.swift; sourceTree = "<group>"; };
+		D3D1ADE8538361C49C4E75BA /* PhaseDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PhaseDetailViewModel.swift; path = PhaseDetailViewModel.swift; sourceTree = "<group>"; };
 		37CC4963A0824B2C495890C3 /* ScoringEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScoringEngine.swift; path = ScoringEngine.swift; sourceTree = "<group>"; };
 		395D436583402C054135DA6D /* FunctionalFitnessPrescription.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FunctionalFitnessPrescription.swift; path = FunctionalFitnessPrescription.swift; sourceTree = "<group>"; };
 		3D2F47A2B1091593A97276F5 /* BlockProgressionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = BlockProgressionEngine.swift; path = BlockProgressionEngine.swift; sourceTree = "<group>"; };
@@ -435,6 +467,7 @@
 		3A355E4AB7B14E1D9472BF9A /* PlanPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PlanPresentation.swift; path = PlanPresentation.swift; sourceTree = "<group>"; };
 		CC8803845AE248AF80D2BA1D /* TemplateSessionPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TemplateSessionPreviewView.swift; path = TemplateSessionPreviewView.swift; sourceTree = "<group>"; };
 		2FE0FFCA13024C1AB23160AC /* ProgramDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ProgramDetailView.swift; path = ProgramDetailView.swift; sourceTree = "<group>"; };
+		A3D150AD03C8492E1FF8D00B /* PhaseDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PhaseDetailView.swift; path = PhaseDetailView.swift; sourceTree = "<group>"; };
 		60554B31BA8A4E000BEC1DA5 /* BlockPrescription.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = BlockPrescription.swift; path = BlockPrescription.swift; sourceTree = "<group>"; };
 		60F44B7DA153CF555A4121AB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = Assets.xcassets; sourceTree = "<group>"; };
 		64E1458F8E3D57EF0174737D /* ProgramInstance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ProgramInstance.swift; path = ProgramInstance.swift; sourceTree = "<group>"; };
@@ -448,6 +481,7 @@
 		8E324E3DA961C03C4EA43C8D /* FunctionalFitnessMovement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FunctionalFitnessMovement.swift; path = FunctionalFitnessMovement.swift; sourceTree = "<group>"; };
 		95C24FF9B12AC7E08690FE82 /* ExercisePerformanceProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExercisePerformanceProfile.swift; path = ExercisePerformanceProfile.swift; sourceTree = "<group>"; };
 		961D418E8A3F58DE37C29D67 /* SeedDataProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SeedDataProvider.swift; path = SeedDataProvider.swift; sourceTree = "<group>"; };
+		644E60F7C01B06C9C9FBC852 /* SeedAnnualPlanJourney.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SeedAnnualPlanJourney.swift; path = SeedAnnualPlanJourney.swift; sourceTree = "<group>"; };
 		961E416D9AE157977247CA3E /* ProgressViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ProgressViewModel.swift; path = ProgressViewModel.swift; sourceTree = "<group>"; };
 		997847CA96D0A5455620B7F0 /* RecordWorkoutResultUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RecordWorkoutResultUseCase.swift; path = RecordWorkoutResultUseCase.swift; sourceTree = "<group>"; };
 		39986A89E832432AB65A8A90 /* AcceptStrategicPlanUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AcceptStrategicPlanUseCase.swift; path = AcceptStrategicPlanUseCase.swift; sourceTree = "<group>"; };
@@ -711,6 +745,7 @@
 			isa = PBXGroup;
 			children = (
 				338F413189BA70F30B6518DE /* PlanViewModel.swift */,
+				D3D1ADE8538361C49C4E75BA /* PhaseDetailViewModel.swift */,
 				BCFA48EE8EA729613F37D526 /* TodayViewModel.swift */,
 				1793CF229B5B4ECEA2495970 /* StrengthExecutionViewModel.swift */,
 				8DAEC226AF824209936AF212 /* SteadyStateExecutionViewModel.swift */,
@@ -866,6 +901,16 @@
 				EC5688EE20314C90818014A3 /* HypertrophyFeedbackTests.swift */,
 				4E99C0F8B5FA4C32B38652ED /* EndToEndProgressionLoopTests.swift */,
 				C1750BE8D344473EB34B0B37 /* CompletedSessionHistoryTests.swift */,
+				B86E1087B9234796B5B9D232 /* TacticalPlanningOrchestrationTests.swift */,
+				E56E90C63AB20EC556DB6EFA /* TacticalPlacementBoundaryTests.swift */,
+				548555B1729E665AC98063B5 /* WeekNavigationAndUpcomingPhasePreviewTests.swift */,
+				30201204894403D77BA34EA7 /* MaintenancePlanningContextTests.swift */,
+				C9BA50FDB38331DE711DD6E2 /* ProgramInstanceExerciseSlotResolutionTests.swift */,
+				3E60D1784792F2DEB5315A66 /* MixedModalityOrchestrationTests.swift */,
+				9CF51CDD1896E15653E18789 /* PhaseTransitionOrchestrationTests.swift */,
+				153ECE010B6C54C7C3947982 /* AnnualPlanOrchestrationTests.swift */,
+				EA03FC7311E8C7DEF56EE7E4 /* AnnualPlanSeedDateTests.swift */,
+				A192E13A9A3D258BBE1AE006 /* SeedBootstrapAndPresentationTests.swift */,
 				2327185FDBD04486B2715F34 /* RecordEnduranceResultUseCaseTests.swift */,
 				F04D9ED653204C10B88A2D23 /* WorkoutTimerTests.swift */,
 				821F86C0738E4D5BBF958B49 /* OrchestratingUseCaseTests.swift */,
@@ -905,6 +950,10 @@
 				D1720DD3AB5743FFB9F2AD0E /* ChangeSessionStatusUseCase.swift */,
 				DC5F6A7AAF294AD698EB9316 /* CompleteSessionUseCase.swift */,
 				891261D50FDB4230AAA0A045 /* RecordAutoregulationFeedbackUseCase.swift */,
+				138F71F8ABBE4E84ADA1DFE4 /* StartPhaseUseCase.swift */,
+				007E9E88C8519C95FE83AE1D /* ResolveProgramInstanceExerciseSlotsUseCase.swift */,
+				F918DEE916BD1D1887C4A159 /* TransitionPhaseUseCase.swift */,
+				06B0147E3A684A29BFEE7EBB /* RollTacticalWindowUseCase.swift */,
 				EF54CBE9E26A4258841BA2C4 /* IntervalProgramGenerator.swift */,
 				4640777D6C884B498DD14ACE /* IntervalMaterializer.swift */,
 				E3357B0E22BB4DAEB345D574 /* SubstituteExerciseUseCase.swift */,
@@ -933,6 +982,7 @@
 				3A355E4AB7B14E1D9472BF9A /* PlanPresentation.swift */,
 				CC8803845AE248AF80D2BA1D /* TemplateSessionPreviewView.swift */,
 				2FE0FFCA13024C1AB23160AC /* ProgramDetailView.swift */,
+				A3D150AD03C8492E1FF8D00B /* PhaseDetailView.swift */,
 			);
 			name = Plan;
 			path = Plan;
@@ -996,6 +1046,7 @@
 				822A4709B48D41F2F190CB89 /* ExerciseCatalog.swift */,
 				BE6C49BCB88C87109C9B228E /* SeedScenarios.swift */,
 				961D418E8A3F58DE37C29D67 /* SeedDataProvider.swift */,
+				644E60F7C01B06C9C9FBC852 /* SeedAnnualPlanJourney.swift */,
 			);
 			name = Seed;
 			path = Seed;
@@ -1136,6 +1187,16 @@
 				DD4059D072B44A1EB2090522 /* HypertrophyFeedbackTests.swift in Sources */,
 				088A8647BA3542EB84037C83 /* EndToEndProgressionLoopTests.swift in Sources */,
 				C0AECD23000A46DC9B40B8D8 /* CompletedSessionHistoryTests.swift in Sources */,
+				3F56B04128564DA4AB8F13D5 /* TacticalPlanningOrchestrationTests.swift in Sources */,
+				204685DACD85B14969D78146 /* TacticalPlacementBoundaryTests.swift in Sources */,
+				4C18D2906D33D4D75F53B66E /* WeekNavigationAndUpcomingPhasePreviewTests.swift in Sources */,
+				E29B16736615C80422CE3F7F /* MaintenancePlanningContextTests.swift in Sources */,
+				67CA5EBA7F99A723EC052F26 /* ProgramInstanceExerciseSlotResolutionTests.swift in Sources */,
+				A781BC89D3269D430CB96C76 /* MixedModalityOrchestrationTests.swift in Sources */,
+				C0EAB0737AB01D7EBC60D62C /* PhaseTransitionOrchestrationTests.swift in Sources */,
+				A33327DC683DB1B3E3B66CCF /* AnnualPlanOrchestrationTests.swift in Sources */,
+				CBC43A59193D50A551E42143 /* AnnualPlanSeedDateTests.swift in Sources */,
+				0D3B0E76BAB571AE9B7763DC /* SeedBootstrapAndPresentationTests.swift in Sources */,
 				9016EB9237EA459999749E43 /* RecordEnduranceResultUseCaseTests.swift in Sources */,
 				246EBBEEC0F24B01AAB82557 /* WorkoutTimerTests.swift in Sources */,
 				EAC26DC9D5FA453BB0459663 /* OrchestratingUseCaseTests.swift in Sources */,
@@ -1183,6 +1244,7 @@
 				AD4F6E6585354F6499FC2EAE /* PlanPresentation.swift in Sources */,
 				76987EF448DE4FA1A070E757 /* TemplateSessionPreviewView.swift in Sources */,
 				14FE2A9B9A1441A69BE6CF07 /* ProgramDetailView.swift in Sources */,
+				F7C3EE0B5EE21DB907682359 /* PhaseDetailView.swift in Sources */,
 				B6D54E9A81CD9A6CAE70C838 /* Theme.swift in Sources */,
 				355E4F519569B26DB7E6814D /* RootTabView.swift in Sources */,
 				E8BC41AAB80633416FED8810 /* ProgressView.swift in Sources */,
@@ -1258,6 +1320,10 @@
 				8C34A2A050F2424695BBD979 /* IntervalTimerResolution.swift in Sources */,
 				61BB21D4D95A4E8C99D753F2 /* FunctionalFitnessScoring.swift in Sources */,
 				C62101883CC340C5B1066C55 /* RecordAutoregulationFeedbackUseCase.swift in Sources */,
+				DAC6AE0EE29D42C9A46A7D9F /* StartPhaseUseCase.swift in Sources */,
+				ED357995A908EC607179502D /* ResolveProgramInstanceExerciseSlotsUseCase.swift in Sources */,
+				883F56948B8F74975934F595 /* TransitionPhaseUseCase.swift in Sources */,
+				4830DA1573124F4A89F80EB7 /* RollTacticalWindowUseCase.swift in Sources */,
 				53BF188E79C74E57B147A6A0 /* ProgramWeekGrouping.swift in Sources */,
 				955632AEC59249A2A2DAEEB7 /* AutoregulationRatingResolver.swift in Sources */,
 				B98BC5662FAB42929AAAB101 /* CompletedHistoryPresentation.swift in Sources */,
@@ -1316,6 +1382,7 @@
 				53D249389AB99EBAFE5F4B39 /* ProgressionEngine.swift in Sources */,
 				3D7248C398566C80F74071DE /* PersistenceController.swift in Sources */,
 				19A84DD2B076029285474FCD /* PlanViewModel.swift in Sources */,
+				707CFA9E1A3ED8B9F58C949D /* PhaseDetailViewModel.swift in Sources */,
 				FA334A52AA8CE4F7E4B15A91 /* TodayViewModel.swift in Sources */,
 				EDFB17DF42464241A6AFC8C7 /* StrengthExecutionViewModel.swift in Sources */,
 				C94367AAD8874B44BA829A37 /* SteadyStateExecutionViewModel.swift in Sources */,
@@ -1353,6 +1420,7 @@
 				F2104C698605C0A1991E3260 /* ExerciseCatalog.swift in Sources */,
 				30B5470C92004F59610077E8 /* SeedScenarios.swift in Sources */,
 				C1094D1684704135A0056249 /* SeedDataProvider.swift in Sources */,
+				3F6472F0B7D130861C2BE05D /* SeedAnnualPlanJourney.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

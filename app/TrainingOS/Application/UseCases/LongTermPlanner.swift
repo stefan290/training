@@ -381,6 +381,41 @@ enum LongTermPlanner {
     /// enforced downstream by `ConcurrentScheduler`/`SchedulingPipeline`
     /// (the `.userSelectedMix` reason code), not by withholding a
     /// proposal here; this call is purely advisory.
+    /// A phase's place within its own `TrainingPlan` — read-only, derived
+    /// entirely from `TrainingPlan.orderedPhases` at call time, never a
+    /// new persisted relationship (`PHASE_PLANNING_RULES.md` §42/§43 both
+    /// describe a phase's recommendation as depending on what surrounds
+    /// it; this is the one mechanism both draw from, so a Transition
+    /// policy can reuse it later without a second context type).
+    struct PlanningContext {
+        var previousPhase: TrainingPhase?
+        var nextPhase: TrainingPhase?
+
+        /// The strongest available signal for what the previous phase
+        /// actually trained: its own user-`.selected` mix always wins
+        /// over the system's `.recommended` one for it — the exact same
+        /// "a `.selected` mix always wins" precedence `TrainingMix`
+        /// itself already documents for tactical scheduling, applied
+        /// here to strategic-context resolution instead. `nil` only when
+        /// there is no previous phase, or it has neither mix yet.
+        var previousTrainingMix: TrainingMix? {
+            previousPhase?.selectedTrainingMix ?? previousPhase?.recommendedTrainingMix
+        }
+    }
+
+    /// Builds a phase's `PlanningContext` purely from `TrainingPlan
+    /// .orderedPhases` — no new stored relationship, no persistence, safe
+    /// to call from a read-only preview.
+    static func planningContext(for phase: TrainingPhase) -> PlanningContext {
+        guard let plan = phase.plan,
+              let index = plan.orderedPhases.firstIndex(where: { $0.id == phase.id }) else {
+            return PlanningContext(previousPhase: nil, nextPhase: nil)
+        }
+        let previous = index > 0 ? plan.orderedPhases[index - 1] : nil
+        let next = plan.orderedPhases.indices.contains(index + 1) ? plan.orderedPhases[index + 1] : nil
+        return PlanningContext(previousPhase: previous, nextPhase: next)
+    }
+
     static func proposeTrainingMix(phase: TrainingPhase, goal: Goal) -> [CandidateTrainingMix] {
         let templates = candidateMixTemplates(phase: phase, goal: goal)
         let availability = comparisonAvailability(goal: goal)
@@ -600,8 +635,166 @@ enum LongTermPlanner {
             ]
         case .functionalFitness:
             return [(functionalFitnessFocusedMix(), [.phaseSelectedForGoal])]
-        case .maintenance, .recovery, .transition:
+        case .maintenance:
+            return [(maintenanceMix(phase: phase, goal: goal, context: planningContext(for: phase)), [.phaseSelectedForGoal])]
+        case .recovery, .transition:
+            // Deliberately still the shared generic fallback, but via
+            // their own switch arm — never routed through `maintenanceMix`
+            // (§6: Maintenance/Recovery/Transition are distinct strategic
+            // purposes, not aliases, even where today's implementation
+            // happens to produce the same content for two of them). A
+            // Transition-specific blend of the outgoing/incoming phase's
+            // components (`PHASE_PLANNING_RULES.md` §43) can be added
+            // here independently, using the same `planningContext`
+            // mechanism Maintenance already uses, without touching
+            // Maintenance's own policy.
             return [(lowerDemandGenericMix(phase: phase), [.phaseSelectedForGoal])]
+        }
+    }
+
+    /// Maintenance's own policy seam — deliberately distinct from
+    /// `lowerDemandGenericMix` (§6), and no longer routed through it when
+    /// a preceding training state actually exists. `context
+    /// .previousTrainingMix` resolves the strongest available signal for
+    /// what was actually being trained (the preceding phase's own
+    /// selected mix, falling back to its recommendation, §7 of the
+    /// round's own spec); `maintenanceComponentDecisions` turns that into
+    /// a genuinely quality-preserving, reduced-dose mix per the
+    /// TRAININGOS-DESIGNED policy below (explicitly a designed decision,
+    /// not sourced from any sports-science reference — no such reference
+    /// exists anywhere in this repo, confirmed by a full-repo search).
+    /// Falls back to the generic fallback only when there is truly
+    /// nothing to preserve (no previous phase, or its mix has no
+    /// components) — never fabricating a preceding state that doesn't
+    /// exist.
+    private static func maintenanceMix(phase: TrainingPhase, goal: Goal, context: PlanningContext) -> TrainingMix {
+        guard let previousMix = context.previousTrainingMix, !previousMix.orderedComponents.isEmpty else {
+            return lowerDemandGenericMix(phase: phase)
+        }
+
+        let decisions = maintenanceComponentDecisions(for: previousMix.orderedComponents)
+        let mix = TrainingMix(kind: .recommended, name: "Maintenance")
+        for decision in decisions {
+            guard let newTarget = decision.newTarget else { continue }
+            mix.addComponent(TrainingMixComponent(
+                label: decision.sourceLabel, programmingSystem: decision.sourceSystem,
+                priority: decision.sourcePriority, frequency: SessionFrequency(target: newTarget)
+            ))
+        }
+        // Every component came from a genuinely omittable Supporting tier
+        // (never Primary/Secondary, which always produce >= 1) — this can
+        // only happen if the preceding mix was ENTIRELY Supporting, an
+        // edge case with nothing to meaningfully preserve.
+        guard !mix.orderedComponents.isEmpty else { return lowerDemandGenericMix(phase: phase) }
+        return mix
+    }
+
+    /// One documented decision the Maintenance transform made about a
+    /// single preceding component — deliberately structured, never an
+    /// opaque one-off calculation, so a later stage can build a real
+    /// explanation ("Reduced from 5 to 2 weekly sessions to preserve
+    /// hypertrophy with lower training demand") without re-deriving the
+    /// reasoning (§11 of the round's own spec). Not yet wired into
+    /// `PlannerDecision`/any UI — this is the seam, not the feature.
+    struct MaintenanceComponentDecision {
+        enum Outcome {
+            /// Kept, but at a lower `SessionFrequency.target` than before.
+            case preservedAtReducedFrequency
+            /// Kept at its exact previous frequency (already at or below
+            /// the maintenance floor for its own category).
+            case preservedUnchanged
+            /// A Supporting-tier component whose previous single weekly
+            /// session would only add density without being the mix's
+            /// sole remaining supporting quality — dropped, never
+            /// reduced to zero on a Primary/Secondary component.
+            case omittedAsRedundantSupporting
+        }
+        var sourceLabel: String
+        var sourceSystem: ProgrammingSystemKind?
+        var sourcePriority: GoalPriority
+        var previousTarget: Int
+        /// `nil` exactly when `outcome == .omittedAsRedundantSupporting`.
+        var newTarget: Int?
+        var outcome: Outcome
+    }
+
+    /// Hypertrophy/Powerlifting are this repo's own resistance-training
+    /// systems (§2 of the round's own spec); every other system reduces
+    /// under the non-resistance rule instead.
+    private static func isResistanceSystem(_ system: ProgrammingSystemKind?) -> Bool {
+        switch system {
+        case .hypertrophy, .powerlifting: return true
+        case .steadyState, .interval, .functionalFitness, nil: return false
+        }
+    }
+
+    /// Primary/Secondary resistance-training reduction: 2/week is the
+    /// maintenance floor for a quality that previously received
+    /// meaningful emphasis — never reduced further merely to hit a flat
+    /// percentage, and never reduced to zero.
+    private static func resistanceMaintenanceTarget(previous: Int) -> Int {
+        previous >= 3 ? 2 : max(1, previous)
+    }
+
+    /// Primary/Secondary non-resistance reduction (conditioning-style
+    /// systems carrying primary/secondary emphasis).
+    private static func nonResistanceMaintenanceTarget(previous: Int) -> Int {
+        previous >= 4 ? 2 : 1
+    }
+
+    /// Turns the preceding mix's own components into this round's
+    /// Maintenance policy decisions (§1-§3, §6 of the round's own spec):
+    /// Primary/Secondary are always preserved (reduced per their own
+    /// resistance/non-resistance rule, never to zero); Supporting is
+    /// reduced more aggressively and, once already at a single weekly
+    /// session, is preserved only when it is the mix's sole remaining
+    /// Supporting quality — otherwise it is exactly the kind of "arbitrary
+    /// filler" the spec says must not be preserved merely because it
+    /// existed before. Never increases a frequency, and never produces a
+    /// target below any `minimum` the source component already declared
+    /// (§6: an existing invariant is respected, never overridden).
+    private static func maintenanceComponentDecisions(for previousComponents: [TrainingMixComponent]) -> [MaintenanceComponentDecision] {
+        let supportingCount = previousComponents.filter { $0.priority == .supporting }.count
+
+        return previousComponents.map { component in
+            let previousTarget = component.frequency.target
+
+            // `nil` proposedTarget means "omit" (Supporting-only); every
+            // other case proposes a concrete, never-increased target.
+            let proposedTarget: Int?
+            switch component.priority {
+            case .primary, .secondary:
+                proposedTarget = isResistanceSystem(component.programmingSystem)
+                    ? resistanceMaintenanceTarget(previous: previousTarget)
+                    : nonResistanceMaintenanceTarget(previous: previousTarget)
+            case .supporting:
+                if previousTarget >= 2 {
+                    proposedTarget = 1
+                } else if supportingCount == 1 {
+                    proposedTarget = 1
+                } else {
+                    proposedTarget = nil
+                }
+            }
+
+            // Floored against any existing `minimum` the source component
+            // already declared — respected, never overridden (§6) — then
+            // the outcome is labeled from that final value, so a
+            // `minimum` that pulls a target back up is never described as
+            // a bigger reduction than it actually was.
+            let flooredTarget = proposedTarget.map { max($0, component.frequency.minimum ?? $0) }
+            let outcome: MaintenanceComponentDecision.Outcome
+            if let flooredTarget {
+                outcome = flooredTarget == previousTarget ? .preservedUnchanged : .preservedAtReducedFrequency
+            } else {
+                outcome = .omittedAsRedundantSupporting
+            }
+
+            return MaintenanceComponentDecision(
+                sourceLabel: component.label, sourceSystem: component.programmingSystem,
+                sourcePriority: component.priority, previousTarget: previousTarget,
+                newTarget: flooredTarget, outcome: outcome
+            )
         }
     }
 
@@ -794,16 +987,42 @@ enum LongTermPlanner {
         )
     }
 
+    /// Read-only preview of which `ProgramDefinition` would likely be
+    /// chosen for a not-yet-started component — reuses the exact same
+    /// `proposeProgram` ranking a real phase start would use, scored
+    /// against the same `comparisonAvailability` `proposeTrainingMix`
+    /// itself already ranks mix candidates with (never the user's real
+    /// availability, and never a real `PerformanceProfile` — a future
+    /// phase's eventual real start may see different history/readiness
+    /// by the time it actually happens, so this is deliberately a
+    /// conservative, generic preview, never a promise). Callers previewing
+    /// a not-yet-active phase must supply a disposable, never-saved
+    /// `context` (e.g. `PersistenceController.makeInMemoryContainer()`'s
+    /// own `mainContext`) — `proposeProgram` does construct a real
+    /// `ProgramDefinition` object, and this guarantees it is never
+    /// persisted into the app's real store merely by being previewed.
+    static func previewProgramCandidate(component: TrainingMixComponent, goal: Goal, context: ModelContext) -> ProgramCandidate? {
+        let availability = comparisonAvailability(goal: goal)
+        let (candidates, _) = proposeProgram(component: component, profile: nil, availability: availability, goal: goal, context: context)
+        return candidates.first
+    }
+
     // MARK: - proposeProgram
 
     /// Ranked, always-executable program candidates for one
     /// `TrainingMixComponent`, plus any conceptually-good paths
     /// TrainingOS cannot currently start. `PROGRAM_RECOMMENDATION_MODEL.md`
-    /// §1/§5.
+    /// §1/§5. `goal` is optional (default `nil`) purely for source
+    /// compatibility with existing callers that predate activity-type
+    /// resolution — every real caller that has a `Goal` available should
+    /// pass it, since it is what lets a Steady State/Interval component
+    /// resolve the user's own stated activity preference instead of
+    /// silently defaulting to running.
     static func proposeProgram(
         component: TrainingMixComponent,
         profile: PerformanceProfile?,
         availability: UserAvailability,
+        goal: Goal? = nil,
         context: ModelContext
     ) -> (candidates: [ProgramCandidate], gaps: [CapabilityGap]) {
         guard let system = component.programmingSystem else {
@@ -817,9 +1036,9 @@ enum LongTermPlanner {
         case .powerlifting:
             rawCandidates = powerliftingParameterCandidates(component: component)
         case .steadyState:
-            rawCandidates = steadyStateParameterCandidates(component: component)
+            rawCandidates = steadyStateParameterCandidates(component: component, goal: goal)
         case .interval:
-            rawCandidates = intervalParameterCandidates(component: component)
+            rawCandidates = intervalParameterCandidates(component: component, goal: goal)
         case .functionalFitness:
             rawCandidates = functionalFitnessParameterCandidates(component: component)
         }
@@ -886,9 +1105,9 @@ enum LongTermPlanner {
     /// (`PROGRAM_RECOMMENDATION_MODEL.md` §5d) — parameters are derived
     /// directly from the component's own stated frequency, a real,
     /// fully-executable configuration, just not a named preset.
-    private static func steadyStateParameterCandidates(component: TrainingMixComponent) -> [(name: String, parameters: GeneratorParameters)] {
+    private static func steadyStateParameterCandidates(component: TrainingMixComponent, goal: Goal?) -> [(name: String, parameters: GeneratorParameters)] {
         let days = max(1, component.frequency.target)
-        let activity = preferredActivityType(component: component) ?? .running
+        let activity = preferredActivityType(component: component, goal: goal) ?? .running
         let configuration = SteadyStateProgramConfiguration(
             activityType: activity, allowedActivityTypes: [activity], daysPerWeek: days,
             lengthWeeks: 4, progressionDimension: .duration
@@ -896,9 +1115,9 @@ enum LongTermPlanner {
         return [("Generated \(days)-Day \(activity.rawValue.capitalized) Steady-State", .steadyState(configuration))]
     }
 
-    private static func intervalParameterCandidates(component: TrainingMixComponent) -> [(name: String, parameters: GeneratorParameters)] {
+    private static func intervalParameterCandidates(component: TrainingMixComponent, goal: Goal?) -> [(name: String, parameters: GeneratorParameters)] {
         let days = max(1, component.frequency.target)
-        let activity = preferredActivityType(component: component) ?? .running
+        let activity = preferredActivityType(component: component, goal: goal) ?? .running
         let configuration = IntervalProgramConfiguration(
             activityType: activity, allowedActivityTypes: [activity], daysPerWeek: days,
             lengthWeeks: 4, sessionRole: .interval, workBasis: .duration,
@@ -917,7 +1136,13 @@ enum LongTermPlanner {
                 ModalityCount(modality: .gymnastics, count: 1),
                 ModalityCount(modality: .metabolicConditioning, count: 1),
             ],
-            skillDemand: .moderate, systemicDemand: .moderate, scoreType: .roundsAndReps
+            // `.roundsForTime`'s own natural score type is `.time`
+            // (`FunctionalFitnessStimulusValidator.defaultScoreType`) —
+            // `scoreType` must agree with whatever `format` below actually
+            // is, or Stage E validation always fails (this pass's own
+            // Slice 3 discovery: nothing had ever exercised this specific
+            // candidate through a real materializer before).
+            skillDemand: .moderate, systemicDemand: .moderate, scoreType: .time
         )
         let configuration = FunctionalFitnessProgramConfiguration(
             daysPerWeek: days, lengthWeeks: 4, targetStimulus: stimulus,
@@ -945,12 +1170,22 @@ enum LongTermPlanner {
         return Array(sorted.prefix(2))
     }
 
-    private static func preferredActivityType(component: TrainingMixComponent) -> ActivityType? {
-        // The component itself doesn't carry a stored ActivityType
-        // preference (that lives on `Goal.preferences`, resolved by the
-        // caller before this point); nothing here guesses one beyond the
-        // deterministic `.running` fallback used above.
-        nil
+    /// The component itself carries no stored `ActivityType` preference —
+    /// that lives on `Goal.preferences.preferredModalities`
+    /// (`ModalityPreference`, `STRATEGIC_PLAN_MODEL.md` §1d), the exact
+    /// same generic, already-existing mechanism `preferredEnduranceActivityLabel`
+    /// already reads for `enduranceEvent` phases specifically. This was
+    /// previously a stub that always returned `nil` regardless of `goal`
+    /// — a real, missing-wiring gap, not a deliberate decision — leaving
+    /// every Steady State/Interval component silently defaulting to
+    /// `.running`. Now resolves generically for any phase type: any
+    /// component whose `programmingSystem` has a matching
+    /// `ModalityPreference` uses the user's own stated activity; `nil`
+    /// (no goal, no preferences, or no matching preference) still falls
+    /// through to the same `.running` default as before.
+    private static func preferredActivityType(component: TrainingMixComponent, goal: Goal?) -> ActivityType? {
+        guard let system = component.programmingSystem else { return nil }
+        return goal?.preferences?.preferredModalities.first { $0.system == system }?.activityType
     }
 
     private static func materialize(_ parameters: GeneratorParameters, name: String, context: ModelContext) -> ProgramDefinition {

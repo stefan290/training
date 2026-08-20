@@ -284,6 +284,21 @@ struct SchedulableSession {
     /// `componentSortIndex`. Never crosses component boundaries: it only
     /// affects which of THIS component's own sessions get first claim.
     var isKeySession: Bool
+    /// Days between this session's own naive/materialized date
+    /// (`session.day?.date`) and the immediately-preceding session's, in
+    /// this same component's own materialization order — `nil` for the
+    /// first session, or when either date is unavailable. Preserves a
+    /// multi-week materializer's own intended cadence (e.g. Steady
+    /// State's weekly sessions are naively 7 days apart) so a delay
+    /// absorbed by one session — e.g. a lower-priority component losing
+    /// a day-capacity contest during a phase's shortened first week —
+    /// propagates forward as an equal delay to every later session of
+    /// the SAME component, rather than letting a later, uncontested
+    /// session snap back to its own early "earliest offset," clustering
+    /// two of that component's sessions close together and silently
+    /// overloading whichever calendar week absorbs both. See
+    /// `ConcurrentScheduler.spacingFloorOffset`.
+    var naiveGapFromPreviousSameComponentSession: Int?
 }
 
 // MARK: - Goal alignment

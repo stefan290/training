@@ -59,6 +59,19 @@ final class ProgramInstance {
     @Relationship(deleteRule: .nullify, inverse: \TrainingMixComponent.programInstance)
     var trainingMixComponents: [TrainingMixComponent] = []
 
+    /// Stage 7 addition: `PlannerDecision.programInstance`'s required
+    /// inverse — nothing reads this collection. Same reasoning as
+    /// `trainingMixComponents` above: an un-inversed to-one reference to
+    /// a type that genuinely gets deleted (this one, unlike `Goal`/
+    /// `TrainingPlan`) crashes instead of nullifying cleanly on delete —
+    /// confirmed by this pass's own deletion-invariant test. `.nullify`
+    /// keeps the audit-trail row itself intact (never cascaded away)
+    /// while letting it simply lose its instance reference, matching
+    /// `PlannerDecision`'s own doc comment: every back-reference is
+    /// optional, set only when relevant.
+    @Relationship(deleteRule: .nullify, inverse: \PlannerDecision.programInstance)
+    var plannerDecisions: [PlannerDecision] = []
+
     init(
         id: UUID = UUID(),
         ownerUserID: UUID,

@@ -15,17 +15,16 @@ struct PlanView: View {
                     if let goal = viewModel.goal {
                         GoalCard(goal: goal)
                     }
+                    Text("ANNUAL PLAN")
+                        .font(Theme.label)
+                        .foregroundStyle(Theme.textSecondary)
                     ForEach(viewModel.phases) { phase in
-                        if let instance = phase.programInstances.first, let definition = instance.programDefinition {
-                            NavigationLink {
-                                ProgramDetailView(instance: instance, definition: definition)
-                            } label: {
-                                PhaseCard(phase: phase, programName: definition.name)
-                            }
-                            .buttonStyle(.plain)
-                        } else {
-                            PhaseCard(phase: phase, programName: nil)
+                        NavigationLink {
+                            PhaseDetailView(phase: phase)
+                        } label: {
+                            PhaseCard(phase: phase)
                         }
+                        .buttonStyle(.plain)
                     }
                 }
                 .padding(16)
@@ -55,29 +54,39 @@ private struct GoalCard: View {
 
 private struct PhaseCard: View {
     let phase: TrainingPhase
-    /// `nil` when this Phase has no `ProgramInstance` yet — shown plainly,
-    /// never a tappable dead end.
-    let programName: String?
+
+    private var dateRangeLabel: String {
+        let start = phase.startDate.formatted(.dateTime.month(.abbreviated).day())
+        guard let end = phase.endDate else { return "From \(start)" }
+        return "\(start) – \(end.formatted(.dateTime.month(.abbreviated).day()))"
+    }
+
+    /// The mix actually driving (or that drove) execution — selected
+    /// always wins over recommended, mirroring `TrainingMix`'s own rule.
+    private var mixSummary: String? {
+        guard let mix = phase.selectedTrainingMix ?? phase.recommendedTrainingMix, !mix.orderedComponents.isEmpty else { return nil }
+        return PlanPresentation.mixSummary(mix)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text(phase.status == .active ? "ACTIVE PHASE" : phase.status == .completed ? "COMPLETED PHASE" : "PHASE")
-                    .font(Theme.label)
-                    .foregroundStyle(Theme.primary)
+                Text(PlanPresentation.phaseTypeLabel(phase.type))
+                    .font(Theme.heading)
+                    .foregroundStyle(Theme.textPrimary)
                 Spacer()
-                Text(PlanPresentation.phaseStatusLabel(phase.status))
+                Text(PlanPresentation.annualPlanStatusLabel(phase.status))
                     .font(Theme.label)
-                    .foregroundStyle(Theme.textSecondary)
+                    .foregroundStyle(phase.status == .active ? Theme.primary : Theme.textSecondary)
             }
-            Text(PlanPresentation.phaseTypeLabel(phase.type))
-                .font(Theme.heading)
-                .foregroundStyle(Theme.textPrimary)
+            Text(dateRangeLabel)
+                .font(Theme.numeric)
+                .foregroundStyle(Theme.textSecondary)
 
-            if let programName {
+            if let mixSummary {
                 HStack {
-                    Text("PROGRAM · \(programName)")
-                        .font(Theme.numeric)
+                    Text(mixSummary)
+                        .font(Theme.label)
                         .foregroundStyle(Theme.textSecondary)
                     Spacer()
                     Image(systemName: "chevron.right")
@@ -89,6 +98,15 @@ private struct PhaseCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
         .background(Theme.surfacePrimary, in: RoundedRectangle(cornerRadius: 12))
+        // A custom NavigationLink label with .buttonStyle(.plain) only
+        // reliably registers taps on rendered content (text glyphs), not
+        // on the background/padding around it (same Stage 6E finding as
+        // TodayView's SessionCard). An unconfigured phase renders fewer
+        // lines (no mixSummary row), shrinking its real hit-testable area
+        // well below the card's visible bounds — this guarantees the
+        // entire card is one uniform tap target regardless of how much
+        // content a given phase happens to render.
+        .contentShape(Rectangle())
     }
 }
 

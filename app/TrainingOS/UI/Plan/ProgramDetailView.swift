@@ -10,12 +10,33 @@ import SwiftData
 /// `ProgramDefinition.orderedTemplateSessions` graph directly; no
 /// parallel dataset.
 struct ProgramDetailView: View {
-    let instance: ProgramInstance
+    /// `nil` only for a not-yet-started phase's strategic preview (see
+    /// `PhaseDetailViewModel.upcomingComponentPreviews`) — every week then
+    /// falls through to the template-only branch below, exactly as an
+    /// active program's own not-yet-materialized future week already does.
+    let instance: ProgramInstance?
     let definition: ProgramDefinition
+
+    init(instance: ProgramInstance, definition: ProgramDefinition) {
+        self.instance = instance
+        self.definition = definition
+    }
+
+    /// A not-yet-started phase's recommended program — real,
+    /// already-known template structure, never a fabricated schedule.
+    init(previewDefinition definition: ProgramDefinition) {
+        self.instance = nil
+        self.definition = definition
+    }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
+                if instance == nil {
+                    Text("RECOMMENDED — NOT YET STARTED")
+                        .font(Theme.label)
+                        .foregroundStyle(Theme.textSecondary)
+                }
                 ForEach(0..<max(definition.lengthWeeks, 1), id: \.self) { weekIndex in
                     weekSection(weekIndex)
                 }
@@ -58,7 +79,8 @@ struct ProgramDetailView: View {
     }
 
     private func realSessions(forWeek weekIndex: Int) -> [Session] {
-        ProgramWeekGrouping.realSessions(in: instance, forWeek: weekIndex)
+        guard let instance else { return [] }
+        return ProgramWeekGrouping.realSessions(in: instance, forWeek: weekIndex)
     }
 
     private func realSessionRow(_ session: Session) -> some View {

@@ -37,20 +37,34 @@ struct WeekView: View {
     }
 
     /// Part S: at minimum Previous/Current/Next Week, current week always
-    /// obvious.
+    /// obvious. Compact icon + center-label layout — guaranteed to fit on
+    /// any device width/Dynamic Type size, unlike three full-text bordered
+    /// buttons sharing one row. "This Week"/"Current Week" stays a single
+    /// button (disabled, not hidden, when already on the current week) so
+    /// its width never shifts between states.
     private var weekNavigationBar: some View {
-        HStack {
-            Button("Previous Week") { viewModel.goToPreviousWeek(modelContext: modelContext) }
-            Spacer()
-            if viewModel.isCurrentWeek {
-                Text("This Week")
-                    .font(Theme.label)
-                    .foregroundStyle(Theme.primary)
-            } else {
-                Button("Current Week") { viewModel.goToCurrentWeek(modelContext: modelContext) }
+        HStack(spacing: 8) {
+            Button {
+                viewModel.goToPreviousWeek(modelContext: modelContext)
+            } label: {
+                Image(systemName: "chevron.left")
             }
-            Spacer()
-            Button("Next Week") { viewModel.goToNextWeek(modelContext: modelContext) }
+            .accessibilityLabel("Previous Week")
+
+            Button {
+                viewModel.goToCurrentWeek(modelContext: modelContext)
+            } label: {
+                Text(viewModel.weekNavigationLabel)
+                    .frame(maxWidth: .infinity)
+            }
+            .disabled(viewModel.isCurrentWeek)
+
+            Button {
+                viewModel.goToNextWeek(modelContext: modelContext)
+            } label: {
+                Image(systemName: "chevron.right")
+            }
+            .accessibilityLabel("Next Week")
         }
         .buttonStyle(.bordered)
         .font(Theme.label)
