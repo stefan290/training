@@ -85,6 +85,14 @@ final class WorkoutBlock {
     @Relationship(deleteRule: .nullify, inverse: \FunctionalFitnessResult.workoutBlock)
     var functionalFitnessResult: FunctionalFitnessResult?
 
+    /// Stage 8B addition: `ReadinessAdaptationDecision.workoutBlock`'s
+    /// required inverse — nothing reads this collection. Same established
+    /// fix as `ExercisePrescription.readinessAdaptationDecisions`; lets a
+    /// Level 4 (block removal) decision survive with `workoutBlock == nil`
+    /// if this block is ever deleted out from under it.
+    @Relationship(deleteRule: .nullify, inverse: \ReadinessAdaptationDecision.workoutBlock)
+    var readinessAdaptationDecisions: [ReadinessAdaptationDecision] = []
+
     init(
         id: UUID = UUID(),
         type: WorkoutBlockType,

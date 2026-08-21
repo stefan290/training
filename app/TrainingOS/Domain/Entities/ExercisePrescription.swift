@@ -95,6 +95,14 @@ final class ExercisePrescription {
     @Relationship(deleteRule: .nullify, inverse: \SetResult.exercisePrescription)
     var loggedSetResults: [SetResult] = []
 
+    /// Stage 8B addition: `ReadinessAdaptationDecision.exercisePrescription`'s
+    /// required inverse — nothing reads this collection. Same established
+    /// "un-inversed to-one reference to a deletable type crashes instead of
+    /// nullifying" fix as `sourceExerciseSlot`/`ExerciseSlot
+    /// .materializedPrescriptions` above.
+    @Relationship(deleteRule: .nullify, inverse: \ReadinessAdaptationDecision.exercisePrescription)
+    var readinessAdaptationDecisions: [ReadinessAdaptationDecision] = []
+
     init(
         id: UUID = UUID(),
         exercise: Exercise? = nil,
@@ -131,5 +139,17 @@ final class ExercisePrescription {
 
     var orderedSetPrescriptions: [SetPrescription] {
         setPrescriptions.sorted { $0.sortIndex < $1.sortIndex }
+    }
+
+    /// Stage 8B addition: `orderedSetPrescriptions` minus any set a Level 2
+    /// readiness adaptation marked `isAdaptedAway` — what should actually
+    /// be executed/logged/previewed today. `orderedSetPrescriptions` itself
+    /// is deliberately left unchanged everywhere else: it must keep meaning
+    /// "the true original prescription" so `AutoregulationRatingResolver
+    /// .previousWeekSetCount` and any other reader of the full historical
+    /// count is never affected by a same-day adaptation
+    /// (`READINESS_PROGRESSION_CONTRACT.md` §3/§4).
+    var executableSetPrescriptions: [SetPrescription] {
+        orderedSetPrescriptions.filter { !$0.isAdaptedAway }
     }
 }

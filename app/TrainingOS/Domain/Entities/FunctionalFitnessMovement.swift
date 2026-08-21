@@ -26,6 +26,26 @@ final class FunctionalFitnessMovement {
     var loadKilograms: Double?
     var minuteSlot: Int?
 
+    /// Stage 8B addition, mirroring `ExercisePrescription.substitutionUsed`/
+    /// `.substitutionReason` exactly: whether the user (or the readiness
+    /// adaptation flow, on the user's behalf) substituted a different
+    /// exercise than prescribed, and why.
+    var substitutionUsed: Bool
+    /// Stage 8B addition, mirroring `ExercisePrescription.sourceExerciseSlot`
+    /// exactly (its own Stage 6B doc comment explains the reasoning in
+    /// full): the `ExerciseSlot` this movement was materialized from, when
+    /// known — lets `SubstituteFunctionalFitnessMovementUseCase` validate a
+    /// same-session substitution through the same `SubstitutionValidator`
+    /// every other slot-based substitution already uses. `nil` for a
+    /// movement created outside the slot-based materializer path (an ad
+    /// hoc/seed-authored movement) — substitution stays unavailable for
+    /// those rather than inventing an unconstrained substitution (CLAUDE.md
+    /// rule 10). The delete rule lives on
+    /// `ExerciseSlot.materializedFunctionalFitnessMovements` — this is a
+    /// plain inverse property.
+    var sourceExerciseSlot: ExerciseSlot?
+    var substitutionReason: SubstitutionReason?
+
     /// Nothing in application code reads this — it exists purely so
     /// `FunctionalFitnessPerformedMovement.prescribedMovement` has a real
     /// inverse to nullify against on delete (an un-inversed to-one
@@ -35,6 +55,13 @@ final class FunctionalFitnessMovement {
     @Relationship(deleteRule: .nullify, inverse: \FunctionalFitnessPerformedMovement.prescribedMovement)
     var performedAttempts: [FunctionalFitnessPerformedMovement] = []
 
+    /// Stage 8B addition: `ReadinessAdaptationDecision
+    /// .functionalFitnessMovement`'s required inverse — nothing reads this
+    /// collection. Same established fix as `ExercisePrescription
+    /// .readinessAdaptationDecisions`.
+    @Relationship(deleteRule: .nullify, inverse: \ReadinessAdaptationDecision.functionalFitnessMovement)
+    var readinessAdaptationDecisions: [ReadinessAdaptationDecision] = []
+
     init(
         id: UUID = UUID(),
         exercise: Exercise? = nil,
@@ -42,7 +69,9 @@ final class FunctionalFitnessMovement {
         calories: Int? = nil,
         distanceMeters: Double? = nil,
         loadKilograms: Double? = nil,
-        minuteSlot: Int? = nil
+        minuteSlot: Int? = nil,
+        substitutionUsed: Bool = false,
+        substitutionReason: SubstitutionReason? = nil
     ) {
         self.id = id
         self.exercise = exercise
@@ -52,5 +81,7 @@ final class FunctionalFitnessMovement {
         self.distanceMeters = distanceMeters
         self.loadKilograms = loadKilograms
         self.minuteSlot = minuteSlot
+        self.substitutionUsed = substitutionUsed
+        self.substitutionReason = substitutionReason
     }
 }

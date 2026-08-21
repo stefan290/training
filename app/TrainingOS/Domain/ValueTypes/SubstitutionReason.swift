@@ -18,4 +18,11 @@ enum SubstitutionReason: String, Codable, CaseIterable {
     case exerciseUnavailable
     case equipmentUnavailable
     case userPreference
+    /// Stage 8B addition: a same-session substitution proposed by
+    /// `EvaluateReadinessAdaptationUseCase` and accepted by the user. The
+    /// *specific* trigger (pain vs. stiffness vs. soreness, and which body
+    /// area) is never exploded into more `SubstitutionReason` cases — it
+    /// lives on the paired `ReadinessAdaptationDecision.triggeringSignals`
+    /// instead (Stage 8A decision D7).
+    case readinessAdaptation
 }

@@ -6,6 +6,10 @@ import SwiftData
 struct TodayView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var viewModel = TodayViewModel()
+    /// Stage 8B: the Session currently going through the readiness gate —
+    /// presented before `viewModel.start` ever fires
+    /// (`READINESS_ADAPTATION_PIPELINE.md` §0).
+    @State private var readinessGateSession: Session?
 
     var body: some View {
         NavigationStack {
@@ -23,7 +27,7 @@ struct TodayView: View {
                             } label: {
                                 SessionCard(
                                     session: session,
-                                    onStart: { viewModel.start(session, modelContext: modelContext) },
+                                    onStart: { readinessGateSession = session },
                                     onMarkMissed: { viewModel.markMissed(session, modelContext: modelContext) }
                                 )
                             }
@@ -41,6 +45,23 @@ struct TodayView: View {
                                 .foregroundStyle(Theme.primary)
                         }
                         .padding(.top, 4)
+
+                        #if DEBUG
+                        // Stage 8B manual-acceptance aid, debug-only —
+                        // compiled out of Release builds. Adds several
+                        // independent, ad-hoc Sessions scheduled for today
+                        // so each acceptance scenario has its own testable
+                        // Session, without starting any future-dated
+                        // Session early and without touching the annual/
+                        // tactical plan. See DebugAcceptanceFixturesUseCase.
+                        Button("Add Stage 8B Acceptance Test Sessions") {
+                            try? DebugAcceptanceFixturesUseCase.seedIfNeeded(context: modelContext)
+                            viewModel.load(modelContext: modelContext)
+                        }
+                        .font(Theme.label)
+                        .foregroundStyle(Theme.textSecondary)
+                        .padding(.top, 12)
+                        #endif
                     }
                     .padding(16)
                 }
@@ -49,6 +70,12 @@ struct TodayView: View {
             .navigationTitle("Today")
         }
         .task { viewModel.load(modelContext: modelContext) }
+        .fullScreenCover(item: $readinessGateSession) { session in
+            ReadinessGateFlow(session: session) {
+                readinessGateSession = nil
+                viewModel.start(session, modelContext: modelContext)
+            }
+        }
     }
 }
 

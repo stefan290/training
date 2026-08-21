@@ -81,6 +81,14 @@ final class ExerciseSlot {
     @Relationship(deleteRule: .nullify, inverse: \ExercisePrescription.sourceExerciseSlot)
     var materializedPrescriptions: [ExercisePrescription] = []
 
+    /// Stage 8B addition: `FunctionalFitnessMovement.sourceExerciseSlot`'s
+    /// required inverse — nothing reads this collection. Exact same
+    /// reasoning as `materializedPrescriptions` above, one level over, for
+    /// Functional Fitness's live movements instead of strength's live
+    /// prescriptions.
+    @Relationship(deleteRule: .nullify, inverse: \FunctionalFitnessMovement.sourceExerciseSlot)
+    var materializedFunctionalFitnessMovements: [FunctionalFitnessMovement] = []
+
     init(
         id: UUID = UUID(),
         name: String,

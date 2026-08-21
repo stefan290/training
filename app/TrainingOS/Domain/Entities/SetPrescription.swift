@@ -17,6 +17,19 @@ final class SetPrescription {
     var targetWeight: Double?
     var targetRir: Int?
     var isWarmup: Bool
+    /// Stage 8B addition: `true` when a Level 2 readiness adaptation
+    /// removed this set from TODAY's executable prescription
+    /// (`ReadinessAdaptationDecision`, `actionKind == .setCountReduced`).
+    /// **Never delete the row instead** — the historical model must still
+    /// answer "originally 4 sets were prescribed" even after an adaptation
+    /// reduces today's executable count to 3
+    /// (`READINESS_PROGRESSION_CONTRACT.md` §4). `false` is the default and
+    /// the only value for every set prescribed outside a readiness
+    /// adaptation — this is a distinct state from "skipped/missed," never
+    /// overloaded onto an existing skip concept, so future progression
+    /// logic never mistakes an intentional adaptation for a failed or
+    /// forgotten set.
+    var isAdaptedAway: Bool
 
     /// Nullify, not cascade: a SetResult must outlive the prescription that
     /// produced it (e.g. if a program is later edited or removed).
@@ -29,7 +42,8 @@ final class SetPrescription {
         repRangeHigh: Int,
         targetWeight: Double? = nil,
         targetRir: Int? = nil,
-        isWarmup: Bool = false
+        isWarmup: Bool = false,
+        isAdaptedAway: Bool = false
     ) {
         self.id = id
         self.sortIndex = 0
@@ -38,6 +52,7 @@ final class SetPrescription {
         self.targetWeight = targetWeight
         self.targetRir = targetRir
         self.isWarmup = isWarmup
+        self.isAdaptedAway = isAdaptedAway
     }
 
     /// The only way application code should attach a SetResult (the

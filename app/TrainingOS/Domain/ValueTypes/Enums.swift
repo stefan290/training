@@ -196,4 +196,13 @@ enum ProgressionReasonCode: String, Codable, CaseIterable {
     case calibrationRequired
     case recencyDecay
     case substitutionEstimate
+    /// Stage 8B addition: distinct from `.hold`. `.hold` means "the
+    /// logged performance itself didn't clear the bar for an increase."
+    /// `.readinessAdaptedHold` means "today's prescription was
+    /// intentionally reduced by an accepted readiness adaptation, so
+    /// today's result is neutral evidence about the unperformed original
+    /// prescription — never treated as a failed attempt at the original,
+    /// and never treated as proof the adapted number should become the
+    /// new anchor." See `READINESS_PROGRESSION_CONTRACT.md` §3.
+    case readinessAdaptedHold
 }

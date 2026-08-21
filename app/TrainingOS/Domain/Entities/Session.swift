@@ -55,6 +55,16 @@ final class Session {
     @Relationship(deleteRule: .cascade, inverse: \WorkoutBlock.session)
     var blocks: [WorkoutBlock] = []
 
+    /// Stage 8B addition: what the user reported before starting this
+    /// Session, at most one — cascade, mirroring `WorkoutBlock.result`'s
+    /// exact shape. A `ReadinessCheckIn` has no meaning outside the
+    /// Session it was reported for, same reasoning as `Session -> WorkoutBlock`
+    /// above; deleting the Session deletes its own readiness report along
+    /// with it. This is a real, additive schema change on `Session` — see
+    /// `DELETE_RULE_MATRIX.md`'s Stage 8B section.
+    @Relationship(deleteRule: .cascade, inverse: \ReadinessCheckIn.session)
+    var readinessCheckIn: ReadinessCheckIn?
+
     init(
         id: UUID = UUID(),
         scheduledTime: Date? = nil,
@@ -90,5 +100,12 @@ final class Session {
     /// this property, never sort by insertion order.
     var orderedBlocks: [WorkoutBlock] {
         blocks.sorted { $0.sortIndex < $1.sortIndex }
+    }
+
+    /// The only way application code should attach a ReadinessCheckIn.
+    /// Mutates exactly one side (`readinessCheckIn`); SwiftData maintains
+    /// `checkIn.session` from the declared inverse.
+    func attachReadinessCheckIn(_ checkIn: ReadinessCheckIn) {
+        readinessCheckIn = checkIn
     }
 }

@@ -417,3 +417,45 @@ No other Stage 6B addition touches a relationship: `SessionCompletionContext`/
 the pre-existing `.sourceSetResult`/`.sourceWorkoutResult`/
 `.sourceFunctionalFitnessResult` nullify pattern exactly) are the only
 other schema changes this stage made.
+
+## Stage 8B additions
+
+Two new entities (`ReadinessCheckIn`, `ReadinessAdaptationDecision`), one
+additive relationship on the existing `Session` entity, one additive
+field on the existing `SetPrescription` entity, and additive substitution
+plumbing on `FunctionalFitnessMovement` mirroring `ExercisePrescription`'s
+own Stage 6B fields exactly. **`Session` genuinely receives an additive
+schema change here** — stated plainly rather than minimized, per explicit
+instruction: `Session.readinessCheckIn: ReadinessCheckIn?` is a real new
+`@Relationship`, not a side effect of an unrelated change.
+
+| Parent | Child | Relationship | Delete rule | Expected behaviour | Why |
+|---|---|---|---|---|---|
+| `Session` | `ReadinessCheckIn` | `readinessCheckIn: ReadinessCheckIn?` | `.cascade` | Deleting a Session deletes its own readiness report. | A `ReadinessCheckIn` has no meaning outside the one Session it was reported for — mirrors `Session -> WorkoutBlock`'s identical cascade reasoning, not the performance-critical `.nullify` rows above (this is never `SetResult`/`PersonalRecord`-shaped data). |
+| `ExercisePrescription` | `ReadinessAdaptationDecision` | `readinessAdaptationDecisions: [ReadinessAdaptationDecision]` (required inverse only; nothing reads it) | `.nullify` | Deleting the prescription (e.g. its Session is deleted) nullifies `decision.exercisePrescription`; the decision row survives. | Same established "un-inversed to-one reference to a deletable type crashes instead of nullifying" fix as `ExercisePrescription.sourceExerciseSlot`/`ExerciseSlot.materializedPrescriptions`. A readiness decision is its own permanent audit record (mirrors `PlannerDecision`) and must outlive the session-scoped object it was about. |
+| `FunctionalFitnessMovement` | `ReadinessAdaptationDecision` | `readinessAdaptationDecisions: [ReadinessAdaptationDecision]` (required inverse only) | `.nullify` | Same reasoning, one level over for Functional Fitness's live movements. | Same reasoning. |
+| `WorkoutBlock` | `ReadinessAdaptationDecision` | `readinessAdaptationDecisions: [ReadinessAdaptationDecision]` (required inverse only) | `.nullify` | Same reasoning — lets a Level 4 (block removal) decision survive `workoutBlock == nil` if the block is later deleted. | Same reasoning. |
+| `ReadinessCheckIn` | `ReadinessAdaptationDecision` | `adaptationDecisions: [ReadinessAdaptationDecision]` (required inverse only) | `.nullify` | Deleting the check-in nullifies `decision.readinessCheckIn`; the decision survives with its own fields (`triggeringSignals`, `explanation`, etc.) already copied, mirroring `PersonalRecord`'s "copy the value, keep the pointer as traceability only" pattern. | Same reasoning. |
+| `ExerciseSlot` | `FunctionalFitnessMovement` | `materializedFunctionalFitnessMovements: [FunctionalFitnessMovement]` (required inverse only) | `.nullify` | Mirrors `ExerciseSlot.materializedPrescriptions` exactly, one level over for Functional Fitness's live movements — lets Change-Movement-style substitution trace back to the slot it came from, and lets that link nullify cleanly if the slot's `ProgramDefinition` is deleted. | CLAUDE.md rule 1 — a live movement's history must never depend on the template that originally produced it. |
+
+**Additive, non-relationship fields:** `SetPrescription.isAdaptedAway: Bool`
+(default `false`) — a Level 2 readiness adaptation marks a set
+`isAdaptedAway` rather than deleting its row, so
+`AutoregulationRatingResolver.previousWeekSetCount` and any other reader
+of `orderedSetPrescriptions` keeps seeing the TRUE original prescribed
+count; `ExercisePrescription.executableSetPrescriptions` (computed,
+non-persisted) filters those out for "what to actually execute/log/preview
+today." `FunctionalFitnessMovement.substitutionUsed`/`.substitutionReason`/
+`.sourceExerciseSlot` mirror `ExercisePrescription`'s identical
+Stage 6B-established fields, letting Functional Fitness reuse the exact
+same this-session-only substitution mechanism.
+
+### Confirms rule 1/2 hold for the new types
+
+- `ReadinessCheckIn`/`ReadinessAdaptationDecision` never reference
+  `SetResult`/`WorkoutResult`/`PersonalRecord`/any `*PerformanceProfile`,
+  and nothing in this stage's schema gives either type a path to
+  performance history.
+- `ProgramDefinition`/`TrainingWeek`/the template graph gained no new
+  fields this stage — readiness is a session-local overlay, never
+  template-level state (CLAUDE.md rule 2).

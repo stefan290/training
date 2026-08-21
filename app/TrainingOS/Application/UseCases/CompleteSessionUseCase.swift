@@ -66,7 +66,13 @@ enum CompleteSessionUseCase {
             for prescription in block.orderedPrescriptions {
                 guard let exercise = prescription.exercise, !prescription.loggedSetResults.isEmpty else { continue }
 
-                let targets = prescription.orderedSetPrescriptions.map {
+                // Stage 8B (D9 fix): today's EXECUTABLE targets, not the
+                // full original prescription — excludes any set a Level 2
+                // readiness adaptation marked `isAdaptedAway` so the
+                // target count naturally lines up with what was actually
+                // asked of the athlete today.
+                let executable = prescription.executableSetPrescriptions
+                let targets = executable.map {
                     SetTarget(repRangeLow: $0.repRangeLow, repRangeHigh: $0.repRangeHigh, targetRir: $0.targetRir)
                 }
                 guard !targets.isEmpty else { continue }
@@ -84,6 +90,28 @@ enum CompleteSessionUseCase {
                     targets: targets, latestResults: outcomes, hasUsableHistory: true,
                     equipmentIncrement: increment, lastKnownWeight: lastWeight
                 ))
+
+                // Stage 8B (D9 fix): an accepted readiness adaptation makes
+                // today's completed result NEUTRAL evidence about the
+                // unperformed original prescription — never a failed
+                // attempt at it, and never proof the adapted number should
+                // become the new anchor (READINESS_PROGRESSION_CONTRACT.md
+                // §3). Only overrides the engine's own verdict when it
+                // would otherwise read as a load increase; a genuine miss
+                // against the adapted targets (`.hold`/etc.) still reports
+                // normally — "existing methodology may react conservatively
+                // as appropriate" is exactly the unmodified engine output.
+                if output.reasonCode == .loadIncrease,
+                   let adaptation = prescription.readinessAdaptationDecisions.first(where: { $0.userResponse == .accepted }) {
+                    items.append(ProgressionPreviewItem(
+                        exerciseName: exercise.canonicalName,
+                        reasonCode: .readinessAdaptedHold,
+                        recommendedWeight: adaptation.originalWeight ?? lastWeight,
+                        inputsSummary: "Today's prescription was reduced by an accepted readiness adaptation (\(adaptation.actionKind.rawValue)). Completing the adapted session neither counts as failing nor as progressing the original prescription — holding at the pre-adaptation state."
+                    ))
+                    continue
+                }
+
                 items.append(ProgressionPreviewItem(
                     exerciseName: exercise.canonicalName, reasonCode: output.reasonCode,
                     recommendedWeight: output.recommendedWeight, inputsSummary: output.inputsSummary

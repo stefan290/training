@@ -65,6 +65,9 @@ enum PersistenceController {
         TrainingMixComponent.self,
         // Stage 5B additions — see LONG_TERM_PLANNER.md/PLAN_REVISION_MODEL.md.
         PlannerDecision.self,
+        // Stage 8B additions — see READINESS_MODEL.md/READINESS_PROGRESSION_CONTRACT.md.
+        ReadinessCheckIn.self,
+        ReadinessAdaptationDecision.self,
     ])
 
     /// The app's on-disk, offline-first store. Local storage is
