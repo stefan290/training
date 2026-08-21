@@ -65,6 +65,13 @@ final class Session {
     @Relationship(deleteRule: .cascade, inverse: \ReadinessCheckIn.session)
     var readinessCheckIn: ReadinessCheckIn?
 
+    /// Stage 9B addition: the generated pre-workout warm-up for this
+    /// Session, at most one — cascade, mirroring `readinessCheckIn`'s
+    /// exact shape. A `WarmupSequence` has no meaning outside the Session
+    /// it was generated for.
+    @Relationship(deleteRule: .cascade, inverse: \WarmupSequence.session)
+    var warmupSequence: WarmupSequence?
+
     init(
         id: UUID = UUID(),
         scheduledTime: Date? = nil,
@@ -107,5 +114,12 @@ final class Session {
     /// `checkIn.session` from the declared inverse.
     func attachReadinessCheckIn(_ checkIn: ReadinessCheckIn) {
         readinessCheckIn = checkIn
+    }
+
+    /// The only way application code should attach a WarmupSequence.
+    /// Mutates exactly one side (`warmupSequence`); SwiftData maintains
+    /// `sequence.session` from the declared inverse.
+    func attachWarmupSequence(_ sequence: WarmupSequence) {
+        warmupSequence = sequence
     }
 }

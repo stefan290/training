@@ -24,18 +24,34 @@ final class DebugAcceptanceFixturesUseCaseTests: XCTestCase {
         )
     }
 
-    func testSeedsSixIndependentSessionsScheduledForToday() throws {
+    func testSeedsSevenIndependentSessionsScheduledForToday() throws {
         try seedRealJourney()
         try DebugAcceptanceFixturesUseCase.seedIfNeeded(context: context)
 
         let sessions = try context.fetch(FetchDescriptor<Session>())
         let acceptanceSessions = sessions.filter { $0.name.hasPrefix("Acceptance — ") }
-        XCTAssertEqual(acceptanceSessions.count, 6, "one independent session per acceptance scenario")
+        XCTAssertEqual(acceptanceSessions.count, 7, "one independent session per acceptance scenario, including the Stage 9B multi-exercise lower-body fixture")
         XCTAssertTrue(acceptanceSessions.allSatisfy { $0.status == .scheduled })
-        XCTAssertTrue(acceptanceSessions.allSatisfy { $0.programInstance == nil }, "ad hoc, outside any active program instance")
 
         let today = Calendar.current.startOfDay(for: Date())
         XCTAssertTrue(acceptanceSessions.allSatisfy { Calendar.current.isDate($0.day?.date ?? .distantPast, inSameDayAs: today) })
+    }
+
+    /// Stage 9B: the real, multi-exercise lower-body/hinge fixture
+    /// (`SeedScenarios.materializedLowerASession`), surfaced so Case B's
+    /// generated warm-up can be visually inspected — proven here to be the
+    /// exact real production materialization, not a stand-in.
+    func testLowerBodyFixtureIsTheRealMultiExerciseMaterializedSession() throws {
+        try seedRealJourney()
+        try DebugAcceptanceFixturesUseCase.seedIfNeeded(context: context)
+
+        let sessions = try context.fetch(FetchDescriptor<Session>())
+        let lowerBodySession = try XCTUnwrap(sessions.first { $0.name == "Acceptance — Lower Body (multi-exercise)" })
+        let exerciseNames = Set(lowerBodySession.orderedBlocks.flatMap(\.orderedPrescriptions).compactMap { $0.exercise?.canonicalName })
+
+        XCTAssertEqual(exerciseNames, ["Back Squat", "Romanian Deadlift", "Leg Press", "Leg Curl", "Calf Raise"])
+        XCTAssertEqual(lowerBodySession.status, .scheduled)
+        XCTAssertNotNil(lowerBodySession.programInstance, "materialized through the real StrengthMaterializer path, which always attaches a ProgramInstance")
     }
 
     func testLocalPainScenarioHasTwoExercisesTargetingDifferentMuscleGroups() throws {
@@ -60,9 +76,14 @@ final class DebugAcceptanceFixturesUseCaseTests: XCTestCase {
 
         let sessions = try context.fetch(FetchDescriptor<Session>())
         let acceptanceSessions = sessions.filter { $0.name.hasPrefix("Acceptance — ") }
-        XCTAssertEqual(acceptanceSessions.count, 6, "a second seed call must never duplicate the fixtures")
+        XCTAssertEqual(acceptanceSessions.count, 7, "a second seed call must never duplicate the fixtures")
     }
 
+    /// REVISED: the lower-body fixture legitimately creates its own new,
+    /// independent `ProgramInstance` (via the real materializer path) —
+    /// the invariant under test is that every PRE-EXISTING ProgramInstance/
+    /// TrainingPhase/Session from the real annual-plan journey survives
+    /// completely unchanged, not that zero new ones are ever created.
     func testNeverTouchesTheRealAnnualPlanJourney() throws {
         try seedRealJourney()
         let programInstancesBefore = try context.fetch(FetchDescriptor<ProgramInstance>()).map(\.id)
@@ -71,12 +92,12 @@ final class DebugAcceptanceFixturesUseCaseTests: XCTestCase {
 
         try DebugAcceptanceFixturesUseCase.seedIfNeeded(context: context)
 
-        let programInstancesAfter = try context.fetch(FetchDescriptor<ProgramInstance>()).map(\.id)
-        let phasesAfter = try context.fetch(FetchDescriptor<TrainingPhase>()).map(\.id)
+        let programInstancesAfter = Set(try context.fetch(FetchDescriptor<ProgramInstance>()).map(\.id))
+        let phasesAfter = Set(try context.fetch(FetchDescriptor<TrainingPhase>()).map(\.id))
         let realSessionsAfter = try context.fetch(FetchDescriptor<Session>()).filter { !$0.name.hasPrefix("Acceptance — ") }.map(\.id)
 
-        XCTAssertEqual(Set(programInstancesBefore), Set(programInstancesAfter), "no ProgramInstance created, deleted, or reassigned")
-        XCTAssertEqual(Set(phasesBefore), Set(phasesAfter), "no TrainingPhase touched")
+        XCTAssertTrue(Set(programInstancesBefore).isSubset(of: programInstancesAfter), "every pre-existing ProgramInstance survives untouched")
+        XCTAssertEqual(Set(phasesBefore), phasesAfter, "no TrainingPhase touched — the lower-body fixture's new ProgramInstance is never attached to any existing Phase")
         XCTAssertEqual(Set(realSessionsBefore), Set(realSessionsAfter), "every pre-existing real Session is untouched")
     }
 }

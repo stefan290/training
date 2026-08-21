@@ -64,6 +64,12 @@ enum MovementFunction: String, Codable, CaseIterable {
     case carry
     case locomotion
     case trunk
+    /// Stage 9B addition: no existing case distinguished jumping/plyometric
+    /// movements (e.g. box jumps) from any other lower-body pattern —
+    /// confirmed the smallest clean addition after implementation audit,
+    /// same purely-additive, no-persistence-risk precedent as the Stage 4E
+    /// additions above.
+    case jumping
     case other
 }
 

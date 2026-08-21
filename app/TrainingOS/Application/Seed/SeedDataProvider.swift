@@ -56,6 +56,7 @@ enum SeedDataProvider {
         user.attachPerformanceProfile(performanceProfile)
 
         let catalog = ExerciseCatalog.makeAndInsert(context: context)
+        WarmupCatalog.makeAndInsert(exerciseCatalog: catalog, context: context)
 
         return SeedPrerequisites(user: user, performanceProfile: performanceProfile, catalog: catalog)
     }

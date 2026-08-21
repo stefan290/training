@@ -21,6 +21,7 @@
 		0BF241918A38BC0D404CE558 /* BenchmarkDefinition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40954AFEBB023B609343A10D /* BenchmarkDefinition.swift */; };
 		0D3B0E76BAB571AE9B7763DC /* SeedBootstrapAndPresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A192E13A9A3D258BBE1AE006 /* SeedBootstrapAndPresentationTests.swift */; };
 		0D5CB251D52347A282BF16FA /* FunctionalFitnessPersistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A75340A521B34E13B963971E /* FunctionalFitnessPersistenceTests.swift */; };
+		0E326794108DAF76008B3762 /* RecordWarmupSequenceUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83B9B687F162C709669BABA9 /* RecordWarmupSequenceUseCase.swift */; };
 		11112222111122221111222A /* IntervalSubstitutionAndHistoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33334444333344443333444B /* IntervalSubstitutionAndHistoryTests.swift */; };
 		11727466C27048968ACDBA0F /* HypertrophyBuiltInLibraryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6B47DF543E14E3B8658D721 /* HypertrophyBuiltInLibraryTests.swift */; };
 		14DCCC6A9BC04C2280CF120F /* ProgramCapabilityRegistryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD94FB475DAA45B8BD31E25B /* ProgramCapabilityRegistryTests.swift */; };
@@ -58,6 +59,7 @@
 		31EC28402D2A4994AAA2A846 /* IntervalProgramGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF54CBE9E26A4258841BA2C4 /* IntervalProgramGenerator.swift */; };
 		32844A0BBFF65B175D6B5667 /* TrainingWeek.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0AE4E068ED033C4367CFEBF /* TrainingWeek.swift */; };
 		339A4559B435C92D4D149029 /* IntensityTarget.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA4742E084A9E98BCA463313 /* IntensityTarget.swift */; };
+		34AB0BEDB996AD3881AB0B1E /* WarmupGenerationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B97A4120D5E026ABBAC5DF1 /* WarmupGenerationTests.swift */; };
 		3551ADA6C410935FE55EAE34 /* ReadinessAdaptationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9F23F0D57FE43683653E5C3 /* ReadinessAdaptationTests.swift */; };
 		355E4F519569B26DB7E6814D /* RootTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E0E4261BBC7588AA3AB4DF4 /* RootTabView.swift */; };
 		35E59F71F781AACD3829C7B7 /* ReadinessAdaptationProposal.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3AA60AECBBF25BDB3413257 /* ReadinessAdaptationProposal.swift */; };
@@ -78,6 +80,7 @@
 		3FDDAAFBAC984F749D9A6209 /* LogSetUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35CBF47813A240BD8386EC7F /* LogSetUseCase.swift */; };
 		401D1E6865FD462CA64C4040 /* FunctionalFitnessStimulusValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3074468F2262484EBDC8FA65 /* FunctionalFitnessStimulusValidator.swift */; };
 		40FF4EC2955E9A470AFFA219 /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49DE4515B6FEC3892FBABD84 /* UserProfile.swift */; };
+		433E4AFDAF8A1EAD2F404B2E /* WarmupTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F4D9EBCB76486A2F5FAC862 /* WarmupTypes.swift */; };
 		43EB4EC5B4032403D398B8AC /* BlockProgressionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D2F47A2B1091593A97276F5 /* BlockProgressionEngine.swift */; };
 		46584862F94C4D329D5F7A13 /* RecordIntervalResultUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F54A0D6E1604920A4CA7A2E /* RecordIntervalResultUseCase.swift */; };
 		46AB9AF783A14BCC9A4315EB /* AcceptStrategicPlanUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39986A89E832432AB65A8A90 /* AcceptStrategicPlanUseCase.swift */; };
@@ -92,6 +95,7 @@
 		4FD142CFAAE75B36545E608A /* BlockResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 116242DBB985C05A0FC01D5C /* BlockResult.swift */; };
 		4FD2907863234BBEA7424101 /* WeekViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7D9373C0ECA41CFA72BF0EE /* WeekViewModel.swift */; };
 		4FF5E6332E954BF5B3DD7934 /* SubstitutionReason.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D1C80A29EAD40E0B85E855B /* SubstitutionReason.swift */; };
+		5070F4CD6950A8579911F16A /* WarmupSequence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00B39E0790386710A7FA1E20 /* WarmupSequence.swift */; };
 		51E568351ADA4481BBDB1C74 /* ProgramProvenance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B06BE6A5A714AFDB8FA09D7 /* ProgramProvenance.swift */; };
 		52A1F877F76744B1921DD637 /* FunctionalFitnessProgramGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80B39257099744D18ACECC93 /* FunctionalFitnessProgramGeneratorTests.swift */; };
 		52A7D261DF0E4FD0A5C7C327 /* ExerciseRelationship.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9371B7F87D414C6D8FE13465 /* ExerciseRelationship.swift */; };
@@ -165,10 +169,12 @@
 		8BA34A6E91DB5DC1662834BD /* SetPrescription.swift in Sources */ = {isa = PBXBuildFile; fileRef = F377483DB325CB8E61B20CCF /* SetPrescription.swift */; };
 		8BD3A44DA03A4ADF84C8F828 /* SteadyStateProgramGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B742762184141A9A09105EE /* SteadyStateProgramGenerator.swift */; };
 		8C34A2A050F2424695BBD979 /* IntervalTimerResolution.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10CD7CEFC7F14311B3C11E68 /* IntervalTimerResolution.swift */; };
+		8C63C02BD143CC884BEF3BC7 /* GenerateWarmupSequenceUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B8DA7B2D236B3F6C86EAAB5 /* GenerateWarmupSequenceUseCase.swift */; };
 		8D3DDB68C8D84A6EB9F198DF /* StageSixBEndToEndFlowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20576E30E6864CF98C00C040 /* StageSixBEndToEndFlowTests.swift */; };
 		8D4D2D9BCC0843F7A4EA9BC7 /* LongTermGoalTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D9DA0991E3A4B6BA7E36A93 /* LongTermGoalTypes.swift */; };
 		8DFA473DBEDD70041FD4B451 /* ScoringEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37CC4963A0824B2C495890C3 /* ScoringEngine.swift */; };
 		8E450FA465BDF81D84D686E5 /* ReadinessTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A5A60FA60FDE8570AA8FFBA /* ReadinessTypes.swift */; };
+		8F4850E4D1E651FC9191EE2C /* WarmupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC55E402B8C288360ACFED80 /* WarmupView.swift */; };
 		9016EB9237EA459999749E43 /* RecordEnduranceResultUseCaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2327185FDBD04486B2715F34 /* RecordEnduranceResultUseCaseTests.swift */; };
 		903E4161452A4735937B2042 /* ExerciseSubstitutionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9D602DA94B24FD3B316C251 /* ExerciseSubstitutionEngine.swift */; };
 		91744E5DA4D8FC8A3CE5FA55 /* SessionRole.swift in Sources */ = {isa = PBXBuildFile; fileRef = 778C4B008E55FFE4765AE125 /* SessionRole.swift */; };
@@ -195,6 +201,7 @@
 		A6FE2F4D911949888CF3AD50 /* IntervalPrescriptionTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A5E6E7EC9C54EA5BA38CBD9 /* IntervalPrescriptionTemplate.swift */; };
 		A781BC89D3269D430CB96C76 /* MixedModalityOrchestrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E60D1784792F2DEB5315A66 /* MixedModalityOrchestrationTests.swift */; };
 		A83D4ABD937090B2899BA12D /* ModalityContinuityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4E841F08066E82A874C3FB1 /* ModalityContinuityTests.swift */; };
+		A844FDFEC772383DC4728D0D /* WarmupEmphasisDerivation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9AB821D10B1EDD59C245292 /* WarmupEmphasisDerivation.swift */; };
 		A95A9AA483344D048BB7FCD4 /* LongTermPlannerTrainingMixRankingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E08F11449D2435FB502E093 /* LongTermPlannerTrainingMixRankingTests.swift */; };
 		AA9D5DED71B14ADABB95DD9C /* TemplateSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96BB5A7748D34684ACF0C620 /* TemplateSession.swift */; };
 		AAAA1111AAAA1111AAAA111A /* IntervalPersistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB2222BBBB2222BBBB222B /* IntervalPersistenceTests.swift */; };
@@ -218,8 +225,10 @@
 		BB200340764A6A7015095326 /* SubstituteFunctionalFitnessMovementUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30EF0935CED956F4B433467A /* SubstituteFunctionalFitnessMovementUseCase.swift */; };
 		BC7E88F401364980B712DA1D /* WorkoutBlockTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E31C02AB609E4A759BE83970 /* WorkoutBlockTemplate.swift */; };
 		BC954381882996F2E7176E7E /* PerformanceProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9B34CC8A8AECF7AFE6EF20B /* PerformanceProfile.swift */; };
+		BD6F38197C42E65CCCD64F0A /* WarmupCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2D2C2BAA5E96E19751E5E40 /* WarmupCatalog.swift */; };
 		BDD634310D4448FCB614B808 /* RecordFunctionalFitnessResultUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 230EB4614BE34E3DAE234617 /* RecordFunctionalFitnessResultUseCase.swift */; };
 		BDF4C4BF7FAE44208C6AEB9D /* SteadyStateExecutionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C82334A3F17461A9515276C /* SteadyStateExecutionView.swift */; };
+		BEE20248CC920D37C8443415 /* WarmupMovement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0ED014CB5A6D18800806D17E /* WarmupMovement.swift */; };
 		BF2D794F7F0D4CBC898B6FDF /* SteadyStateProgramGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 788AC1711F2142B7AA4C232A /* SteadyStateProgramGeneratorTests.swift */; };
 		BF384E4EBC21DE0698934299 /* DoubleProgressionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C74461AA0E1D6FDDC442680 /* DoubleProgressionEngine.swift */; };
 		C00BBCB002554BD09C6BDCAA /* TrainingMixComponent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29759397E5FA46FFB6EEE8F2 /* TrainingMixComponent.swift */; };
@@ -310,6 +319,7 @@
 /* Begin PBXFileReference section */
 		0003E1DA9A6F4438B65048D7 /* LongTermPlannerProgramRecommendationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LongTermPlannerProgramRecommendationTests.swift; path = LongTermPlannerProgramRecommendationTests.swift; sourceTree = "<group>"; };
 		007E9E88C8519C95FE83AE1D /* ResolveProgramInstanceExerciseSlotsUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ResolveProgramInstanceExerciseSlotsUseCase.swift; path = ResolveProgramInstanceExerciseSlotsUseCase.swift; sourceTree = "<group>"; };
+		00B39E0790386710A7FA1E20 /* WarmupSequence.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WarmupSequence.swift; sourceTree = "<group>"; };
 		012CAEB8BE0D43708C4A7691 /* IntervalProgressionRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = IntervalProgressionRules.swift; path = IntervalProgressionRules.swift; sourceTree = "<group>"; };
 		02EB4A188AEAD116A06FB831 /* TrainingPhase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TrainingPhase.swift; path = TrainingPhase.swift; sourceTree = "<group>"; };
 		03294116BD89A6D5E88A078D /* Session.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Session.swift; path = Session.swift; sourceTree = "<group>"; };
@@ -318,6 +328,7 @@
 		08AE48DC9FD887472E7FA4BD /* IntervalPrescription.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = IntervalPrescription.swift; path = IntervalPrescription.swift; sourceTree = "<group>"; };
 		08BDCB71D7BCC99002871A76 /* EvaluateReadinessAdaptationUseCase.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EvaluateReadinessAdaptationUseCase.swift; sourceTree = "<group>"; };
 		0DD886531E7444D68549B9F1 /* HypertrophyProgramGeneratorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HypertrophyProgramGeneratorTests.swift; path = HypertrophyProgramGeneratorTests.swift; sourceTree = "<group>"; };
+		0ED014CB5A6D18800806D17E /* WarmupMovement.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WarmupMovement.swift; sourceTree = "<group>"; };
 		0ED7601E87844F88926EC0AE /* SubstitutionCandidateRanking.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SubstitutionCandidateRanking.swift; path = SubstitutionCandidateRanking.swift; sourceTree = "<group>"; };
 		10CD7CEFC7F14311B3C11E68 /* IntervalTimerResolution.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = IntervalTimerResolution.swift; path = IntervalTimerResolution.swift; sourceTree = "<group>"; };
 		116242DBB985C05A0FC01D5C /* BlockResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = BlockResult.swift; path = BlockResult.swift; sourceTree = "<group>"; };
@@ -406,6 +417,7 @@
 		587C213741DA4FC3BC0B97CD /* FunctionalFitnessProgramGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FunctionalFitnessProgramGenerator.swift; path = FunctionalFitnessProgramGenerator.swift; sourceTree = "<group>"; };
 		59034661A6D460A8E0CA0710 /* PlanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PlanView.swift; path = PlanView.swift; sourceTree = "<group>"; };
 		5AF125152E6C44B4BC7AE833 /* ApplySubstitutionUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ApplySubstitutionUseCase.swift; path = ApplySubstitutionUseCase.swift; sourceTree = "<group>"; };
+		5B8DA7B2D236B3F6C86EAAB5 /* GenerateWarmupSequenceUseCase.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GenerateWarmupSequenceUseCase.swift; sourceTree = "<group>"; };
 		5D2112E204C14D75B19DE189 /* GoalAlignmentEvaluator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = GoalAlignmentEvaluator.swift; path = GoalAlignmentEvaluator.swift; sourceTree = "<group>"; };
 		5E8DE90422F540E5B44654D9 /* HypertrophyProgramJourney.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HypertrophyProgramJourney.swift; path = HypertrophyProgramJourney.swift; sourceTree = "<group>"; };
 		600C5ABAA59146D18E25D66A /* CompletedSessionDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CompletedSessionDetail.swift; path = CompletedSessionDetail.swift; sourceTree = "<group>"; };
@@ -433,6 +445,7 @@
 		7A50B7F2EEDA4E4EAA89C021 /* IntervalTimerResolutionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = IntervalTimerResolutionTests.swift; path = IntervalTimerResolutionTests.swift; sourceTree = "<group>"; };
 		7A5A60FA60FDE8570AA8FFBA /* ReadinessTypes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReadinessTypes.swift; sourceTree = "<group>"; };
 		7B11C89D284D4F8DA812C302 /* StrategicPlanProposal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = StrategicPlanProposal.swift; path = StrategicPlanProposal.swift; sourceTree = "<group>"; };
+		7B97A4120D5E026ABBAC5DF1 /* WarmupGenerationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WarmupGenerationTests.swift; sourceTree = "<group>"; };
 		7BED2E1A33B5D3515496A443 /* ReadinessAdaptationDecisionUseCase.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReadinessAdaptationDecisionUseCase.swift; sourceTree = "<group>"; };
 		7FEC7AB7CC2E4A2787466854 /* LongTermPlannerPersistenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LongTermPlannerPersistenceTests.swift; path = LongTermPlannerPersistenceTests.swift; sourceTree = "<group>"; };
 		80B39257099744D18ACECC93 /* FunctionalFitnessProgramGeneratorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FunctionalFitnessProgramGeneratorTests.swift; path = FunctionalFitnessProgramGeneratorTests.swift; sourceTree = "<group>"; };
@@ -440,6 +453,7 @@
 		821F86C0738E4D5BBF958B49 /* OrchestratingUseCaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OrchestratingUseCaseTests.swift; path = OrchestratingUseCaseTests.swift; sourceTree = "<group>"; };
 		822A4709B48D41F2F190CB89 /* ExerciseCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExerciseCatalog.swift; path = ExerciseCatalog.swift; sourceTree = "<group>"; };
 		824122BD15B0440FBAAE83E4 /* SessionExecutionStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SessionExecutionStateTests.swift; path = SessionExecutionStateTests.swift; sourceTree = "<group>"; };
+		83B9B687F162C709669BABA9 /* RecordWarmupSequenceUseCase.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RecordWarmupSequenceUseCase.swift; sourceTree = "<group>"; };
 		84E8450DB6F0A3A61A467281 /* PersistenceRoundTripTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PersistenceRoundTripTests.swift; path = PersistenceRoundTripTests.swift; sourceTree = "<group>"; };
 		851C668957E085E631B0B4FE /* ReadinessCheckInView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReadinessCheckInView.swift; sourceTree = "<group>"; };
 		8683C5E47BB344149B050CDA /* FunctionalFitnessReasonCode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FunctionalFitnessReasonCode.swift; path = FunctionalFitnessReasonCode.swift; sourceTree = "<group>"; };
@@ -454,6 +468,7 @@
 		8E0BF58155E94E84A1021B9E /* ScheduleIssue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScheduleIssue.swift; path = ScheduleIssue.swift; sourceTree = "<group>"; };
 		8E324E3DA961C03C4EA43C8D /* FunctionalFitnessMovement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FunctionalFitnessMovement.swift; path = FunctionalFitnessMovement.swift; sourceTree = "<group>"; };
 		8E87ABA502914319A82C1265 /* SubstitutionAwareRecommendation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SubstitutionAwareRecommendation.swift; path = SubstitutionAwareRecommendation.swift; sourceTree = "<group>"; };
+		8F4D9EBCB76486A2F5FAC862 /* WarmupTypes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WarmupTypes.swift; sourceTree = "<group>"; };
 		8F743585235A4168B3B46ED0 /* HypertrophyFeedbackPrompts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HypertrophyFeedbackPrompts.swift; path = HypertrophyFeedbackPrompts.swift; sourceTree = "<group>"; };
 		8FA2F295772A423E90CF7617 /* SessionStressComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SessionStressComposer.swift; path = SessionStressComposer.swift; sourceTree = "<group>"; };
 		8FBA8E92C3C44360A9A70AD2 /* SteadyStateConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SteadyStateConfiguration.swift; path = SteadyStateConfiguration.swift; sourceTree = "<group>"; };
@@ -481,6 +496,7 @@
 		A192E13A9A3D258BBE1AE006 /* SeedBootstrapAndPresentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SeedBootstrapAndPresentationTests.swift; path = SeedBootstrapAndPresentationTests.swift; sourceTree = "<group>"; };
 		A19E46C6A95AC6EE65B67E22 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = User.swift; path = User.swift; sourceTree = "<group>"; };
 		A28E41A1923F2FF34CD718B2 /* Recommendation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Recommendation.swift; path = Recommendation.swift; sourceTree = "<group>"; };
+		A2D2C2BAA5E96E19751E5E40 /* WarmupCatalog.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WarmupCatalog.swift; sourceTree = "<group>"; };
 		A36C5B87A8D1D6EDD9F5C536 /* ReadinessAdaptationDecision.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReadinessAdaptationDecision.swift; sourceTree = "<group>"; };
 		A3D150AD03C8492E1FF8D00B /* PhaseDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PhaseDetailView.swift; path = PhaseDetailView.swift; sourceTree = "<group>"; };
 		A3D9A752F4704351BF2B938A /* ActivityPerformanceProfileIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ActivityPerformanceProfileIntegrationTests.swift; path = ActivityPerformanceProfileIntegrationTests.swift; sourceTree = "<group>"; };
@@ -503,6 +519,7 @@
 		B86E1087B9234796B5B9D232 /* TacticalPlanningOrchestrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TacticalPlanningOrchestrationTests.swift; path = TacticalPlanningOrchestrationTests.swift; sourceTree = "<group>"; };
 		B875478EA0A0B59BC2ADD02C /* Goal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Goal.swift; path = Goal.swift; sourceTree = "<group>"; };
 		B90DBE6F609F4D92BD8373EE /* FunctionalFitnessDecisionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FunctionalFitnessDecisionEngine.swift; path = FunctionalFitnessDecisionEngine.swift; sourceTree = "<group>"; };
+		B9AB821D10B1EDD59C245292 /* WarmupEmphasisDerivation.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WarmupEmphasisDerivation.swift; sourceTree = "<group>"; };
 		B9DCAF4271314269937B71F6 /* IntervalExecutionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = IntervalExecutionViewModel.swift; path = IntervalExecutionViewModel.swift; sourceTree = "<group>"; };
 		BBBB2222BBBB2222BBBB222B /* IntervalPersistenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = IntervalPersistenceTests.swift; path = IntervalPersistenceTests.swift; sourceTree = "<group>"; };
 		BC3132275BE14CE2BA917340 /* FinalizeIntervalResultUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FinalizeIntervalResultUseCase.swift; path = FinalizeIntervalResultUseCase.swift; sourceTree = "<group>"; };
@@ -576,6 +593,7 @@
 		E794317CBD83438593EEBF25 /* BlockPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = BlockPresentation.swift; path = BlockPresentation.swift; sourceTree = "<group>"; };
 		E9F23F0D57FE43683653E5C3 /* ReadinessAdaptationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReadinessAdaptationTests.swift; sourceTree = "<group>"; };
 		EA03FC7311E8C7DEF56EE7E4 /* AnnualPlanSeedDateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AnnualPlanSeedDateTests.swift; path = AnnualPlanSeedDateTests.swift; sourceTree = "<group>"; };
+		EC55E402B8C288360ACFED80 /* WarmupView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WarmupView.swift; sourceTree = "<group>"; };
 		EC5688EE20314C90818014A3 /* HypertrophyFeedbackTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HypertrophyFeedbackTests.swift; path = HypertrophyFeedbackTests.swift; sourceTree = "<group>"; };
 		EC720902E60A4932B8017301 /* LogEnduranceResultUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LogEnduranceResultUseCase.swift; path = LogEnduranceResultUseCase.swift; sourceTree = "<group>"; };
 		EDA5586697D9472A9D3E1A95 /* DeloadStrategy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DeloadStrategy.swift; path = DeloadStrategy.swift; sourceTree = "<group>"; };
@@ -662,6 +680,8 @@
 				96BB5A7748D34684ACF0C620 /* TemplateSession.swift */,
 				983C6FA09470A408B7315795 /* ReadinessCheckIn.swift */,
 				A36C5B87A8D1D6EDD9F5C536 /* ReadinessAdaptationDecision.swift */,
+				0ED014CB5A6D18800806D17E /* WarmupMovement.swift */,
+				00B39E0790386710A7FA1E20 /* WarmupSequence.swift */,
 			);
 			name = Entities;
 			path = Entities;
@@ -722,6 +742,7 @@
 				8FBA8E92C3C44360A9A70AD2 /* SteadyStateConfiguration.swift */,
 				7A5A60FA60FDE8570AA8FFBA /* ReadinessTypes.swift */,
 				C3AA60AECBBF25BDB3413257 /* ReadinessAdaptationProposal.swift */,
+				8F4D9EBCB76486A2F5FAC862 /* WarmupTypes.swift */,
 			);
 			name = ValueTypes;
 			path = ValueTypes;
@@ -768,6 +789,7 @@
 				C7B1CE4E11D4488488940A7A /* CompletedHistoryPresentation.swift */,
 				8F743585235A4168B3B46ED0 /* HypertrophyFeedbackPrompts.swift */,
 				5431AFF9B89347E69AD3AA56 /* SchedulingPipeline.swift */,
+				B9AB821D10B1EDD59C245292 /* WarmupEmphasisDerivation.swift */,
 			);
 			name = Engines;
 			path = Engines;
@@ -859,6 +881,7 @@
 				851C668957E085E631B0B4FE /* ReadinessCheckInView.swift */,
 				DFEA3FD6C2073D7616C28880 /* ReadinessAdaptationProposalView.swift */,
 				FD4047FA363594C906A694B4 /* ReadinessGateFlow.swift */,
+				EC55E402B8C288360ACFED80 /* WarmupView.swift */,
 			);
 			name = Session;
 			path = Session;
@@ -949,6 +972,7 @@
 				B5FBF35C540B41F4A3F8FE1E /* TacticalWindowPolicyTests.swift */,
 				E9F23F0D57FE43683653E5C3 /* ReadinessAdaptationTests.swift */,
 				9E5357BC2DE5E72175D66848 /* DebugAcceptanceFixturesUseCaseTests.swift */,
+				7B97A4120D5E026ABBAC5DF1 /* WarmupGenerationTests.swift */,
 			);
 			name = TrainingOSTests;
 			path = TrainingOSTests;
@@ -1002,6 +1026,8 @@
 				3259D5BC8DE6E93F9D2E7D1D /* RecordReadinessCheckInUseCase.swift */,
 				08BDCB71D7BCC99002871A76 /* EvaluateReadinessAdaptationUseCase.swift */,
 				7BED2E1A33B5D3515496A443 /* ReadinessAdaptationDecisionUseCase.swift */,
+				5B8DA7B2D236B3F6C86EAAB5 /* GenerateWarmupSequenceUseCase.swift */,
+				83B9B687F162C709669BABA9 /* RecordWarmupSequenceUseCase.swift */,
 			);
 			name = UseCases;
 			path = UseCases;
@@ -1089,6 +1115,7 @@
 				961D418E8A3F58DE37C29D67 /* SeedDataProvider.swift */,
 				644E60F7C01B06C9C9FBC852 /* SeedAnnualPlanJourney.swift */,
 				C53583ECC035CDB0FF4A103D /* DebugAcceptanceFixturesUseCase.swift */,
+				A2D2C2BAA5E96E19751E5E40 /* WarmupCatalog.swift */,
 			);
 			name = Seed;
 			path = Seed;
@@ -1256,6 +1283,7 @@
 				C6379DCBFA834054950D09C4 /* PowerliftingBuiltInLibraryTests.swift in Sources */,
 				3551ADA6C410935FE55EAE34 /* ReadinessAdaptationTests.swift in Sources */,
 				570471E6EE162793157F65EA /* DebugAcceptanceFixturesUseCaseTests.swift in Sources */,
+				34AB0BEDB996AD3881AB0B1E /* WarmupGenerationTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1477,6 +1505,14 @@
 				81A322830F9A69907824C880 /* ReadinessAdaptationProposalView.swift in Sources */,
 				CCE898AF9F188DCE5DDFBF01 /* ReadinessGateFlow.swift in Sources */,
 				88A7960D19DB02BFE31CE70B /* DebugAcceptanceFixturesUseCase.swift in Sources */,
+				BEE20248CC920D37C8443415 /* WarmupMovement.swift in Sources */,
+				5070F4CD6950A8579911F16A /* WarmupSequence.swift in Sources */,
+				433E4AFDAF8A1EAD2F404B2E /* WarmupTypes.swift in Sources */,
+				A844FDFEC772383DC4728D0D /* WarmupEmphasisDerivation.swift in Sources */,
+				8C63C02BD143CC884BEF3BC7 /* GenerateWarmupSequenceUseCase.swift in Sources */,
+				0E326794108DAF76008B3762 /* RecordWarmupSequenceUseCase.swift in Sources */,
+				BD6F38197C42E65CCCD64F0A /* WarmupCatalog.swift in Sources */,
+				8F4850E4D1E651FC9191EE2C /* WarmupView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

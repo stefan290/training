@@ -459,3 +459,31 @@ same this-session-only substitution mechanism.
 - `ProgramDefinition`/`TrainingWeek`/the template graph gained no new
   fields this stage — readiness is a session-local overlay, never
   template-level state (CLAUDE.md rule 2).
+
+## Stage 9B additions
+
+Three new entities (`WarmupMovement`, `WarmupSequence`,
+`WarmupSequenceItem`) and one additive relationship on the existing
+`Session` entity — same shape and reasoning as Stage 8B's own
+`ReadinessCheckIn` addition.
+
+| Parent | Child | Relationship | Delete rule | Expected behaviour | Why |
+|---|---|---|---|---|---|
+| `Session` | `WarmupSequence` | `warmupSequence: WarmupSequence?` | `.cascade` | Deleting a Session deletes its own generated warm-up. | A `WarmupSequence` has no meaning outside the one Session it was generated for — mirrors `Session -> ReadinessCheckIn`'s identical cascade reasoning. |
+| `WarmupSequence` | `WarmupSequenceItem` | `items: [WarmupSequenceItem]` | `.cascade` | Deleting a sequence deletes its own item list. | An item has no independent meaning outside its owning sequence — mirrors `WorkoutBlock -> ExercisePrescription`. |
+| `WarmupMovement` | `WarmupSequenceItem` | `usedInSequenceItems: [WarmupSequenceItem]` (required inverse only; nothing reads it) | `.nullify` | Deleting a catalog movement (not expected in normal operation, but structurally possible) nullifies `item.movement` rather than crashing; the historical item row survives. | Same established "un-inversed to-one reference to a deletable type crashes instead of nullifying" fix as `ExerciseSlot.materializedPrescriptions`. |
+
+**Additive, non-relationship field:** `WarmupMovement.exercise: Exercise?`
+— a plain, un-inversed reference, the same accepted pattern as
+`ExercisePrescription.exercise`/`FunctionalFitnessMovement.exercise`
+(nothing in this app deletes a canonical `Exercise` out from under active
+data yet — same documented, deferred risk, not a new one).
+
+### Confirms rule 1/2 hold for the new types
+
+- `WarmupMovement`/`WarmupSequence`/`WarmupSequenceItem` never reference
+  `SetResult`/`WorkoutResult`/`PersonalRecord`/any `*PerformanceProfile`
+  — no path to performance history exists anywhere in this schema.
+- `ProgramDefinition`/`TrainingWeek`/the template graph gained no new
+  fields this stage — warm-up is a session-local, generated artifact,
+  never template-level state.

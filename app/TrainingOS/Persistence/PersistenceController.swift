@@ -68,6 +68,10 @@ enum PersistenceController {
         // Stage 8B additions — see READINESS_MODEL.md/READINESS_PROGRESSION_CONTRACT.md.
         ReadinessCheckIn.self,
         ReadinessAdaptationDecision.self,
+        // Stage 9B additions — see STAGE9_WARMUP_DESIGN.md/STAGE9B_IMPLEMENTATION_REPORT.md.
+        WarmupMovement.self,
+        WarmupSequence.self,
+        WarmupSequenceItem.self,
     ])
 
     /// The app's on-disk, offline-first store. Local storage is

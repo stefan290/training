@@ -93,6 +93,63 @@ enum DebugAcceptanceFixturesUseCase {
             addExercise(bulgarianSplitSquat, to: makeSession("Postpone"), sets: 3, reps: 8, weight: 20)
         }
 
+        // Scenario 6 — Stage 9B manual acceptance: the exact multi-exercise
+        // lower-body/hinge fixture (Squat/RDL/Leg Press/Leg Curl/Calf
+        // Raise) used throughout the automated Stage 9B test suite,
+        // surfaced for Simulator inspection. Reuses the REAL production
+        // materializer path (`SeedScenarios.materializedLowerASession` ->
+        // the real `StrengthMaterializer`/`ExerciseSlot`/
+        // `PrescriptionTemplate` machinery) rather than a hand-built
+        // stand-in, so the generated warm-up is proven against genuine
+        // production data end to end — never a mocked warm-up screen.
+        // Produces its own new, independent `ProgramDefinition`/
+        // `ProgramInstance` (not the real seeded annual plan's own) — the
+        // same "additive, never touches existing data" discipline as
+        // every other fixture in this file.
+        if let catalog = reconstructExerciseCatalog(from: exercises) {
+            let lowerBodyDay = Day(ownerUserID: user.id, date: today)
+            context.insert(lowerBodyDay)
+            let fixture = SeedScenarios.materializedLowerASession(
+                day: lowerBodyDay, catalog: catalog, ownerUserID: user.id, modelContext: context
+            )
+            fixture.session.name = markerPrefix + "Lower Body (multi-exercise)"
+        }
+
         try context.save()
+    }
+
+    /// Rebuilds the `ExerciseCatalog` struct from already-seeded `Exercise`
+    /// rows (never re-inserts — `Exercise.canonicalName` is unique) so
+    /// `SeedScenarios.materializedLowerASession` — a real production-path
+    /// fixture builder — can be reused here exactly as the automated test
+    /// suite uses it. `nil` if the app's own seed bootstrap hasn't run
+    /// (should not happen in practice; a safe no-op rather than a crash).
+    private static func reconstructExerciseCatalog(from exercises: [Exercise]) -> ExerciseCatalog? {
+        func find(_ name: String) -> Exercise? { exercises.first { $0.canonicalName == name } }
+        guard
+            let benchPress = find("Barbell Bench Press"), let backSquat = find("Back Squat"),
+            let inclineDumbbellPress = find("Incline Dumbbell Press"), let easyRun = find("Easy Run (Zone 2)"),
+            let trackIntervalRun = find("Track Interval Run"), let wallBall = find("Wall Ball"),
+            let burpee = find("Burpee"), let kettlebellSwing = find("Kettlebell Swing"), let thruster = find("Thruster"),
+            let pullUp = find("Pull-up"), let bike = find("Assault Bike"), let row = find("Row Erg"),
+            let skiErg = find("SkiErg"), let toesToBar = find("Toes-to-Bar"), let pushUp = find("Push-up"),
+            let handstandPushUp = find("Handstand Push-up"), let deadlift = find("Deadlift"),
+            let dumbbellSnatch = find("Dumbbell Snatch"), let romanianDeadlift = find("Romanian Deadlift"),
+            let legPress = find("Leg Press"), let bulgarianSplitSquat = find("Bulgarian Split Squat"),
+            let legCurl = find("Leg Curl"), let calfRaise = find("Calf Raise"), let frontSquat = find("Front Squat"),
+            let conventionalDeadlift = find("Conventional Deadlift"), let seatedLegCurl = find("Seated Leg Curl"),
+            let seatedCalfRaise = find("Seated Calf Raise")
+        else { return nil }
+
+        return ExerciseCatalog(
+            benchPress: benchPress, backSquat: backSquat, inclineDumbbellPress: inclineDumbbellPress,
+            easyRun: easyRun, trackIntervalRun: trackIntervalRun, wallBall: wallBall, burpee: burpee,
+            kettlebellSwing: kettlebellSwing, thruster: thruster, pullUp: pullUp, bike: bike, row: row,
+            skiErg: skiErg, toesToBar: toesToBar, pushUp: pushUp, handstandPushUp: handstandPushUp,
+            deadlift: deadlift, dumbbellSnatch: dumbbellSnatch, romanianDeadlift: romanianDeadlift,
+            legPress: legPress, bulgarianSplitSquat: bulgarianSplitSquat, legCurl: legCurl, calfRaise: calfRaise,
+            frontSquat: frontSquat, conventionalDeadlift: conventionalDeadlift, seatedLegCurl: seatedLegCurl,
+            seatedCalfRaise: seatedCalfRaise
+        )
     }
 }
