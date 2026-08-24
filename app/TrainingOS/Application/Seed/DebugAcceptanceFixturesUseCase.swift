@@ -143,7 +143,8 @@ enum DebugAcceptanceFixturesUseCase {
             let barbellRow = find("Barbell Row"),
             let overheadPress = find("Barbell Overhead Press"), let legExtension = find("Leg Extension"),
             let cableChestFly = find("Cable Chest Fly"), let facePull = find("Face Pull"),
-            let latPulldown = find("Lat Pulldown"), let seatedCableRow = find("Seated Cable Row")
+            let latPulldown = find("Lat Pulldown"), let seatedCableRow = find("Seated Cable Row"),
+            let stiffLeggedDeadlift = find("Stiff-Legged Deadlift")
         else { return nil }
 
         return ExerciseCatalog(
@@ -157,7 +158,8 @@ enum DebugAcceptanceFixturesUseCase {
             seatedCalfRaise: seatedCalfRaise, barbellCurl: barbellCurl, cableTricepsPushdown: cableTricepsPushdown,
             dumbbellLateralRaise: dumbbellLateralRaise, barbellRow: barbellRow,
             overheadPress: overheadPress, legExtension: legExtension, cableChestFly: cableChestFly,
-            facePull: facePull, latPulldown: latPulldown, seatedCableRow: seatedCableRow
+            facePull: facePull, latPulldown: latPulldown, seatedCableRow: seatedCableRow,
+            stiffLeggedDeadlift: stiffLeggedDeadlift
         )
     }
 }

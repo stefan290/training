@@ -94,6 +94,19 @@ enum MovementFunction: String, Codable, CaseIterable {
     case horizontalPullLoaded
     case verticalPullLoaded
     case verticalPushLoaded
+    /// Stage 10R.1 Slice 1A addition: a loaded knee-flexion isolation
+    /// movement (leg curl family) — distinguishes a real "Hamstrings
+    /// Isolation" source category slot from a hip-hinge/deadlift-pattern
+    /// exercise that happens to share the `.hamstrings` target
+    /// (`hingeLoaded`, e.g. Romanian/Conventional/Stiff-Legged Deadlift).
+    /// Without this, a Hamstrings-Isolation-intent slot could not be
+    /// distinguished from a hip-hinge slot by movement function alone —
+    /// the exact same class of collision `.verticalPushLoaded`/
+    /// `.horizontalPullLoaded` were added to solve, discovered while
+    /// recovering the real RP source category database
+    /// (`SOURCE_PROGRAM_MANIFEST.md` §5). Additive only — `Leg Curl`/
+    /// `Seated Leg Curl` keep every existing tag unchanged.
+    case kneeFlexionLoaded
 }
 
 /// How many slots of a given `FunctionalModality` a stimulus calls for —

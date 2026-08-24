@@ -182,7 +182,7 @@ final class HypertrophyV2EndToEndTests: XCTestCase {
         let fixture = try makeFixture()
         let week0Sessions = try materializeWeekZero(fixture)
         let allWeek0 = week0Sessions.flatMap(\.orderedBlocks).flatMap(\.orderedPrescriptions)
-        let squat = try XCTUnwrap(allWeek0.first { $0.exercise?.canonicalName == "Back Squat" })
+        let squat = try XCTUnwrap(allWeek0.first { $0.exercise?.canonicalName == "Front Squat" })
         XCTAssertEqual(squat.appliedProgressionReasonCode, .calibrationRequired, "no history at all for week 0")
         XCTAssertNil(squat.orderedSetPrescriptions.first?.targetWeight)
 
@@ -211,7 +211,7 @@ final class HypertrophyV2EndToEndTests: XCTestCase {
         let fixture = try makeFixture()
         let week0Sessions = try materializeWeekZero(fixture)
         let allWeek0 = week0Sessions.flatMap(\.orderedBlocks).flatMap(\.orderedPrescriptions)
-        let squat = try XCTUnwrap(allWeek0.first { $0.exercise?.canonicalName == "Back Squat" })
+        let squat = try XCTUnwrap(allWeek0.first { $0.exercise?.canonicalName == "Front Squat" })
 
         // 8 reps @ 3 RIR (week 0's own target) — inside range, on-track, not strong.
         try logSameExercise(as: squat, in: allWeek0, reps: 8, actualRir: 3, performanceProfile: fixture.performanceProfile, asOf: fixture.startDate)
@@ -226,18 +226,30 @@ final class HypertrophyV2EndToEndTests: XCTestCase {
         XCTAssertEqual(squatWeek1.orderedSetPrescriptions.first?.targetWeight, squatLastWeight, "load holds, same weight carried forward")
     }
 
-    // MARK: 3 — accessory exercise reaches a real independent decision
+    // MARK: 3 — a second, unrelated slot reaches its own independent decision
 
-    func test3_AccessoryExerciseOwnIndependentHistory() throws {
+    /// Stage 10R.1 Slice 1A: the real recovered Mesocycle 1 has no
+    /// `.accessory`-role slot at all (every real category autoregulates
+    /// to a rated set count — `SOURCE_PROGRAM_MANIFEST.md` §3) — Barbell
+    /// Curl now resolves for the "Biceps" category (Pull Emphasis),
+    /// `.primary` role, same as every other slot. This test's actual
+    /// point (an independent slot reaches its own progression decision,
+    /// uncoupled from Squat's) is unchanged; only the role/baseline
+    /// specifics are updated to match the real content.
+    func test3_ASecondSlotReachesItsOwnIndependentProgressionDecision() throws {
         let fixture = try makeFixture()
         let week0Sessions = try materializeWeekZero(fixture)
         let allWeek0 = week0Sessions.flatMap(\.orderedBlocks).flatMap(\.orderedPrescriptions)
         let curl = try XCTUnwrap(allWeek0.first { $0.exercise?.canonicalName == "Barbell Curl" })
-        XCTAssertEqual(curl.sourcePrescriptionTemplate?.slotRole, .accessory)
-        XCTAssertNil(curl.sourcePrescriptionTemplate?.pairedSlot, "accessory is never autoregulated — no rating source needed")
-        XCTAssertEqual(curl.orderedSetPrescriptions.count, 2, "accessory baseline")
+        XCTAssertEqual(curl.sourcePrescriptionTemplate?.slotRole, .primary)
+        XCTAssertEqual(curl.sourcePrescriptionTemplate?.pairedSlot?.id, curl.sourcePrescriptionTemplate?.id, "self-attributed, same as every other real Mesocycle 1 slot")
+        XCTAssertEqual(curl.orderedSetPrescriptions.count, 3, "Biceps' real recovered Week-1 baseline")
 
-        try logSameExercise(as: curl, in: allWeek0, reps: 20, actualRir: 2, performanceProfile: fixture.performanceProfile, asOf: fixture.startDate)
+        // Hits the top of the primary 5-10 range at week 0's own target
+        // RIR (3) — the same "clear load increase" shape as test 1, on a
+        // completely different slot, proving the two decisions never
+        // interact.
+        try logSameExercise(as: curl, in: allWeek0, reps: 10, actualRir: 3, performanceProfile: fixture.performanceProfile, asOf: fixture.startDate)
         try logAdequatePerformanceAndComplete(otherExercises(than: curl, in: allWeek0), performanceProfile: fixture.performanceProfile, asOf: fixture.startDate)
         let curlLastWeight = try XCTUnwrap(curl.loggedSetResults.first?.weight)
 
@@ -245,24 +257,24 @@ final class HypertrophyV2EndToEndTests: XCTestCase {
         let result = try rollForward(fixture, asOf: week1Date)
         let curlWeek1 = try XCTUnwrap(weekPrescriptions(result).first { $0.sourcePrescriptionTemplate?.id == curl.sourcePrescriptionTemplate?.id })
 
-        XCTAssertEqual(curlWeek1.appliedProgressionReasonCode, .loadIncrease, "20 reps hit the top of 10-20 at target RIR 2")
+        XCTAssertEqual(curlWeek1.appliedProgressionReasonCode, .loadIncrease)
         XCTAssertEqual(curlWeek1.orderedSetPrescriptions.first?.targetWeight, curlLastWeight + 2.5)
-        XCTAssertEqual(curlWeek1.orderedSetPrescriptions.count, 2, "accessory set count is fixed, never autoregulated")
     }
 
-    /// Back Squat legitimately trains on more than one day of this
-    /// rotation (Day A's solo Quadriceps slot and Day C's Squat Pattern
-    /// slot) — a real, intended feature of the program, not a test
-    /// artifact. Tests 4/5 specifically need ONE clean exposure per
-    /// decision cycle, so they exercise only Day A's own occurrence and
-    /// deliberately leave every OTHER day's session unlogged/uncompleted
-    /// for that week — an unlogged prescription contributes zero
-    /// exposures to history (`DoubleProgressionHistoryResolver`'s own
-    /// "a skipped workout is NOT an underperformance exposure" rule),
-    /// so this cleanly isolates a single real exposure without needing
-    /// every session in the week to be touched.
+    /// Front Squat legitimately trains on more than one day of the real
+    /// recovered source rotation ("Push Emphasis"'s solo Quads slot and
+    /// "Legs Emphasis"'s first of two Quads slots) — a real, intended
+    /// feature of the program, not a test artifact. Tests 4/5 specifically
+    /// need ONE clean exposure per decision cycle, so they exercise only
+    /// "Push Emphasis"'s own occurrence and deliberately leave every OTHER
+    /// day's session unlogged/uncompleted for that week — an unlogged
+    /// prescription contributes zero exposures to history
+    /// (`DoubleProgressionHistoryResolver`'s own "a skipped workout is NOT
+    /// an underperformance exposure" rule), so this cleanly isolates a
+    /// single real exposure without needing every session in the week to
+    /// be touched.
     private func dayASquat(in prescriptions: [ExercisePrescription]) throws -> ExercisePrescription {
-        try XCTUnwrap(prescriptions.first { $0.exercise?.canonicalName == "Back Squat" && $0.workoutBlock?.session?.name == "Day A" })
+        try XCTUnwrap(prescriptions.first { $0.exercise?.canonicalName == "Front Squat" && $0.workoutBlock?.session?.name == "Push Emphasis" })
     }
 
     private func dayASiblings(of squat: ExercisePrescription, in prescriptions: [ExercisePrescription]) -> [ExercisePrescription] {
@@ -328,8 +340,12 @@ final class HypertrophyV2EndToEndTests: XCTestCase {
         let fixture = try makeFixture()
         let week0Sessions = try materializeWeekZero(fixture)
         let allWeek0 = week0Sessions.flatMap(\.orderedBlocks).flatMap(\.orderedPrescriptions)
-        let squat = try XCTUnwrap(allWeek0.first { $0.exercise?.canonicalName == "Back Squat" })
-        let bench = try XCTUnwrap(allWeek0.first { $0.exercise?.canonicalName == "Barbell Bench Press" })
+        // "Barbell Row" (Horizontal Pull) has a uniform Week-1 baseline of
+        // 3 on every real occurrence (`SOURCE_PROGRAM_MANIFEST.md` §3),
+        // unlike Front Squat/Quads (2 on "Push Emphasis," 3 on "Legs
+        // Emphasis") — avoids picking an ambiguous occurrence here.
+        let squat = try XCTUnwrap(allWeek0.first { $0.exercise?.canonicalName == "Barbell Row" && $0.workoutBlock?.session?.name == "Push Emphasis" })
+        let bench = try XCTUnwrap(allWeek0.first { $0.exercise?.canonicalName == "Barbell Bench Press" && $0.workoutBlock?.session?.name == "Push Emphasis" })
         XCTAssertEqual(squat.orderedSetPrescriptions.count, 3, "primary baseline")
 
         try logAdequatePerformanceAndComplete(allWeek0, performanceProfile: fixture.performanceProfile, asOf: fixture.startDate)
@@ -364,7 +380,10 @@ final class HypertrophyV2EndToEndTests: XCTestCase {
             previousSessions = Array(result.newSessionsByComponent.values.flatMap { $0 })
         }
 
-        let squat = try XCTUnwrap(previousSessions.flatMap(\.orderedBlocks).flatMap(\.orderedPrescriptions).first { $0.exercise?.canonicalName == "Back Squat" })
+        // "Barbell Row" again, for the same uniform-baseline reason as
+        // test 6 — every occurrence resolves to baseline 3, so no
+        // day-scoping is needed to get a deterministic `round(3*0.5)=2`.
+        let squat = try XCTUnwrap(previousSessions.flatMap(\.orderedBlocks).flatMap(\.orderedPrescriptions).first { $0.exercise?.canonicalName == "Barbell Row" })
         XCTAssertEqual(fixture.definition.orderedWeeks[4].isDeload, true, "sanity: the 5th templated week is the deload marker")
 
         let deloadDate = try XCTUnwrap(Calendar.current.date(byAdding: .day, value: 7, to: weekStart))

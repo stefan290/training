@@ -313,41 +313,19 @@ enum HypertrophyProgramGenerator {
         var accessory: [MuscleGroup]
     }
 
-    /// The approved 3-Day Full Body Hypertrophy day-focus rotation
-    /// (product-owner decisions D-10B-1 and the "Day A/B/C" clarification
-    /// — verbatim, plus the Blocker-1 correction adding calves). **This
-    /// stage's only supported day-focus table** — see `generate()`'s
-    /// branch condition. Day C deliberately carries no `secondary` tier
-    /// (its broad `primary` already spans the full body; forcing a
-    /// secondary tier here would be symmetry for its own sake, which the
-    /// product owner explicitly rejected).
-    ///
-    /// **Calf placement (product owner's corrected V1 policy):** calves
-    /// are accessory work on **Day A and Day C only** — the two days
-    /// whose `primary` tier itself includes quadriceps-loaded (Squat
-    /// Pattern) work, not merely secondary/incidental quad involvement.
-    /// Day B's primary tier is posterior-chain/hinge-dominant (back,
-    /// hamstrings, glutes) with quadriceps only in its secondary tier —
-    /// deliberately the one day left without calf work, so calves ride
-    /// alongside the day's own primary lower-body emphasis rather than
-    /// being mechanically distributed for numeric symmetry. This yields
-    /// exactly the approved 2×/week exposure without displacing any
-    /// primary/secondary work (appended to the existing accessory tier,
-    /// same tier biceps/triceps already occupy).
-    static let threeDayFullBodyRotation: [HypertrophyDayFocus] = [
-        HypertrophyDayFocus(
-            name: "Day A", primary: [.quadriceps, .chest, .shoulders],
-            secondary: [.back, .hamstrings, .glutes], accessory: [.biceps, .triceps, .calves]
-        ),
-        HypertrophyDayFocus(
-            name: "Day B", primary: [.back, .hamstrings, .glutes],
-            secondary: [.chest, .quadriceps, .shoulders], accessory: [.biceps, .triceps]
-        ),
-        HypertrophyDayFocus(
-            name: "Day C", primary: [.quadriceps, .hamstrings, .glutes, .chest, .back, .shoulders],
-            secondary: [], accessory: [.biceps, .triceps, .calves]
-        ),
-    ]
+    /// **Retired, Stage 10R.1 Slice 1A** — this TrainingOS-invented Day
+    /// A/B/C rotation is no longer authoritative for any generated
+    /// program. It has been replaced by the literal, cell-cited Mesocycle
+    /// 1 "Basic Hypertrophy" category sequence recovered from the real
+    /// `3 day full body_Novice.xlsx` workbook — see
+    /// `threeDayFullBodyMesocycle1BasicHypertrophy` below and
+    /// `SOURCE_PROGRAM_MANIFEST.md` §3. `HypertrophyDayFocus`/
+    /// `validateWeeklyCoverage`/`trackedMuscleGroups`/
+    /// `expectedWeeklyExposure` remain declared below — they are a generic
+    /// coverage-checking *mechanism*, still exercised by their own
+    /// pure-function unit tests, not themselves invented program content —
+    /// but nothing in production calls them with this retired rotation
+    /// any longer.
 
     /// The 9 muscle groups Stage 10B's coverage check reasons over —
     /// exactly `STAGE10A_PROGRAMMING_ENGINE_AUDIT.md`'s originally
@@ -367,9 +345,10 @@ enum HypertrophyProgramGenerator {
     /// are exposed on all 3 days — an outcome of the approved Day A/B/C
     /// emphasis definitions, not a separate symmetry rule. `.calves` is
     /// the one deliberately different case: 2×/week, accessory-only, per
-    /// the product owner's explicit V1 policy (see
-    /// `threeDayFullBodyRotation`'s doc comment for the placement
-    /// reasoning). `validateWeeklyCoverage` checks the generated table
+    /// the product owner's explicit V1 policy (historical Stage 10B
+    /// placement reasoning, now retired along with the rotation itself —
+    /// see the retirement note above). `validateWeeklyCoverage` checks
+    /// whatever table it's given against this policy
     /// against this policy exactly — a group appearing MORE or FEWER
     /// times than its expected count is a reportable mismatch, not just a
     /// "did it appear at all" check.
@@ -554,23 +533,121 @@ enum HypertrophyProgramGenerator {
         role == .primary && split == .legs && Set(targets) == Set([.quadriceps, .glutes])
     }
 
+    // MARK: - Stage 10R.1 Slice 1A: real source content, Mesocycle 1 only
+
+    /// One category slot exactly as it appears in the real source
+    /// workbook — `sourceLabel` preserves the literal display text found
+    /// in the cell (Decision 3: provenance audit trail), `category` is
+    /// the canonical identity it normalizes to, `weekOneSets` is the
+    /// literal Week-1 baseline sets recovered from the workbook's own `I`
+    /// column. Nothing here is derived, rebalanced, or invented — see
+    /// `SOURCE_PROGRAM_MANIFEST.md` §3 for the cell-by-cell citation.
+    struct SourceCategorySlot: Equatable {
+        var sourceLabel: String
+        var category: SourceHypertrophyCategory
+        var weekOneSets: Int
+    }
+
+    /// One real source training day — `sourceEmphasisName` is the literal
+    /// workbook day-emphasis label ("Push Emphasis," etc.), `categories`
+    /// is the literal, exact-order category sequence for that day.
+    struct SourceDay: Equatable {
+        var sourceEmphasisName: String
+        var categories: [SourceCategorySlot]
+    }
+
+    /// Recovered verbatim from `3 day full body_Novice.xlsx`, sheet
+    /// "Mesocycle 1 Basic Hypertrophy," rows 10-40
+    /// (`SOURCE_PROGRAM_MANIFEST.md` §3) — the ONLY source of day/category
+    /// truth for this configuration's Mesocycle 1. Mesocycle 2 ("Metabolite
+    /// Focus," with its superset mechanic) and Mesocycle 3
+    /// ("Resensitization") are recovered and documented but deliberately
+    /// **not** implemented yet — Slice 1A's explicit scope is Mesocycle 1
+    /// only (see the Stage 10R.1 recovery-order decision).
+    static let threeDayFullBodyMesocycle1BasicHypertrophy: [SourceDay] = [
+        SourceDay(sourceEmphasisName: "Push Emphasis", categories: [
+            SourceCategorySlot(sourceLabel: "Horizontal Push", category: .horizontalPush, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Chest Isolation or Triceps", category: .chestIsolationOrTriceps, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Incline Push or Front Delts", category: .inclinePushOrFrontDelts, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Side Delts", category: .sideDelts, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Vertical Pull", category: .verticalPull, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Horizontal Pull", category: .horizontalPull, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Hamstrings Isolation", category: .hamstringsIsolation, weekOneSets: 2),
+            SourceCategorySlot(sourceLabel: "Quads", category: .quads, weekOneSets: 2),
+        ]),
+        SourceDay(sourceEmphasisName: "Legs Emphasis", categories: [
+            SourceCategorySlot(sourceLabel: "Quads", category: .quads, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Quads", category: .quads, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Hamstrings Hip Hinge", category: .hamstringsHipHinge, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Side Delts", category: .sideDelts, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Vertical Pull", category: .verticalPull, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Horizontal Pull", category: .horizontalPull, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Incline Push or Front Delts", category: .inclinePushOrFrontDelts, weekOneSets: 2),
+            SourceCategorySlot(sourceLabel: "Horizontal Push", category: .horizontalPush, weekOneSets: 2),
+        ]),
+        SourceDay(sourceEmphasisName: "Pull Emphasis", categories: [
+            SourceCategorySlot(sourceLabel: "Vertical Pull", category: .verticalPull, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Horizontal Pull", category: .horizontalPull, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Rear Delts or Side Delts", category: .rearOrSideDelts, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Biceps", category: .biceps, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Horizontal Push", category: .horizontalPush, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Incline Push", category: .inclinePush, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Glutes", category: .glutes, weekOneSets: 2),
+            SourceCategorySlot(sourceLabel: "Hamstrings Isolation", category: .hamstringsIsolation, weekOneSets: 2),
+        ]),
+    ]
+
+    /// **TrainingOS execution-layer selection** (explicitly distinct from
+    /// source content, per the Stage 10R.1 architecture) — which ONE of a
+    /// category's several source-approved exercises this configuration
+    /// currently resolves to, by canonical name. Every value here is
+    /// either a literal source-approved name or a documented, narrow
+    /// equivalence to one (e.g. "Barbell Bench Press" ≈ the source's
+    /// "Medium Grip Bench Press"; "Conventional Deadlift" ≈ the source's
+    /// plain "Deadlift" — never an unrelated substitute). `.quads` has two
+    /// distinct occurrences on "Legs Emphasis"; `quadsOccurrenceNames`
+    /// gives each a different, still source-approved exercise rather than
+    /// prescribing the same movement twice in one day. This table may grow
+    /// as the catalog gains more literal source-named exercises (Slice 2)
+    /// — it is not itself the source-approved option set (see
+    /// `SourceHypertrophyCategory.sourceApprovedExerciseNames`), only
+    /// today's deterministic pick from within it.
+    private static let sourceCategoryResolvedExerciseName: [SourceHypertrophyCategory: String] = [
+        .horizontalPush: "Barbell Bench Press",
+        .inclinePush: "Incline Dumbbell Press",
+        .inclinePushOrFrontDelts: "Barbell Overhead Press",
+        .chestIsolationOrTriceps: "Cable Chest Fly",
+        .horizontalPull: "Barbell Row",
+        .verticalPull: "Lat Pulldown",
+        .sideDelts: "Dumbbell Lateral Raise",
+        .rearOrSideDelts: "Face Pull",
+        .biceps: "Barbell Curl",
+        .glutes: "Conventional Deadlift",
+        .hamstringsHipHinge: "Stiff-Legged Deadlift",
+        .hamstringsIsolation: "Seated Leg Curl",
+    ]
+    private static let quadsOccurrenceNames = ["Front Squat", "Leg Press"]
+
+    /// Looks up an already-persisted `Exercise` by exact canonical name —
+    /// never creates one. Slice 1A never expands the catalog with a
+    /// TrainingOS-invented exercise during resolution (Decision-required
+    /// item 8); the one new catalog row this slice adds (`Stiff-Legged
+    /// Deadlift`) is a real, source-named exercise added to
+    /// `ExerciseCatalog` itself, not fabricated here.
+    private static func findCatalogedExercise(named name: String, context: ModelContext) -> Exercise? {
+        let descriptor = FetchDescriptor<Exercise>(predicate: #Predicate { $0.canonicalName == name })
+        return try? context.fetch(descriptor).first
+    }
+
     private static func generateDayFocusDriven(
         configuration: HypertrophyProgramConfiguration,
         provenance: ProgramProvenance,
         context: ModelContext
     ) throws -> ProgramDefinition {
-        let coverage = validateWeeklyCoverage(dayFocuses: threeDayFullBodyRotation)
-        guard coverage.mismatches.isEmpty else {
-            throw HypertrophyGenerationError.weeklyExposurePolicyViolated(mismatches: coverage.mismatches)
-        }
-        guard coverage.duplicateDayNames.isEmpty else {
-            throw HypertrophyGenerationError.duplicateDayFocus(dayNames: coverage.duplicateDayNames)
-        }
-
         let definition = ProgramDefinition(
             name: "3-Day Full Body Hypertrophy — \(phaseName(configuration.phaseType))",
             lengthWeeks: 5,
-            intent: "\(phaseName(configuration.phaseType)), 3-day Full Body (day-focus rotation)",
+            intent: "\(phaseName(configuration.phaseType)), 3-day Full Body — Mesocycle 1 Basic Hypertrophy, recovered verbatim from the real source workbook (SOURCE_PROGRAM_MANIFEST.md §3)",
             programmingSystem: .hypertrophy,
             generatorVersion: currentVersion,
             provenance: provenance,
@@ -587,8 +664,8 @@ enum HypertrophyProgramGenerator {
         context.insert(deloadWeek)
         definition.addWeek(deloadWeek)
 
-        for focus in threeDayFullBodyRotation {
-            let session = TemplateSession(name: focus.name, role: .hypertrophy)
+        for day in threeDayFullBodyMesocycle1BasicHypertrophy {
+            let session = TemplateSession(name: day.sourceEmphasisName, role: .hypertrophy)
             context.insert(session)
             definition.addTemplateSession(session)
 
@@ -596,43 +673,51 @@ enum HypertrophyProgramGenerator {
             context.insert(block)
             session.addBlockTemplate(block)
 
-            // Primary, then secondary, then accessory — ordering follows
-            // priority-before-accessory (§11), no fatigue model.
-            let primarySlots = groupMuscleGroups(focus.primary).map { (role: SlotRole.primary, targets: $0) }
-            let secondarySlots = groupMuscleGroups(focus.secondary).map { (role: SlotRole.secondary, targets: $0) }
-            let accessorySlots = groupMuscleGroups(focus.accessory).map { (role: SlotRole.accessory, targets: $0) }
-            let orderedSlots = primarySlots + secondarySlots + accessorySlots
+            var templatesThisDay: [PrescriptionTemplate] = []
+            var quadsSeenThisDay = 0
 
-            var primaryAndSecondaryTemplates: [PrescriptionTemplate] = []
-
-            for (role, targets) in orderedSlots {
-                let template = makeDayFocusTemplate(role: role)
+            for categorySlot in day.categories {
+                let template = makeSourceCategoryTemplate(baselineSets: categorySlot.weekOneSets)
                 let slot = ExerciseSlot(
-                    name: slotLabel(for: targets), allowedTargets: targets,
-                    allowedMovementFunctions: movementFunctionIntent(for: targets)
+                    name: categorySlot.sourceLabel,
+                    allowedTargets: categorySlot.category.allowedTargets,
+                    allowedMovementFunctions: categorySlot.category.allowedMovementFunctions
                 )
+
+                // Deterministic, source-approved-set resolution — see
+                // `sourceCategoryResolvedExerciseName`'s doc comment.
+                // Pre-setting `resolvedExercise` here (rather than relying
+                // on `ResolveProgramInstanceExerciseSlotsUseCase`'s
+                // shared-pool overlap matching) is exactly the "idempotent,
+                // already-resolved slot" seam that use case's own doc
+                // comment already anticipates for curated content — it
+                // never overwrites a slot that already has one.
+                let exerciseName: String
+                if categorySlot.category == .quads {
+                    exerciseName = quadsOccurrenceNames[min(quadsSeenThisDay, quadsOccurrenceNames.count - 1)]
+                    quadsSeenThisDay += 1
+                } else {
+                    exerciseName = sourceCategoryResolvedExerciseName[categorySlot.category] ?? ""
+                }
+                slot.resolvedExercise = findCatalogedExercise(named: exerciseName, context: context)
+
                 context.insert(template)
                 context.insert(slot)
                 template.attachExerciseSlot(slot)
-                template.slotRole = role
+                template.slotRole = .primary
                 block.addPrescriptionTemplate(template)
-
-                if role != .accessory {
-                    primaryAndSecondaryTemplates.append(template)
-                }
+                templatesThisDay.append(template)
             }
 
-            // Stage 10B.6 fix (D-10B6-6 — the feedback fan-out flaw the
-            // Stage 10B.5 audit confirmed): every primary/secondary
-            // template now rates ITSELF — `AutoregulationRatingResolver
-            // .rating(for:)` reads `template.pairedSlot`'s most recently
-            // completed prescription's rating, so a self-reference means
-            // each slot's own soreness/difficulty answer feeds only its
-            // own next-week set count, never a sibling's. Accessory
-            // templates set no `pairedSlot` at all — Hypertrophy V2's
-            // accessory sets are a fixed schedule, never autoregulated,
-            // so there is nothing for a rating to drive.
-            for template in primaryAndSecondaryTemplates {
+            // Stage 10B.6's self-attribution fix is preserved exactly
+            // (Decision on Stage 10B.6 classification: KEEP this specific
+            // mechanism) — every slot rates itself, so no sibling's
+            // feedback can fan out onto another slot's set count.
+            // **Not** the real source's chronological last-trained-
+            // occurrence pairing web (`SOURCE_PROGRAM_MANIFEST.md` §3) —
+            // that is explicitly deferred to Slice 1B, per the Stage 10R.1
+            // autoregulation decision; this slice is content-only.
+            for template in templatesThisDay {
                 template.pairedSlot = template
             }
         }
@@ -640,29 +725,25 @@ enum HypertrophyProgramGenerator {
         return definition
     }
 
-    /// Builds one `PrescriptionTemplate`'s rules for the day-focus path —
-    /// **Stage 10B.6 replacement of Family A's rules with Hypertrophy
-    /// V2's own** (`STAGE10B6_HYPERTROPHY_PRESCRIPTION_REDESIGN.md` §2):
-    /// `.doubleProgression` load, role-based rep range + RIR trajectory
-    /// (`HypertrophyV2ProgressionEngine`), bounded local set-count
-    /// autoregulation for primary/secondary, a fixed schedule for
-    /// accessory. No phase-specific week-1 RM factor and no Heavy
-    /// Quads/Glutes exception apply here — both were mechanisms of
-    /// `.rmBased` loading (a %RM anchor), which this rule family does not
-    /// use at all (D-10B6-7: e1RM/RM-factor dropped as a Hypertrophy
-    /// dependency). `deloadWeightAction`/`deloadRepAction` stay `.standard`
-    /// (the default) for every role — Hypertrophy V2's deload is resolved
-    /// entirely by `HypertrophyV2ProgressionEngine`/`StrengthMaterializer`'s
-    /// `.doubleProgression` branch, never by `SourceCompatibleDeloadStrategy`
-    /// (which this rule family's templates never reach).
-    private static func makeDayFocusTemplate(role: SlotRole) -> PrescriptionTemplate {
-        let setCountRule: SetCountRule = role == .accessory
-            ? .fixed(setsByWeek: Array(repeating: HypertrophyV2ProgressionEngine.baselineSets(for: role), count: 4))
-            : .autoregulated(AutoregulatedSetCount(baselineSets: HypertrophyV2ProgressionEngine.baselineSets(for: role)))
-        return PrescriptionTemplate(rules: StrengthProgressionRules(
+    /// Builds one `PrescriptionTemplate`'s rules for the Slice 1A
+    /// source-content path. **Deliberately, explicitly unchanged from
+    /// Stage 10B.6's progression mechanism** — `.doubleProgression` load,
+    /// the `.primary`-role rep range/RIR trajectory
+    /// (`HypertrophyV2ProgressionEngine`), autoregulated set count — per
+    /// the Stage 10R.1 instruction "do not modify progression yet." The
+    /// only change from the pre-Slice-1A version is `baselineSets`, which
+    /// is now the literal source Week-1 value for this specific category
+    /// slot (a content/data input) instead of a flat role-derived
+    /// constant — every real Mesocycle-1 category in this workbook
+    /// autoregulates the same way (to-failure, rated set-count), so every
+    /// slot uses `.primary`'s rule shape (proven numerically identical to
+    /// `.secondary`'s — `STAGE10B5_HYPERTROPHY_PRESCRIPTION_AUDIT.md` §10);
+    /// none of them match `.accessory`'s fixed/never-autoregulated shape.
+    private static func makeSourceCategoryTemplate(baselineSets: Int) -> PrescriptionTemplate {
+        PrescriptionTemplate(rules: StrengthProgressionRules(
             loadRule: .doubleProgression,
-            setCountRule: setCountRule,
-            repGoalSchedule: HypertrophyV2ProgressionEngine.makeRepGoalSchedule(for: role)
+            setCountRule: .autoregulated(AutoregulatedSetCount(baselineSets: baselineSets)),
+            repGoalSchedule: HypertrophyV2ProgressionEngine.makeRepGoalSchedule(for: .primary)
         ))
     }
 }

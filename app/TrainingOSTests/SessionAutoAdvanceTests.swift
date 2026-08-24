@@ -49,7 +49,11 @@ final class SessionAutoAdvanceTests: XCTestCase {
             startDate: Date(timeIntervalSince1970: 0), ownerUserID: ownerUserID, equipmentProfile: equipment,
             slotContext: { slot in Self.stage10B6SlotContext(slot: slot, weekIndex: 0, isDeload: false) }, context: context
         )
-        let session = try XCTUnwrap(materialized.sessions.first)
+        // "Pull Emphasis" specifically — the real recovered source's
+        // Biceps/Barbell Curl slot only exists there (Stage 10R.1 Slice
+        // 1A; unlike the retired invented rotation, biceps no longer
+        // appears on every day).
+        let session = try XCTUnwrap(materialized.sessions.first { $0.name == "Pull Emphasis" })
         return (session, catalog)
     }
 
@@ -83,7 +87,7 @@ final class SessionAutoAdvanceTests: XCTestCase {
         return checkIn
     }
 
-    // MARK: 1 — readiness good -> warm-up -> Start Workout -> execution opens exercise 1 of 7
+    // MARK: 1 — readiness good -> warm-up -> Start Workout -> execution opens exercise 1 of 8
 
     func testGoodReadinessThenWarmupThenStartWorkoutAutoOpensSoleBlockAtExerciseOne() throws {
         let (session, catalog) = try makeStage10BSession()
@@ -106,8 +110,8 @@ final class SessionAutoAdvanceTests: XCTestCase {
 
         let block = try XCTUnwrap(SessionAutoAdvance.blockToAutoOpen(session: session), "must auto-open the sole block once the Session is in progress")
         XCTAssertEqual(session.id, sessionIDBefore, "Session identity must never change across readiness -> warm-up -> execution")
-        XCTAssertEqual(block.orderedPrescriptions.count, 7)
-        XCTAssertEqual(block.orderedPrescriptions.first?.exercise?.canonicalName, "Barbell Bench Press", "exercise 1 of 7")
+        XCTAssertEqual(block.orderedPrescriptions.count, 8, "Pull Emphasis' real recovered 8-category sequence")
+        XCTAssertEqual(block.orderedPrescriptions.first?.exercise?.canonicalName, "Lat Pulldown", "exercise 1 of 8 — Vertical Pull is the first recovered category on this day")
     }
 
     // MARK: 2 — readiness good -> Skip Warm-up -> execution opens
@@ -128,7 +132,7 @@ final class SessionAutoAdvanceTests: XCTestCase {
         try StartSessionUseCase.start(session, asOf: Date(), modelContext: context)
 
         let block = try XCTUnwrap(SessionAutoAdvance.blockToAutoOpen(session: session))
-        XCTAssertEqual(block.orderedPrescriptions.first?.exercise?.canonicalName, "Barbell Bench Press")
+        XCTAssertEqual(block.orderedPrescriptions.first?.exercise?.canonicalName, "Lat Pulldown", "Pull Emphasis' first recovered category, Vertical Pull")
         XCTAssertTrue(sequence.wasSkippedEntirely)
     }
 

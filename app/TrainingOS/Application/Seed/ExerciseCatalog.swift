@@ -75,6 +75,15 @@ struct ExerciseCatalog {
     let facePull: Exercise
     let latPulldown: Exercise
     let seatedCableRow: Exercise
+    // Stage 10R.1 Slice 1A addition — recovered directly from the real
+    // "3 day full body_Novice.xlsx" workbook's `Hamstrings_Hip_Hinge`
+    // category table (`SOURCE_PROGRAM_MANIFEST.md` §5): the ONLY
+    // catalog gap found while resolving the recovered Mesocycle-1
+    // structure — no existing exercise (Romanian/Conventional Deadlift)
+    // is a literal source-approved option for this specific category,
+    // which is deliberately distinct from the "Glutes" category that
+    // plain "Deadlift" belongs to.
+    let stiffLeggedDeadlift: Exercise
 
     static func makeAndInsert(context: ModelContext) -> ExerciseCatalog {
         func make(
@@ -229,9 +238,12 @@ struct ExerciseCatalog {
             primaryTargets: [.quadriceps, .glutes], movementFunctions: [.squatLoaded],
             requiredEquipment: [.dumbbells, .bench]
         )
+        // Stage 10R.1 Slice 1A: `.kneeFlexionLoaded` added additively —
+        // see `MovementFunction`'s own doc comment for the exact
+        // Hamstrings-Isolation-vs-hip-hinge collision this closes.
         let legCurl = make(
             "Leg Curl", .strength, "machine", "kneeFlexion",
-            primaryTargets: [.hamstrings],
+            primaryTargets: [.hamstrings], movementFunctions: [.kneeFlexionLoaded],
             requiredEquipment: [.machine]
         )
         let calfRaise = make(
@@ -334,6 +346,14 @@ struct ExerciseCatalog {
             requiredEquipment: [.cableStation]
         )
 
+        // Stage 10R.1 Slice 1A addition (see the stored property's own
+        // doc comment above).
+        let stiffLeggedDeadlift = make(
+            "Stiff-Legged Deadlift", .hypertrophy, "barbell", "hinge",
+            primaryTargets: [.hamstrings, .glutes], movementFunctions: [.hingeLoaded],
+            requiredEquipment: [.barbell]
+        )
+
         return ExerciseCatalog(
             benchPress: benchPress,
             backSquat: backSquat,
@@ -371,7 +391,8 @@ struct ExerciseCatalog {
             cableChestFly: cableChestFly,
             facePull: facePull,
             latPulldown: latPulldown,
-            seatedCableRow: seatedCableRow
+            seatedCableRow: seatedCableRow,
+            stiffLeggedDeadlift: stiffLeggedDeadlift
         )
     }
 }

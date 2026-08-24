@@ -443,24 +443,26 @@ final class TacticalPlanningOrchestrationTests: XCTestCase {
         let instance = try XCTUnwrap(fixture.phase.primaryInstance)
         XCTAssertEqual(instance.programDefinition?.name, "3-Day Full Body Hypertrophy — Basic Hypertrophy", "real onboarding chose the exact V2 reference configuration, not a hand-picked one")
 
+        // Stage 10R.1 Slice 1A: the real recovered Mesocycle 1 day names
+        // and category sequence — the invented Day A/B/C rotation is
+        // retired (`SOURCE_PROGRAM_MANIFEST.md` §3).
         let sessionNames = Set(instance.sessions.compactMap(\.name))
-        XCTAssertEqual(sessionNames, ["Day A", "Day B", "Day C"], "the approved Stage 10B day-focus rotation, unchanged")
+        XCTAssertEqual(sessionNames, ["Push Emphasis", "Legs Emphasis", "Pull Emphasis"], "the real recovered source day-focus sequence")
 
-        let dayA = try XCTUnwrap(instance.sessions.first { $0.name == "Day A" })
+        let dayA = try XCTUnwrap(instance.sessions.first { $0.name == "Push Emphasis" })
         let dayAPrescriptions = dayA.orderedBlocks.flatMap(\.orderedPrescriptions)
-        XCTAssertEqual(dayAPrescriptions.count, 7, "the approved Stage 10B richer Day A structure, unchanged")
+        XCTAssertEqual(dayAPrescriptions.count, 8, "the real recovered 8-category Push Emphasis structure")
 
-        // Week 1 Hypertrophy V2 numbers, read from the REAL materialized SetPrescriptions.
+        // Week 1 Hypertrophy V2 numbers, read from the REAL materialized
+        // SetPrescriptions. Every real Mesocycle-1 slot is `.primary` role
+        // (no `.secondary`/`.accessory` in the real recovered content —
+        // Slice 1A's own "do not modify progression" scope keeps the
+        // underlying rep-range/RIR table unchanged, just applied uniformly
+        // now instead of per-tier).
         for prescription in dayAPrescriptions {
             guard let role = prescription.sourcePrescriptionTemplate?.slotRole, let firstSet = prescription.orderedSetPrescriptions.first else { continue }
-            switch role {
-            case .primary:
-                XCTAssertEqual(firstSet.repRangeLow, 5); XCTAssertEqual(firstSet.repRangeHigh, 10); XCTAssertEqual(firstSet.targetRir, 3)
-            case .secondary:
-                XCTAssertEqual(firstSet.repRangeLow, 6); XCTAssertEqual(firstSet.repRangeHigh, 12); XCTAssertEqual(firstSet.targetRir, 3)
-            case .accessory:
-                XCTAssertEqual(firstSet.repRangeLow, 10); XCTAssertEqual(firstSet.repRangeHigh, 20); XCTAssertEqual(firstSet.targetRir, 2)
-            }
+            XCTAssertEqual(role, .primary)
+            XCTAssertEqual(firstSet.repRangeLow, 5); XCTAssertEqual(firstSet.repRangeHigh, 10); XCTAssertEqual(firstSet.targetRir, 3)
         }
         // Sanity: this is NOT the legacy 3-3@0RIR/12-12-no-RIR shape.
         XCTAssertFalse(dayAPrescriptions.contains { $0.orderedSetPrescriptions.first?.targetRir == 0 }, "no legacy toFailure-derived RIR 0 anywhere in this real V2 session")
@@ -483,7 +485,7 @@ final class TacticalPlanningOrchestrationTests: XCTestCase {
 
         XCTAssertEqual(dayA.status, .inProgress)
         let dayAAfterExecution = dayA.orderedBlocks.flatMap(\.orderedPrescriptions)
-        XCTAssertEqual(dayAAfterExecution.count, 7, "still all 7 exercises after readiness/warm-up — nothing was dropped or replaced")
+        XCTAssertEqual(dayAAfterExecution.count, 8, "still all 8 exercises after readiness/warm-up — nothing was dropped or replaced")
         let primaryAfter = try XCTUnwrap(dayAAfterExecution.first { $0.sourcePrescriptionTemplate?.slotRole == .primary })
         XCTAssertEqual(primaryAfter.orderedSetPrescriptions.first?.targetRir, 3, "the V2 prescription survives readiness/warm-up unchanged")
     }

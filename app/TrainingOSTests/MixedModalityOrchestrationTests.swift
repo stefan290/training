@@ -65,25 +65,27 @@ final class MixedModalityOrchestrationTests: XCTestCase {
             context.insert(ex)
             return ex
         }
+        // Stage 10R.1 Slice 1A: "Strength Plus Variety"'s Hypertrophy
+        // component (frequency target 3) now resolves to the 3-Day Full
+        // Body configuration's REAL recovered Mesocycle-1 category
+        // sequence (`SOURCE_PROGRAM_MANIFEST.md` §3), not the retired
+        // invented Day A/B/C rotation — this pool must cover every real
+        // category's target/movement-function combination, or a real
+        // slot is left unresolved (`.calibrationRequired`) rather than
+        // silently defaulting.
         let strength = [
-            exercise("Aaa Mixed Primary Shoulders", [.shoulders]),
-            exercise("Aaa Mixed Primary Quads", [.quadriceps], [.squatLoaded]),
-            exercise("Aaa Mixed Primary Back", [.back]),
-            // Stage 10B: "Strength Plus Variety"'s Hypertrophy component
-            // (frequency target 3) now resolves to the 3-Day Full Body
-            // day-focus-driven configuration, which has more distinct
-            // slot target-sets than the old single-pair-per-day shape —
-            // in particular a hamstrings+glutes hinge-pattern slot, a
-            // chest+shoulders press-pattern slot, and a calves accessory
-            // slot, none of which the original candidates above are
-            // tagged for. `.pressLoaded`/`.hingeLoaded` movement-function
-            // tags (Blocker 2) are required for these to actually satisfy
-            // "Horizontal Push"/"Hinge Pattern" — muscle-group overlap
-            // alone is no longer sufficient.
-            exercise("Zzz Mixed Paired Accessory", [.chest, .triceps], [.pressLoaded]),
-            exercise("Aaa Mixed Primary Hamstrings Glutes", [.hamstrings, .glutes], [.hingeLoaded]),
+            exercise("Aaa Mixed Horizontal Push", [.chest], [.pressLoaded]),
+            exercise("Aaa Mixed Vertical Push", [.shoulders], [.verticalPushLoaded]),
+            exercise("Aaa Mixed Chest Isolation Triceps", [.chest, .triceps]),
+            exercise("Aaa Mixed Horizontal Pull", [.back], [.horizontalPullLoaded]),
+            exercise("Aaa Mixed Vertical Pull", [.back], [.verticalPullLoaded]),
+            exercise("Aaa Mixed Side Delts", [.lateralDelt]),
+            exercise("Aaa Mixed Rear Or Side Delts", [.rearDelt, .lateralDelt]),
             exercise("Zzz Mixed Accessory Biceps", [.biceps]),
-            exercise("Zzz Mixed Accessory Calves", [.calves]),
+            exercise("Aaa Mixed Primary Quads", [.quadriceps], [.squatLoaded]),
+            exercise("Aaa Mixed Glutes", [.glutes], [.hingeLoaded]),
+            exercise("Aaa Mixed Hip Hinge", [.hamstrings, .glutes], [.hingeLoaded]),
+            exercise("Aaa Mixed Hamstrings Isolation", [.hamstrings], [.kneeFlexionLoaded]),
         ]
         let ff = [
             exercise("Mixed FF Squat Lift", [], [.squatLoaded], .weightlifting),
