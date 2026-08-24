@@ -539,7 +539,9 @@ final class HypertrophyDayFocusGenerationTests: XCTestCase {
         XCTAssertEqual(catalog.cableTricepsPushdown.primaryTargets, [.triceps])
 
         XCTAssertEqual(catalog.dumbbellLateralRaise.canonicalName, "Dumbbell Lateral Raise")
-        XCTAssertEqual(catalog.dumbbellLateralRaise.primaryTargets, [.shoulders])
+        // Stage 10C.1: `.lateralDelt` added alongside the pre-existing
+        // generic `.shoulders` — additive, never a replacement.
+        XCTAssertEqual(catalog.dumbbellLateralRaise.primaryTargets, [.shoulders, .lateralDelt])
 
         XCTAssertEqual(catalog.barbellRow.canonicalName, "Barbell Row")
         XCTAssertEqual(catalog.barbellRow.primaryTargets, [.back, .biceps])

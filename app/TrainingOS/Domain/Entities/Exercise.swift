@@ -43,6 +43,14 @@ final class Exercise {
     /// `primaryTargets`' "empty/nil means not applicable, not wildcard"
     /// convention.
     var functionalModality: FunctionalModality?
+    /// Stage 10C.1 addition: what physical equipment this exercise
+    /// actually requires (see `EquipmentRequirement`'s own doc comment
+    /// for why this is a separate concept from `equipment: String`
+    /// above, which is unchanged and keeps its existing job). Empty is
+    /// the default for every pre-Stage-10C.1 row and simply means "not
+    /// yet recorded," not "requires nothing" — no code reads this field
+    /// yet, so there is no behavioral difference either way.
+    var requiredEquipment: [EquipmentRequirement] = []
 
     @Relationship(deleteRule: .cascade, inverse: \ExerciseAlias.exercise)
     var aliases: [ExerciseAlias] = []
@@ -55,7 +63,8 @@ final class Exercise {
         movementPattern: String,
         primaryTargets: [MuscleGroup] = [],
         movementFunctions: [MovementFunction] = [],
-        functionalModality: FunctionalModality? = nil
+        functionalModality: FunctionalModality? = nil,
+        requiredEquipment: [EquipmentRequirement] = []
     ) {
         self.id = id
         self.canonicalName = canonicalName
@@ -65,6 +74,7 @@ final class Exercise {
         self.primaryTargets = primaryTargets
         self.movementFunctions = movementFunctions
         self.functionalModality = functionalModality
+        self.requiredEquipment = requiredEquipment
     }
 
     /// The only way application code should attach an ExerciseAlias.

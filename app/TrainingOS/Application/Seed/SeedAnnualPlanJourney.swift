@@ -83,6 +83,17 @@ enum SeedAnnualPlanJourney {
             // component's `SessionFrequency(target: 3)` already selects
             // the exact 3-Day Full Body configuration.
             catalog.barbellCurl, catalog.cableTricepsPushdown, catalog.dumbbellLateralRaise, catalog.barbellRow,
+            // Stage 10C.1 promotions (D-10C1-1) — already existed in the
+            // catalog, already slot-capable, just never curated into a
+            // real candidate pool before.
+            catalog.bulgarianSplitSquat, catalog.conventionalDeadlift, catalog.seatedLegCurl,
+            catalog.seatedCalfRaise, catalog.pullUp,
+            // Stage 10C.1 new exercises (D-10C1-2/D-10C1-3) — fill the
+            // vertical-push/quadriceps-isolation/chest-isolation/
+            // rear-delt/loaded-vertical-pull gaps, plus the approved
+            // second horizontal-pull option.
+            catalog.overheadPress, catalog.legExtension, catalog.cableChestFly,
+            catalog.facePull, catalog.latPulldown, catalog.seatedCableRow,
         ]
         let functionalFitnessCandidates = [
             catalog.wallBall, catalog.pullUp, catalog.bike, catalog.row, catalog.toesToBar,

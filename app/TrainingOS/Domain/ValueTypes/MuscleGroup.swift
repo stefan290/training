@@ -17,4 +17,17 @@ enum MuscleGroup: String, Codable, CaseIterable {
     case calves
     case core
     case forearms
+    /// Stage 10C.1 additions: `.shoulders` alone could not distinguish
+    /// a lateral-delt-isolation slot intent (e.g. Lateral Raise) from a
+    /// rear-delt/upper-back-accessory intent (e.g. Face Pull) — two
+    /// meaningfully different hypertrophy programming targets that
+    /// happened to collapse onto one tag. Purely additive: existing
+    /// exercises keep `.shoulders` unchanged and gain the more specific
+    /// tag alongside it, never in place of it, so any slot still
+    /// matching on generic `.shoulders` is unaffected. Deliberately not
+    /// a full anatomical subdivision (no front-delt case, no separate
+    /// rotator-cuff tag) — only the two distinctions Stage 10C's own
+    /// audit found a concrete near-term programming need for.
+    case lateralDelt
+    case rearDelt
 }

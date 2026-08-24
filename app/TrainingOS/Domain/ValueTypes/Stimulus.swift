@@ -71,6 +71,29 @@ enum MovementFunction: String, Codable, CaseIterable {
     /// additions above.
     case jumping
     case other
+    /// Stage 10C.1 additions: `.gymnasticsPull` is specifically
+    /// bodyweight/gymnastics-flavored (Pull-up, Toes-to-Bar) — no case
+    /// existed for a general LOADED pull at all (barbell/machine/cable
+    /// row or pulldown), and none of `.pressLoaded`'s existing users
+    /// distinguish horizontal from vertical pressing. Without these,
+    /// a horizontal-pull-intent slot and a vertical-pull-intent slot
+    /// were indistinguishable by movement function (only `primaryTargets`
+    /// overlap could gate them, and `.back` overlaps both) — confirmed
+    /// during this stage's own audit as a real substitution-safety risk
+    /// once Lat Pulldown/Seated Cable Row were added. `.verticalPushLoaded`
+    /// exists for the same reason on the press side: reusing generic
+    /// `.pressLoaded` for a new Overhead Press exercise was found to
+    /// let it wrongly satisfy the existing "Horizontal Push" slot
+    /// grouping (`HypertrophyProgramGenerator.movementPatternGroupings`)
+    /// purely via shared `.shoulders`/`.pressLoaded` overlap — a
+    /// concrete, discovered collision, not a hypothetical one.
+    /// `.pressLoaded` itself is left completely unchanged for every
+    /// exercise that already carries it (Bench Press, Incline Dumbbell
+    /// Press, Wall Ball, Thruster, Dumbbell Snatch) — only the new
+    /// Overhead Press exercise uses `.verticalPushLoaded` instead.
+    case horizontalPullLoaded
+    case verticalPullLoaded
+    case verticalPushLoaded
 }
 
 /// How many slots of a given `FunctionalModality` a stimulus calls for —

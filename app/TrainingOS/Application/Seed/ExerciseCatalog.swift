@@ -62,17 +62,32 @@ struct ExerciseCatalog {
     let cableTricepsPushdown: Exercise
     let dumbbellLateralRaise: Exercise
     let barbellRow: Exercise
+    // Stage 10C.1 additions — the exercise-catalog/movement-family
+    // foundation for 4/5-Day Hypertrophy V2 (STAGE10C1_EXERCISE_CATALOG_AUDIT.md).
+    // `overheadPress`/`legExtension`/`cableChestFly`/`facePull`/`latPulldown`
+    // fill real, previously-nonexistent movement families (vertical
+    // push, quadriceps isolation, chest isolation, rear delt, loaded
+    // vertical pull); `seatedCableRow` is the approved second
+    // horizontal-pull option alongside `barbellRow`.
+    let overheadPress: Exercise
+    let legExtension: Exercise
+    let cableChestFly: Exercise
+    let facePull: Exercise
+    let latPulldown: Exercise
+    let seatedCableRow: Exercise
 
     static func makeAndInsert(context: ModelContext) -> ExerciseCatalog {
         func make(
             _ name: String, _ modality: TrainingModality, _ equipment: String, _ pattern: String,
             primaryTargets: [MuscleGroup] = [],
             movementFunctions: [MovementFunction] = [],
-            functionalModality: FunctionalModality? = nil
+            functionalModality: FunctionalModality? = nil,
+            requiredEquipment: [EquipmentRequirement] = []
         ) -> Exercise {
             let exercise = Exercise(
                 canonicalName: name, modality: modality, equipment: equipment, movementPattern: pattern,
-                primaryTargets: primaryTargets, movementFunctions: movementFunctions, functionalModality: functionalModality
+                primaryTargets: primaryTargets, movementFunctions: movementFunctions, functionalModality: functionalModality,
+                requiredEquipment: requiredEquipment
             )
             context.insert(exercise)
             return exercise
@@ -85,11 +100,13 @@ struct ExerciseCatalog {
         // `HypertrophyProgramGenerator.movementPatternGroupings`.
         let benchPress = make(
             "Barbell Bench Press", .hypertrophy, "barbell", "horizontalPush",
-            primaryTargets: [.chest, .triceps], movementFunctions: [.pressLoaded]
+            primaryTargets: [.chest, .triceps], movementFunctions: [.pressLoaded],
+            requiredEquipment: [.barbell, .rack, .bench]
         )
         let inclineDumbbellPress = make(
             "Incline Dumbbell Press", .hypertrophy, "dumbbell", "horizontalPush",
-            primaryTargets: [.chest, .triceps], movementFunctions: [.pressLoaded]
+            primaryTargets: [.chest, .triceps], movementFunctions: [.pressLoaded],
+            requiredEquipment: [.dumbbells, .bench]
         )
 
         // Demonstrates the alias/mapping shape (handoff section 10) without
@@ -103,7 +120,8 @@ struct ExerciseCatalog {
 
         let backSquat = make(
             "Back Squat", .strength, "barbell", "squat",
-            primaryTargets: [.quadriceps, .glutes], movementFunctions: [.squatLoaded], functionalModality: .weightlifting
+            primaryTargets: [.quadriceps, .glutes], movementFunctions: [.squatLoaded], functionalModality: .weightlifting,
+            requiredEquipment: [.barbell, .rack]
         )
         let easyRun = make(
             "Easy Run (Zone 2)", .conditioning, "none", "locomotion",
@@ -115,61 +133,79 @@ struct ExerciseCatalog {
         )
         let wallBall = make(
             "Wall Ball", .functionalFitness, "medicineBall", "squatToPress",
-            primaryTargets: [.quadriceps, .shoulders], movementFunctions: [.squatLoaded, .pressLoaded], functionalModality: .weightlifting
+            primaryTargets: [.quadriceps, .shoulders], movementFunctions: [.squatLoaded, .pressLoaded], functionalModality: .weightlifting,
+            requiredEquipment: [.medicineBall]
         )
         let burpee = make(
             "Burpee", .functionalFitness, "bodyweight", "fullBody",
-            movementFunctions: [.other], functionalModality: .gymnastics
+            movementFunctions: [.other], functionalModality: .gymnastics,
+            requiredEquipment: [.bodyweight]
         )
         let kettlebellSwing = make(
             "Kettlebell Swing", .functionalFitness, "kettlebell", "hipHinge",
-            primaryTargets: [.glutes, .hamstrings], movementFunctions: [.hingeLoaded], functionalModality: .weightlifting
+            primaryTargets: [.glutes, .hamstrings], movementFunctions: [.hingeLoaded], functionalModality: .weightlifting,
+            requiredEquipment: [.kettlebell]
         )
         let thruster = make(
             "Thruster", .functionalFitness, "barbell", "squatToPress",
-            primaryTargets: [.quadriceps, .shoulders], movementFunctions: [.squatLoaded, .pressLoaded], functionalModality: .weightlifting
+            primaryTargets: [.quadriceps, .shoulders], movementFunctions: [.squatLoaded, .pressLoaded], functionalModality: .weightlifting,
+            requiredEquipment: [.barbell]
         )
+        // Stage 10C.1: `.verticalPullLoaded` added alongside the
+        // existing `.gymnasticsPull` (never replacing it) — Pull-up is
+        // now also a real Hypertrophy V2 vertical-pull candidate
+        // (D-10C1-1), while its Functional Fitness usage is completely
+        // unaffected.
         let pullUp = make(
             "Pull-up", .functionalFitness, "bodyweight", "verticalPull",
-            primaryTargets: [.back, .biceps], movementFunctions: [.gymnasticsPull], functionalModality: .gymnastics
+            primaryTargets: [.back, .biceps], movementFunctions: [.gymnasticsPull, .verticalPullLoaded], functionalModality: .gymnastics,
+            requiredEquipment: [.pullUpBar]
         )
 
         // Monostructural.
         let bike = make(
             "Assault Bike", .functionalFitness, "bike", "locomotion",
-            movementFunctions: [.monostructural, .locomotion], functionalModality: .metabolicConditioning
+            movementFunctions: [.monostructural, .locomotion], functionalModality: .metabolicConditioning,
+            requiredEquipment: [.bike]
         )
         let row = make(
             "Row Erg", .functionalFitness, "rower", "locomotion",
-            movementFunctions: [.monostructural, .locomotion], functionalModality: .metabolicConditioning
+            movementFunctions: [.monostructural, .locomotion], functionalModality: .metabolicConditioning,
+            requiredEquipment: [.rower]
         )
         let skiErg = make(
             "SkiErg", .functionalFitness, "skiErg", "locomotion",
-            movementFunctions: [.monostructural, .locomotion], functionalModality: .metabolicConditioning
+            movementFunctions: [.monostructural, .locomotion], functionalModality: .metabolicConditioning,
+            requiredEquipment: [.skiErg]
         )
 
         // Gymnastics.
         let toesToBar = make(
             "Toes-to-Bar", .functionalFitness, "bodyweight", "coreFlexion",
-            primaryTargets: [.core], movementFunctions: [.gymnasticsPull, .trunk], functionalModality: .gymnastics
+            primaryTargets: [.core], movementFunctions: [.gymnasticsPull, .trunk], functionalModality: .gymnastics,
+            requiredEquipment: [.pullUpBar]
         )
         let pushUp = make(
             "Push-up", .functionalFitness, "bodyweight", "horizontalPush",
-            primaryTargets: [.chest, .triceps], movementFunctions: [.gymnasticsPush], functionalModality: .gymnastics
+            primaryTargets: [.chest, .triceps], movementFunctions: [.gymnasticsPush], functionalModality: .gymnastics,
+            requiredEquipment: [.bodyweight]
         )
         let handstandPushUp = make(
             "Handstand Push-up", .functionalFitness, "bodyweight", "verticalPush",
-            primaryTargets: [.shoulders, .triceps], movementFunctions: [.gymnasticsPush], functionalModality: .gymnastics
+            primaryTargets: [.shoulders, .triceps], movementFunctions: [.gymnasticsPush], functionalModality: .gymnastics,
+            requiredEquipment: [.bodyweight]
         )
 
         // Weightlifting.
         let deadlift = make(
             "Deadlift", .functionalFitness, "barbell", "hinge",
-            primaryTargets: [.back, .hamstrings, .glutes], movementFunctions: [.hingeLoaded], functionalModality: .weightlifting
+            primaryTargets: [.back, .hamstrings, .glutes], movementFunctions: [.hingeLoaded], functionalModality: .weightlifting,
+            requiredEquipment: [.barbell]
         )
         let dumbbellSnatch = make(
             "Dumbbell Snatch", .functionalFitness, "dumbbell", "hingeToPress",
-            primaryTargets: [.shoulders, .glutes], movementFunctions: [.hingeLoaded, .pressLoaded], functionalModality: .weightlifting
+            primaryTargets: [.shoulders, .glutes], movementFunctions: [.hingeLoaded, .pressLoaded], functionalModality: .weightlifting,
+            requiredEquipment: [.dumbbells]
         )
 
         // Stage 6C additions — realistic Lower A acceptance fixture.
@@ -180,60 +216,122 @@ struct ExerciseCatalog {
         // `HypertrophyProgramGenerator.movementPatternGroupings`.
         let romanianDeadlift = make(
             "Romanian Deadlift", .strength, "barbell", "hinge",
-            primaryTargets: [.hamstrings, .glutes], movementFunctions: [.hingeLoaded]
+            primaryTargets: [.hamstrings, .glutes], movementFunctions: [.hingeLoaded],
+            requiredEquipment: [.barbell]
         )
         let legPress = make(
             "Leg Press", .strength, "machine", "squat",
-            primaryTargets: [.quadriceps, .glutes], movementFunctions: [.squatLoaded]
+            primaryTargets: [.quadriceps, .glutes], movementFunctions: [.squatLoaded],
+            requiredEquipment: [.machine]
         )
         let bulgarianSplitSquat = make(
             "Bulgarian Split Squat", .strength, "dumbbell", "squat",
-            primaryTargets: [.quadriceps, .glutes], movementFunctions: [.squatLoaded]
+            primaryTargets: [.quadriceps, .glutes], movementFunctions: [.squatLoaded],
+            requiredEquipment: [.dumbbells, .bench]
         )
         let legCurl = make(
             "Leg Curl", .strength, "machine", "kneeFlexion",
-            primaryTargets: [.hamstrings]
+            primaryTargets: [.hamstrings],
+            requiredEquipment: [.machine]
         )
         let calfRaise = make(
             "Calf Raise", .strength, "machine", "ankleExtension",
-            primaryTargets: [.calves]
+            primaryTargets: [.calves],
+            requiredEquipment: [.machine]
         )
 
         // Stage 6D additions — real slot-valid alternatives. Same Stage
         // 10B movement-function tagging reasoning as above.
         let frontSquat = make(
             "Front Squat", .strength, "barbell", "squat",
-            primaryTargets: [.quadriceps, .glutes], movementFunctions: [.squatLoaded]
+            primaryTargets: [.quadriceps, .glutes], movementFunctions: [.squatLoaded],
+            requiredEquipment: [.barbell, .rack]
         )
         let conventionalDeadlift = make(
             "Conventional Deadlift", .strength, "barbell", "hinge",
-            primaryTargets: [.hamstrings, .glutes], movementFunctions: [.hingeLoaded]
+            primaryTargets: [.hamstrings, .glutes], movementFunctions: [.hingeLoaded],
+            requiredEquipment: [.barbell]
         )
         let seatedLegCurl = make(
             "Seated Leg Curl", .strength, "machine", "kneeFlexion",
-            primaryTargets: [.hamstrings]
+            primaryTargets: [.hamstrings],
+            requiredEquipment: [.machine]
         )
         let seatedCalfRaise = make(
             "Seated Calf Raise", .strength, "machine", "ankleExtension",
-            primaryTargets: [.calves]
+            primaryTargets: [.calves],
+            requiredEquipment: [.machine]
         )
 
         // Stage 10B additions.
         let barbellCurl = make(
             "Barbell Curl", .hypertrophy, "barbell", "elbowFlexion",
-            primaryTargets: [.biceps]
+            primaryTargets: [.biceps],
+            requiredEquipment: [.barbell]
         )
         let cableTricepsPushdown = make(
             "Cable Triceps Pushdown", .hypertrophy, "cable", "elbowExtension",
-            primaryTargets: [.triceps]
+            primaryTargets: [.triceps],
+            requiredEquipment: [.cableStation]
         )
+        // Stage 10C.1: `.lateralDelt` added alongside the existing
+        // generic `.shoulders` (never replacing it) — see `MuscleGroup`'s
+        // own doc comment.
         let dumbbellLateralRaise = make(
             "Dumbbell Lateral Raise", .hypertrophy, "dumbbell", "shoulderAbduction",
-            primaryTargets: [.shoulders]
+            primaryTargets: [.shoulders, .lateralDelt],
+            requiredEquipment: [.dumbbells]
         )
+        // Stage 10C.1: `.horizontalPullLoaded` added — this template's
+        // `movementFunctions` was previously empty (matched only via
+        // `primaryTargets`); now distinguishable from vertical pull (see
+        // `MovementFunction`'s own doc comment).
         let barbellRow = make(
             "Barbell Row", .hypertrophy, "barbell", "horizontalPull",
-            primaryTargets: [.back, .biceps]
+            primaryTargets: [.back, .biceps], movementFunctions: [.horizontalPullLoaded],
+            requiredEquipment: [.barbell]
+        )
+
+        // Stage 10C.1 additions (STAGE10C1_EXERCISE_CATALOG_AUDIT.md §8) —
+        // fills the vertical-push, quadriceps-isolation, chest-isolation,
+        // rear-delt and loaded-vertical-pull gaps the audit found, plus
+        // the approved second horizontal-pull option. `.verticalPushLoaded`
+        // (not `.pressLoaded`) is deliberate — see `MovementFunction`'s
+        // own doc comment for the exact collision this avoids.
+        let overheadPress = make(
+            "Barbell Overhead Press", .hypertrophy, "barbell", "verticalPush",
+            primaryTargets: [.shoulders, .triceps], movementFunctions: [.verticalPushLoaded],
+            requiredEquipment: [.barbell, .rack]
+        )
+        let legExtension = make(
+            "Leg Extension", .strength, "machine", "kneeExtension",
+            primaryTargets: [.quadriceps],
+            requiredEquipment: [.machine]
+        )
+        let cableChestFly = make(
+            "Cable Chest Fly", .hypertrophy, "cable", "chestFly",
+            primaryTargets: [.chest],
+            requiredEquipment: [.cableStation]
+        )
+        // `.rearDelt` added alongside generic `.shoulders` — see
+        // `MuscleGroup`'s own doc comment; the model still cannot
+        // distinguish this from `.lateralDelt` any further than these
+        // two explicit tags (flagged as a known limit, not solved
+        // further here).
+        let facePull = make(
+            "Face Pull", .hypertrophy, "cable", "facePull",
+            primaryTargets: [.shoulders, .rearDelt],
+            requiredEquipment: [.cableStation]
+        )
+        let latPulldown = make(
+            "Lat Pulldown", .hypertrophy, "cable", "verticalPull",
+            primaryTargets: [.back, .biceps], movementFunctions: [.verticalPullLoaded],
+            requiredEquipment: [.cableStation]
+        )
+        let seatedCableRow = make(
+            "Seated Cable Row", .hypertrophy, "cable", "horizontalPull",
+            primaryTargets: [.back, .biceps], movementFunctions: [.horizontalPullLoaded],
+            requiredEquipment: [.cableStation]
         )
 
         return ExerciseCatalog(
@@ -267,7 +365,13 @@ struct ExerciseCatalog {
             barbellCurl: barbellCurl,
             cableTricepsPushdown: cableTricepsPushdown,
             dumbbellLateralRaise: dumbbellLateralRaise,
-            barbellRow: barbellRow
+            barbellRow: barbellRow,
+            overheadPress: overheadPress,
+            legExtension: legExtension,
+            cableChestFly: cableChestFly,
+            facePull: facePull,
+            latPulldown: latPulldown,
+            seatedCableRow: seatedCableRow
         )
     }
 }
