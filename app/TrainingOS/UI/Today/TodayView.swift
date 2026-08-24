@@ -10,6 +10,19 @@ struct TodayView: View {
     /// presented before `viewModel.start` ever fires
     /// (`READINESS_ADAPTATION_PIPELINE.md` §0).
     @State private var readinessGateSession: Session?
+    /// The reported gap this closes: finishing the readiness/warm-up gate
+    /// (`ReadinessGateFlow`'s `onFinished`, fired by both WarmupView's
+    /// "Start Workout" and "Skip Warm-up") used to only dismiss the
+    /// full-screen cover and mark the Session `.inProgress` in place —
+    /// leaving the user back on this plain list with no indication where
+    /// to go next, never inside the actual workout. Setting this
+    /// immediately after starting pushes the SAME Session (identity
+    /// unchanged — Stage 8B mutates in place, never copies) straight into
+    /// `SessionDetailView`, which itself auto-advances into the sole
+    /// block for a single-block Session (`SessionDetailView.autoOpenedBlock`).
+    /// Independent of the existing per-card `NavigationLink`s below —
+    /// tapping a card manually is completely unaffected.
+    @State private var justStartedSession: Session?
 
     var body: some View {
         NavigationStack {
@@ -68,12 +81,18 @@ struct TodayView: View {
             }
             .background(Theme.ground)
             .navigationTitle("Today")
+            .navigationDestination(item: $justStartedSession) { session in
+                SessionDetailView(session: session, onChange: {
+                    viewModel.load(modelContext: modelContext)
+                })
+            }
         }
         .task { viewModel.load(modelContext: modelContext) }
         .fullScreenCover(item: $readinessGateSession) { session in
             ReadinessGateFlow(session: session) {
                 readinessGateSession = nil
                 viewModel.start(session, modelContext: modelContext)
+                justStartedSession = session
             }
         }
     }

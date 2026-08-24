@@ -67,9 +67,23 @@ final class MixedModalityOrchestrationTests: XCTestCase {
         }
         let strength = [
             exercise("Aaa Mixed Primary Shoulders", [.shoulders]),
-            exercise("Aaa Mixed Primary Quads", [.quadriceps]),
+            exercise("Aaa Mixed Primary Quads", [.quadriceps], [.squatLoaded]),
             exercise("Aaa Mixed Primary Back", [.back]),
-            exercise("Zzz Mixed Paired Accessory", [.chest, .triceps]),
+            // Stage 10B: "Strength Plus Variety"'s Hypertrophy component
+            // (frequency target 3) now resolves to the 3-Day Full Body
+            // day-focus-driven configuration, which has more distinct
+            // slot target-sets than the old single-pair-per-day shape —
+            // in particular a hamstrings+glutes hinge-pattern slot, a
+            // chest+shoulders press-pattern slot, and a calves accessory
+            // slot, none of which the original candidates above are
+            // tagged for. `.pressLoaded`/`.hingeLoaded` movement-function
+            // tags (Blocker 2) are required for these to actually satisfy
+            // "Horizontal Push"/"Hinge Pattern" — muscle-group overlap
+            // alone is no longer sufficient.
+            exercise("Zzz Mixed Paired Accessory", [.chest, .triceps], [.pressLoaded]),
+            exercise("Aaa Mixed Primary Hamstrings Glutes", [.hamstrings, .glutes], [.hingeLoaded]),
+            exercise("Zzz Mixed Accessory Biceps", [.biceps]),
+            exercise("Zzz Mixed Accessory Calves", [.calves]),
         ]
         let ff = [
             exercise("Mixed FF Squat Lift", [], [.squatLoaded], .weightlifting),

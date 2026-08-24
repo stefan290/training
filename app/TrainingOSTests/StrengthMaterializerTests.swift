@@ -30,9 +30,14 @@ final class StrengthMaterializerTests: XCTestCase {
         return instance
     }
 
+    /// `(5, .fullBody)`, not `(3, .fullBody)` — Stage 10B repurposes the
+    /// latter for its own day-focus-driven path (variable slot count per
+    /// day), which would break this test's "one primary + one paired
+    /// accessory" assumption; `(5, .fullBody)` exercises the identical,
+    /// unchanged legacy generator this test was always about.
     func testMaterializeWeekZeroCreatesOneSessionPerTemplateSessionWithCorrectValues() throws {
-        let definition = HypertrophyProgramGenerator.generate(
-            configuration: HypertrophyProgramConfiguration(dayCount: 3, split: .fullBody, phaseType: .basicHypertrophy),
+        let definition = try HypertrophyProgramGenerator.generate(
+            configuration: HypertrophyProgramConfiguration(dayCount: 5, split: .fullBody, phaseType: .basicHypertrophy),
             provenance: .constructed(reason: "test fixture"),
             context: context
         )
@@ -45,8 +50,8 @@ final class StrengthMaterializerTests: XCTestCase {
             slotContext: { _ in .init(rmKilograms: 100) }, context: context
         )
 
-        XCTAssertEqual(result.sessions.count, 3)
-        XCTAssertEqual(instance.sessions.count, 3)
+        XCTAssertEqual(result.sessions.count, 5)
+        XCTAssertEqual(instance.sessions.count, 5)
 
         let session = try XCTUnwrap(result.sessions.first)
         XCTAssertEqual(session.day?.ownerUserID, ownerUserID)
@@ -70,7 +75,7 @@ final class StrengthMaterializerTests: XCTestCase {
     /// never `toFailure`) — never hardcoded, never invented for the case
     /// the source data doesn't define.
     func testMaterializeWeekTranslatesToFailureIntoRIRNeverInventingOneForNonFailureSets() throws {
-        let definition = HypertrophyProgramGenerator.generate(
+        let definition = try HypertrophyProgramGenerator.generate(
             configuration: HypertrophyProgramConfiguration(dayCount: 1, split: .fullBody, phaseType: .basicHypertrophy),
             provenance: .constructed(reason: "test fixture"),
             context: context
@@ -96,7 +101,7 @@ final class StrengthMaterializerTests: XCTestCase {
     /// onto the movement itself, at materialization time — never
     /// re-derived later, never discarded.
     func testMaterializeWeekPersistsTheReasonCodesTheEngineActuallyProduced() throws {
-        let definition = HypertrophyProgramGenerator.generate(
+        let definition = try HypertrophyProgramGenerator.generate(
             configuration: HypertrophyProgramConfiguration(dayCount: 1, split: .fullBody, phaseType: .basicHypertrophy),
             provenance: .constructed(reason: "test fixture"),
             context: context
@@ -138,7 +143,7 @@ final class StrengthMaterializerTests: XCTestCase {
     /// fraction of the primary's weight *resolved in this same
     /// materialization pass*, not some other value.
     func testMaterializeWeekZeroPairedSlotUsesPrimarysResolvedWeightThisPass() throws {
-        let definition = HypertrophyProgramGenerator.generate(
+        let definition = try HypertrophyProgramGenerator.generate(
             configuration: HypertrophyProgramConfiguration(dayCount: 1, split: .fullBody, phaseType: .basicHypertrophy),
             provenance: .constructed(reason: "test fixture"),
             context: context
@@ -162,7 +167,7 @@ final class StrengthMaterializerTests: XCTestCase {
     }
 
     func testMaterializeWeekZeroWithoutRMLeavesWeightNilRatherThanGuessing() throws {
-        let definition = HypertrophyProgramGenerator.generate(
+        let definition = try HypertrophyProgramGenerator.generate(
             configuration: HypertrophyProgramConfiguration(dayCount: 1, split: .fullBody, phaseType: .basicHypertrophy),
             provenance: .constructed(reason: "test fixture"),
             context: context
@@ -185,7 +190,7 @@ final class StrengthMaterializerTests: XCTestCase {
     /// weight asymmetry, the hardcoded 2-set constant, floored deload
     /// reps, and the paired slot omitted entirely.
     func testMaterializeDeloadWeekAppliesFamilyARulesGivenWeekZeroResolvedValues() throws {
-        let definition = HypertrophyProgramGenerator.generate(
+        let definition = try HypertrophyProgramGenerator.generate(
             configuration: HypertrophyProgramConfiguration(dayCount: 4, split: .fullBody, phaseType: .basicHypertrophy),
             provenance: .constructed(reason: "test fixture"),
             context: context
@@ -223,7 +228,7 @@ final class StrengthMaterializerTests: XCTestCase {
     }
 
     func testMaterializedGraphSurvivesRoundTrip() throws {
-        let definition = HypertrophyProgramGenerator.generate(
+        let definition = try HypertrophyProgramGenerator.generate(
             configuration: HypertrophyProgramConfiguration(dayCount: 2, split: .fullBody, phaseType: .basicHypertrophy),
             provenance: .constructed(reason: "test fixture"),
             context: context

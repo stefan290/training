@@ -14,6 +14,13 @@ final class PrescriptionTemplate {
     /// Stable position among a block template's slots, assigned by
     /// `WorkoutBlockTemplate.addPrescriptionTemplate(_:)`.
     var sortIndex: Int
+    /// Stage 10B addition — see `SlotRole`'s own doc comment. `nil` on
+    /// every pre-Stage-10B row (including every Powerlifting row and
+    /// every non-3-Day-Full-Body Hypertrophy row); a plain scalar field,
+    /// stored exactly like `DeloadExerciseAction`/`RMType` already are on
+    /// this same type (no enum-with-payload risk — see this file's own
+    /// "Rule storage" doc comment).
+    var slotRole: SlotRole?
 
     /// Cascade: an `ExerciseSlot` has no independent meaning outside its
     /// template.
@@ -71,6 +78,14 @@ final class PrescriptionTemplate {
     /// in this codebase.
     var repGoalReps: [Int] = []
     var repGoalToFailure: [Bool] = []
+    /// Stage 10B.6 additions — parallel to `repGoalReps`/`repGoalToFailure`,
+    /// same flattening discipline. `-1` is the "not set" sentinel (a real
+    /// rep-range-high or RIR is never negative); every pre-existing row
+    /// defaults to all-`-1`, which the `repGoalSchedule` accessor below
+    /// decodes back to `nil` — byte-for-byte the original single-number
+    /// `RepGoal` behavior for every Family A/B/C row.
+    var repGoalRepRangeHigh: [Int] = []
+    var repGoalTargetRir: [Int] = []
 
     var deloadWeightAction: DeloadExerciseAction = DeloadExerciseAction.standard
     var deloadRepAction: DeloadExerciseAction = DeloadExerciseAction.standard
@@ -111,10 +126,11 @@ final class PrescriptionTemplate {
     @Relationship(deleteRule: .nullify, inverse: \ExercisePrescription.sourcePrescriptionTemplate)
     var materializedPrescriptions: [ExercisePrescription] = []
 
-    init(id: UUID = UUID(), rules: StrengthProgressionRules? = nil) {
+    init(id: UUID = UUID(), rules: StrengthProgressionRules? = nil, slotRole: SlotRole? = nil) {
         self.id = id
         self.sortIndex = 0
         self.rules = rules
+        self.slotRole = slotRole
     }
 
     /// The only way application code should attach this slot's
@@ -141,6 +157,8 @@ final class PrescriptionTemplate {
                 return .linkedToPairedSlot(fractionOfSourceResult: fraction)
             case .none:
                 return LoadRule.none
+            case .doubleProgression:
+                return LoadRule.doubleProgression
             }
         }
         set {
@@ -163,6 +181,8 @@ final class PrescriptionTemplate {
                 loadRuleFractionOfSourceResult = fraction
             case .none:
                 loadRuleKind = LoadRuleKind.none
+            case .doubleProgression:
+                loadRuleKind = .doubleProgression
             }
         }
     }
@@ -203,10 +223,18 @@ final class PrescriptionTemplate {
     }
 
     var repGoalSchedule: [RepGoal] {
-        get { zip(repGoalReps, repGoalToFailure).map { RepGoal(reps: $0, toFailure: $1) } }
+        get {
+            (0..<repGoalReps.count).map { i in
+                let high = (repGoalRepRangeHigh.indices.contains(i) && repGoalRepRangeHigh[i] >= 0) ? repGoalRepRangeHigh[i] : nil
+                let rir = (repGoalTargetRir.indices.contains(i) && repGoalTargetRir[i] >= 0) ? repGoalTargetRir[i] : nil
+                return RepGoal(reps: repGoalReps[i], toFailure: repGoalToFailure[i], repRangeHigh: high, targetRir: rir)
+            }
+        }
         set {
             repGoalReps = newValue.map(\.reps)
             repGoalToFailure = newValue.map(\.toFailure)
+            repGoalRepRangeHigh = newValue.map { $0.repRangeHigh ?? -1 }
+            repGoalTargetRir = newValue.map { $0.targetRir ?? -1 }
         }
     }
 

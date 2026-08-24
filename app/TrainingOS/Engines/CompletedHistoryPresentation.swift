@@ -28,6 +28,32 @@ enum SessionDisplayMode {
     }
 }
 
+/// Stage 10B follow-up: the pure decision behind `SessionDetailView`'s
+/// auto-advance-into-the-sole-block behavior — extracted from the View
+/// so the actual business rule, not the SwiftUI lifecycle wiring around
+/// it, is independently testable (mirrors `SessionDisplayMode.mode`'s
+/// own precedent exactly). Closes a real reported gap: finishing
+/// readiness/warm-up left the user on a plain Today list with no
+/// indication where to go next, never inside the actual workout —
+/// because nothing ever navigated into the Session's own detail screen,
+/// and even once there, a single-block Session's one-row block list was
+/// an extra, pointless tap before reaching execution.
+enum SessionAutoAdvance {
+    /// The sole block to auto-open, or `nil` if no auto-advance should
+    /// happen. Never fires for a not-yet-started (`.scheduled`) Session
+    /// — that status transition is still the user's own explicit "Start
+    /// Workout" tap on this same screen, never silently skipped. Never
+    /// fires for a multi-block Session — a real choice exists there, so
+    /// the block list stays. Never re-opens an already-finished block.
+    static func blockToAutoOpen(session: Session) -> WorkoutBlock? {
+        guard session.status == .inProgress, session.orderedBlocks.count == 1,
+              let onlyBlock = session.orderedBlocks.first,
+              onlyBlock.status != .completed, onlyBlock.status != .skipped
+        else { return nil }
+        return onlyBlock
+    }
+}
+
 /// Stage 6E: re-derives, for a PersonalRecord already sitting in
 /// completed history, whether it was this profile's first-ever entry in
 /// its context/repBand group or a genuine improvement over an earlier

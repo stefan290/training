@@ -380,4 +380,111 @@ final class TacticalPlanningOrchestrationTests: XCTestCase {
         let pairedWeek1 = try XCTUnwrap(week1Prescriptions.first { $0.sourcePrescriptionTemplate?.id == pairedWeek0.sourcePrescriptionTemplate?.id })
         XCTAssertEqual(pairedWeek1.exercise?.id, candidates.pairedAccessoryAlt.id, "the GOING FORWARD override must win over the slot's originally-resolved default for every future materialization")
     }
+
+    // MARK: Stage 10B.6 — real production-path proof for Muscle Gain / 3-Day Full Body Hypertrophy V2
+
+    /// Stage 10B.6 manual-acceptance follow-up: proves the Hypertrophy V2
+    /// day-focus/rep-range/RIR rules are actually reachable from the SAME
+    /// public entry points a real user goes through — never a hand-built
+    /// `ProgramInstance`/directly-injected `.doubleProgression` template.
+    /// `LongTermPlanner.proposeTrainingMix(phase:goal:)`'s own two real
+    /// `.muscleGain` candidates are "Focused Hypertrophy" (5-Day, which
+    /// legitimately stays on legacy Family A — Stage 10C's job, not this
+    /// one) and "Strength Plus Variety" (Hypertrophy `target: 3`, which
+    /// resolves to the exact 3-Day Full Body configuration via
+    /// `LongTermPlanner.closestByDayCount`'s deterministic exact-match
+    /// rule — confirmed by reading that function directly, not assumed).
+    /// Selecting "Strength Plus Variety" over the system's own default
+    /// recommendation is a real, first-class, already-supported user
+    /// action (CLAUDE.md rule 17 — preference may promote a non-default
+    /// candidate); this test performs that same real selection, exactly
+    /// as `SeedAnnualPlanJourney`'s own real phase-2 transition already
+    /// does for the app's own demo/acceptance data.
+    func testRealProductionPathMuscleGainThreeDayFullBodyReceivesHypertrophyV2() throws {
+        let asOf = date(2026, 1, 5)
+        let fixture = try makeAcceptedPlan(primaryType: .muscleGain, asOf: asOf)
+        let mixCandidates = LongTermPlanner.proposeTrainingMix(phase: fixture.phase, goal: fixture.goal)
+        guard let recommended = mixCandidates.first(where: { $0.roles.contains(.recommended) }),
+              let selected = mixCandidates.first(where: { $0.mix.id != recommended.mix.id }) else {
+            return XCTFail("expected 2 real Muscle Gain mix candidates")
+        }
+        // The 3-Day config is reached via the NON-recommended alternative
+        // here — proving both that it's real and selectable (never
+        // hidden) and that this is a genuine user choice, not a shortcut.
+        XCTAssertEqual(recommended.mix.name, "Focused Hypertrophy")
+        XCTAssertEqual(selected.mix.name, "Strength Plus Variety")
+        selected.mix.kind = .selected
+
+        let catalog = ExerciseCatalog.makeAndInsert(context: context)
+        let strengthCandidates = [
+            catalog.backSquat, catalog.benchPress, catalog.inclineDumbbellPress, catalog.romanianDeadlift,
+            catalog.legPress, catalog.frontSquat, catalog.legCurl, catalog.calfRaise,
+            catalog.barbellCurl, catalog.cableTricepsPushdown, catalog.dumbbellLateralRaise, catalog.barbellRow,
+        ]
+        // "Strength Plus Variety" also has a Functional Fitness component
+        // (`muscleGainVariedMix`) — needs its own real candidate pool too,
+        // or `StartPhaseUseCase.start` throws before Hypertrophy even
+        // materializes. Same pool `SeedAnnualPlanJourney` already uses.
+        let functionalFitnessCandidates = [
+            catalog.wallBall, catalog.pullUp, catalog.bike, catalog.row, catalog.toesToBar,
+            catalog.kettlebellSwing, catalog.thruster, catalog.deadlift, catalog.dumbbellSnatch,
+        ]
+        let materializationContext = TacticalMaterializationContext(
+            equipmentProfile: equipment, strengthCandidateExercises: strengthCandidates,
+            functionalFitnessCandidateExercises: functionalFitnessCandidates
+        )
+
+        try StartPhaseUseCase.start(
+            phase: fixture.phase, mix: selected.mix, asOf: asOf, ownerUserID: ownerUserID,
+            performanceProfile: nil, availability: availability(),
+            materializationContext: materializationContext, context: context
+        )
+
+        let instance = try XCTUnwrap(fixture.phase.primaryInstance)
+        XCTAssertEqual(instance.programDefinition?.name, "3-Day Full Body Hypertrophy — Basic Hypertrophy", "real onboarding chose the exact V2 reference configuration, not a hand-picked one")
+
+        let sessionNames = Set(instance.sessions.compactMap(\.name))
+        XCTAssertEqual(sessionNames, ["Day A", "Day B", "Day C"], "the approved Stage 10B day-focus rotation, unchanged")
+
+        let dayA = try XCTUnwrap(instance.sessions.first { $0.name == "Day A" })
+        let dayAPrescriptions = dayA.orderedBlocks.flatMap(\.orderedPrescriptions)
+        XCTAssertEqual(dayAPrescriptions.count, 7, "the approved Stage 10B richer Day A structure, unchanged")
+
+        // Week 1 Hypertrophy V2 numbers, read from the REAL materialized SetPrescriptions.
+        for prescription in dayAPrescriptions {
+            guard let role = prescription.sourcePrescriptionTemplate?.slotRole, let firstSet = prescription.orderedSetPrescriptions.first else { continue }
+            switch role {
+            case .primary:
+                XCTAssertEqual(firstSet.repRangeLow, 5); XCTAssertEqual(firstSet.repRangeHigh, 10); XCTAssertEqual(firstSet.targetRir, 3)
+            case .secondary:
+                XCTAssertEqual(firstSet.repRangeLow, 6); XCTAssertEqual(firstSet.repRangeHigh, 12); XCTAssertEqual(firstSet.targetRir, 3)
+            case .accessory:
+                XCTAssertEqual(firstSet.repRangeLow, 10); XCTAssertEqual(firstSet.repRangeHigh, 20); XCTAssertEqual(firstSet.targetRir, 2)
+            }
+        }
+        // Sanity: this is NOT the legacy 3-3@0RIR/12-12-no-RIR shape.
+        XCTAssertFalse(dayAPrescriptions.contains { $0.orderedSetPrescriptions.first?.targetRir == 0 }, "no legacy toFailure-derived RIR 0 anywhere in this real V2 session")
+
+        // Now prove the SAME real session travels through Readiness ->
+        // Warm-up -> Execution without replacing or degrading any of the
+        // prescriptions just verified above.
+        WarmupCatalog.makeAndInsert(exerciseCatalog: catalog, context: context)
+        let checkIn = ReadinessCheckIn(recordedAt: asOf, sleep: .good, energy: .good, overallRecovery: .good)
+        context.insert(checkIn)
+        try RecordReadinessCheckInUseCase.record(checkIn, for: dayA, modelContext: context)
+        let proposal = EvaluateReadinessAdaptationUseCase.evaluate(session: dayA, checkIn: checkIn, modelContext: context)
+        XCTAssertTrue(proposal.isEmpty, "an all-good check-in proposes no adaptation")
+
+        let warmup = try XCTUnwrap(GenerateWarmupSequenceUseCase.generate(
+            context: WarmupGenerationContext(executableWorkout: dayA, readiness: checkIn), modelContext: context
+        ))
+        try RecordWarmupSequenceUseCase.record(warmup, for: dayA, modelContext: context)
+        try StartSessionUseCase.start(dayA, asOf: asOf, modelContext: context)
+
+        XCTAssertEqual(dayA.status, .inProgress)
+        let dayAAfterExecution = dayA.orderedBlocks.flatMap(\.orderedPrescriptions)
+        XCTAssertEqual(dayAAfterExecution.count, 7, "still all 7 exercises after readiness/warm-up — nothing was dropped or replaced")
+        let primaryAfter = try XCTUnwrap(dayAAfterExecution.first { $0.sourcePrescriptionTemplate?.slotRole == .primary })
+        XCTAssertEqual(primaryAfter.orderedSetPrescriptions.first?.targetRir, 3, "the V2 prescription survives readiness/warm-up unchanged")
+    }
 }

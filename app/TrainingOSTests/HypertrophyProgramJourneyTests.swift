@@ -29,7 +29,7 @@ final class HypertrophyProgramJourneyTests: XCTestCase {
         context.insert(plan)
         goal.addPlan(plan)
 
-        let results = HypertrophyProgramJourney.build(
+        let results = try HypertrophyProgramJourney.build(
             dayCount: 4, split: .fullBody, plan: plan, ownerUserID: ownerUserID,
             firstPhaseStartDate: Date(timeIntervalSince1970: 0), context: context
         )
@@ -47,7 +47,7 @@ final class HypertrophyProgramJourneyTests: XCTestCase {
         let plan = TrainingPlan(status: .active)
         context.insert(plan)
 
-        let results = HypertrophyProgramJourney.build(
+        let results = try HypertrophyProgramJourney.build(
             dayCount: 3, split: .legs, plan: plan, ownerUserID: ownerUserID,
             firstPhaseStartDate: Date(timeIntervalSince1970: 0), context: context
         )
@@ -73,7 +73,7 @@ final class HypertrophyProgramJourneyTests: XCTestCase {
         let plan = TrainingPlan(status: .active)
         context.insert(plan)
 
-        let results = HypertrophyProgramJourney.build(
+        let results = try HypertrophyProgramJourney.build(
             dayCount: 3, split: .fullBody, plan: plan, ownerUserID: ownerUserID,
             firstPhaseStartDate: Date(timeIntervalSince1970: 0), context: context
         )
@@ -101,7 +101,7 @@ final class HypertrophyProgramJourneyTests: XCTestCase {
         context.insert(plan)
         let planID = plan.id
 
-        HypertrophyProgramJourney.build(
+        try HypertrophyProgramJourney.build(
             dayCount: 4, split: .backChest, plan: plan, ownerUserID: ownerUserID,
             firstPhaseStartDate: Date(timeIntervalSince1970: 0), context: context
         )

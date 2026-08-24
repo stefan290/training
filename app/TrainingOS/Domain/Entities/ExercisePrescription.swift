@@ -85,6 +85,17 @@ final class ExercisePrescription {
     /// See `appliedLoadReasonCode` — the reason code for this
     /// prescription's resolved rep goal.
     var appliedRepGoalReasonCode: StrengthReasonCode?
+    /// Stage 10B.6 addition: the `ProgressionReasonCode` `HypertrophyV2ProgressionEngine`
+    /// /`DoubleProgressionEngine` actually produced for THIS prescription's
+    /// weight/set-count/rep-goal decision — the Hypertrophy V2 sibling of
+    /// `appliedLoadReasonCode` above, kept as its own field rather than
+    /// reusing that one because it is typed to a different reason-code
+    /// vocabulary (`StrengthMaterializer`'s own doc comment: mapping one
+    /// engine's reason codes onto the other would misrepresent which
+    /// engine actually produced the value). `nil` for every Family A/B/C
+    /// prescription; `appliedLoadReasonCode` stays `nil` for every V2
+    /// prescription — the two are mutually exclusive by rule family.
+    var appliedProgressionReasonCode: ProgressionReasonCode?
 
     @Relationship(deleteRule: .cascade, inverse: \SetPrescription.exercisePrescription)
     var setPrescriptions: [SetPrescription] = []

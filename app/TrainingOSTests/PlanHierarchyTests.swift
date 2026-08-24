@@ -28,7 +28,7 @@ final class PlanHierarchyTests: XCTestCase {
     // MARK: Week grouping
 
     func testRealSessionsAreBucketedIntoTheCorrectWeek() throws {
-        let definition = HypertrophyProgramGenerator.generate(
+        let definition = try HypertrophyProgramGenerator.generate(
             configuration: HypertrophyProgramConfiguration(dayCount: 3, split: .fullBody, phaseType: .basicHypertrophy),
             provenance: .constructed(reason: "test fixture"), context: context
         )
@@ -55,7 +55,7 @@ final class PlanHierarchyTests: XCTestCase {
     }
 
     func testWeekGroupingNeverFabricatesASessionForAnUnmaterializedWeek() throws {
-        let definition = HypertrophyProgramGenerator.generate(
+        let definition = try HypertrophyProgramGenerator.generate(
             configuration: HypertrophyProgramConfiguration(dayCount: 3, split: .fullBody, phaseType: .basicHypertrophy),
             provenance: .constructed(reason: "test fixture"), context: context
         )
@@ -71,7 +71,7 @@ final class PlanHierarchyTests: XCTestCase {
     // MARK: Template-only preview never mutates/creates anything
 
     func testTemplateOnlySessionPreviewNeverCreatesASessionOrMutatesTheDefinition() throws {
-        let definition = HypertrophyProgramGenerator.generate(
+        let definition = try HypertrophyProgramGenerator.generate(
             configuration: HypertrophyProgramConfiguration(dayCount: 3, split: .fullBody, phaseType: .basicHypertrophy),
             provenance: .constructed(reason: "test fixture"), context: context
         )
@@ -94,7 +94,7 @@ final class PlanHierarchyTests: XCTestCase {
     /// tested RM (a runtime input this view never has), so the deterministic
     /// rep-goal schedule is the only numeric detail ever surfaced for it.
     func testTemplateOnlyPreviewExposesRepGoalButNeverAAFabricatedLoad() throws {
-        let definition = HypertrophyProgramGenerator.generate(
+        let definition = try HypertrophyProgramGenerator.generate(
             configuration: HypertrophyProgramConfiguration(dayCount: 1, split: .legs, phaseType: .basicHypertrophy),
             provenance: .constructed(reason: "test fixture"), context: context
         )

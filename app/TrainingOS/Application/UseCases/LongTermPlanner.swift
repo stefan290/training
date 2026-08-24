@@ -1055,7 +1055,22 @@ enum LongTermPlanner {
                 gaps.append(CapabilityGap(desiredDescription: name, reason: .parametersNotInstantiable))
                 continue
             }
-            let definition = materialize(parameters, name: name, context: context)
+            let definition: ProgramDefinition
+            do {
+                definition = try materialize(parameters, name: name, context: context)
+            } catch {
+                // Stage 10B (D-10B-3): the generator's own internal
+                // structural-coverage check failed — never persisted, and
+                // never a crash; surfaced as exactly the same
+                // "conceptually good idea, not currently executable" gap
+                // `parametersNotInstantiable` already models, just for a
+                // distinct root cause. `error` is deliberately not
+                // inspected further here — `CapabilityGap` has no field
+                // for it, and the generator's own thrown case already
+                // named the specific missing coverage.
+                gaps.append(CapabilityGap(desiredDescription: name, reason: .generationFailed))
+                continue
+            }
             let factors = fitFactors(
                 system: system, parameters: parameters, component: component,
                 profile: profile, availability: availability
@@ -1188,11 +1203,11 @@ enum LongTermPlanner {
         return goal?.preferences?.preferredModalities.first { $0.system == system }?.activityType
     }
 
-    private static func materialize(_ parameters: GeneratorParameters, name: String, context: ModelContext) -> ProgramDefinition {
+    private static func materialize(_ parameters: GeneratorParameters, name: String, context: ModelContext) throws -> ProgramDefinition {
         let provenance = ProgramProvenance.constructed(reason: "Long-Term Planner recommendation: \(name)")
         switch parameters {
         case .hypertrophy(let configuration):
-            return HypertrophyProgramGenerator.generate(configuration: configuration, provenance: provenance, context: context)
+            return try HypertrophyProgramGenerator.generate(configuration: configuration, provenance: provenance, context: context)
         case .powerlifting(let configuration):
             return PowerliftingProgramGenerator.generate(configuration: configuration, provenance: provenance, context: context)
         case .steadyState(let configuration):

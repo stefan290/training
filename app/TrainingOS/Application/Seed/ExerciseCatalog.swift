@@ -46,6 +46,22 @@ struct ExerciseCatalog {
     let conventionalDeadlift: Exercise
     let seatedLegCurl: Exercise
     let seatedCalfRaise: Exercise
+    // Stage 10B additions — the 3-Day Full Body Hypertrophy reference
+    // program's accessory tier (biceps/triceps) had no isolation
+    // candidate anywhere in this catalog; D-10B-6 also asks for a
+    // lateral-delt/shoulder accessory candidate even though no Day A/B/C
+    // slot in this reference config isolates shoulders alone (see
+    // `STAGE10B_IMPLEMENTATION_REPORT.md`). `barbellRow` closes a second,
+    // independently-discovered gap: every existing `.back`-tagged
+    // exercise in this catalog (Deadlift, Pull-up) is `.functionalFitness`
+    // modality, outside the strength candidate pool `SeedAnnualPlanJourney`
+    // supplies — leaving Day A/B/C's "Back" solo slot with no eligible
+    // candidate at all (confirmed by direct resolution trace, not
+    // assumption).
+    let barbellCurl: Exercise
+    let cableTricepsPushdown: Exercise
+    let dumbbellLateralRaise: Exercise
+    let barbellRow: Exercise
 
     static func makeAndInsert(context: ModelContext) -> ExerciseCatalog {
         func make(
@@ -62,8 +78,19 @@ struct ExerciseCatalog {
             return exercise
         }
 
-        let benchPress = make("Barbell Bench Press", .hypertrophy, "barbell", "horizontalPush", primaryTargets: [.chest, .triceps])
-        let inclineDumbbellPress = make("Incline Dumbbell Press", .hypertrophy, "dumbbell", "horizontalPush", primaryTargets: [.chest, .triceps])
+        // Stage 10B (Blocker 2): `.pressLoaded` distinguishes a genuine
+        // loaded press from an isolation shoulder/chest movement (e.g.
+        // Dumbbell Lateral Raise) that happens to share a target muscle
+        // group with a "Horizontal Push" slot — see
+        // `HypertrophyProgramGenerator.movementPatternGroupings`.
+        let benchPress = make(
+            "Barbell Bench Press", .hypertrophy, "barbell", "horizontalPush",
+            primaryTargets: [.chest, .triceps], movementFunctions: [.pressLoaded]
+        )
+        let inclineDumbbellPress = make(
+            "Incline Dumbbell Press", .hypertrophy, "dumbbell", "horizontalPush",
+            primaryTargets: [.chest, .triceps], movementFunctions: [.pressLoaded]
+        )
 
         // Demonstrates the alias/mapping shape (handoff section 10) without
         // an import pipeline: several source spellings resolve to one
@@ -146,17 +173,22 @@ struct ExerciseCatalog {
         )
 
         // Stage 6C additions — realistic Lower A acceptance fixture.
+        // Stage 10B (Blocker 2) adds `.hingeLoaded`/`.squatLoaded` to
+        // these — genuine domain metadata (a Romanian Deadlift IS a hinge
+        // movement, a Leg Press/Bulgarian Split Squat IS a squat-pattern
+        // movement), not something invented merely to satisfy a slot; see
+        // `HypertrophyProgramGenerator.movementPatternGroupings`.
         let romanianDeadlift = make(
             "Romanian Deadlift", .strength, "barbell", "hinge",
-            primaryTargets: [.hamstrings, .glutes]
+            primaryTargets: [.hamstrings, .glutes], movementFunctions: [.hingeLoaded]
         )
         let legPress = make(
             "Leg Press", .strength, "machine", "squat",
-            primaryTargets: [.quadriceps, .glutes]
+            primaryTargets: [.quadriceps, .glutes], movementFunctions: [.squatLoaded]
         )
         let bulgarianSplitSquat = make(
             "Bulgarian Split Squat", .strength, "dumbbell", "squat",
-            primaryTargets: [.quadriceps, .glutes]
+            primaryTargets: [.quadriceps, .glutes], movementFunctions: [.squatLoaded]
         )
         let legCurl = make(
             "Leg Curl", .strength, "machine", "kneeFlexion",
@@ -167,14 +199,15 @@ struct ExerciseCatalog {
             primaryTargets: [.calves]
         )
 
-        // Stage 6D additions — real slot-valid alternatives.
+        // Stage 6D additions — real slot-valid alternatives. Same Stage
+        // 10B movement-function tagging reasoning as above.
         let frontSquat = make(
             "Front Squat", .strength, "barbell", "squat",
-            primaryTargets: [.quadriceps, .glutes]
+            primaryTargets: [.quadriceps, .glutes], movementFunctions: [.squatLoaded]
         )
         let conventionalDeadlift = make(
             "Conventional Deadlift", .strength, "barbell", "hinge",
-            primaryTargets: [.hamstrings, .glutes]
+            primaryTargets: [.hamstrings, .glutes], movementFunctions: [.hingeLoaded]
         )
         let seatedLegCurl = make(
             "Seated Leg Curl", .strength, "machine", "kneeFlexion",
@@ -183,6 +216,24 @@ struct ExerciseCatalog {
         let seatedCalfRaise = make(
             "Seated Calf Raise", .strength, "machine", "ankleExtension",
             primaryTargets: [.calves]
+        )
+
+        // Stage 10B additions.
+        let barbellCurl = make(
+            "Barbell Curl", .hypertrophy, "barbell", "elbowFlexion",
+            primaryTargets: [.biceps]
+        )
+        let cableTricepsPushdown = make(
+            "Cable Triceps Pushdown", .hypertrophy, "cable", "elbowExtension",
+            primaryTargets: [.triceps]
+        )
+        let dumbbellLateralRaise = make(
+            "Dumbbell Lateral Raise", .hypertrophy, "dumbbell", "shoulderAbduction",
+            primaryTargets: [.shoulders]
+        )
+        let barbellRow = make(
+            "Barbell Row", .hypertrophy, "barbell", "horizontalPull",
+            primaryTargets: [.back, .biceps]
         )
 
         return ExerciseCatalog(
@@ -212,7 +263,11 @@ struct ExerciseCatalog {
             frontSquat: frontSquat,
             conventionalDeadlift: conventionalDeadlift,
             seatedLegCurl: seatedLegCurl,
-            seatedCalfRaise: seatedCalfRaise
+            seatedCalfRaise: seatedCalfRaise,
+            barbellCurl: barbellCurl,
+            cableTricepsPushdown: cableTricepsPushdown,
+            dumbbellLateralRaise: dumbbellLateralRaise,
+            barbellRow: barbellRow
         )
     }
 }

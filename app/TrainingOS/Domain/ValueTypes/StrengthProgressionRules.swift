@@ -62,10 +62,24 @@ struct RMBasedLoad: Codable, Equatable {
 struct RepGoal: Codable, Equatable {
     var reps: Int
     var toFailure: Bool
+    /// Stage 10B.6 addition: `nil` (every pre-existing Family A/B/C row)
+    /// preserves single-number-target behavior exactly — `reps` is both
+    /// the low and high end. Hypertrophy V2 sets this explicitly, making
+    /// `reps`/`repRangeHigh` a genuine range (`STAGE10B6_HYPERTROPHY_PRESCRIPTION_REDESIGN.md`
+    /// §3). Additive; never repurposes `reps`' existing meaning.
+    var repRangeHigh: Int?
+    /// Stage 10B.6 addition: `nil` (every pre-existing row) preserves the
+    /// existing `toFailure`-derives-RIR-0 mechanical rule exactly.
+    /// Hypertrophy V2 sets this explicitly every week, superseding
+    /// `toFailure` (which stays `false`/unused for V2 rows) — see
+    /// `StrengthMaterializer`'s targetRir resolution.
+    var targetRir: Int?
 
-    init(reps: Int, toFailure: Bool = false) {
+    init(reps: Int, toFailure: Bool = false, repRangeHigh: Int? = nil, targetRir: Int? = nil) {
         self.reps = reps
         self.toFailure = toFailure
+        self.repRangeHigh = repRangeHigh
+        self.targetRir = targetRir
     }
 }
 
@@ -92,6 +106,12 @@ enum LoadRuleKind: String, Codable, CaseIterable {
     case rmBased
     case linkedToPairedSlot
     case none
+    /// Stage 10B.6: Hypertrophy V2's performance-qualified load
+    /// progression (`HypertrophyV2ProgressionEngine`/`DoubleProgressionEngine`)
+    /// — never used by Family A/B/C. No payload: resolution reads real
+    /// logged history via the caller-supplied `SlotContext`, exactly like
+    /// `.rmBased` already does for `rmKilograms`.
+    case doubleProgression
 }
 
 /// `SetCountRule`'s persisted discriminator — see `LoadRuleKind`'s doc
@@ -135,6 +155,8 @@ enum LoadRule: Codable, Equatable {
     case linkedToPairedSlot(fractionOfSourceResult: Double)
     /// No load progression at all (e.g. a bodyweight accessory movement).
     case none
+    /// Stage 10B.6: see `LoadRuleKind.doubleProgression`'s doc comment.
+    case doubleProgression
 }
 
 /// `SetCountRule.autoregulated`'s payload — bundled into one struct

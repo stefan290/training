@@ -76,6 +76,13 @@ enum SeedAnnualPlanJourney {
         let strengthCandidates = [
             catalog.backSquat, catalog.benchPress, catalog.inclineDumbbellPress, catalog.romanianDeadlift,
             catalog.legPress, catalog.frontSquat, catalog.legCurl, catalog.calfRaise,
+            // Stage 10B additions — the 3-Day Full Body Hypertrophy
+            // reference program's accessory slots (biceps/triceps) need
+            // real candidates to resolve to; this pool already backs
+            // phase 2 ("Strength Plus Variety"), whose Hypertrophy
+            // component's `SessionFrequency(target: 3)` already selects
+            // the exact 3-Day Full Body configuration.
+            catalog.barbellCurl, catalog.cableTricepsPushdown, catalog.dumbbellLateralRaise, catalog.barbellRow,
         ]
         let functionalFitnessCandidates = [
             catalog.wallBall, catalog.pullUp, catalog.bike, catalog.row, catalog.toesToBar,

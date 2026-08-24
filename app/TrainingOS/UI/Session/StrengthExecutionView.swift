@@ -178,7 +178,15 @@ struct StrengthExecutionView: View {
                 .font(Theme.heading)
                 .foregroundStyle(Theme.textPrimary)
             if let setPrescription = viewModel.currentSetPrescription {
-                Text("Set \(viewModel.currentSetIndex + 1) of \(viewModel.currentMovement?.orderedSetPrescriptions.count ?? 0) · \(setPrescription.repRangeLow)-\(setPrescription.repRangeHigh) reps"
+                // Stage 10B.6: honest range display — Hypertrophy V2
+                // prescriptions genuinely differ (e.g. "5-10 reps");
+                // legacy single-number prescriptions (repRangeLow ==
+                // repRangeHigh) show one plain number instead of the
+                // redundant "5-5" this line always technically computed.
+                let repsText = setPrescription.repRangeLow == setPrescription.repRangeHigh
+                    ? "\(setPrescription.repRangeLow) reps"
+                    : "\(setPrescription.repRangeLow)-\(setPrescription.repRangeHigh) reps"
+                Text("Set \(viewModel.currentSetIndex + 1) of \(viewModel.currentMovement?.orderedSetPrescriptions.count ?? 0) · \(repsText)"
                     + (setPrescription.targetRir.map { " · \($0) RIR" } ?? ""))
                     .font(Theme.body)
                     .foregroundStyle(Theme.textSecondary)

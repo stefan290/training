@@ -48,6 +48,16 @@ enum CapabilityGapReason: String, Codable, CaseIterable {
     /// The parameters themselves don't resolve to a valid configuration
     /// (e.g. a non-positive day count).
     case parametersNotInstantiable
+    /// Stage 10B addition (D-10B-3): the parameters were well-formed and
+    /// `canInstantiate` said yes, but the generator's own internal
+    /// structural-coverage check (`HypertrophyProgramGenerator`'s
+    /// `validateWeeklyCoverage`) failed while actually building the
+    /// template graph — never persisted (see
+    /// `HypertrophyGenerationError`'s doc comment). Distinct from
+    /// `parametersNotInstantiable`, which is about the *input* shape;
+    /// this is about the generator's own output failing its own
+    /// contract, a genuinely different failure mode.
+    case generationFailed
 }
 
 /// A conceptually-good path the planner considered but TrainingOS cannot

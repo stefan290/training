@@ -96,7 +96,7 @@ final class ProgramInstanceExerciseSlotResolutionTests: XCTestCase {
         context.insert(benchPress)
         context.insert(inclineDumbbellPress)
 
-        let definition = HypertrophyProgramGenerator.generate(
+        let definition = try HypertrophyProgramGenerator.generate(
             configuration: HypertrophyProgramConfiguration(dayCount: 1, split: .fullBody, phaseType: .basicHypertrophy),
             provenance: .constructed(reason: "test"), context: context
         )
@@ -122,7 +122,7 @@ final class ProgramInstanceExerciseSlotResolutionTests: XCTestCase {
         let onlyCandidate = Exercise(canonicalName: "Barbell Bench Press", modality: .hypertrophy, equipment: "barbell", movementPattern: "horizontalPush", primaryTargets: [.chest, .triceps])
         context.insert(onlyCandidate)
 
-        let definition = HypertrophyProgramGenerator.generate(
+        let definition = try HypertrophyProgramGenerator.generate(
             configuration: HypertrophyProgramConfiguration(dayCount: 1, split: .fullBody, phaseType: .basicHypertrophy),
             provenance: .constructed(reason: "test"), context: context
         )
@@ -171,8 +171,8 @@ final class ProgramInstanceExerciseSlotResolutionTests: XCTestCase {
         // is comparing).
         let configuration = HypertrophyProgramConfiguration(dayCount: 1, split: .fullBody, phaseType: .basicHypertrophy)
 
-        let definitionA = HypertrophyProgramGenerator.generate(configuration: configuration, provenance: .constructed(reason: "test A"), context: context)
-        let definitionB = HypertrophyProgramGenerator.generate(configuration: configuration, provenance: .constructed(reason: "test B"), context: context)
+        let definitionA = try HypertrophyProgramGenerator.generate(configuration: configuration, provenance: .constructed(reason: "test A"), context: context)
+        let definitionB = try HypertrophyProgramGenerator.generate(configuration: configuration, provenance: .constructed(reason: "test B"), context: context)
 
         ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: definitionA, candidateExercises: candidates.all)
         ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: definitionB, candidateExercises: candidates.all)
@@ -191,7 +191,7 @@ final class ProgramInstanceExerciseSlotResolutionTests: XCTestCase {
     func testResolutionNeverOverwritesAnAlreadyResolvedSlot() throws {
         let candidates = makeCandidates()
         let configuration = HypertrophyProgramConfiguration(dayCount: 3, split: .legs, phaseType: .basicHypertrophy)
-        let definition = HypertrophyProgramGenerator.generate(configuration: configuration, provenance: .constructed(reason: "test"), context: context)
+        let definition = try HypertrophyProgramGenerator.generate(configuration: configuration, provenance: .constructed(reason: "test"), context: context)
 
         let firstSlot = try XCTUnwrap(definition.orderedTemplateSessions.first?.orderedBlockTemplates.first?.orderedPrescriptionTemplates.first?.exerciseSlot)
         firstSlot.resolvedExercise = candidates.primaryBack // deliberately NOT a valid quads candidate — proves it's left alone, not "corrected"

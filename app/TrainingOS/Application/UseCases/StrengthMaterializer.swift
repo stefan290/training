@@ -59,17 +59,36 @@ enum StrengthMaterializer {
         var weekOneResolvedWeightKg: Double?
         var previousWeekSetCount: Int?
         var autoregulationRating: Int?
+        /// Stage 10B.6 additions — only populated by
+        /// `RollTacticalWindowUseCase.strengthSlotContext` for a
+        /// `.doubleProgression` template; `nil` for every legacy
+        /// Family A/B/C slot. Pre-resolved by the caller (which already
+        /// has `performanceProfile` in scope) rather than resolved inside
+        /// this materializer, matching this struct's own documented
+        /// contract: "everything the template graph itself cannot know."
+        var doubleProgressionWeightKg: Double?
+        var doubleProgressionReasonCode: ProgressionReasonCode?
+        var doubleProgressionRepGoal: RepGoal?
+        var doubleProgressionSetCount: Int?
 
         init(
             rmKilograms: Double? = nil,
             weekOneResolvedWeightKg: Double? = nil,
             previousWeekSetCount: Int? = nil,
-            autoregulationRating: Int? = nil
+            autoregulationRating: Int? = nil,
+            doubleProgressionWeightKg: Double? = nil,
+            doubleProgressionReasonCode: ProgressionReasonCode? = nil,
+            doubleProgressionRepGoal: RepGoal? = nil,
+            doubleProgressionSetCount: Int? = nil
         ) {
             self.rmKilograms = rmKilograms
             self.weekOneResolvedWeightKg = weekOneResolvedWeightKg
             self.previousWeekSetCount = previousWeekSetCount
             self.autoregulationRating = autoregulationRating
+            self.doubleProgressionWeightKg = doubleProgressionWeightKg
+            self.doubleProgressionReasonCode = doubleProgressionReasonCode
+            self.doubleProgressionRepGoal = doubleProgressionRepGoal
+            self.doubleProgressionSetCount = doubleProgressionSetCount
         }
     }
 
@@ -135,66 +154,102 @@ enum StrengthMaterializer {
                     guard let rules = template.rules, let slot = template.exerciseSlot else { continue }
                     let ctx = slotContext(slot)
                     let pairedResolvedWeight = template.pairedSlot.flatMap { resolvedWeightsByTemplateID[$0.id] }
+                    let resolvedExercise = SubstituteExerciseUseCase.resolvedExercise(for: slot, in: instance)
 
-                    let weightResult: (weightKg: Double?, reasonCode: StrengthReasonCode)
-                    let repResult: (repGoal: RepGoal?, reasonCode: StrengthReasonCode)
-                    let setResult: (sets: Int?, reasonCode: StrengthReasonCode)
+                    let weightKg: Double?
+                    let repGoal: RepGoal?
+                    let setCount: Int?
+                    let loadReasonCode: StrengthReasonCode?
+                    let setCountReasonCode: StrengthReasonCode?
+                    let repGoalReasonCode: StrengthReasonCode?
+                    let progressionReasonCode: ProgressionReasonCode?
 
-                    if isDeload {
-                        weightResult = deloadStrategy.resolveDeloadWeight(
+                    // Stage 10B.6: Hypertrophy V2 templates resolve
+                    // entirely through their own engine (already computed
+                    // by the caller's `slotContext` — see `SlotContext`'s
+                    // doc comment) — never through `StrengthProgressionEngine`/
+                    // `SourceCompatibleDeloadStrategy`, regardless of
+                    // `isDeload`. Family A/B/C templates never carry this
+                    // load rule kind, so the branch below is unreachable
+                    // for them.
+                    if rules.loadRule == .doubleProgression {
+                        weightKg = ctx.doubleProgressionWeightKg
+                        progressionReasonCode = ctx.doubleProgressionReasonCode
+                        repGoal = ctx.doubleProgressionRepGoal
+                        setCount = ctx.doubleProgressionSetCount
+                        loadReasonCode = nil
+                        setCountReasonCode = nil
+                        repGoalReasonCode = nil
+                    } else if isDeload {
+                        let weightResult = deloadStrategy.resolveDeloadWeight(
                             rules: rules, dayPositionInWeek: dayIndex, dayCount: orderedTemplateSessions.count,
                             weekOneResolvedWeightKg: ctx.weekOneResolvedWeightKg, equipmentProfile: equipmentProfile
                         )
-                        repResult = deloadStrategy.resolveDeloadRepGoal(
+                        let repResult = deloadStrategy.resolveDeloadRepGoal(
                             rules: rules, dayPositionInWeek: dayIndex, dayCount: orderedTemplateSessions.count
                         )
-                        setResult = deloadStrategy.resolveDeloadSetCount(rules: rules)
+                        let setResult = deloadStrategy.resolveDeloadSetCount(rules: rules)
+                        weightKg = weightResult.weightKg
+                        repGoal = repResult.repGoal
+                        setCount = setResult.sets
+                        loadReasonCode = weightResult.reasonCode
+                        repGoalReasonCode = repResult.reasonCode
+                        setCountReasonCode = setResult.reasonCode
+                        progressionReasonCode = nil
                     } else {
-                        weightResult = StrengthProgressionEngine.resolveWeight(
+                        let weightResult = StrengthProgressionEngine.resolveWeight(
                             rules: rules, weekIndex: weekIndex, rmKilograms: ctx.rmKilograms,
                             weekOneResolvedWeightKg: ctx.weekOneResolvedWeightKg,
                             pairedSlotResolvedWeightKg: pairedResolvedWeight, equipmentProfile: equipmentProfile
                         )
-                        repResult = StrengthProgressionEngine.resolveRepGoal(rules: rules, weekIndex: weekIndex)
-                        setResult = StrengthProgressionEngine.resolveSetCount(
+                        let repResult = StrengthProgressionEngine.resolveRepGoal(rules: rules, weekIndex: weekIndex)
+                        let setResult = StrengthProgressionEngine.resolveSetCount(
                             rules: rules, weekIndex: weekIndex,
                             previousWeekSetCount: ctx.previousWeekSetCount, autoregulationRating: ctx.autoregulationRating
                         )
+                        weightKg = weightResult.weightKg
+                        repGoal = repResult.repGoal
+                        setCount = setResult.sets
+                        loadReasonCode = weightResult.reasonCode
+                        repGoalReasonCode = repResult.reasonCode
+                        setCountReasonCode = setResult.reasonCode
+                        progressionReasonCode = nil
                     }
 
-                    if let weightKg = weightResult.weightKg {
+                    if let weightKg {
                         resolvedWeightsBySlotID[slot.id] = weightKg
                         resolvedWeightsByTemplateID[template.id] = weightKg
                     }
 
-                    let prescription = ExercisePrescription(exercise: SubstituteExerciseUseCase.resolvedExercise(for: slot, in: instance))
+                    let prescription = ExercisePrescription(exercise: resolvedExercise)
                     prescription.sourceExerciseSlot = slot
                     prescription.sourcePrescriptionTemplate = template
-                    // Stage 6D Part 7: capture the reason codes the engine
-                    // already computed for this decision, at the one
-                    // moment they're available — never re-derived later.
-                    prescription.appliedLoadReasonCode = weightResult.reasonCode
-                    prescription.appliedSetCountReasonCode = setResult.reasonCode
-                    prescription.appliedRepGoalReasonCode = repResult.reasonCode
+                    // Stage 6D Part 7 / Stage 10B.6: capture the reason
+                    // codes the engine already computed for this
+                    // decision, at the one moment they're available —
+                    // never re-derived later.
+                    prescription.appliedLoadReasonCode = loadReasonCode
+                    prescription.appliedSetCountReasonCode = setCountReasonCode
+                    prescription.appliedRepGoalReasonCode = repGoalReasonCode
+                    prescription.appliedProgressionReasonCode = progressionReasonCode
                     context.insert(prescription)
                     block.addPrescription(prescription)
 
-                    let setCount = setResult.sets ?? 0
-                    // Stage 6D: `RepGoal.toFailure` is already resolved
-                    // here — "to failure" is definitionally RIR 0, a
-                    // direct translation of data the engine already
-                    // produces, never an invented target. No family spec
-                    // defines a target for `toFailure == false` (RP's own
-                    // notation only ever specifies "X reps to failure" or
-                    // a plain rep count — PROGRAM_LOGIC_SPEC.md never
-                    // states a non-failure RIR), so that case stays `nil`
-                    // rather than guessing one (CLAUDE.md rule 10).
-                    let targetRir = (repResult.repGoal?.toFailure == true) ? 0 : nil
-                    for _ in 0..<setCount {
+                    let finalSetCount = setCount ?? 0
+                    // Stage 10B.6: an explicit `targetRir` (Hypertrophy V2)
+                    // always wins. Otherwise, `RepGoal.toFailure` is
+                    // resolved exactly as before Stage 10B.6 — "to
+                    // failure" is definitionally RIR 0, a direct
+                    // translation of data the engine already produces,
+                    // never an invented target; no target at all for
+                    // `toFailure == false` with no explicit `targetRir`
+                    // (CLAUDE.md rule 10).
+                    let targetRir = repGoal?.targetRir ?? ((repGoal?.toFailure == true) ? 0 : nil)
+                    for _ in 0..<finalSetCount {
                         let setPrescription = SetPrescription(
-                            repRangeLow: repResult.repGoal?.reps ?? 0,
-                            repRangeHigh: repResult.repGoal?.reps ?? 0,
-                            targetWeight: weightResult.weightKg,
+                            repRangeLow: repGoal?.reps ?? 0,
+                            repRangeHigh: repGoal?.repRangeHigh ?? repGoal?.reps ?? 0,
+                            targetWeight: weightKg,
                             targetRir: targetRir
                         )
                         context.insert(setPrescription)

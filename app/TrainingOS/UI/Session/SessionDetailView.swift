@@ -25,6 +25,23 @@ struct SessionDetailView: View {
     @State private var completionSummary: CompletionSummary?
     @State private var pendingFinishContext: SessionCompletionContext?
     @State private var pendingFeedbackPrompts: [ExercisePrescription] = []
+    /// Auto-advance seam: a Session with exactly one `WorkoutBlock` (every
+    /// Hypertrophy/Powerlifting/Steady State/Interval/Functional Fitness
+    /// Session materialized so far) has no real "choose a block" decision
+    /// for the user to make — showing a one-row list before letting them
+    /// into their own already-started workout is pure friction, and was
+    /// the reported gap: after readiness -> warm-up -> "Start Workout",
+    /// the user landed back on this hub with nothing indicating where to
+    /// go next, never inside `StrengthExecutionView`. Fires at most once
+    /// per `SessionDetailView` instance (`hasAutoNavigated` persists for
+    /// this view's lifetime in the NavigationStack, so popping back from
+    /// the block to tap Finish/Resume Later never re-triggers it) and
+    /// only for an already-`.inProgress` Session whose sole block still
+    /// has work — never for `.scheduled` (that transition is still the
+    /// user's own "Start Workout" tap here) and never for a
+    /// multi-block Session, where the choice is real.
+    @State private var autoOpenedBlock: WorkoutBlock?
+    @State private var hasAutoNavigated = false
 
     /// Stage 6E: a completed/skipped/missed/abandoned Session is ALWAYS
     /// history, regardless of the caller's `readOnly` flag — that flag
@@ -79,6 +96,8 @@ struct SessionDetailView: View {
         .background(Theme.ground)
         .navigationTitle(session.name)
         .navigationBarTitleDisplayMode(.inline)
+        .navigationDestination(item: $autoOpenedBlock, destination: destination(for:))
+        .onAppear(perform: autoNavigateIfNeeded)
         .fullScreenCover(item: $completionSummary) { summary in
             NavigationStack {
                 CompletionSummaryView(summary: summary) {
@@ -146,6 +165,16 @@ struct SessionDetailView: View {
         case .completed, .skipped, .missed, .abandoned:
             EmptyView()
         }
+    }
+
+    /// See `autoOpenedBlock`'s own doc comment for the exact scope of
+    /// this seam. The actual decision is `SessionAutoAdvance.blockToAutoOpen`
+    /// (a pure, independently-tested function) — this only fires it at
+    /// most once per view instance.
+    private func autoNavigateIfNeeded() {
+        guard !hasAutoNavigated else { return }
+        hasAutoNavigated = true
+        autoOpenedBlock = SessionAutoAdvance.blockToAutoOpen(session: session)
     }
 
     /// Every modality's execution screen shares this Session's one

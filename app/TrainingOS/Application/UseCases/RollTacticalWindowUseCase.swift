@@ -30,7 +30,7 @@ enum RollTacticalWindowUseCase {
     @discardableResult
     static func materializeFirstWindow(
         system: ProgrammingSystemKind, definition: ProgramDefinition, instance: ProgramInstance,
-        startDate: Date, ownerUserID: UUID, performanceProfile: PerformanceProfile?,
+        startDate: Date, ownerUserID: UUID, performanceProfile: PerformanceProfile?, userProfile: UserProfile? = nil,
         materializationContext: TacticalMaterializationContext, context: ModelContext
     ) throws -> [Session] {
         switch system {
@@ -39,7 +39,10 @@ enum RollTacticalWindowUseCase {
                 definition: definition, instance: instance, weekIndex: 0, isDeload: false,
                 startDate: startDate, ownerUserID: ownerUserID, equipmentProfile: materializationContext.equipmentProfile,
                 slotContext: { slot in
-                    strengthSlotContext(slot: slot, instance: instance, weekIndex: 0, performanceProfile: performanceProfile, context: context)
+                    strengthSlotContext(
+                        slot: slot, instance: instance, weekIndex: 0, isDeload: false,
+                        performanceProfile: performanceProfile, userProfile: userProfile, context: context
+                    )
                 },
                 context: context
             )
@@ -79,7 +82,7 @@ enum RollTacticalWindowUseCase {
     @discardableResult
     static func rollForward(
         mix: TrainingMix, asOf: Date, ownerUserID: UUID,
-        performanceProfile: PerformanceProfile?, availability: UserAvailability,
+        performanceProfile: PerformanceProfile?, availability: UserAvailability, userProfile: UserProfile? = nil,
         materializationContext: TacticalMaterializationContext, context: ModelContext
     ) throws -> Result? {
         var inputs: [ScheduledProgramInput] = []
@@ -101,14 +104,26 @@ enum RollTacticalWindowUseCase {
             // dating every rolled-forward week one week later than intended.
             let weekStartDate = Calendar.current.date(byAdding: .day, value: weekIndex * 7, to: instance.startDate) ?? instance.startDate
 
+            // Stage 10B.6 fix: this previously hardcoded `isDeload: false`
+            // regardless of `weekIndex`, making the already-generated 5th
+            // `TrainingWeek` (already marked `isDeload: true` by every
+            // generator) structurally unreachable in production — see
+            // `STAGE10B6_HYPERTROPHY_PRESCRIPTION_REDESIGN.md` §12. Reads
+            // the real, already-persisted flag instead of assuming.
+            let weeks = definition.orderedWeeks
+            let isDeload = weeks.indices.contains(weekIndex) ? weeks[weekIndex].isDeload : false
+
             let sessions: [Session]
             switch system {
             case .hypertrophy, .powerlifting:
                 let result = StrengthMaterializer.materializeWeek(
-                    definition: definition, instance: instance, weekIndex: weekIndex, isDeload: false,
+                    definition: definition, instance: instance, weekIndex: weekIndex, isDeload: isDeload,
                     startDate: weekStartDate, ownerUserID: ownerUserID, equipmentProfile: materializationContext.equipmentProfile,
                     slotContext: { slot in
-                        strengthSlotContext(slot: slot, instance: instance, weekIndex: weekIndex, performanceProfile: performanceProfile, context: context)
+                        strengthSlotContext(
+                            slot: slot, instance: instance, weekIndex: weekIndex, isDeload: isDeload,
+                            performanceProfile: performanceProfile, userProfile: userProfile, context: context
+                        )
                     },
                     context: context
                 )
@@ -151,9 +166,44 @@ enum RollTacticalWindowUseCase {
     /// inputs from the actually-materialized graph — never re-derives or
     /// clones a prior week's values.
     private static func strengthSlotContext(
-        slot: ExerciseSlot, instance: ProgramInstance, weekIndex: Int, performanceProfile: PerformanceProfile?, context: ModelContext
+        slot: ExerciseSlot, instance: ProgramInstance, weekIndex: Int, isDeload: Bool,
+        performanceProfile: PerformanceProfile?, userProfile: UserProfile?, context: ModelContext
     ) -> StrengthMaterializer.SlotContext {
         guard let exercise = SubstituteExerciseUseCase.resolvedExercise(for: slot, in: instance) else { return .init() }
+
+        // Stage 10B.6: Hypertrophy V2 slots resolve entirely through
+        // their own engine, identically at every week including week 0 —
+        // no e1RM, no phase-specific week-1 RM factor (D-10B6-7/D-10B6-9:
+        // e1RM is dropped as a dependency for this rule family, kept
+        // unchanged for Family A/B/C's own `weekIndex == 0` branch below).
+        if let template = slot.prescriptionTemplate, let rules = template.rules, rules.loadRule == .doubleProgression {
+            // TRAININGOS_DESIGNED fallback (2.5 kg), matching
+            // `CompleteSessionUseCase.progressionPreview`'s exact existing
+            // convention — never blocks materialization on a missing
+            // per-user equipment setting.
+            let increment = userProfile?.equipmentIncrements[exercise.equipment] ?? 2.5
+            let weightResolution = HypertrophyV2ProgressionEngine.resolveWeight(
+                exercise: exercise, performanceProfile: performanceProfile, equipmentIncrement: increment
+            )
+            guard let role = template.slotRole else {
+                return StrengthMaterializer.SlotContext(
+                    doubleProgressionWeightKg: weightResolution.weightKg,
+                    doubleProgressionReasonCode: weightResolution.reasonCode
+                )
+            }
+            let repGoal = HypertrophyV2ProgressionEngine.resolveRepGoal(rules: rules, weekIndex: weekIndex, isDeload: isDeload)
+            let setCount = HypertrophyV2ProgressionEngine.resolveSetCount(
+                role: role, rules: rules, isDeload: isDeload,
+                previousWeekSetCount: AutoregulationRatingResolver.previousWeekSetCount(for: template, in: instance),
+                autoregulationRating: AutoregulationRatingResolver.rating(for: template, in: instance)
+            )
+            return StrengthMaterializer.SlotContext(
+                doubleProgressionWeightKg: weightResolution.weightKg,
+                doubleProgressionReasonCode: weightResolution.reasonCode,
+                doubleProgressionRepGoal: repGoal,
+                doubleProgressionSetCount: setCount
+            )
+        }
 
         if weekIndex == 0 {
             let selectedProfile = performanceProfile?.profile(for: exercise)

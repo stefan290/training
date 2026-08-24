@@ -36,11 +36,21 @@ enum CompleteSessionUseCase {
             try modelContext.save()
         }
 
+        // Stage 10B.6: the same real, exercise-scoped history
+        // `HypertrophyV2ProgressionEngine`'s real materialization reads —
+        // fetched here (never fabricated) so the live preview and the
+        // real next-week decision can never diverge ("one authoritative
+        // decision path"). A single local `PerformanceProfile` matches
+        // this app's offline-first, single-user architecture; `nil` if
+        // none exists yet degrades to the pre-Stage-10B6 preview-only
+        // behavior (no REGRESS lookback), never a crash.
+        let performanceProfile = try? modelContext.fetch(FetchDescriptor<PerformanceProfile>()).first
+
         return CompletionSummary(
             session: session,
             completionContext: session.completionContext ?? context,
             highlights: highlights,
-            progressionPreview: progressionPreview(for: session, userProfile: userProfile)
+            progressionPreview: progressionPreview(for: session, userProfile: userProfile, performanceProfile: performanceProfile)
         )
     }
 
@@ -58,7 +68,9 @@ enum CompleteSessionUseCase {
     // only session.orderedBlocks...loggedSetResults, mutates nothing, and
     // is idempotent, so calling it again later for a completed Session is
     // exactly as safe as the original call at completion time.
-    static func progressionPreview(for session: Session, userProfile: UserProfile?) -> [ProgressionPreviewItem] {
+    static func progressionPreview(
+        for session: Session, userProfile: UserProfile?, performanceProfile: PerformanceProfile? = nil
+    ) -> [ProgressionPreviewItem] {
         let engine = DoubleProgressionEngine()
         var items: [ProgressionPreviewItem] = []
 
@@ -86,9 +98,20 @@ enum CompleteSessionUseCase {
                 // equipment — never blocks the preview on missing settings.
                 let increment = userProfile?.equipmentIncrements[exercise.equipment] ?? 2.5
 
+                // Stage 10B.6: the exposure immediately before this one,
+                // via the same authoritative history resolver real
+                // materialization uses — so this preview's REGRESS
+                // lookback (if any) matches exactly what week N+1's real
+                // materialization would compute, never a display-only
+                // approximation.
+                let previousExposure = DoubleProgressionHistoryResolver.lookup(
+                    for: exercise, performanceProfile: performanceProfile, excluding: prescription.id
+                ).mostRecentNormal
+
                 let output = engine.recommend(ProgressionInput(
                     targets: targets, latestResults: outcomes, hasUsableHistory: true,
-                    equipmentIncrement: increment, lastKnownWeight: lastWeight
+                    equipmentIncrement: increment, lastKnownWeight: lastWeight,
+                    previousTargets: previousExposure?.targets, previousResults: previousExposure?.outcomes
                 ))
 
                 // Stage 8B (D9 fix): an accepted readiness adaptation makes

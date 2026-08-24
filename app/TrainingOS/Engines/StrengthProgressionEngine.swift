@@ -55,6 +55,16 @@ enum StrengthProgressionEngine {
 
         case .none:
             return (nil, .noLoadProgression)
+
+        case .doubleProgression:
+            // Stage 10B.6: never actually reached — `StrengthMaterializer`
+            // branches on `loadRule == .doubleProgression` before ever
+            // calling into this engine, resolving through
+            // `HypertrophyV2ProgressionEngine`/`DoubleProgressionEngine`
+            // instead (a different reason-code vocabulary entirely; see
+            // `ExercisePrescription.appliedProgressionReasonCode`). Present
+            // only so this switch stays exhaustive without a `default`.
+            return (nil, .noLoadProgression)
         }
     }
 

@@ -29,7 +29,7 @@ final class HypertrophyBuiltInLibraryTests: XCTestCase {
 
     func testEveryBuiltInConfigurationInstantiatesViaTheSameGenerator() throws {
         for config in HypertrophyBuiltInLibrary.all {
-            let definition = HypertrophyProgramGenerator.generate(
+            let definition = try HypertrophyProgramGenerator.generate(
                 configuration: HypertrophyProgramConfiguration(dayCount: config.dayCount, split: config.split, phaseType: .basicHypertrophy),
                 provenance: .constructed(reason: "V1 built-in: \(config.name)"),
                 context: context
@@ -48,7 +48,7 @@ final class HypertrophyBuiltInLibraryTests: XCTestCase {
             let plan = TrainingPlan(status: .active)
             context.insert(plan)
 
-            let results = HypertrophyProgramJourney.build(
+            let results = try HypertrophyProgramJourney.build(
                 dayCount: config.dayCount, split: config.split, plan: plan, ownerUserID: UUID(),
                 firstPhaseStartDate: Date(timeIntervalSince1970: 0), context: context
             )
@@ -64,7 +64,14 @@ final class HypertrophyBuiltInLibraryTests: XCTestCase {
     /// Lower/Leg Focus configuration, not any full-body/arms config.
     func testOnlyLegFocusConfigurationAppliesTheHeavyException() throws {
         for config in HypertrophyBuiltInLibrary.all {
-            let definition = HypertrophyProgramGenerator.generate(
+            // Stage 10B.6: the 3-Day Full Body reference configuration now
+            // runs through the day-focus-driven Hypertrophy V2 path
+            // (`.doubleProgression` load, no %RM factor at all) — the
+            // Heavy Quads/Glutes exception is a `.rmBased`-only mechanism
+            // and cannot apply there; covered instead by
+            // `HypertrophyDayFocusGenerationTests.testHeavyExceptionNeverFiresUnderStage10BsActualFullBodyReferenceConfig()`.
+            guard !(config.dayCount == 3 && config.split == .fullBody) else { continue }
+            let definition = try HypertrophyProgramGenerator.generate(
                 configuration: HypertrophyProgramConfiguration(dayCount: config.dayCount, split: config.split, phaseType: .basicHypertrophy),
                 provenance: .constructed(reason: "test"),
                 context: context
