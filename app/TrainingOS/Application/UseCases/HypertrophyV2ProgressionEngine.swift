@@ -53,7 +53,7 @@ enum HypertrophyV2ProgressionEngine {
     static func makeRepGoalSchedule(for role: SlotRole) -> [RepGoal] {
         let range = repRange(for: role)
         let trajectory = role == .accessory ? Array(repeating: accessoryTargetRir, count: 4) : primarySecondaryRirTrajectory
-        return trajectory.map { rir in RepGoal(reps: range.low, toFailure: false, repRangeHigh: range.high, targetRir: rir) }
+        return trajectory.map { rir in RepGoal(prescription: .fixedReps(range.low), repRangeHigh: range.high, targetRir: rir) }
     }
 
     // MARK: - Materialization-time resolution
@@ -71,8 +71,8 @@ enum HypertrophyV2ProgressionEngine {
     /// strategy would apply (D-10B6-8).
     static func resolveRepGoal(rules: StrengthProgressionRules, weekIndex: Int, isDeload: Bool) -> RepGoal? {
         guard !isDeload else {
-            guard let lastProgressive = rules.repGoalSchedule.last else { return nil }
-            return RepGoal(reps: lastProgressive.reps, toFailure: false, repRangeHigh: lastProgressive.repRangeHigh, targetRir: deloadTargetRir)
+            guard let lastProgressive = rules.repGoalSchedule.last, case .fixedReps(let low) = lastProgressive.prescription else { return nil }
+            return RepGoal(prescription: .fixedReps(low), repRangeHigh: lastProgressive.repRangeHigh, targetRir: deloadTargetRir)
         }
         guard rules.repGoalSchedule.indices.contains(weekIndex) else { return nil }
         return rules.repGoalSchedule[weekIndex]

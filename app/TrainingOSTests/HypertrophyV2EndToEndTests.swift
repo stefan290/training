@@ -45,22 +45,96 @@ final class HypertrophyV2EndToEndTests: XCTestCase {
         let startDate: Date
     }
 
-    /// Builds the real 3-Day Full Body Hypertrophy V2 `ProgramDefinition`,
-    /// resolves every slot, and wires a minimal but real `TrainingMix`/
-    /// `TrainingMixComponent`/`ProgramInstance` so `RollTacticalWindowUseCase`
-    /// can be called exactly as production would.
+    /// Stage 10R.1 Slice 1B retired `.doubleProgression` from every
+    /// `HypertrophyProgramGenerator` production path — 3-Day Full Body now
+    /// generates the restored source-compatible `.rmBased` progression
+    /// instead (`STAGE10R1_SLICE1B_SOURCE_PROGRESSION_DESIGN.md`); no
+    /// built-in configuration emits `.doubleProgression` any longer.
+    /// Hypertrophy V2 (`HypertrophyV2ProgressionEngine`/
+    /// `DoubleProgressionEngine`) is kept as infrastructure for a future
+    /// load-bias overlay stage (Decision on Stage 10B.6 routing — code
+    /// stays, authority for THIS program moves) — this fixture builds a
+    /// standalone, hand-authored `.doubleProgression` template graph
+    /// directly, matching the exact day/slot/baseline shape Stage 10B.6's
+    /// day-focus generator used to produce, so the engine itself and the
+    /// real `RollTacticalWindowUseCase`/materialization/logging pipeline
+    /// around it stay covered by genuine integration-shaped tests without
+    /// depending on a generator path that no longer emits this rule.
+    private func makeDoubleProgressionTemplateGraph(catalog: ExerciseCatalog) -> ProgramDefinition {
+        let configuration = HypertrophyProgramConfiguration(dayCount: 3, split: .fullBody, phaseType: .basicHypertrophy)
+        let definition = ProgramDefinition(
+            name: "Test Hypertrophy V2 Fixture", lengthWeeks: 5, intent: "Stage 10B.6 engine regression fixture",
+            programmingSystem: .hypertrophy, generatorVersion: HypertrophyProgramGenerator.currentVersion,
+            provenance: .constructed(reason: "Stage 10B.6 end-to-end test"), hypertrophyConfiguration: configuration
+        )
+        context.insert(definition)
+        for _ in 0..<4 {
+            let week = TrainingWeek(isDeload: false)
+            context.insert(week)
+            definition.addWeek(week)
+        }
+        let deloadWeek = TrainingWeek(isDeload: true)
+        context.insert(deloadWeek)
+        definition.addWeek(deloadWeek)
+
+        func addSlot(to block: WorkoutBlockTemplate, name: String, targets: [MuscleGroup], exercise: Exercise, baselineSets: Int) {
+            let template = PrescriptionTemplate(rules: StrengthProgressionRules(
+                loadRule: .doubleProgression,
+                setCountRule: .autoregulated(AutoregulatedSetCount(baselineSets: baselineSets)),
+                repGoalSchedule: HypertrophyV2ProgressionEngine.makeRepGoalSchedule(for: .primary)
+            ), slotRole: .primary)
+            let slot = ExerciseSlot(name: name, allowedTargets: targets)
+            context.insert(template)
+            context.insert(slot)
+            template.attachExerciseSlot(slot)
+            slot.resolvedExercise = exercise
+            block.addPrescriptionTemplate(template)
+            // Local, self-attributed pairing — this fixture tests the
+            // Hypertrophy V2 engine mechanism itself, not the real source
+            // rating-pairing web (that belongs to the `.rmBased` path,
+            // covered in `HypertrophyDayFocusGenerationTests.swift`).
+            template.pairedSlot = template
+        }
+
+        let days: [(name: String, slots: [(name: String, targets: [MuscleGroup], exercise: Exercise, baselineSets: Int)])] = [
+            ("Push Emphasis", [
+                ("Horizontal Push", [.chest], catalog.benchPress, 3),
+                ("Horizontal Pull", [.back], catalog.barbellRow, 3),
+                ("Quads", [.quadriceps], catalog.frontSquat, 2),
+            ]),
+            ("Legs Emphasis", [
+                ("Horizontal Push", [.chest], catalog.benchPress, 2),
+                ("Horizontal Pull", [.back], catalog.barbellRow, 3),
+                ("Quads", [.quadriceps], catalog.frontSquat, 3),
+            ]),
+            ("Pull Emphasis", [
+                ("Horizontal Push", [.chest], catalog.benchPress, 3),
+                ("Horizontal Pull", [.back], catalog.barbellRow, 3),
+                ("Biceps", [.biceps], catalog.barbellCurl, 3),
+            ]),
+        ]
+        for day in days {
+            let session = TemplateSession(name: day.name, role: .hypertrophy)
+            context.insert(session)
+            definition.addTemplateSession(session)
+            let block = WorkoutBlockTemplate(type: .hypertrophy)
+            context.insert(block)
+            session.addBlockTemplate(block)
+            for slot in day.slots {
+                addSlot(to: block, name: slot.name, targets: slot.targets, exercise: slot.exercise, baselineSets: slot.baselineSets)
+            }
+        }
+        return definition
+    }
+
+    /// Builds the standalone Hypertrophy V2 `ProgramDefinition` fixture
+    /// (see `makeDoubleProgressionTemplateGraph`'s doc comment) and wires
+    /// a minimal but real `TrainingMix`/`TrainingMixComponent`/
+    /// `ProgramInstance` so `RollTacticalWindowUseCase` can be called
+    /// exactly as production would.
     private func makeFixture() throws -> Fixture {
         let catalog = ExerciseCatalog.makeAndInsert(context: context)
-        let candidates = [
-            catalog.backSquat, catalog.benchPress, catalog.inclineDumbbellPress, catalog.romanianDeadlift,
-            catalog.legPress, catalog.frontSquat, catalog.legCurl, catalog.calfRaise,
-            catalog.barbellCurl, catalog.cableTricepsPushdown, catalog.dumbbellLateralRaise, catalog.barbellRow,
-        ]
-        let definition = try HypertrophyProgramGenerator.generate(
-            configuration: HypertrophyProgramConfiguration(dayCount: 3, split: .fullBody, phaseType: .basicHypertrophy),
-            provenance: .constructed(reason: "Stage 10B.6 end-to-end test"), context: context
-        )
-        ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: definition, candidateExercises: candidates)
+        let definition = makeDoubleProgressionTemplateGraph(catalog: catalog)
 
         let startDate = Date(timeIntervalSince1970: 1_700_000_000)
         let instance = ProgramInstance(ownerUserID: ownerUserID, startDate: startDate)

@@ -147,13 +147,19 @@ enum FunctionalFitnessMaterializer {
         context.insert(prescription)
         block.addPrescription(prescription)
 
-        let repGoal = prescriptionTemplate.repGoalSchedule.first
+        // Functional Fitness's strength block always uses a genuine fixed
+        // rep prescription (`FunctionalFitnessProgramGenerator`'s only
+        // rep-goal construction) — never an RIR/effort target.
+        let fixedReps: Int? = {
+            guard case .fixedReps(let n) = prescriptionTemplate.repGoalSchedule.first?.prescription else { return nil }
+            return n
+        }()
         var setCount = 0
         if case .fixed(let setsByWeek) = prescriptionTemplate.setCountRule {
             setCount = setsByWeek.first ?? 0
         }
         for _ in 0..<setCount {
-            let setPrescription = SetPrescription(repRangeLow: repGoal?.reps ?? 0, repRangeHigh: repGoal?.reps ?? 0, targetWeight: nil)
+            let setPrescription = SetPrescription(repRangeLow: fixedReps, repRangeHigh: fixedReps, targetWeight: nil)
             context.insert(setPrescription)
             prescription.addSetPrescription(setPrescription)
         }

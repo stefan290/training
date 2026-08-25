@@ -105,11 +105,25 @@ final class MixedModalityOrchestrationTests: XCTestCase {
         let materializationContext = TacticalMaterializationContext(
             equipmentProfile: equipment, strengthCandidateExercises: candidates.strength, functionalFitnessCandidateExercises: candidates.functionalFitness
         )
-        let result = try StartPhaseUseCase.start(
+        var result = try StartPhaseUseCase.start(
             phase: fixture.phase, mix: variedMix.mix, asOf: asOf, ownerUserID: ownerUserID,
             performanceProfile: nil, availability: availability(),
             materializationContext: materializationContext, context: context
         )
+        // Stage 10R.1C: the Strength component is `.rmBased` and defers
+        // materialization until source RM calibration exists. Completing
+        // it schedules ONLY that component's own newly-materialized
+        // sessions (see `materializeOnceCalibrationComplete`'s own doc
+        // comment on why it deliberately does not re-schedule already-
+        // placed siblings) — so the real, final merged view of every
+        // placement across the whole phase is `start()`'s own proposal
+        // PLUS whatever this later, separate call placed, never one
+        // replacing the other.
+        let proposals = try CalibrationTestSupport.completeAnyPendingCalibrationAndMaterialize(
+            phase: fixture.phase, performanceProfile: nil, availability: availability(),
+            materializationContext: materializationContext, asOf: asOf, context: context
+        )
+        result.scheduleProposal.placements.append(contentsOf: proposals.flatMap(\.placements))
         return (fixture.goal, fixture.phase, variedMix.mix, result, candidates)
     }
 
@@ -181,6 +195,10 @@ final class MixedModalityOrchestrationTests: XCTestCase {
             phase: fixture0.phase, mix: variedMix.mix, asOf: asOf, ownerUserID: ownerUserID,
             performanceProfile: performanceProfile, availability: availability(),
             materializationContext: materializationContext, context: context
+        )
+        try CalibrationTestSupport.completeAnyPendingCalibrationAndMaterialize(
+            phase: fixture0.phase, performanceProfile: performanceProfile, availability: availability(),
+            materializationContext: materializationContext, asOf: asOf, context: context
         )
 
         // Materializing all 3 systems together must never itself write

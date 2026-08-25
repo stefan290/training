@@ -53,61 +53,95 @@ final class EndToEndProgressionLoopTests: XCTestCase {
         let squat = try XCTUnwrap(session.orderedBlocks.first?.orderedPrescriptions.first { $0.exercise?.canonicalName == "Back Squat" })
         let setPrescription = try XCTUnwrap(squat.orderedSetPrescriptions.first)
 
-        XCTAssertGreaterThan(setPrescription.repRangeHigh, 0, "a real rep target, not a placeholder")
-        XCTAssertEqual(setPrescription.targetRir, 0, "Squat Pattern is a to-failure primary — RIR is materialized, not hardcoded")
+        XCTAssertEqual(setPrescription.targetRir, 6, "Squat Pattern is an RIR-based primary — RIR is materialized, not hardcoded")
         XCTAssertNotNil(setPrescription.targetWeight, "a real suggested load resolved from the RM-based rule")
     }
 
     /// TEST B: completed exactly as prescribed (top of range, RIR target
     /// met) — the engine must recommend a load increase, sourced from the
     /// real materialized prescription's own rep range/RIR/weight.
+    ///
+    /// **Stage 10R.1D:** uses "Leg Press" (Unilateral/Machine Squat, a
+    /// genuine fixed-rep-range slot), not "Back Squat" (Squat Pattern) —
+    /// `DoubleProgressionEngine`'s range-based increase/hold/decrease
+    /// logic has no fixed rep range to evaluate for an RIR-only
+    /// prescription (Squat Pattern's `toFailure: true` is now correctly
+    /// RIR-based, per this stage's correction), so it never produces a
+    /// preview item for one at all — see `testE_...` below, which proves
+    /// exactly that, rather than silently reusing a movement this
+    /// engine can no longer evaluate.
     func testB_CompletingExactlyAsPrescribedRecommendsLoadIncrease() throws {
         let (session, profile) = makeLowerA()
         let block = try XCTUnwrap(session.orderedBlocks.first)
-        let squat = try XCTUnwrap(block.orderedPrescriptions.first { $0.exercise?.canonicalName == "Back Squat" })
+        let squat = try XCTUnwrap(block.orderedPrescriptions.first { $0.exercise?.canonicalName == "Leg Press" })
         for setPrescription in squat.orderedSetPrescriptions {
-            try logSet(for: squat, setPrescription: setPrescription, reps: setPrescription.repRangeHigh, actualRir: setPrescription.targetRir, performanceProfile: profile)
+            try logSet(for: squat, setPrescription: setPrescription, reps: setPrescription.repRangeHigh ?? 0, actualRir: setPrescription.targetRir, performanceProfile: profile)
         }
 
         let summary = try CompleteSessionUseCase.complete(session, context: .partial, asOf: Date(), modelContext: context)
 
-        let preview = try XCTUnwrap(summary.progressionPreview.first { $0.exerciseName == "Back Squat" })
+        let preview = try XCTUnwrap(summary.progressionPreview.first { $0.exerciseName == "Leg Press" })
         XCTAssertEqual(preview.reasonCode, .loadIncrease)
     }
 
     /// TEST C: outperforming the prescription — finishing farther from
     /// failure than the target RIR demanded, at or above the top of the
     /// rep range — must still be recognized as a load increase, not
-    /// mistaken for a failed/held rep.
+    /// mistaken for a failed/held rep. See TEST B's doc comment for why
+    /// this uses "Leg Press."
     func testC_OutperformingFartherFromFailureThanTargetStillRecommendsLoadIncrease() throws {
         let (session, profile) = makeLowerA()
         let block = try XCTUnwrap(session.orderedBlocks.first)
-        let squat = try XCTUnwrap(block.orderedPrescriptions.first { $0.exercise?.canonicalName == "Back Squat" })
+        let squat = try XCTUnwrap(block.orderedPrescriptions.first { $0.exercise?.canonicalName == "Leg Press" })
         for setPrescription in squat.orderedSetPrescriptions {
             let target = setPrescription.targetRir ?? 0
-            try logSet(for: squat, setPrescription: setPrescription, reps: setPrescription.repRangeHigh + 2, actualRir: target + 2, performanceProfile: profile)
+            try logSet(for: squat, setPrescription: setPrescription, reps: (setPrescription.repRangeHigh ?? 0) + 2, actualRir: target + 2, performanceProfile: profile)
         }
 
         let summary = try CompleteSessionUseCase.complete(session, context: .partial, asOf: Date(), modelContext: context)
 
-        let preview = try XCTUnwrap(summary.progressionPreview.first { $0.exerciseName == "Back Squat" })
+        let preview = try XCTUnwrap(summary.progressionPreview.first { $0.exerciseName == "Leg Press" })
         XCTAssertEqual(preview.reasonCode, .loadIncrease, "exceeding the top of range with reps still in reserve is never mistaken for a miss")
     }
 
     /// TEST D: underperforming — hitting failure before the bottom of the
-    /// rep range — must hold rather than advance load.
+    /// rep range — must hold rather than advance load. See TEST B's doc
+    /// comment for why this uses "Leg Press."
     func testD_UnderperformingBelowRangeHoldsRatherThanAdvancing() throws {
         let (session, profile) = makeLowerA()
         let block = try XCTUnwrap(session.orderedBlocks.first)
-        let squat = try XCTUnwrap(block.orderedPrescriptions.first { $0.exercise?.canonicalName == "Back Squat" })
+        let squat = try XCTUnwrap(block.orderedPrescriptions.first { $0.exercise?.canonicalName == "Leg Press" })
         for setPrescription in squat.orderedSetPrescriptions {
-            try logSet(for: squat, setPrescription: setPrescription, reps: setPrescription.repRangeLow - 1, actualRir: 0, performanceProfile: profile)
+            try logSet(for: squat, setPrescription: setPrescription, reps: (setPrescription.repRangeLow ?? 0) - 1, actualRir: 0, performanceProfile: profile)
         }
 
         let summary = try CompleteSessionUseCase.complete(session, context: .partial, asOf: Date(), modelContext: context)
 
-        let preview = try XCTUnwrap(summary.progressionPreview.first { $0.exerciseName == "Back Squat" })
+        let preview = try XCTUnwrap(summary.progressionPreview.first { $0.exerciseName == "Leg Press" })
         XCTAssertEqual(preview.reasonCode, .hold, "hitting failure below the bottom of the prescribed range never advances load")
+    }
+
+    /// TEST E (Stage 10R.1D, new): an RIR-only prescription (Squat
+    /// Pattern / Back Squat) has no fixed rep range for
+    /// `DoubleProgressionEngine` to evaluate — it must be skipped from
+    /// the preview entirely, never given a fabricated range-based
+    /// verdict. This is the direct, necessary consequence of no longer
+    /// fabricating `repRangeLow/High` for an RIR target (`STAGE10R1D_SOURCE_SEMANTICS_CORRECTION.md`) —
+    /// a real, newly-exposed gap: `DoubleProgressionEngine`'s "Next time"
+    /// preview does not (and, without further design work, cannot)
+    /// apply to any RIR-only prescription. Flagged, not silently patched
+    /// around, per this stage's own scope discipline.
+    func testE_RIROnlyPrescriptionProducesNoProgressionPreviewRatherThanAFabricatedVerdict() throws {
+        let (session, profile) = makeLowerA()
+        let block = try XCTUnwrap(session.orderedBlocks.first)
+        let squat = try XCTUnwrap(block.orderedPrescriptions.first { $0.exercise?.canonicalName == "Back Squat" })
+        for setPrescription in squat.orderedSetPrescriptions {
+            try logSet(for: squat, setPrescription: setPrescription, reps: 8, actualRir: setPrescription.targetRir, performanceProfile: profile)
+        }
+
+        let summary = try CompleteSessionUseCase.complete(session, context: .partial, asOf: Date(), modelContext: context)
+
+        XCTAssertNil(summary.progressionPreview.first { $0.exerciseName == "Back Squat" }, "no fabricated range-based verdict for an RIR-only prescription")
     }
 
     /// TEST F: substituting to an exercise with no history is allowed
@@ -138,7 +172,7 @@ final class EndToEndProgressionLoopTests: XCTestCase {
         XCTAssertEqual(legPressMovement.exercise?.canonicalName, "Bulgarian Split Squat", "substitution succeeded despite no history — never blocked")
 
         for setPrescription in legPressMovement.orderedSetPrescriptions {
-            try logSet(for: legPressMovement, setPrescription: setPrescription, reps: setPrescription.repRangeHigh, actualRir: setPrescription.targetRir, performanceProfile: profile)
+            try logSet(for: legPressMovement, setPrescription: setPrescription, reps: setPrescription.repRangeHigh ?? 0, actualRir: setPrescription.targetRir, performanceProfile: profile)
         }
 
         let exerciseProfile = try XCTUnwrap(profile.profile(for: catalog.bulgarianSplitSquat), "completing the substituted exercise must create usable history for it")

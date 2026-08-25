@@ -41,7 +41,7 @@ final class SubstitutionTests: XCTestCase {
         let template = PrescriptionTemplate(rules: StrengthProgressionRules(
             loadRule: .rmBased(RMBasedLoad(rmType: .rm10, weekOneFactor: 0.85, laterWeekMultipliers: [1.05, 1.075, 1.1])),
             setCountRule: .fixed(setsByWeek: [3, 3, 3, 3]),
-            repGoalSchedule: [RepGoal(reps: 10, toFailure: true)]
+            repGoalSchedule: [RepGoal.rir(10)]
         ))
         context.insert(template)
         block.addPrescriptionTemplate(template)

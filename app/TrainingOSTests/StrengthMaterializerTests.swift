@@ -62,19 +62,23 @@ final class StrengthMaterializerTests: XCTestCase {
         XCTAssertEqual(primary.orderedSetPrescriptions.count, 3, "autoregulated baseline for Basic Hypertrophy")
         for setPrescription in primary.orderedSetPrescriptions {
             XCTAssertEqual(setPrescription.targetWeight ?? -1, 85, accuracy: 0.0001) // MROUND(100*0.85, 2.5)
-            XCTAssertEqual(setPrescription.repRangeLow, 3)
-            XCTAssertEqual(setPrescription.repRangeHigh, 3)
+            // Stage 10R.1D: "3/fail" is RIR 3, never a fabricated fixed
+            // rep count — see `testMaterializeWeekTranslatesRIRTargetsNeverInventingAFixedRepCount` below.
+            XCTAssertNil(setPrescription.repRangeLow)
+            XCTAssertNil(setPrescription.repRangeHigh)
         }
     }
 
-    /// Stage 6D Part 2: `RepGoal.toFailure` (already resolved by
-    /// `StrengthProgressionEngine.resolveRepGoal`) is translated onto the
-    /// materialized `SetPrescription.targetRir` — 0 for the primary
-    /// (Family A's own `repGoalSchedule` is `toFailure: true` for every
-    /// week), absent for the paired accessory (`pairedRepGoalSchedule` is
-    /// never `toFailure`) — never hardcoded, never invented for the case
-    /// the source data doesn't define.
-    func testMaterializeWeekTranslatesToFailureIntoRIRNeverInventingOneForNonFailureSets() throws {
+    /// **Stage 10R.1D correction:** `RepGoal.prescription` (already
+    /// resolved by `StrengthProgressionEngine.resolveRepGoal`) is
+    /// translated onto the materialized `SetPrescription.targetRir` — RIR
+    /// 3 for the primary (Family A's own `repGoalSchedule` is `.rir(3)`
+    /// for week 1), absent for the paired accessory (`pairedRepGoalSchedule`
+    /// is a genuine fixed-rep target, `.fixedReps(12)`) — never hardcoded,
+    /// never invented for the case the source data doesn't define. This
+    /// test previously asserted the pre-correction fabrication (RIR 0 for
+    /// a "to failure" flag) — renamed to reflect the corrected reading.
+    func testMaterializeWeekTranslatesRIRTargetsNeverInventingAFixedRepCount() throws {
         let definition = try HypertrophyProgramGenerator.generate(
             configuration: HypertrophyProgramConfiguration(dayCount: 1, split: .fullBody, phaseType: .basicHypertrophy),
             provenance: .constructed(reason: "test fixture"),
@@ -92,8 +96,10 @@ final class StrengthMaterializerTests: XCTestCase {
         let primary = try XCTUnwrap(block.orderedPrescriptions.first { $0.orderedSetPrescriptions.count == 3 })
         let paired = try XCTUnwrap(block.orderedPrescriptions.first { $0.orderedSetPrescriptions.count == 2 })
 
-        XCTAssertTrue(primary.orderedSetPrescriptions.allSatisfy { $0.targetRir == 0 })
+        XCTAssertTrue(primary.orderedSetPrescriptions.allSatisfy { $0.targetRir == 3 })
+        XCTAssertTrue(primary.orderedSetPrescriptions.allSatisfy { $0.repRangeLow == nil && $0.repRangeHigh == nil })
         XCTAssertTrue(paired.orderedSetPrescriptions.allSatisfy { $0.targetRir == nil })
+        XCTAssertTrue(paired.orderedSetPrescriptions.allSatisfy { $0.repRangeLow == 12 && $0.repRangeHigh == 12 }, "the paired accessory is a genuine fixed-rep target")
     }
 
     /// Stage 6D Part 7: the reason code the engine actually produced for
@@ -187,8 +193,10 @@ final class StrengthMaterializerTests: XCTestCase {
     }
 
     /// The deload week, given week 0's resolved values: day-boundary
-    /// weight asymmetry, the hardcoded 2-set constant, floored deload
-    /// reps, and the paired slot omitted entirely.
+    /// weight asymmetry, the hardcoded 2-set constant, and the paired
+    /// slot omitted entirely. **Stage 10R.1D:** deload rep resolution no
+    /// longer fabricates a floored rep count from the template — see
+    /// `STAGE10R1D_SOURCE_SEMANTICS_CORRECTION.md`.
     func testMaterializeDeloadWeekAppliesFamilyARulesGivenWeekZeroResolvedValues() throws {
         let definition = try HypertrophyProgramGenerator.generate(
             configuration: HypertrophyProgramConfiguration(dayCount: 4, split: .fullBody, phaseType: .basicHypertrophy),
@@ -219,7 +227,8 @@ final class StrengthMaterializerTests: XCTestCase {
             let expectedWeight = dayIndex < 2 ? 85.0 : 42.5 // ceil(4/2) = 2 full-weight days
             for setPrescription in primary.orderedSetPrescriptions {
                 XCTAssertEqual(setPrescription.targetWeight ?? -1, expectedWeight, accuracy: 0.0001, "day \(dayIndex)")
-                XCTAssertEqual(setPrescription.repRangeLow, 1) // floor(3 * 0.5) = 1
+                XCTAssertNil(setPrescription.repRangeLow, "never fabricate a deload rep count from the template")
+                XCTAssertNil(setPrescription.targetRir, "unresolved, not fabricated")
             }
 
             let paired = block.orderedPrescriptions.first { $0.orderedSetPrescriptions.isEmpty }

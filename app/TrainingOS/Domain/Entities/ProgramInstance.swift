@@ -72,6 +72,16 @@ final class ProgramInstance {
     @Relationship(deleteRule: .nullify, inverse: \PlannerDecision.programInstance)
     var plannerDecisions: [PlannerDecision] = []
 
+    /// Stage 10R.1C addition: the explicit source-RM-calibration state for
+    /// this instance's `.rmBased` slots — see `SourceRMCalibration`'s own
+    /// doc comment. Cascade, like `slotSelectionOverrides` — this is
+    /// instance-specific setup state, not permanent performance history;
+    /// deleting the instance leaves nothing worth preserving here (a fresh
+    /// instance needs fresh calibration anyway, per the source's own
+    /// never-carried-over rule).
+    @Relationship(deleteRule: .cascade, inverse: \SourceRMCalibration.programInstance)
+    var sourceRMCalibrations: [SourceRMCalibration] = []
+
     init(
         id: UUID = UUID(),
         ownerUserID: UUID,
@@ -126,5 +136,22 @@ final class ProgramInstance {
     /// own "Stage 4D correction" doc comment.
     func activitySelectionOverride(for templateBlock: WorkoutBlockTemplate) -> ActivitySelectionOverride? {
         activitySelectionOverrides.first { $0.templateBlock?.id == templateBlock.id }
+    }
+
+    /// Stage 10R.1C addition: the only way application code should attach
+    /// a `SourceRMCalibration`. Mutates exactly one side; SwiftData
+    /// maintains the declared inverse.
+    func addSourceRMCalibration(_ calibration: SourceRMCalibration) {
+        sourceRMCalibrations.append(calibration)
+    }
+
+    /// This instance's calibration for `(exercise, rmType)`, if one has
+    /// been entered — `nil` means genuinely not yet calibrated (never a
+    /// guessed value). Identity is `(programInstance, exercise, rmType)`
+    /// exactly — never keyed by slot/template (`STAGE10R1C_SOURCE_RM_CALIBRATION_DESIGN.md`
+    /// Decision 1): the same exercise appearing in multiple slots that
+    /// require the identical `RMType` is satisfied by one entry.
+    func sourceRMCalibration(for exercise: Exercise, rmType: RMType) -> SourceRMCalibration? {
+        sourceRMCalibrations.first { $0.exercise?.id == exercise.id && $0.rmType == rmType }
     }
 }

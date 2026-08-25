@@ -77,6 +77,18 @@ enum StartPhaseUseCase {
         /// earlier call are skipped, never re-instantiated).
         var instancesByComponent: [UUID: ProgramInstance]
         var scheduleProposal: ScheduleProposal
+        /// Stage 10R.1C addition: `TrainingMixComponent.id`s that were
+        /// instantiated (a real `ProgramInstance` exists, exercise slots
+        /// are resolved) but deliberately NOT materialized this call
+        /// because `RequiredSourceCalibrationsUseCase.stillRequired`
+        /// found at least one `.rmBased` slot with no matching
+        /// `SourceRMCalibration` yet. Empty for every component that
+        /// materialized normally (including every non-`.rmBased` system,
+        /// and any `.rmBased` program with no outstanding requirement).
+        /// The caller (UI) surfaces a calibration step for these and
+        /// later calls `materializeOnceCalibrationComplete` once the user
+        /// finishes — see this type's own doc comment.
+        var componentsAwaitingCalibration: Set<UUID> = []
     }
 
     @discardableResult
@@ -122,6 +134,7 @@ enum StartPhaseUseCase {
 
         var instancesByComponent: [UUID: ProgramInstance] = [:]
         var inputs: [ScheduledProgramInput] = []
+        var componentsAwaitingCalibration: Set<UUID> = []
 
         for component in mix.orderedComponents {
             guard component.programInstance == nil else { continue }
@@ -158,6 +171,21 @@ enum StartPhaseUseCase {
             )
             context.insert(decision)
 
+            // Stage 10R.1C: a `.rmBased` program's Week-1 load can only be
+            // honestly materialized once every slot's required source RM
+            // calibration exists — never derived, never estimated (see
+            // `STAGE10R1C_SOURCE_RM_CALIBRATION_DESIGN.md`). Instance
+            // creation and exercise-slot resolution above already happened
+            // (both user-independent of calibration); only the actual
+            // materialization call is deferred. This check is generic
+            // across every `.rmBased` family (Hypertrophy/Powerlifting),
+            // never Hypertrophy-specific.
+            if (system == .hypertrophy || system == .powerlifting),
+               !RequiredSourceCalibrationsUseCase.stillRequired(for: chosen.programDefinition, instance: instance).isEmpty {
+                componentsAwaitingCalibration.insert(component.id)
+                continue
+            }
+
             let sessions = try RollTacticalWindowUseCase.materializeFirstWindow(
                 system: system, definition: chosen.programDefinition, instance: instance,
                 startDate: phase.startDate, ownerUserID: ownerUserID,
@@ -166,8 +194,106 @@ enum StartPhaseUseCase {
             inputs.append(ScheduledProgramInput(component: component, sessions: sessions))
         }
 
-        guard !inputs.isEmpty else { throw StartPhaseError.noExecutableComponents }
+        guard !inputs.isEmpty || !componentsAwaitingCalibration.isEmpty else {
+            throw StartPhaseError.noExecutableComponents
+        }
 
+        let scheduled = try scheduleAndAccept(
+            phase: phase, mix: mix, inputs: inputs, windowDays: windowDays,
+            ownerUserID: ownerUserID, availability: availability, context: context
+        )
+
+        return Result(
+            phase: phase, mix: mix, instancesByComponent: instancesByComponent,
+            scheduleProposal: scheduled, componentsAwaitingCalibration: componentsAwaitingCalibration
+        )
+    }
+
+    /// Stage 10R.1C: the deferred half of `start()` for a component that
+    /// was instantiated (real `ProgramInstance`, exercise slots resolved)
+    /// but held back from materialization because required source RM
+    /// calibration was missing. Call once
+    /// `RequiredSourceCalibrationsUseCase.stillRequired` is empty for
+    /// `instance` — re-verified defensively here rather than trusted
+    /// blindly from the caller. Performs the exact same
+    /// `materializeFirstWindow` + schedule/accept steps `start()` already
+    /// runs for an immediately-executable component — never a second
+    /// materialization mechanism, and never a retroactive mutation of
+    /// anything already materialized (this is the one and only
+    /// materialization for this instance's Week 1, simply invoked later
+    /// than usual).
+    @discardableResult
+    static func materializeOnceCalibrationComplete(
+        component: TrainingMixComponent,
+        instance: ProgramInstance,
+        phase: TrainingPhase,
+        mix: TrainingMix,
+        asOf: Date,
+        ownerUserID: UUID,
+        performanceProfile: PerformanceProfile?,
+        availability: UserAvailability,
+        materializationContext: TacticalMaterializationContext,
+        context: ModelContext
+    ) throws -> ScheduleProposal {
+        guard let definition = instance.programDefinition else { throw StartPhaseError.noExecutableComponents }
+        guard let system = component.programmingSystem else { throw StartPhaseError.noExecutableComponents }
+        // This instance has already materialized — calling this a second
+        // time (e.g. a defensive/duplicate UI action) must never
+        // re-materialize or duplicate Week 1; the one-time materialization
+        // invariant applies here exactly as it does everywhere else.
+        guard instance.sessions.isEmpty else { throw StartPhaseError.noExecutableComponents }
+        guard RequiredSourceCalibrationsUseCase.stillRequired(for: definition, instance: instance).isEmpty else {
+            throw StartPhaseError.noExecutableComponents
+        }
+
+        let sessions = try RollTacticalWindowUseCase.materializeFirstWindow(
+            system: system, definition: definition, instance: instance,
+            startDate: phase.startDate, ownerUserID: ownerUserID,
+            performanceProfile: performanceProfile, materializationContext: materializationContext, context: context
+        )
+
+        // KNOWN, DOCUMENTED LIMITATION (not solved by this slice — see
+        // STAGE10R1C_SOURCE_RM_CALIBRATION_IMPLEMENTATION_REPORT.md):
+        // the scheduler only ever sees what's in THIS call's `inputs` — it
+        // has no memory of a prior, separate `propose`/`accept` call for
+        // this same phase's OTHER components. An earlier version of this
+        // function re-included every other already-instantiated
+        // component's own already-materialized sessions here, to try to
+        // reproduce one joint scheduling pass across everyone — but that
+        // re-introduces ALL of those sessions as freely re-placeable
+        // inputs (`ConcurrentScheduler` has no "already placed, do not
+        // move" concept), which reliably produced spurious `.infeasible`
+        // results for realistic mixed-modality phases (confirmed via this
+        // slice's own regression tests) — a strictly worse outcome than
+        // the narrower risk being guarded against. Scheduling ONLY this
+        // component's own newly-materialized sessions is the safer
+        // default until the scheduler itself grows a real "pinned/already
+        // placed" input concept; the residual risk (a deferred
+        // component's sessions landing on a day an already-scheduled
+        // sibling also occupies, only for an already-at-capacity mix) is
+        // accepted and documented rather than "fixed" with something that
+        // regresses the common case.
+        let inputs = [ScheduledProgramInput(component: component, sessions: sessions)]
+
+        let windowDays = TacticalWindowPolicy.windowLengthInDays(
+            primarySystem: mix.orderedComponents.first { $0.priority == .primary }?.programmingSystem,
+            asOf: asOf, phaseEndDate: phase.endDate
+        )
+        return try scheduleAndAccept(
+            phase: phase, mix: mix, inputs: inputs, windowDays: windowDays,
+            ownerUserID: ownerUserID, availability: availability, context: context
+        )
+    }
+
+    /// Shared tail: widens the window to cover whatever was just
+    /// materialized, proposes the schedule, and accepts it — identical to
+    /// what `start()` always did, extracted so
+    /// `materializeOnceCalibrationComplete` can reuse it exactly rather
+    /// than duplicating it.
+    private static func scheduleAndAccept(
+        phase: TrainingPhase, mix: TrainingMix, inputs: [ScheduledProgramInput], windowDays: Int,
+        ownerUserID: UUID, availability: UserAvailability, context: ModelContext
+    ) throws -> ScheduleProposal {
         // A non-primary component can materialize further out than the
         // primary system's own natural block (Steady State's whole
         // natural block, materialized in one call regardless of the
@@ -180,7 +306,6 @@ enum StartPhaseUseCase {
         let constraints = SchedulingConstraints(availability: availability, window: SchedulingWindow(startDate: phase.startDate, numberOfDays: effectiveWindowDays))
         let scheduled = SchedulingPipeline.propose(mix: mix, inputs: inputs, constraints: constraints)
         try AcceptScheduleProposalUseCase.accept(scheduled.proposal, ownerUserID: ownerUserID, context: context)
-
-        return Result(phase: phase, mix: mix, instancesByComponent: instancesByComponent, scheduleProposal: scheduled.proposal)
+        return scheduled.proposal
     }
 }

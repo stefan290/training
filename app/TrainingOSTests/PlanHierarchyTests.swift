@@ -102,7 +102,7 @@ final class PlanHierarchyTests: XCTestCase {
         let blockTemplate = try XCTUnwrap(templateSession.orderedBlockTemplates.first)
         let primaryTemplate = try XCTUnwrap(blockTemplate.orderedPrescriptionTemplates.first { $0.rules?.setCountRule.isAutoregulated == true })
 
-        XCTAssertNotNil(primaryTemplate.rules?.repGoalSchedule.first?.reps, "rep goal is deterministic from the template alone")
+        XCTAssertNotNil(primaryTemplate.rules?.repGoalSchedule.first?.prescription, "rep goal is deterministic from the template alone")
         // PrescriptionTemplate itself has no resolved-weight concept at
         // all — load only ever exists on a materialized SetPrescription.
     }

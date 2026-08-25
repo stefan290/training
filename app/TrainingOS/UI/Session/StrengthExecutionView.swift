@@ -18,7 +18,15 @@ struct StrengthExecutionView: View {
     let executionState: SessionExecutionState
 
     @State private var weightText: String = ""
-    @State private var reps: Int = 0
+    /// Stage 10R.1D UX correction: `nil` means the athlete has not yet
+    /// entered an actual rep count for this set — displayed as an
+    /// explicit placeholder ("—"), never as a visually-meaningful `0`,
+    /// which previously looked indistinguishable from a genuine
+    /// zero-rep prescription for an RIR-only set. Prefilled from
+    /// `repRangeHigh` (non-nil only for a genuine fixed-rep prescription)
+    /// in `resetInputsForCurrentSet` — never fabricated for an RIR-only
+    /// or unresolved-deload set.
+    @State private var reps: Int?
     @State private var actualRir: Int?
     @State private var lastHighlight: LoggedResultHighlight?
     @State private var showingChangeExercise = false
@@ -178,22 +186,33 @@ struct StrengthExecutionView: View {
                 .font(Theme.heading)
                 .foregroundStyle(Theme.textPrimary)
             if let setPrescription = viewModel.currentSetPrescription {
-                // Stage 10B.6: honest range display — Hypertrophy V2
-                // prescriptions genuinely differ (e.g. "5-10 reps");
-                // legacy single-number prescriptions (repRangeLow ==
-                // repRangeHigh) show one plain number instead of the
-                // redundant "5-5" this line always technically computed.
-                let repsText = setPrescription.repRangeLow == setPrescription.repRangeHigh
-                    ? "\(setPrescription.repRangeLow) reps"
-                    : "\(setPrescription.repRangeLow)-\(setPrescription.repRangeHigh) reps"
-                Text("Set \(viewModel.currentSetIndex + 1) of \(viewModel.currentMovement?.orderedSetPrescriptions.count ?? 0) · \(repsText)"
-                    + (setPrescription.targetRir.map { " · \($0) RIR" } ?? ""))
+                // Stage 10R.1D: a fixed rep count and an RIR/effort target
+                // are never both fabricated — see `StrengthSetPresentation`
+                // for the pure (independently tested) formatting rules.
+                let repsText = StrengthSetPresentation.repsText(repRangeLow: setPrescription.repRangeLow, repRangeHigh: setPrescription.repRangeHigh)
+                let targetText = StrengthSetPresentation.targetText(
+                    repRangeLow: setPrescription.repRangeLow, repRangeHigh: setPrescription.repRangeHigh, targetRir: setPrescription.targetRir
+                )
+                Text("Set \(viewModel.currentSetIndex + 1) of \(viewModel.currentMovement?.orderedSetPrescriptions.count ?? 0)"
+                    + (targetText.isEmpty ? "" : " · \(targetText)"))
                     .font(Theme.body)
                     .foregroundStyle(Theme.textSecondary)
                 if let target = setPrescription.targetWeight {
                     Text("Suggested load: \(target.formattedWeight) kg")
                         .font(Theme.numeric)
                         .foregroundStyle(Theme.primary)
+                }
+                // Stage 10R.1D UX correction: plain-language guidance for
+                // a genuinely RIR-only prescription (no fixed rep count
+                // at all — `repsText == nil`) — explains the existing RIR
+                // target, never a fabricated rep range. Never shown for a
+                // fixed-rep prescription (including Hypertrophy V2's
+                // rep-range + explicit-RIR hybrid, which already has its
+                // own rep range on screen).
+                if repsText == nil, let targetRir = setPrescription.targetRir {
+                    Text(StrengthSetPresentation.rirGuidance(for: targetRir))
+                        .font(Theme.label)
+                        .foregroundStyle(Theme.textSecondary)
                 }
             }
         }
@@ -230,11 +249,23 @@ struct StrengthExecutionView: View {
                     .frame(width: 90)
             }
 
-            Stepper("Reps: \(reps)", value: $reps, in: 0...50)
-                .font(Theme.body)
+            // Stage 10R.1D UX correction: "Actual reps" (not plain "Reps")
+            // — this is what the athlete performed, never the
+            // prescription — and an explicit "—" placeholder rather than
+            // a visually-meaningful `0` before anything has been entered
+            // (a real, previously-reported UX confusion for RIR-only
+            // sets, which have no fixed rep count to show instead).
+            Stepper(value: repsStepperBinding, in: 0...50) {
+                Text(StrengthSetPresentation.actualRepsLabel(reps))
+            }
+            .font(Theme.body)
 
             VStack(alignment: .leading, spacing: 6) {
-                Text("RIR")
+                // "Actual RIR" (not plain "RIR") — this selector records
+                // what the athlete actually achieved, never the
+                // prescription's target RIR (shown separately, above, in
+                // the header).
+                Text(StrengthSetPresentation.actualRirSelectorLabel)
                     .font(Theme.label)
                     .foregroundStyle(Theme.textSecondary)
                 HStack(spacing: 8) {
@@ -266,9 +297,18 @@ struct StrengthExecutionView: View {
             .foregroundStyle(highlight.isPersonalRecord ? Theme.positive : Theme.textSecondary)
     }
 
+    /// The Stepper widget itself needs a concrete `Int` to increment/
+    /// decrement from — `reps ?? 0` supplies that starting point without
+    /// ever being displayed as a number (the label above renders "—"
+    /// while `reps` is `nil`); the first tap sets a real, user-entered
+    /// value, at which point the label switches to showing it.
+    private var repsStepperBinding: Binding<Int> {
+        Binding(get: { reps ?? 0 }, set: { reps = $0 })
+    }
+
     private func logSet() {
         guard let weight = Double(weightText) else { return }
-        lastHighlight = viewModel.logCurrentSet(weight: weight, reps: reps, actualRir: actualRir, modelContext: modelContext)
+        lastHighlight = viewModel.logCurrentSet(weight: weight, reps: reps ?? 0, actualRir: actualRir, modelContext: modelContext)
         executionState.record(lastHighlight)
         resetInputsForCurrentSet()
     }
@@ -276,6 +316,13 @@ struct StrengthExecutionView: View {
     private func resetInputsForCurrentSet() {
         guard let setPrescription = viewModel.currentSetPrescription else { return }
         weightText = setPrescription.targetWeight.map { $0.formattedWeight } ?? ""
+        // Stage 10R.1D: never prefill the actual-reps input with a
+        // fabricated number for an RIR-only (or unresolved-deload)
+        // prescription — `repRangeHigh` is only ever non-nil for a
+        // genuine fixed-rep target, in which case it's a reasonable
+        // starting-point prefill (unchanged from before); otherwise the
+        // input starts genuinely unset ("—"), never a visually-meaningful
+        // `0`.
         reps = setPrescription.repRangeHigh
         actualRir = setPrescription.targetRir
     }

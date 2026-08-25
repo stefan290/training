@@ -236,21 +236,40 @@ enum StrengthMaterializer {
                     block.addPrescription(prescription)
 
                     let finalSetCount = setCount ?? 0
-                    // Stage 10B.6: an explicit `targetRir` (Hypertrophy V2)
-                    // always wins. Otherwise, `RepGoal.toFailure` is
-                    // resolved exactly as before Stage 10B.6 — "to
-                    // failure" is definitionally RIR 0, a direct
-                    // translation of data the engine already produces,
-                    // never an invented target; no target at all for
-                    // `toFailure == false` with no explicit `targetRir`
-                    // (CLAUDE.md rule 10).
-                    let targetRir = repGoal?.targetRir ?? ((repGoal?.toFailure == true) ? 0 : nil)
+                    // Stage 10R.1D: a `RepGoal` is now one of two distinct
+                    // kinds — a genuine fixed rep count, or an RIR/effort
+                    // target with no rep count at all — never collapsed
+                    // into one fabricated number. `targetRir` is the
+                    // explicit RIR value for `.rir`, or Hypertrophy V2's
+                    // separate explicit companion value for `.fixedReps`
+                    // (nil for every Family A/B/C `.fixedReps` row, e.g.
+                    // Powerlifting's Triples). `repRangeLow`/`repRangeHigh`
+                    // are nil whenever there is no fixed rep count to show
+                    // (an RIR-only prescription, or a deload set whose rep
+                    // target could not be resolved — `repGoal == nil`).
+                    let resolvedRepRangeLow: Int?
+                    let resolvedRepRangeHigh: Int?
+                    let resolvedTargetRir: Int?
+                    switch repGoal?.prescription {
+                    case .fixedReps(let n):
+                        resolvedRepRangeLow = n
+                        resolvedRepRangeHigh = repGoal?.repRangeHigh ?? n
+                        resolvedTargetRir = repGoal?.targetRir
+                    case .rir(let n):
+                        resolvedRepRangeLow = nil
+                        resolvedRepRangeHigh = nil
+                        resolvedTargetRir = n
+                    case nil:
+                        resolvedRepRangeLow = nil
+                        resolvedRepRangeHigh = nil
+                        resolvedTargetRir = nil
+                    }
                     for _ in 0..<finalSetCount {
                         let setPrescription = SetPrescription(
-                            repRangeLow: repGoal?.reps ?? 0,
-                            repRangeHigh: repGoal?.repRangeHigh ?? repGoal?.reps ?? 0,
+                            repRangeLow: resolvedRepRangeLow,
+                            repRangeHigh: resolvedRepRangeHigh,
                             targetWeight: weightKg,
-                            targetRir: targetRir
+                            targetRir: resolvedTargetRir
                         )
                         context.insert(setPrescription)
                         prescription.addSetPrescription(setPrescription)

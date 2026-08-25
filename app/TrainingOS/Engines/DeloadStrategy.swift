@@ -89,6 +89,22 @@ struct SourceCompatibleDeloadStrategy: DeloadStrategy {
     /// to values that are simply unused when there's no override, so
     /// every pre-existing Family A call site continues to compile and
     /// behave identically without passing them.
+    /// **Stage 10R.1D correction:** the source's own deload-week "Rep
+    /// Goal" cell ("1/2 reps of Week 1", "2/3 reps of Week 1") is proven
+    /// — by the workbook's own separate "Rep Goal"/"Rep Results" column
+    /// headers — to reference the athlete's ACTUAL logged Week-1
+    /// performance, never the Week-1 template's authored target (a fixed
+    /// rep count OR an RIR value; the source's own instruction text is
+    /// identical either way). TrainingOS does not yet thread logged
+    /// `SetResult`s into this resolver, and *which* Week-1 set to
+    /// reference when several logged different rep counts has no
+    /// source-provided answer (`STAGE10R1D_SOURCE_SEMANTICS_CORRECTION.md`'s
+    /// deload archaeology: no formula, comment, validation, or
+    /// instruction anywhere resolves it). Returning `nil` here — rather
+    /// than halving the Week-1 template's rep goal, the pre-10R.1D
+    /// defect — is deliberate: fabricating a number from the template
+    /// would reintroduce that exact defect under a new name. Deload
+    /// weight and set count are unaffected and fully resolved elsewhere.
     func resolveDeloadRepGoal(
         rules: StrengthProgressionRules,
         dayPositionInWeek: Int = 0,
@@ -97,17 +113,10 @@ struct SourceCompatibleDeloadStrategy: DeloadStrategy {
         guard rules.deloadRepAction == .standard else {
             return (nil, .deloadRepOmitted)
         }
-        guard let weekOneGoal = rules.repGoalSchedule.first else {
+        guard rules.repGoalSchedule.first != nil else {
             return (nil, .calibrationRequired)
         }
-        let fraction: Double
-        if let override = rules.deloadRepPositionOverride {
-            fraction = dayPositionInWeek < override.boundaryDayIndex ? override.fullPositionFactor : override.halfPositionFactor
-        } else {
-            fraction = rules.deloadRepFraction
-        }
-        let deloadReps = Int((Double(weekOneGoal.reps) * fraction).rounded(.down))
-        return (RepGoal(reps: deloadReps, toFailure: weekOneGoal.toFailure), .deloadRepPrescribed)
+        return (nil, .deloadRepsRequireLoggedPerformanceData)
     }
 
     /// Deload-week set count — `rules.deloadSetCount` (default `2`,

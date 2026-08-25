@@ -260,9 +260,18 @@ final class ReadinessAdaptationTests: XCTestCase {
 
     // MARK: K/M/N/O/P — the progression-neutrality contract
 
+    /// **Stage 10R.1D:** uses "Leg Press" (a genuine fixed-rep-range
+    /// prescription), not "Back Squat" — Back Squat's `toFailure` is now
+    /// correctly RIR-based, and `DoubleProgressionEngine` has no fixed
+    /// rep range to evaluate for an RIR-only prescription, so it never
+    /// produces a preview item at all (proven separately by
+    /// `EndToEndProgressionLoopTests.testE_...`). This test's own purpose
+    /// — proving the readiness-adapted-hold progression-neutrality
+    /// contract THROUGH a real preview — needs a movement the engine can
+    /// actually evaluate.
     func testK_CompletingAnAdaptedSessionPreservesOriginalAdaptedAndPerformedAsThreeTruths() throws {
-        let (session, _, _, catalog) = makeLowerA()
-        let squat = try XCTUnwrap(session.orderedBlocks.flatMap(\.orderedPrescriptions).first { $0.exercise?.canonicalName == catalog.backSquat.canonicalName })
+        let (session, _, _, _) = makeLowerA()
+        let squat = try XCTUnwrap(session.orderedBlocks.flatMap(\.orderedPrescriptions).first { $0.exercise?.canonicalName == "Leg Press" })
         let originalCount = squat.orderedSetPrescriptions.count
         let checkIn = ReadinessCheckIn(recordedAt: Date(), energy: .poor)
         try RecordReadinessCheckInUseCase.record(checkIn, for: session, modelContext: context)
@@ -272,7 +281,7 @@ final class ReadinessAdaptationTests: XCTestCase {
         try ReadinessAdaptationDecisionUseCase.accept(item, session: session, checkIn: checkIn, decidedAt: Date(), modelContext: context)
 
         for setPrescription in squat.executableSetPrescriptions {
-            try logSet(for: squat, setPrescription: setPrescription, reps: setPrescription.repRangeHigh, actualRir: setPrescription.targetRir)
+            try logSet(for: squat, setPrescription: setPrescription, reps: setPrescription.repRangeHigh ?? 0, actualRir: setPrescription.targetRir)
         }
 
         let summary = try CompleteSessionUseCase.complete(session, context: .partial, asOf: Date(), modelContext: context)
@@ -281,7 +290,7 @@ final class ReadinessAdaptationTests: XCTestCase {
         XCTAssertEqual(squat.executableSetPrescriptions.count, originalCount - 1, "adapted target")
         XCTAssertEqual(squat.loggedSetResults.count, originalCount - 1, "performed matches what was actually asked today")
 
-        let preview = try XCTUnwrap(summary.progressionPreview.first { $0.exerciseName == catalog.backSquat.canonicalName })
+        let preview = try XCTUnwrap(summary.progressionPreview.first { $0.exerciseName == "Leg Press" })
         XCTAssertEqual(preview.reasonCode, .readinessAdaptedHold, "an adapted-and-successfully-completed session is neutral, never a load increase")
     }
 
@@ -367,7 +376,7 @@ final class ReadinessAdaptationTests: XCTestCase {
         for setPrescription in prescription.orderedSetPrescriptions {
             try LogSetUseCase.logSet(
                 setIndex: prescription.loggedSetResults.count, weight: setPrescription.targetWeight ?? 100,
-                reps: setPrescription.repRangeHigh, targetRir: setPrescription.targetRir, actualRir: setPrescription.targetRir,
+                reps: setPrescription.repRangeHigh ?? 0, targetRir: setPrescription.targetRir, actualRir: setPrescription.targetRir,
                 prBand: nil, scoringDirection: .higherIsBetter, context: .rx, setPrescription: setPrescription,
                 exercisePrescription: prescription, exercise: prescription.exercise!, performanceProfile: profile,
                 completedAt: Date(), modelContext: context

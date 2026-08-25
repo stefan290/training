@@ -51,10 +51,10 @@ final class MultiExerciseExecutionTests: XCTestCase {
             try LogSetUseCase.logSet(
                 setIndex: movement.loggedSetResults.count,
                 weight: setPrescription.targetWeight ?? 20,
-                reps: setPrescription.repRangeHigh,
+                reps: setPrescription.repRangeHigh ?? 0,
                 targetRir: setPrescription.targetRir,
                 actualRir: setPrescription.targetRir,
-                prBand: "\(setPrescription.repRangeLow)-\(setPrescription.repRangeHigh)",
+                prBand: "\(setPrescription.repRangeLow ?? 0)-\(setPrescription.repRangeHigh ?? 0)",
                 scoringDirection: .higherIsBetter,
                 context: .rx,
                 setPrescription: setPrescription,
@@ -79,19 +79,49 @@ final class MultiExerciseExecutionTests: XCTestCase {
         )
     }
 
-    /// Stage 6D Part 2: the materialized prescription's `targetRir` is the
-    /// engine's own honest translation of `RepGoal.toFailure` (0, the only
-    /// intensity-target concept the approved family specs define) — never
+    /// **Stage 10R.1D:** the materialized prescription's `targetRir` is
+    /// the engine's own honest translation of the fixture's RIR-based
+    /// prescription (RIR 6, the literal value the "Squat Pattern" fixture
+    /// spec declares — never a fabricated 0 for "to failure") — never
     /// hardcoded in the UI, and never present where the source data has
-    /// no such concept (an accessory's `toFailure == false`).
+    /// no such concept (an accessory's genuine fixed-rep target).
     func testMaterializedRIRComesFromTheRealPrescriptionNeverHardcoded() throws {
         let fixture = makeLowerA()
         let block = try XCTUnwrap(fixture.session.orderedBlocks.first)
         let squat = try XCTUnwrap(block.orderedPrescriptions.first { $0.exercise?.canonicalName == "Back Squat" })
         let legCurl = try XCTUnwrap(block.orderedPrescriptions.first { $0.exercise?.canonicalName == "Leg Curl" })
 
-        XCTAssertEqual(squat.orderedSetPrescriptions.first?.targetRir, 0, "a to-failure primary movement materializes with a real RIR target")
-        XCTAssertNil(legCurl.orderedSetPrescriptions.first?.targetRir, "an accessory with no toFailure target has no invented RIR value")
+        XCTAssertEqual(squat.orderedSetPrescriptions.first?.targetRir, 6, "an RIR-based primary movement materializes with a real RIR target, never a fabricated one")
+        XCTAssertNil(legCurl.orderedSetPrescriptions.first?.targetRir, "an accessory with a genuine fixed-rep target has no invented RIR value")
+    }
+
+    /// Stage 10R.1D UX correction, items 6/7 of the automated-acceptance
+    /// checklist: an RIR-only prescription's actual-reps input begins
+    /// unset in the UI (`StrengthSetPresentation.actualRepsLabel(nil) ==
+    /// "Actual reps: —"`, proven separately in `StrengthSetPresentationTests`),
+    /// but the athlete must still be able to enter and log a real value
+    /// through the same `StrengthExecutionViewModel.logCurrentSet` path
+    /// the UI calls — and that value must persist correctly on the
+    /// resulting `SetResult`, completely independent of the prescription's
+    /// own (nil) rep range.
+    func testActualRepsCanBeEnteredAndLoggedForAnRIROnlyPrescriptionAndPersistsCorrectly() throws {
+        let fixture = makeLowerA()
+        let block = try XCTUnwrap(fixture.session.orderedBlocks.first)
+        let squat = try XCTUnwrap(block.orderedPrescriptions.first { $0.exercise?.canonicalName == "Back Squat" })
+        let setPrescription = try XCTUnwrap(squat.orderedSetPrescriptions.first)
+
+        // Sanity: this really is the RIR-only prescription this test needs.
+        XCTAssertNil(setPrescription.repRangeLow, "precondition: RIR-only, no fixed rep count to prefill")
+
+        let viewModel = StrengthExecutionViewModel(block: block)
+        let highlight = viewModel.logCurrentSet(weight: 100, reps: 5, actualRir: 2, modelContext: context)
+        XCTAssertNotNil(highlight, "a real weight/reps/RIR entry must log successfully")
+
+        let loggedResult = try XCTUnwrap(squat.loggedSetResults.first)
+        XCTAssertEqual(loggedResult.reps, 5, "the athlete's entered actual reps persist correctly")
+        XCTAssertEqual(loggedResult.actualRir, 2, "the athlete's entered actual RIR persists correctly, independent of the target RIR")
+        XCTAssertEqual(loggedResult.weight, 100)
+        XCTAssertEqual(loggedResult.targetRir, setPrescription.targetRir, "the logged result still separately records the prescription's own target RIR for later reference — never overwritten by the actual")
     }
 
     /// Stage 6D Part 7: the seed fixture's own parallel materialization
@@ -196,7 +226,7 @@ final class MultiExerciseExecutionTests: XCTestCase {
                 break
             }
             guard let setPrescription = viewModel.currentSetPrescription else { break }
-            viewModel.logCurrentSet(weight: setPrescription.targetWeight ?? 20, reps: setPrescription.repRangeHigh, actualRir: setPrescription.targetRir, modelContext: context)
+            viewModel.logCurrentSet(weight: setPrescription.targetWeight ?? 20, reps: setPrescription.repRangeHigh ?? 0, actualRir: setPrescription.targetRir, modelContext: context)
             if viewModel.isMovementComplete, viewModel.hasNextMovement {
                 viewModel.goToNextMovement(modelContext: context)
             }

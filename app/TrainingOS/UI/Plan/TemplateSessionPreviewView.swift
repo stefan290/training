@@ -67,7 +67,13 @@ struct TemplateSessionPreviewView: View {
                 .font(Theme.body)
                 .foregroundStyle(Theme.textPrimary)
             if let repGoal = template.rules?.repGoalSchedule.first {
-                Text(repGoal.toFailure ? "\(repGoal.reps) reps to failure" : "\(repGoal.reps) reps")
+                let text: String = {
+                    switch repGoal.prescription {
+                    case .fixedReps(let n): return "\(n) reps"
+                    case .rir(let n): return "RIR \(n)"
+                    }
+                }()
+                Text(text)
                     .font(Theme.label)
                     .foregroundStyle(Theme.textSecondary)
             }

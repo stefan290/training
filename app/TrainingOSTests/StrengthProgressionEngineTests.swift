@@ -26,7 +26,7 @@ final class StrengthProgressionEngineTests: XCTestCase {
         let rules = StrengthProgressionRules(
             loadRule: .rmBased(RMBasedLoad(rmType: .rm10, weekOneFactor: 0.85, laterWeekMultipliers: [1.05, 1.075, 1.1])),
             setCountRule: .fixed(setsByWeek: [3, 3, 3, 3]),
-            repGoalSchedule: [RepGoal(reps: 3, toFailure: true)]
+            repGoalSchedule: [RepGoal.rir(3)]
         )
 
         let week1 = StrengthProgressionEngine.resolveWeight(
@@ -61,7 +61,7 @@ final class StrengthProgressionEngineTests: XCTestCase {
         let rules = StrengthProgressionRules(
             loadRule: .rmBased(RMBasedLoad(rmType: .rm10, weekOneFactor: 0.85, laterWeekMultipliers: [1.05])),
             setCountRule: .fixed(setsByWeek: [3]),
-            repGoalSchedule: [RepGoal(reps: 3)]
+            repGoalSchedule: [RepGoal.fixedReps(3)]
         )
         let result = StrengthProgressionEngine.resolveWeight(
             rules: rules, weekIndex: 0, rmKilograms: nil, weekOneResolvedWeightKg: nil,
@@ -72,7 +72,7 @@ final class StrengthProgressionEngineTests: XCTestCase {
     }
 
     func testNoLoadRuleNeverProducesAWeight() {
-        let rules = StrengthProgressionRules(loadRule: .none, setCountRule: .fixed(setsByWeek: [3]), repGoalSchedule: [RepGoal(reps: 12)])
+        let rules = StrengthProgressionRules(loadRule: .none, setCountRule: .fixed(setsByWeek: [3]), repGoalSchedule: [RepGoal.fixedReps(12)])
         let result = StrengthProgressionEngine.resolveWeight(
             rules: rules, weekIndex: 0, rmKilograms: 100, weekOneResolvedWeightKg: nil,
             pairedSlotResolvedWeightKg: nil, equipmentProfile: equipment
@@ -89,7 +89,7 @@ final class StrengthProgressionEngineTests: XCTestCase {
         let rules = StrengthProgressionRules(
             loadRule: .linkedToPairedSlot(fractionOfSourceResult: 0.6),
             setCountRule: .fixed(setsByWeek: [2, 2, 2, 2]),
-            repGoalSchedule: [RepGoal(reps: 12)]
+            repGoalSchedule: [RepGoal.fixedReps(12)]
         )
         let week1 = StrengthProgressionEngine.resolveWeight(
             rules: rules, weekIndex: 0, rmKilograms: nil, weekOneResolvedWeightKg: nil,
@@ -116,7 +116,7 @@ final class StrengthProgressionEngineTests: XCTestCase {
         let rules = StrengthProgressionRules(
             loadRule: .none,
             setCountRule: .autoregulated(AutoregulatedSetCount(baselineSets: 3)),
-            repGoalSchedule: [RepGoal(reps: 3, toFailure: true)]
+            repGoalSchedule: [RepGoal.rir(3)]
         )
 
         let week1 = StrengthProgressionEngine.resolveSetCount(rules: rules, weekIndex: 0, previousWeekSetCount: nil, autoregulationRating: nil)
@@ -137,13 +137,13 @@ final class StrengthProgressionEngineTests: XCTestCase {
     }
 
     func testAutoregulatedSetCountNeverGoesNegative() {
-        let rules = StrengthProgressionRules(loadRule: .none, setCountRule: .autoregulated(AutoregulatedSetCount(baselineSets: 0)), repGoalSchedule: [RepGoal(reps: 3)])
+        let rules = StrengthProgressionRules(loadRule: .none, setCountRule: .autoregulated(AutoregulatedSetCount(baselineSets: 0)), repGoalSchedule: [RepGoal.fixedReps(3)])
         let result = StrengthProgressionEngine.resolveSetCount(rules: rules, weekIndex: 1, previousWeekSetCount: 0, autoregulationRating: -1)
         XCTAssertEqual(result.sets, 0)
     }
 
     func testFixedSetScheduleIsAPlainLookup() {
-        let rules = StrengthProgressionRules(loadRule: .none, setCountRule: .fixed(setsByWeek: [2, 2, 2, 2]), repGoalSchedule: [RepGoal(reps: 12)])
+        let rules = StrengthProgressionRules(loadRule: .none, setCountRule: .fixed(setsByWeek: [2, 2, 2, 2]), repGoalSchedule: [RepGoal.fixedReps(12)])
         for week in 0..<4 {
             let result = StrengthProgressionEngine.resolveSetCount(rules: rules, weekIndex: week, previousWeekSetCount: nil, autoregulationRating: nil)
             XCTAssertEqual(result.sets, 2)
@@ -160,7 +160,7 @@ final class StrengthProgressionEngineTests: XCTestCase {
         let rules = StrengthProgressionRules(
             loadRule: .rmBased(RMBasedLoad(rmType: .rm10, weekOneFactor: 0.85, laterWeekMultipliers: [1.05, 1.075, 1.1])),
             setCountRule: .fixed(setsByWeek: [3, 3, 3, 3]),
-            repGoalSchedule: [RepGoal(reps: 3, toFailure: true)]
+            repGoalSchedule: [RepGoal.rir(3)]
         )
         let strategy = SourceCompatibleDeloadStrategy()
 
@@ -179,7 +179,7 @@ final class StrengthProgressionEngineTests: XCTestCase {
         let rules = StrengthProgressionRules(
             loadRule: .linkedToPairedSlot(fractionOfSourceResult: 0.6),
             setCountRule: .fixed(setsByWeek: [2, 2, 2, 2]),
-            repGoalSchedule: [RepGoal(reps: 12)],
+            repGoalSchedule: [RepGoal.fixedReps(12)],
             deloadWeightAction: .omit,
             deloadRepAction: .omit
         )
@@ -194,13 +194,13 @@ final class StrengthProgressionEngineTests: XCTestCase {
     /// slot never autoregulates during deload.
     func testDeloadSetCountIsAHardcodedConstantRegardlessOfNormalSetCountRule() {
         let strategy = SourceCompatibleDeloadStrategy()
-        let autoregulated = StrengthProgressionRules(loadRule: .none, setCountRule: .autoregulated(AutoregulatedSetCount(baselineSets: 5)), repGoalSchedule: [RepGoal(reps: 3)])
+        let autoregulated = StrengthProgressionRules(loadRule: .none, setCountRule: .autoregulated(AutoregulatedSetCount(baselineSets: 5)), repGoalSchedule: [RepGoal.fixedReps(3)])
         XCTAssertEqual(strategy.resolveDeloadSetCount(rules: autoregulated).sets, 2)
 
-        let fixed = StrengthProgressionRules(loadRule: .none, setCountRule: .fixed(setsByWeek: [4, 4, 4, 4]), repGoalSchedule: [RepGoal(reps: 12)])
+        let fixed = StrengthProgressionRules(loadRule: .none, setCountRule: .fixed(setsByWeek: [4, 4, 4, 4]), repGoalSchedule: [RepGoal.fixedReps(12)])
         XCTAssertEqual(strategy.resolveDeloadSetCount(rules: fixed).sets, 2)
 
-        let omitted = StrengthProgressionRules(loadRule: .none, setCountRule: .fixed(setsByWeek: [2]), repGoalSchedule: [RepGoal(reps: 12)], deloadWeightAction: .omit)
+        let omitted = StrengthProgressionRules(loadRule: .none, setCountRule: .fixed(setsByWeek: [2]), repGoalSchedule: [RepGoal.fixedReps(12)], deloadWeightAction: .omit)
         XCTAssertNil(strategy.resolveDeloadSetCount(rules: omitted).sets)
     }
 
@@ -212,7 +212,7 @@ final class StrengthProgressionEngineTests: XCTestCase {
         let primaryRules = StrengthProgressionRules(
             loadRule: .rmBased(RMBasedLoad(rmType: .rm10, weekOneFactor: 0.85, laterWeekMultipliers: [1.05])),
             setCountRule: .autoregulated(AutoregulatedSetCount(baselineSets: 3)),
-            repGoalSchedule: [RepGoal(reps: 3, toFailure: true)],
+            repGoalSchedule: [RepGoal.rir(3)],
             deloadWeightAction: .standard,
             deloadRepAction: .standard
         )
@@ -222,32 +222,42 @@ final class StrengthProgressionEngineTests: XCTestCase {
         XCTAssertEqual(result.reasonCode, .deloadWeightPrescribed)
     }
 
-    // MARK: - §9.1 Deload rep rounding (universal, always floor)
+    // MARK: - §9.1 Deload rep resolution (Stage 10R.1D: unresolved, never fabricated)
     //
-    // 7 reps x 1/2 = 3.5 -> 3. 5 reps x 2/3 = 3.333 -> 3 (rules out
-    // round-to-nearest coincidence — 2/3 is not Family A's own fraction,
-    // exercised here purely to prove the rounding function itself, per
-    // the regression plan's own stated purpose). 8 reps x 1/2 = 4.0 -> 4
-    // (exact, sanity check).
+    // Superseded test: this used to prove the deload fraction's rounding
+    // always floors (7 x 1/2 -> 3, 5 x 2/3 -> 3, 8 x 1/2 -> 4). That
+    // arithmetic no longer runs at all — `STAGE10R1D_SOURCE_SEMANTICS_CORRECTION.md`'s
+    // deload archaeology proved the source's "X reps of Week 1"
+    // instruction means the athlete's ACTUAL logged Week-1 performance,
+    // never the template's authored rep goal, so halving the template is
+    // exactly the fabrication this stage removes. This test now proves
+    // the negative: no rep count is ever produced from the template,
+    // regardless of fraction.
 
-    func testDeloadRepRoundingAlwaysFloors() {
+    func testDeloadRepResolutionNeverFabricatesFromTheTemplateRegardlessOfFraction() {
         let strategy = SourceCompatibleDeloadStrategy()
 
-        let sevenReps = StrengthProgressionRules(loadRule: .none, setCountRule: .fixed(setsByWeek: [3]), repGoalSchedule: [RepGoal(reps: 7, toFailure: true)], deloadRepFraction: 0.5)
-        XCTAssertEqual(strategy.resolveDeloadRepGoal(rules: sevenReps).repGoal?.reps, 3)
+        let sevenReps = StrengthProgressionRules(loadRule: .none, setCountRule: .fixed(setsByWeek: [3]), repGoalSchedule: [RepGoal.rir(7)], deloadRepFraction: 0.5)
+        let sevenResult = strategy.resolveDeloadRepGoal(rules: sevenReps)
+        XCTAssertNil(sevenResult.repGoal)
+        XCTAssertEqual(sevenResult.reasonCode, .deloadRepsRequireLoggedPerformanceData)
 
-        let fiveReps = StrengthProgressionRules(loadRule: .none, setCountRule: .fixed(setsByWeek: [3]), repGoalSchedule: [RepGoal(reps: 5, toFailure: true)], deloadRepFraction: 2.0 / 3.0)
-        XCTAssertEqual(strategy.resolveDeloadRepGoal(rules: fiveReps).repGoal?.reps, 3)
+        let fiveReps = StrengthProgressionRules(loadRule: .none, setCountRule: .fixed(setsByWeek: [3]), repGoalSchedule: [RepGoal.rir(5)], deloadRepFraction: 2.0 / 3.0)
+        let fiveResult = strategy.resolveDeloadRepGoal(rules: fiveReps)
+        XCTAssertNil(fiveResult.repGoal)
+        XCTAssertEqual(fiveResult.reasonCode, .deloadRepsRequireLoggedPerformanceData)
 
-        let eightReps = StrengthProgressionRules(loadRule: .none, setCountRule: .fixed(setsByWeek: [3]), repGoalSchedule: [RepGoal(reps: 8, toFailure: true)], deloadRepFraction: 0.5)
-        XCTAssertEqual(strategy.resolveDeloadRepGoal(rules: eightReps).repGoal?.reps, 4)
+        let eightReps = StrengthProgressionRules(loadRule: .none, setCountRule: .fixed(setsByWeek: [3]), repGoalSchedule: [RepGoal.rir(8)], deloadRepFraction: 0.5)
+        let eightResult = strategy.resolveDeloadRepGoal(rules: eightReps)
+        XCTAssertNil(eightResult.repGoal)
+        XCTAssertEqual(eightResult.reasonCode, .deloadRepsRequireLoggedPerformanceData)
     }
 
     func testDeloadRepOmittedForConfirmedSupersetPartner() {
         let rules = StrengthProgressionRules(
             loadRule: .linkedToPairedSlot(fractionOfSourceResult: 0.6),
             setCountRule: .fixed(setsByWeek: [2]),
-            repGoalSchedule: [RepGoal(reps: 12)],
+            repGoalSchedule: [RepGoal.fixedReps(12)],
             deloadRepAction: .omit
         )
         let result = SourceCompatibleDeloadStrategy().resolveDeloadRepGoal(rules: rules)
@@ -260,10 +270,10 @@ final class StrengthProgressionEngineTests: XCTestCase {
     func testRepGoalScheduleIsAPlainLookup() {
         let rules = StrengthProgressionRules(
             loadRule: .none, setCountRule: .fixed(setsByWeek: [3, 3, 3, 3]),
-            repGoalSchedule: [RepGoal(reps: 3, toFailure: true), RepGoal(reps: 3, toFailure: true), RepGoal(reps: 2, toFailure: true), RepGoal(reps: 1, toFailure: true)]
+            repGoalSchedule: [RepGoal.rir(3), RepGoal.rir(3), RepGoal.rir(2), RepGoal.rir(1)]
         )
-        XCTAssertEqual(StrengthProgressionEngine.resolveRepGoal(rules: rules, weekIndex: 0).repGoal, RepGoal(reps: 3, toFailure: true))
-        XCTAssertEqual(StrengthProgressionEngine.resolveRepGoal(rules: rules, weekIndex: 2).repGoal, RepGoal(reps: 2, toFailure: true))
-        XCTAssertEqual(StrengthProgressionEngine.resolveRepGoal(rules: rules, weekIndex: 3).repGoal, RepGoal(reps: 1, toFailure: true))
+        XCTAssertEqual(StrengthProgressionEngine.resolveRepGoal(rules: rules, weekIndex: 0).repGoal, RepGoal.rir(3))
+        XCTAssertEqual(StrengthProgressionEngine.resolveRepGoal(rules: rules, weekIndex: 2).repGoal, RepGoal.rir(2))
+        XCTAssertEqual(StrengthProgressionEngine.resolveRepGoal(rules: rules, weekIndex: 3).repGoal, RepGoal.rir(1))
     }
 }

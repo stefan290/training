@@ -51,6 +51,27 @@ enum AutoregulationRatingResolver {
         prescription.workoutBlock?.session?.day?.date ?? .distantFuture
     }
 
+    /// Stage 10R.1 Slice 1B fix: a prescription whose session has actually
+    /// completed (`completedAt != nil`) always outranks one that hasn't,
+    /// regardless of either's `completionDate` fallback. Discovered while
+    /// implementing the real cross-day source pairing web: within one
+    /// `materializeWeek(weekIndex: N)` call, an earlier-processed day's own
+    /// fresh week-N prescription (not yet completed, but already carrying
+    /// a real `session.day.date`) could otherwise out-rank an actually-
+    /// completed WEEK N-1 prescription from a later-processed day —
+    /// because `completionDate`'s fallback (`session?.day?.date`) made the
+    /// brand-new, uncompleted session look "more recent" than the
+    /// genuinely completed prior one. This never surfaced before Slice 1B
+    /// because every pre-existing pairing (Family A/B/C's
+    /// primary<->paired-accessory, Stage 10B.6's self-pairing) was always
+    /// resolved same-day or same-slot, where the rating source's own fresh
+    /// prescription for the current week is never created before the
+    /// reader's own is. A completed candidate is preferred outright rather
+    /// than filtered against an uncompleted one (not simply excluding
+    /// uncompleted candidates) so the pre-existing, intentional case of a
+    /// rating recorded before the session is ever formally completed
+    /// (`HypertrophyFeedbackTests` fixtures) still resolves correctly when
+    /// it is the only candidate.
     private static func mostRecentlyCompletedPrescription(
         for template: PrescriptionTemplate, in instance: ProgramInstance
     ) -> ExercisePrescription? {
@@ -60,7 +81,12 @@ enum AutoregulationRatingResolver {
             .filter { $0.sourcePrescriptionTemplate?.id == template.id }
 
         return candidates.max { lhs, rhs in
-            completionDate(of: lhs) < completionDate(of: rhs)
+            let lhsCompleted = lhs.workoutBlock?.session?.completedAt != nil
+            let rhsCompleted = rhs.workoutBlock?.session?.completedAt != nil
+            if lhsCompleted != rhsCompleted {
+                return rhsCompleted
+            }
+            return completionDate(of: lhs) < completionDate(of: rhs)
         }
     }
 

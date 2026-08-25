@@ -41,7 +41,7 @@ final class CompletedSessionHistoryTests: XCTestCase {
     private func logSet(_ setPrescription: SetPrescription, reps: Int, actualRir: Int?, movement: ExercisePrescription, performanceProfile: PerformanceProfile) throws {
         try LogSetUseCase.logSet(
             setIndex: movement.loggedSetResults.count, weight: setPrescription.targetWeight ?? 20, reps: reps,
-            targetRir: setPrescription.targetRir, actualRir: actualRir, prBand: "\(setPrescription.repRangeLow)-\(setPrescription.repRangeHigh)",
+            targetRir: setPrescription.targetRir, actualRir: actualRir, prBand: "\(setPrescription.repRangeLow ?? 0)-\(setPrescription.repRangeHigh ?? 0)",
             scoringDirection: .higherIsBetter, context: .rx, setPrescription: setPrescription,
             exercisePrescription: movement, exercise: movement.exercise!, performanceProfile: performanceProfile,
             completedAt: Date(), modelContext: context
@@ -131,7 +131,7 @@ final class CompletedSessionHistoryTests: XCTestCase {
         let block = try XCTUnwrap(fixture.session.orderedBlocks.first)
         for movement in block.orderedPrescriptions {
             for setPrescription in movement.orderedSetPrescriptions {
-                try logSet(setPrescription, reps: setPrescription.repRangeHigh, actualRir: setPrescription.targetRir, movement: movement, performanceProfile: fixture.performanceProfile)
+                try logSet(setPrescription, reps: setPrescription.repRangeHigh ?? 0, actualRir: setPrescription.targetRir, movement: movement, performanceProfile: fixture.performanceProfile)
             }
         }
         try CompleteSessionUseCase.complete(fixture.session, context: .full, asOf: Date(), modelContext: context)
@@ -171,10 +171,10 @@ final class CompletedSessionHistoryTests: XCTestCase {
         let squat = try XCTUnwrap(block.orderedPrescriptions.first { $0.exercise?.canonicalName == "Back Squat" })
         let setPrescription = try XCTUnwrap(squat.orderedSetPrescriptions.first)
         // Outperform the prescription so prescribed and performed clearly differ.
-        try logSet(setPrescription, reps: setPrescription.repRangeHigh + 2, actualRir: (setPrescription.targetRir ?? 0) + 2, movement: squat, performanceProfile: fixture.performanceProfile)
+        try logSet(setPrescription, reps: (setPrescription.repRangeHigh ?? 0) + 2, actualRir: (setPrescription.targetRir ?? 0) + 2, movement: squat, performanceProfile: fixture.performanceProfile)
 
         let result = try XCTUnwrap(squat.loggedSetResults.first)
-        XCTAssertNotEqual(result.reps, setPrescription.repRangeHigh, "performed reps stay distinguishable from the prescribed target")
+        XCTAssertNotEqual(result.reps, setPrescription.repRangeHigh ?? 0, "performed reps stay distinguishable from the prescribed target")
         XCTAssertEqual(result.setIndex, 0)
         XCTAssertEqual(result.weight, setPrescription.targetWeight)
         XCTAssertNotNil(setPrescription.targetRir)
@@ -205,7 +205,7 @@ final class CompletedSessionHistoryTests: XCTestCase {
         let block = try XCTUnwrap(fixture.session.orderedBlocks.first)
         for movement in block.orderedPrescriptions {
             for setPrescription in movement.orderedSetPrescriptions {
-                try logSet(setPrescription, reps: setPrescription.repRangeHigh, actualRir: setPrescription.targetRir, movement: movement, performanceProfile: fixture.performanceProfile)
+                try logSet(setPrescription, reps: setPrescription.repRangeHigh ?? 0, actualRir: setPrescription.targetRir, movement: movement, performanceProfile: fixture.performanceProfile)
             }
         }
         let legPress = try XCTUnwrap(block.orderedPrescriptions.first { $0.exercise?.canonicalName == "Leg Press" })
@@ -238,7 +238,7 @@ final class CompletedSessionHistoryTests: XCTestCase {
         let squat = try XCTUnwrap(block.orderedPrescriptions.first { $0.exercise?.canonicalName == "Back Squat" })
         // Only log the first exercise — the rest are left incomplete.
         for setPrescription in squat.orderedSetPrescriptions {
-            try logSet(setPrescription, reps: setPrescription.repRangeHigh, actualRir: setPrescription.targetRir, movement: squat, performanceProfile: fixture.performanceProfile)
+            try logSet(setPrescription, reps: setPrescription.repRangeHigh ?? 0, actualRir: setPrescription.targetRir, movement: squat, performanceProfile: fixture.performanceProfile)
         }
 
         let summary = try CompleteSessionUseCase.complete(fixture.session, context: .partial, asOf: Date(), modelContext: context)
@@ -338,7 +338,7 @@ final class CompletedSessionHistoryTests: XCTestCase {
         let squat = try XCTUnwrap(block.orderedPrescriptions.first { $0.exercise?.canonicalName == "Back Squat" })
         let sets = squat.orderedSetPrescriptions
 
-        try logSet(sets[0], reps: sets[0].repRangeHigh, actualRir: sets[0].targetRir, movement: squat, performanceProfile: fixture.performanceProfile)
+        try logSet(sets[0], reps: sets[0].repRangeHigh ?? 0, actualRir: sets[0].targetRir, movement: squat, performanceProfile: fixture.performanceProfile)
         let profile = try XCTUnwrap(fixture.performanceProfile.profile(for: squat.exercise!))
         let firstRecord = try XCTUnwrap(profile.personalRecords.first)
         XCTAssertTrue(CompletedResultPresentation.isFirstEverEntry(firstRecord, in: profile))
@@ -346,8 +346,8 @@ final class CompletedSessionHistoryTests: XCTestCase {
         // A genuinely heavier set in the same rep band is a real improvement, not a first-ever entry.
         let heavierWeight = (sets[1].targetWeight ?? 20) + 10
         try LogSetUseCase.logSet(
-            setIndex: 1, weight: heavierWeight, reps: sets[1].repRangeHigh, targetRir: sets[1].targetRir,
-            actualRir: sets[1].targetRir, prBand: "\(sets[1].repRangeLow)-\(sets[1].repRangeHigh)",
+            setIndex: 1, weight: heavierWeight, reps: sets[1].repRangeHigh ?? 0, targetRir: sets[1].targetRir,
+            actualRir: sets[1].targetRir, prBand: "\(sets[1].repRangeLow ?? 0)-\(sets[1].repRangeHigh ?? 0)",
             scoringDirection: .higherIsBetter, context: .rx, setPrescription: sets[1],
             exercisePrescription: squat, exercise: squat.exercise!, performanceProfile: fixture.performanceProfile,
             completedAt: Date(), modelContext: context

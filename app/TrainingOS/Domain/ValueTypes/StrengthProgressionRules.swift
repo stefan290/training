@@ -34,6 +34,17 @@ enum StrengthReasonCode: String, Codable, CaseIterable {
     case deloadRepPrescribed
     case deloadRepOmitted
     case calibrationRequired
+    /// Stage 10R.1D: the source's own deload-week instruction ("1/2 reps
+    /// of Week 1") is proven (by the workbook's own separate "Rep Goal"/
+    /// "Rep Results" column headers) to reference the athlete's ACTUAL
+    /// logged Week-1 performance, never the template's authored target —
+    /// a value TrainingOS does not yet thread into deload resolution, and
+    /// "which Week-1 set" has no source-provided answer when several sets
+    /// logged different rep counts (`STAGE10R1D_SOURCE_SEMANTICS_CORRECTION.md`'s
+    /// deload archaeology). Returned instead of fabricating a number by
+    /// halving the template's rep goal (the pre-Stage-10R.1D defect this
+    /// code corrects).
+    case deloadRepsRequireLoggedPerformanceData
 }
 
 /// Which 1RM-family basis a `rmBasedWeekOneLoad` rule is anchored to.
@@ -54,33 +65,59 @@ struct RMBasedLoad: Codable, Equatable {
     var laterWeekMultipliers: [Double]
 }
 
-/// One week's rep target, e.g. "3 reps, to failure" or "1 rep, to failure"
-/// (`FAMILY_A_REP_GOAL_SCHEDULE`). `toFailure` is a flag, not folded into
-/// `reps`, because a fixed rep count without a failure qualifier is also a
-/// legal week (e.g. Family B's flat "2/fail" weeks 1-3, or its
-/// never-changing "Triples" sessions).
+/// **Stage 10R.1D correction:** a source "N/fail" notation (e.g. "3/fail")
+/// is an effort/RIR target — "stop with about N reps left in the tank" —
+/// and carries NO fixed rep count of its own; a source literal per-set
+/// list (e.g. Powerlifting's never-changing "Triples" rows, "3,3,3") is a
+/// genuinely different prescription kind, a real fixed number. Collapsing
+/// both into one "reps" field qualified by a `toFailure` boolean (the
+/// pre-10R.1D shape) forced every RIR-only row to fabricate a fake rep
+/// count and forced `toFailure == true` to fabricate `targetRir == 0` —
+/// exactly backwards from what "N/fail" means. The type system now keeps
+/// the two kinds distinct instead.
+enum RepPrescriptionKind: Codable, Equatable {
+    /// A genuine, source-authored fixed rep-per-set count (e.g.
+    /// Powerlifting's Triples: `.fixedReps(3)`, every week, unchanging).
+    case fixedReps(Int)
+    /// An effort/RIR target with no fixed rep count — the corrected
+    /// reading of "N/fail" (e.g. "3/fail" -> `.rir(3)`). The rep range
+    /// guidance (when one exists) and the actual reps the athlete
+    /// performs to reach that RIR are both separate concerns — see
+    /// `RepGoal.repRangeHigh` and `SetResult.reps` respectively.
+    case rir(Int)
+}
+
+/// One week's rep target. Never itself stored directly on an `@Model`
+/// type — see `PrescriptionTemplate`'s flattened `repGoalIsFixedReps`/
+/// `repGoalPrescriptionValue` properties.
 struct RepGoal: Codable, Equatable {
-    var reps: Int
-    var toFailure: Bool
-    /// Stage 10B.6 addition: `nil` (every pre-existing Family A/B/C row)
-    /// preserves single-number-target behavior exactly — `reps` is both
-    /// the low and high end. Hypertrophy V2 sets this explicitly, making
-    /// `reps`/`repRangeHigh` a genuine range (`STAGE10B6_HYPERTROPHY_PRESCRIPTION_REDESIGN.md`
-    /// §3). Additive; never repurposes `reps`' existing meaning.
+    var prescription: RepPrescriptionKind
+    /// Stage 10B.6 addition, unrelated to the Stage 10R.1D correction
+    /// above: `nil` for every Family A/B/C row (no source rep range
+    /// exists for these families — `STAGE10R1D_SOURCE_SEMANTICS_CORRECTION.md`
+    /// §5). Hypertrophy V2 sets this explicitly alongside a `.fixedReps`
+    /// low bound to express a genuine TrainingOS-authored rep range
+    /// (`STAGE10B6_HYPERTROPHY_PRESCRIPTION_REDESIGN.md` §3) — a
+    /// deliberately separate, orthogonal mechanism from `prescription`,
+    /// never touched by this correction.
     var repRangeHigh: Int?
-    /// Stage 10B.6 addition: `nil` (every pre-existing row) preserves the
-    /// existing `toFailure`-derives-RIR-0 mechanical rule exactly.
-    /// Hypertrophy V2 sets this explicitly every week, superseding
-    /// `toFailure` (which stays `false`/unused for V2 rows) — see
-    /// `StrengthMaterializer`'s targetRir resolution.
+    /// Stage 10B.6 addition, also unrelated to the Stage 10R.1D
+    /// correction: Hypertrophy V2's explicit per-week RIR value, carried
+    /// *alongside* a `.fixedReps` low bound (a genuine "range + effort
+    /// target" hybrid V2 already relies on). Family A/B/C's corrected
+    /// constructions never set this — for those families the `.rir(_:)`
+    /// case on `prescription` above IS the effort target; this field
+    /// stays `nil`.
     var targetRir: Int?
 
-    init(reps: Int, toFailure: Bool = false, repRangeHigh: Int? = nil, targetRir: Int? = nil) {
-        self.reps = reps
-        self.toFailure = toFailure
+    init(prescription: RepPrescriptionKind, repRangeHigh: Int? = nil, targetRir: Int? = nil) {
+        self.prescription = prescription
         self.repRangeHigh = repRangeHigh
         self.targetRir = targetRir
     }
+
+    static func fixedReps(_ reps: Int) -> RepGoal { RepGoal(prescription: .fixedReps(reps)) }
+    static func rir(_ rir: Int) -> RepGoal { RepGoal(prescription: .rir(rir)) }
 }
 
 /// How a slot's weight is progressed week to week. Deliberately does not
@@ -187,11 +224,27 @@ struct AutoregulatedSetCount: Codable, Equatable {
     /// above), but "this value no longer changes at all, permanently."
     /// `nil` (every Family A and Family B slot) means never freeze.
     var freezeAfterWeek: Int?
+    /// Stage 10R.1 Slice 1B addition: when `true`, a `nil`
+    /// `autoregulationRating` (no rating collected yet for the paired
+    /// slot) is treated as `0` — "no set-count change" — reproducing the
+    /// real source workbook's own Excel arithmetic, where a blank rating
+    /// cell is read as `0` by the sheet's own `=previousSets+rating`
+    /// formula (`STAGE10R1_SLICE1B_SOURCE_PROGRESSION_DESIGN.md` Part 4).
+    /// Default `false` preserves every pre-existing Family A/B/C caller's
+    /// exact original `.calibrationRequired`-on-missing-rating behavior —
+    /// this is an explicit, additive, per-template opt-in for the one
+    /// source-recovered program whose content requires it, never a
+    /// redefinition of what "no rating" means anywhere else in TrainingOS.
+    var treatMissingRatingAsNoChange: Bool
 
-    init(baselineSets: Int, applyRatingOnFinalWeek: Bool = true, freezeAfterWeek: Int? = nil) {
+    init(
+        baselineSets: Int, applyRatingOnFinalWeek: Bool = true, freezeAfterWeek: Int? = nil,
+        treatMissingRatingAsNoChange: Bool = false
+    ) {
         self.baselineSets = baselineSets
         self.applyRatingOnFinalWeek = applyRatingOnFinalWeek
         self.freezeAfterWeek = freezeAfterWeek
+        self.treatMissingRatingAsNoChange = treatMissingRatingAsNoChange
     }
 }
 

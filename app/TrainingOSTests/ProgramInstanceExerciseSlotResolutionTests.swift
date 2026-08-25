@@ -143,11 +143,20 @@ final class ProgramInstanceExerciseSlotResolutionTests: XCTestCase {
         let mixCandidates = LongTermPlanner.proposeTrainingMix(phase: fixture.phase, goal: fixture.goal)
         let recommended = try XCTUnwrap(mixCandidates.first { $0.roles.contains(.recommended) })
 
+        let materializationContext = TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.all)
         try StartPhaseUseCase.start(
             phase: fixture.phase, mix: recommended.mix, asOf: asOf, ownerUserID: ownerUserID,
             performanceProfile: nil, availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.all),
+            materializationContext: materializationContext,
             context: context
+        )
+        // Stage 10R.1C: `.rmBased` materialization is deferred until
+        // required source RM calibration exists — complete it here
+        // (the test-fixture equivalent of the real "Set your starting
+        // weights" step) before asserting real materialized prescriptions.
+        try CalibrationTestSupport.completeAnyPendingCalibrationAndMaterialize(
+            phase: fixture.phase, ownerUserID: ownerUserID, performanceProfile: nil,
+            availability: availability(), materializationContext: materializationContext, asOf: asOf, context: context
         )
 
         let instance = try XCTUnwrap(fixture.phase.primaryInstance)
@@ -212,11 +221,16 @@ final class ProgramInstanceExerciseSlotResolutionTests: XCTestCase {
         let performanceProfile = PerformanceProfile()
         context.insert(performanceProfile)
 
+        let materializationContext = TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.all)
         try StartPhaseUseCase.start(
             phase: fixture.phase, mix: recommended.mix, asOf: asOf, ownerUserID: ownerUserID,
             performanceProfile: performanceProfile, availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.all),
+            materializationContext: materializationContext,
             context: context
+        )
+        try CalibrationTestSupport.completeAnyPendingCalibrationAndMaterialize(
+            phase: fixture.phase, ownerUserID: ownerUserID, performanceProfile: performanceProfile,
+            availability: availability(), materializationContext: materializationContext, asOf: asOf, context: context
         )
 
         let instance = try XCTUnwrap(fixture.phase.primaryInstance)
@@ -247,28 +261,50 @@ final class ProgramInstanceExerciseSlotResolutionTests: XCTestCase {
         XCTAssertEqual(survivingExercises.count, 1, "the resolved Exercise itself must never be deleted as a side effect of deleting the slot that once referenced it")
     }
 
-    // MARK: E — missing history never blocks materialization; slot resolution is independent of PerformanceProfile
+    // MARK: E — Stage 10R.1C: missing calibration defers materialization (never fabricates a weight, never blocks slot resolution)
 
-    func testMissingHistoryFallsThroughToCalibrationRequiredButNeverBlocksSlotResolutionOrMaterialization() throws {
+    /// Supersedes the pre-Stage-10R.1C behavior this test used to prove
+    /// ("missing history still materializes with `.calibrationRequired`").
+    /// `.rmBased` slots now require an explicit `SourceRMCalibration`
+    /// before Week 1 can be honestly materialized at all — slot
+    /// resolution itself (independent of any RM input) still happens
+    /// immediately, exactly as before; only the deferred half changed.
+    func testMissingCalibrationDefersMaterializationRatherThanFabricatingAWeight() throws {
         let asOf = date(2026, 1, 5)
         let fixture = try makeAcceptedPlan(asOf: asOf)
         let candidates = makeCandidates()
         let mixCandidates = LongTermPlanner.proposeTrainingMix(phase: fixture.phase, goal: fixture.goal)
         let recommended = try XCTUnwrap(mixCandidates.first { $0.roles.contains(.recommended) })
+        let materializationContext = TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.all)
 
-        try StartPhaseUseCase.start(
+        let result = try StartPhaseUseCase.start(
             phase: fixture.phase, mix: recommended.mix, asOf: asOf, ownerUserID: ownerUserID,
             performanceProfile: nil, availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.all),
+            materializationContext: materializationContext,
             context: context
         )
 
         let instance = try XCTUnwrap(fixture.phase.primaryInstance)
-        let prescriptions = instance.sessions.flatMap(\.orderedBlocks).flatMap(\.orderedPrescriptions)
-        XCTAssertFalse(prescriptions.isEmpty, "materialization must still succeed with no PerformanceProfile at all")
+        XCTAssertTrue(instance.sessions.isEmpty, "no PerformanceProfile and no SourceRMCalibration -> materialization must be deferred, never fabricated")
+        XCTAssertFalse(result.componentsAwaitingCalibration.isEmpty, "the component must be reported as awaiting calibration")
 
+        // Slot resolution itself is unaffected — it already happened at
+        // instance creation, independent of any RM input.
+        guard let definition = instance.programDefinition else { return XCTFail("expected a program definition") }
+        let unresolvedSlots = definition.orderedTemplateSessions
+            .flatMap(\.orderedBlockTemplates).flatMap(\.orderedPrescriptionTemplates)
+            .compactMap(\.exerciseSlot).filter { $0.resolvedExercise == nil }
+        XCTAssertTrue(unresolvedSlots.isEmpty, "every slot must still resolve to a concrete exercise even with zero calibration")
+
+        // Completing calibration (the real user's "Set your starting
+        // weights" step) performs the one, deferred materialization.
+        try CalibrationTestSupport.completeAnyPendingCalibrationAndMaterialize(
+            phase: fixture.phase, ownerUserID: ownerUserID, performanceProfile: nil,
+            availability: availability(), materializationContext: materializationContext, asOf: asOf, context: context
+        )
+        let prescriptions = instance.sessions.flatMap(\.orderedBlocks).flatMap(\.orderedPrescriptions)
+        XCTAssertFalse(prescriptions.isEmpty, "materialization must succeed once calibration is complete")
         let primary = try XCTUnwrap(prescriptions.first { $0.appliedSetCountReasonCode == .fixedSetSchedule && $0.orderedSetPrescriptions.count == 3 })
-        XCTAssertNotNil(primary.exercise, "the slot must still resolve to a concrete exercise even though no history exists for it")
-        XCTAssertEqual(primary.appliedLoadReasonCode, .calibrationRequired, "no history -> calibrationRequired, never a fabricated weight")
+        XCTAssertEqual(primary.appliedLoadReasonCode, .rmBasedLoad, "a real SourceRMCalibration was just entered -> a real resolved load, never calibrationRequired")
     }
 }

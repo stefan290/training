@@ -132,7 +132,7 @@ enum FunctionalFitnessProgramGenerator {
         let template = PrescriptionTemplate(rules: StrengthProgressionRules(
             loadRule: .rmBased(RMBasedLoad(rmType: .rm5, weekOneFactor: 0.8, laterWeekMultipliers: [1.0, 1.0, 1.0])),
             setCountRule: .fixed(setsByWeek: [5, 5, 5, 5]),
-            repGoalSchedule: [RepGoal(reps: 5, toFailure: false)]
+            repGoalSchedule: [.fixedReps(5)]
         ))
         context.insert(template)
         block.addPrescriptionTemplate(template)

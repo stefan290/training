@@ -84,10 +84,18 @@ enum CompleteSessionUseCase {
                 // target count naturally lines up with what was actually
                 // asked of the athlete today.
                 let executable = prescription.executableSetPrescriptions
-                let targets = executable.map {
-                    SetTarget(repRangeLow: $0.repRangeLow, repRangeHigh: $0.repRangeHigh, targetRir: $0.targetRir)
+                // Stage 10R.1D: an RIR-only prescription (or an
+                // unresolved deload rep target) has no fixed rep range to
+                // feed `DoubleProgressionEngine`'s "was this an increase
+                // over the target range" comparison — skipped from this
+                // preview entirely, the same "never fabricate a row"
+                // discipline this function already applies to blocks with
+                // no logged result at all.
+                let targets: [SetTarget] = executable.compactMap { set in
+                    guard let low = set.repRangeLow, let high = set.repRangeHigh else { return nil }
+                    return SetTarget(repRangeLow: low, repRangeHigh: high, targetRir: set.targetRir)
                 }
-                guard !targets.isEmpty else { continue }
+                guard targets.count == executable.count, !targets.isEmpty else { continue }
 
                 let loggedResults = prescription.loggedSetResults.sorted { $0.setIndex < $1.setIndex }
                 guard let lastWeight = loggedResults.last?.weight else { continue }

@@ -110,6 +110,10 @@ final class PhaseTransitionOrchestrationTests: XCTestCase {
             performanceProfile: performanceProfile, availability: availability(),
             materializationContext: materializationContext, context: context
         )
+        try CalibrationTestSupport.completeAnyPendingCalibrationAndMaterialize(
+            phase: phase1, performanceProfile: performanceProfile, availability: availability(),
+            materializationContext: materializationContext, asOf: asOf, context: context
+        )
         XCTAssertEqual(phase1.status, .active)
         let phase1HypertrophyInstance = try XCTUnwrap(phase1.primaryInstance)
         XCTAssertTrue(phase1.programInstances.contains { $0.programDefinition?.programmingSystem == .steadyState }, "Focused Hypertrophy's Zone 2 Conditioning component must also have instantiated")

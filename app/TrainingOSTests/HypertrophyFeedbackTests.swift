@@ -41,7 +41,7 @@ final class HypertrophyFeedbackTests: XCTestCase {
         for setPrescription in movement.orderedSetPrescriptions {
             try LogSetUseCase.logSet(
                 setIndex: movement.loggedSetResults.count, weight: setPrescription.targetWeight ?? 20,
-                reps: setPrescription.repRangeHigh, targetRir: setPrescription.targetRir, actualRir: setPrescription.targetRir,
+                reps: setPrescription.repRangeHigh ?? 0, targetRir: setPrescription.targetRir, actualRir: setPrescription.targetRir,
                 prBand: nil, scoringDirection: .higherIsBetter, context: .rx, setPrescription: setPrescription,
                 exercisePrescription: movement, exercise: movement.exercise!, performanceProfile: performanceProfile,
                 completedAt: Date(), modelContext: context

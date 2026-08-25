@@ -78,6 +78,17 @@ final class AnnualPlanSeedDateTests: XCTestCase {
 
     func testActivePhaseComponentsHaveRealMaterializedFirstWindows() throws {
         let journey = try makeJourney()
+        // Stage 10R.1C: the real seed journey deliberately leaves the
+        // Hypertrophy component awaiting source RM calibration, exactly
+        // as a real fresh install should — complete it here (the
+        // test-fixture equivalent of the real "Set your starting
+        // weights" step) before asserting every component materialized.
+        try CalibrationTestSupport.completeAnyPendingCalibrationAndMaterialize(
+            phase: journey.activePhase, performanceProfile: nil,
+            availability: UserAvailability(trainingDaysPerWeek: 7, allowsDoubleSessions: false, maxSessionsPerDay: 1),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: EquipmentProfile(equipmentType: .barbell, smallestIncrementKg: 2.5)),
+            context: context
+        )
         let viewModel = PhaseDetailViewModel()
         viewModel.load(phase: journey.activePhase, modelContext: context)
 
@@ -92,6 +103,12 @@ final class AnnualPlanSeedDateTests: XCTestCase {
 
     func testCurrentTacticalWindowContainsSessions() throws {
         let journey = try makeJourney()
+        try CalibrationTestSupport.completeAnyPendingCalibrationAndMaterialize(
+            phase: journey.activePhase, performanceProfile: nil,
+            availability: UserAvailability(trainingDaysPerWeek: 7, allowsDoubleSessions: false, maxSessionsPerDay: 1),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: EquipmentProfile(equipmentType: .barbell, smallestIncrementKg: 2.5)),
+            context: context
+        )
         let instance = try XCTUnwrap(journey.activePhase.primaryInstance)
         let weekSessions = ProgramWeekGrouping.realSessions(in: instance, forWeek: 0)
         XCTAssertFalse(weekSessions.isEmpty)

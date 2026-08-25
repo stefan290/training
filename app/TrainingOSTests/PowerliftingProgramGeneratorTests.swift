@@ -72,7 +72,7 @@ final class PowerliftingProgramGeneratorTests: XCTestCase {
                 return XCTFail("expected .rmBased")
             }
             XCTAssertEqual(payload.weekOneFactor, 0.7, accuracy: 0.0001, "\(dayName) is a Triples session")
-            XCTAssertEqual(template.rules?.repGoalSchedule, Array(repeating: RepGoal(reps: 3, toFailure: false), count: 4), "\(dayName)'s rep goal never changes")
+            XCTAssertEqual(template.rules?.repGoalSchedule, Array(repeating: RepGoal.fixedReps(3), count: 4), "\(dayName)'s rep goal never changes")
         }
 
         let tuesday = try XCTUnwrap(definition.orderedTemplateSessions.first { $0.name == "Tuesday" })

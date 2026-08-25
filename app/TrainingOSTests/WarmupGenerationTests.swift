@@ -345,7 +345,7 @@ final class WarmupGenerationTests: XCTestCase {
                 for setPrescription in prescription.orderedSetPrescriptions {
                     try LogSetUseCase.logSet(
                         setIndex: prescription.loggedSetResults.count, weight: setPrescription.targetWeight ?? 20,
-                        reps: setPrescription.repRangeHigh, targetRir: setPrescription.targetRir, actualRir: setPrescription.targetRir,
+                        reps: setPrescription.repRangeHigh ?? 0, targetRir: setPrescription.targetRir, actualRir: setPrescription.targetRir,
                         prBand: nil, scoringDirection: .higherIsBetter, context: .rx, setPrescription: setPrescription,
                         exercisePrescription: prescription, exercise: prescription.exercise!, performanceProfile: profile,
                         completedAt: Date(), modelContext: context

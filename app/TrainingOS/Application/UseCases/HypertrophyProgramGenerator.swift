@@ -70,7 +70,21 @@ struct MuscleGroupExposureMismatch: Equatable {
 /// actual Family A program content, not fabricated here with false
 /// confidence. `STAGE4_IMPLEMENTATION_REPORT.md` restates this.
 enum HypertrophyProgramGenerator {
-    static let currentVersion = 1
+    /// `1`: pre-source-recovery — every configuration, including 3-Day
+    /// Full Body, used TrainingOS-invented content and/or Stage 10B.6's
+    /// `.doubleProgression` engine. `2`: Stage 10R.1 Slices 1A+1B —
+    /// 3-Day Full Body's day-focus-driven path now generates the literal,
+    /// cell-cited Mesocycle 1 "Basic Hypertrophy" content AND progression
+    /// (source-compatible `.rmBased` load, the real 24-slot rating-pairing
+    /// web, `SourceCompatibleDeloadStrategy`) recovered from
+    /// `3 day full body_Novice.xlsx`. One bump covers both slices' combined
+    /// change to this path's output shape (Slice 1A alone did not bump
+    /// this, a gap this bump also corrects) — every other configuration's
+    /// generated shape is completely unaffected by either slice. Existing
+    /// `ProgramDefinition`s keep whichever version they were generated
+    /// under (`generatorVersion` doc comment); only a newly-generated
+    /// definition receives version 2's content.
+    static let currentVersion = 2
 
     /// The 3 non-deload weeks' multipliers of the *resolved* Week-1 value
     /// — identical across every Family A phase and (per
@@ -79,17 +93,16 @@ enum HypertrophyProgramGenerator {
     static let laterWeekMultipliers: [Double] = [1.05, 1.075, 1.1]
 
     /// `FAMILY_A_REP_GOAL_SCHEDULE`: identical across every phase/split.
+    /// Stage 10R.1D correction: the source's "N/fail" notation is an
+    /// RIR/effort target, never a fixed rep count — `3/fail` means "stop
+    /// with about 3 reps left," not "3 reps to failure."
     static let repGoalSchedule: [RepGoal] = [
-        RepGoal(reps: 3, toFailure: true),
-        RepGoal(reps: 3, toFailure: true),
-        RepGoal(reps: 2, toFailure: true),
-        RepGoal(reps: 1, toFailure: true)
+        .rir(3), .rir(3), .rir(2), .rir(1)
     ]
 
-    /// The paired accessory's own, separate rep scheme — a plain higher-rep
-    /// isolation target, unaffected by the primary's rep-goal-to-failure
-    /// schedule.
-    static let pairedRepGoalSchedule: [RepGoal] = Array(repeating: RepGoal(reps: 12, toFailure: false), count: 4)
+    /// The paired accessory's own, separate rep scheme — a genuine fixed
+    /// rep target, unaffected by the primary's RIR-based schedule.
+    static let pairedRepGoalSchedule: [RepGoal] = Array(repeating: .fixedReps(12), count: 4)
 
     /// `FAMILY_A_WEEK1_BASELINE`'s per-phase primary-movement factor.
     /// `.legs` split's confirmed Heavy exception (`FAMILY_A_LEGS_HEAVY_EXCEPTION`)
@@ -597,6 +610,65 @@ enum HypertrophyProgramGenerator {
         ]),
     ]
 
+    // MARK: - Stage 10R.1 Slice 1B: real source progression + autoregulation pairing
+
+    /// Stage 10R.1 Slice 1B: the source workbook's real, fixed,
+    /// authoring-time rating-pairing web, recovered cell-by-cell
+    /// (`STAGE10R1_SLICE1B_SOURCE_PROGRESSION_DESIGN.md` Part 2) — the
+    /// slot at `(dayIndex, slotIndex)` (indices into
+    /// `threeDayFullBodyMesocycle1BasicHypertrophy` itself: `dayIndex`
+    /// selects the `SourceDay`, `slotIndex` the 0-based position within
+    /// that day's `categories`, matching workbook row order exactly)
+    /// rates itself using the paired slot at `(pairedDayIndex,
+    /// pairedSlotIndex)`'s most recently logged rating. This is a
+    /// structural, per-row reference fixed at authoring time — **not** a
+    /// dynamically-recomputed "most recent occurrence of this category"
+    /// search: every one of the 24 rows was confirmed to reference the
+    /// identical source row for all 3 week transitions (Week1->2 reads
+    /// column M, Week2->3 reads S, Week3->4 reads Y, always the same
+    /// row). Mechanically identical to `PrescriptionTemplate.pairedSlot`'s
+    /// existing shape (Stage 3 decision A5) — this table only supplies
+    /// the correct *target* for that existing field, replacing Slice 1A's
+    /// temporary self-reference.
+    struct SourceRatingPairing: Equatable {
+        var dayIndex: Int
+        var slotIndex: Int
+        var pairedDayIndex: Int
+        var pairedSlotIndex: Int
+    }
+
+    static let threeDayFullBodyMesocycle1RatingPairings: [SourceRatingPairing] = [
+        // Push Emphasis (day 0), rows 11-18
+        SourceRatingPairing(dayIndex: 0, slotIndex: 0, pairedDayIndex: 1, pairedSlotIndex: 7), // Horizontal Push <- Legs Horizontal Push (row11<-row29)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 1, pairedDayIndex: 1, pairedSlotIndex: 7), // Chest Isolation or Triceps <- Legs Horizontal Push (row12<-row29)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 2, pairedDayIndex: 1, pairedSlotIndex: 6), // Incline Push or Front Delts <- Legs Incline Push or Front Delts (row13<-row28)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 3, pairedDayIndex: 1, pairedSlotIndex: 3), // Side Delts <- Legs Side Delts (row14<-row25)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 4, pairedDayIndex: 1, pairedSlotIndex: 4), // Vertical Pull <- Legs Vertical Pull (row15<-row26)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 5, pairedDayIndex: 1, pairedSlotIndex: 5), // Horizontal Pull <- Legs Horizontal Pull (row16<-row27)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 6, pairedDayIndex: 1, pairedSlotIndex: 2), // Hamstrings Isolation <- Legs Hamstrings Hip Hinge (row17<-row24)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 7, pairedDayIndex: 1, pairedSlotIndex: 0), // Quads <- Legs Quads 1st (row18<-row22)
+
+        // Legs Emphasis (day 1), rows 22-29
+        SourceRatingPairing(dayIndex: 1, slotIndex: 0, pairedDayIndex: 0, pairedSlotIndex: 7), // Quads 1st <- Push Quads (row22<-row18)
+        SourceRatingPairing(dayIndex: 1, slotIndex: 1, pairedDayIndex: 0, pairedSlotIndex: 7), // Quads 2nd <- Push Quads (row23<-row18)
+        SourceRatingPairing(dayIndex: 1, slotIndex: 2, pairedDayIndex: 2, pairedSlotIndex: 7), // Hamstrings Hip Hinge <- Pull Hamstrings Isolation (row24<-row40)
+        SourceRatingPairing(dayIndex: 1, slotIndex: 3, pairedDayIndex: 2, pairedSlotIndex: 2), // Side Delts <- Pull Rear Delts or Side Delts (row25<-row35)
+        SourceRatingPairing(dayIndex: 1, slotIndex: 4, pairedDayIndex: 2, pairedSlotIndex: 0), // Vertical Pull <- Pull Vertical Pull (row26<-row33)
+        SourceRatingPairing(dayIndex: 1, slotIndex: 5, pairedDayIndex: 2, pairedSlotIndex: 1), // Horizontal Pull <- Pull Horizontal Pull (row27<-row34)
+        SourceRatingPairing(dayIndex: 1, slotIndex: 6, pairedDayIndex: 2, pairedSlotIndex: 5), // Incline Push or Front Delts <- Pull Incline Push (row28<-row38)
+        SourceRatingPairing(dayIndex: 1, slotIndex: 7, pairedDayIndex: 2, pairedSlotIndex: 4), // Horizontal Push <- Pull Horizontal Push (row29<-row37)
+
+        // Pull Emphasis (day 2), rows 33-40
+        SourceRatingPairing(dayIndex: 2, slotIndex: 0, pairedDayIndex: 0, pairedSlotIndex: 4), // Vertical Pull <- Push Vertical Pull (row33<-row15)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 1, pairedDayIndex: 0, pairedSlotIndex: 5), // Horizontal Pull <- Push Horizontal Pull (row34<-row16)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 2, pairedDayIndex: 0, pairedSlotIndex: 3), // Rear Delts or Side Delts <- Push Side Delts (row35<-row14)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 3, pairedDayIndex: 0, pairedSlotIndex: 4), // Biceps <- Push Vertical Pull (row36<-row15)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 4, pairedDayIndex: 0, pairedSlotIndex: 0), // Horizontal Push <- Push Horizontal Push (row37<-row11)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 5, pairedDayIndex: 0, pairedSlotIndex: 0), // Incline Push <- Push Horizontal Push (row38<-row11)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 6, pairedDayIndex: 1, pairedSlotIndex: 2), // Glutes <- Legs Hamstrings Hip Hinge (row39<-row24)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 7, pairedDayIndex: 0, pairedSlotIndex: 6), // Hamstrings Isolation <- Push Hamstrings Isolation (row40<-row17)
+    ]
+
     /// **TrainingOS execution-layer selection** (explicitly distinct from
     /// source content, per the Stage 10R.1 architecture) — which ONE of a
     /// category's several source-approved exercises this configuration
@@ -664,6 +736,14 @@ enum HypertrophyProgramGenerator {
         context.insert(deloadWeek)
         definition.addWeek(deloadWeek)
 
+        // Built up per day/slot-index so `threeDayFullBodyMesocycle1RatingPairings`'
+        // (dayIndex, slotIndex) coordinates can be resolved into real
+        // `PrescriptionTemplate` references once every day's slots exist —
+        // the pairing table deliberately indexes into
+        // `threeDayFullBodyMesocycle1BasicHypertrophy` itself, not any
+        // per-day-local numbering.
+        var templatesByDayIndex: [[PrescriptionTemplate]] = []
+
         for day in threeDayFullBodyMesocycle1BasicHypertrophy {
             let session = TemplateSession(name: day.sourceEmphasisName, role: .hypertrophy)
             context.insert(session)
@@ -709,41 +789,66 @@ enum HypertrophyProgramGenerator {
                 templatesThisDay.append(template)
             }
 
-            // Stage 10B.6's self-attribution fix is preserved exactly
-            // (Decision on Stage 10B.6 classification: KEEP this specific
-            // mechanism) — every slot rates itself, so no sibling's
-            // feedback can fan out onto another slot's set count.
-            // **Not** the real source's chronological last-trained-
-            // occurrence pairing web (`SOURCE_PROGRAM_MANIFEST.md` §3) —
-            // that is explicitly deferred to Slice 1B, per the Stage 10R.1
-            // autoregulation decision; this slice is content-only.
-            for template in templatesThisDay {
-                template.pairedSlot = template
-            }
+            templatesByDayIndex.append(templatesThisDay)
+        }
+
+        // Stage 10R.1 Slice 1B: wire every slot's real, fixed source
+        // rating-pairing target (`threeDayFullBodyMesocycle1RatingPairings`)
+        // — replaces Slice 1A's temporary self-reference. Each pairing is
+        // a structural, authoring-time `PrescriptionTemplate` reference
+        // (Stage 3 decision A5), never re-derived from live training
+        // history or from which exercise a slot happens to resolve to
+        // (`SourceHypertrophyCategory` resolution is completely orthogonal
+        // to this table — Part 3 of the Slice 1B design).
+        for pairing in threeDayFullBodyMesocycle1RatingPairings {
+            guard
+                templatesByDayIndex.indices.contains(pairing.dayIndex),
+                templatesByDayIndex[pairing.dayIndex].indices.contains(pairing.slotIndex),
+                templatesByDayIndex.indices.contains(pairing.pairedDayIndex),
+                templatesByDayIndex[pairing.pairedDayIndex].indices.contains(pairing.pairedSlotIndex)
+            else { continue }
+            templatesByDayIndex[pairing.dayIndex][pairing.slotIndex].pairedSlot =
+                templatesByDayIndex[pairing.pairedDayIndex][pairing.pairedSlotIndex]
         }
 
         return definition
     }
 
-    /// Builds one `PrescriptionTemplate`'s rules for the Slice 1A
-    /// source-content path. **Deliberately, explicitly unchanged from
-    /// Stage 10B.6's progression mechanism** — `.doubleProgression` load,
-    /// the `.primary`-role rep range/RIR trajectory
-    /// (`HypertrophyV2ProgressionEngine`), autoregulated set count — per
-    /// the Stage 10R.1 instruction "do not modify progression yet." The
-    /// only change from the pre-Slice-1A version is `baselineSets`, which
-    /// is now the literal source Week-1 value for this specific category
-    /// slot (a content/data input) instead of a flat role-derived
-    /// constant — every real Mesocycle-1 category in this workbook
-    /// autoregulates the same way (to-failure, rated set-count), so every
-    /// slot uses `.primary`'s rule shape (proven numerically identical to
-    /// `.secondary`'s — `STAGE10B5_HYPERTROPHY_PRESCRIPTION_AUDIT.md` §10);
-    /// none of them match `.accessory`'s fixed/never-autoregulated shape.
+    /// Builds one `PrescriptionTemplate`'s rules for the real, recovered
+    /// Mesocycle 1 "Basic Hypertrophy" source progression (Stage 10R.1
+    /// Slice 1B) — source-compatible `.rmBased` load (Week 1 = 10RM ×
+    /// 0.85, Weeks 2-4 = the resolved Week-1 value × the shared Family A
+    /// `laterWeekMultipliers`, both already-existing top-level constants
+    /// on this type — confirmed by direct trace to be the exact mechanism
+    /// `StrengthProgressionEngine.resolveWeight`'s `.rmBased` case already
+    /// implements), the literal fixed rep/failure schedule
+    /// (`repGoalSchedule`, also an existing top-level constant: `3/fail,
+    /// 3/fail, 2/fail, 1/fail`, identical for every one of the 24 real
+    /// slots), and autoregulated set count with
+    /// `treatMissingRatingAsNoChange: true` (Decision A — a blank source
+    /// rating is "no change," never `.calibrationRequired`, for this
+    /// program specifically). `weekOneFactor` is the literal `0.85`
+    /// Mesocycle-1-is-always-Basic-Hypertrophy factor
+    /// (`primaryWeekOneFactor(for: .basicHypertrophy)`) rather than
+    /// `configuration.phaseType`-dependent — this day-focus path only
+    /// ever generates Mesocycle 1's own content regardless of which
+    /// `HypertrophyPhaseType` a caller passes (Mesocycle 2/3 remain
+    /// unimplemented; see the Slice 1B design doc Part 9) — reading a
+    /// per-phase factor here would silently imply phase-switching support
+    /// that does not exist for this specific day-count/split path.
+    /// **Deliberately, explicitly unchanged from before this slice:** the
+    /// deload path (`SourceCompatibleDeloadStrategy`, reached automatically
+    /// once `loadRule` is `.rmBased`, never `.doubleProgression`) and every
+    /// other `StrengthProgressionRules` default.
     private static func makeSourceCategoryTemplate(baselineSets: Int) -> PrescriptionTemplate {
         PrescriptionTemplate(rules: StrengthProgressionRules(
-            loadRule: .doubleProgression,
-            setCountRule: .autoregulated(AutoregulatedSetCount(baselineSets: baselineSets)),
-            repGoalSchedule: HypertrophyV2ProgressionEngine.makeRepGoalSchedule(for: .primary)
+            loadRule: .rmBased(RMBasedLoad(
+                rmType: .rm10,
+                weekOneFactor: primaryWeekOneFactor(for: .basicHypertrophy),
+                laterWeekMultipliers: laterWeekMultipliers
+            )),
+            setCountRule: .autoregulated(AutoregulatedSetCount(baselineSets: baselineSets, treatMissingRatingAsNoChange: true)),
+            repGoalSchedule: repGoalSchedule
         ))
     }
 }

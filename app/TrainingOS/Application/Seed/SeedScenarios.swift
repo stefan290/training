@@ -589,7 +589,7 @@ enum SeedScenarios {
             let template = PrescriptionTemplate(rules: StrengthProgressionRules(
                 loadRule: .rmBased(RMBasedLoad(rmType: .rm10, weekOneFactor: spec.weekOneFactor, laterWeekMultipliers: laterWeekMultipliers)),
                 setCountRule: setCountRule,
-                repGoalSchedule: Array(repeating: RepGoal(reps: spec.reps, toFailure: spec.toFailure), count: 4)
+                repGoalSchedule: Array(repeating: spec.toFailure ? RepGoal.rir(spec.reps) : RepGoal.fixedReps(spec.reps), count: 4)
             ))
             modelContext.insert(template)
             templatesByName[spec.name] = template
@@ -626,14 +626,32 @@ enum SeedScenarios {
             block.addPrescription(prescription)
 
             let setCount = setResult.sets ?? 0
+            // Mirrors StrengthMaterializer's own resolution exactly
+            // (Stage 10R.1D) — a fixed rep count and an RIR/effort target
+            // are never both fabricated from one another.
+            let resolvedRepRangeLow: Int?
+            let resolvedRepRangeHigh: Int?
+            let resolvedTargetRir: Int?
+            switch repResult.repGoal?.prescription {
+            case .fixedReps(let n):
+                resolvedRepRangeLow = n
+                resolvedRepRangeHigh = repResult.repGoal?.repRangeHigh ?? n
+                resolvedTargetRir = repResult.repGoal?.targetRir
+            case .rir(let n):
+                resolvedRepRangeLow = nil
+                resolvedRepRangeHigh = nil
+                resolvedTargetRir = n
+            case nil:
+                resolvedRepRangeLow = nil
+                resolvedRepRangeHigh = nil
+                resolvedTargetRir = nil
+            }
             for _ in 0..<setCount {
                 let setPrescription = SetPrescription(
-                    repRangeLow: repResult.repGoal?.reps ?? 0,
-                    repRangeHigh: repResult.repGoal?.reps ?? 0,
+                    repRangeLow: resolvedRepRangeLow,
+                    repRangeHigh: resolvedRepRangeHigh,
                     targetWeight: weightResult.weightKg,
-                    // Mirrors StrengthMaterializer's own toFailure -> RIR
-                    // translation exactly (Stage 6D Part 2).
-                    targetRir: (repResult.repGoal?.toFailure == true) ? 0 : nil
+                    targetRir: resolvedTargetRir
                 )
                 modelContext.insert(setPrescription)
                 prescription.addSetPrescription(setPrescription)

@@ -81,13 +81,13 @@ enum PowerliftingProgramGenerator {
     // (8RM, fixed schedule).
 
     private static func generateFamilyB(definition: ProgramDefinition, context: ModelContext) {
-        let ordinaryRepGoal: [RepGoal] = [
-            RepGoal(reps: 2, toFailure: true), RepGoal(reps: 2, toFailure: true),
-            RepGoal(reps: 2, toFailure: true), RepGoal(reps: 1, toFailure: true)
-        ]
-        // "Triples sessions never change" (`FAMILY_B_REP_GOAL`) — flat,
-        // not stepping, and not phrased as "to failure."
-        let triplesRepGoal: [RepGoal] = Array(repeating: RepGoal(reps: 3, toFailure: false), count: 4)
+        // Stage 10R.1D correction: "N/fail" is an RIR/effort target, not a
+        // fixed rep count.
+        let ordinaryRepGoal: [RepGoal] = [.rir(2), .rir(2), .rir(2), .rir(1)]
+        // "Triples sessions never change" (`FAMILY_B_REP_GOAL`) — a
+        // genuine fixed rep count, flat, not stepping, and never phrased
+        // as "N/fail" in the source.
+        let triplesRepGoal: [RepGoal] = Array(repeating: .fixedReps(3), count: 4)
         let deloadWeightSplit = DeloadPositionOverride(boundaryDayIndex: 2, fullPositionFactor: 0.7, halfPositionFactor: 0.5)
         let deloadRepSplit = DeloadPositionOverride(boundaryDayIndex: 2, fullPositionFactor: 2.0 / 3.0, halfPositionFactor: 0.5)
 
@@ -150,8 +150,13 @@ enum PowerliftingProgramGenerator {
     private static func generateFamilyC(definition: ProgramDefinition, context: ModelContext) {
         // Placeholder, unconfirmed in source (see this file's own doc
         // comment) — Family C's non-deload rep-per-week schedule is not
-        // documented anywhere in the surviving material.
-        let standardRepGoal: [RepGoal] = Array(repeating: RepGoal(reps: 8, toFailure: true), count: 4)
+        // documented anywhere in the surviving material. Stage 10R.1D
+        // mechanically migrates this placeholder's shape from a fabricated
+        // fixed-rep count to the corresponding RIR reading ("N/fail" ->
+        // `.rir(N)`) — this does NOT resolve or newly confirm the
+        // placeholder's content; it remains exactly as unconfirmed as
+        // before.
+        let standardRepGoal: [RepGoal] = Array(repeating: .rir(8), count: 4)
         let deloadWeightSplit = DeloadPositionOverride(boundaryDayIndex: 2, fullPositionFactor: 1.0, halfPositionFactor: 0.5)
 
         @discardableResult

@@ -236,15 +236,6 @@ final class TacticalPlanningOrchestrationTests: XCTestCase {
 
         let performanceProfile = PerformanceProfile()
         context.insert(performanceProfile)
-        // Real history for every possible winning split's primary — week 0
-        // must resolve a REAL (non-calibrationRequired) weight regardless
-        // of which built-in candidate ranks first.
-        for primaryCandidate in [candidates.primaryShoulders, candidates.primaryQuads, candidates.primaryBack] {
-            let exerciseProfile = ExercisePerformanceProfile(estimatedOneRepMax: 100, confidence: 0.9)
-            exerciseProfile.exercise = primaryCandidate
-            context.insert(exerciseProfile)
-            performanceProfile.addExerciseProfile(exerciseProfile)
-        }
 
         let materializationContext = TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.all)
 
@@ -252,6 +243,16 @@ final class TacticalPlanningOrchestrationTests: XCTestCase {
             phase: fixture.phase, mix: recommended.mix, asOf: asOf, ownerUserID: ownerUserID,
             performanceProfile: performanceProfile, availability: availability(),
             materializationContext: materializationContext, context: context
+        )
+        // Stage 10R.1C: `.rmBased` week 0 now requires an explicit
+        // `SourceRMCalibration`, never `ExercisePerformanceProfile
+        // .estimatedOneRepMax` — completes it here (rmKilograms: 100,
+        // matching this test's original seeded value) for whichever
+        // primary candidate actually won, regardless of which built-in
+        // configuration ranked first.
+        try CalibrationTestSupport.completeAnyPendingCalibrationAndMaterialize(
+            phase: fixture.phase, performanceProfile: performanceProfile, availability: availability(),
+            materializationContext: materializationContext, asOf: asOf, rmKilograms: 100, context: context
         )
 
         let instance = try XCTUnwrap(fixture.phase.primaryInstance)
@@ -321,7 +322,11 @@ final class TacticalPlanningOrchestrationTests: XCTestCase {
 
         let expectedPrimaryRepGoal = StrengthProgressionEngine.resolveRepGoal(rules: primaryRules, weekIndex: 1)
         XCTAssertEqual(primaryWeek1.appliedRepGoalReasonCode, expectedPrimaryRepGoal.reasonCode)
-        XCTAssertTrue(primaryWeek1.orderedSetPrescriptions.allSatisfy { $0.targetRir == 0 }, "Family A's rep goal is always toFailure -> RIR 0, never invented")
+        // Stage 10R.1D: "N/fail" is RIR N, never a fabricated fixed rep
+        // count forced to RIR 0 — week index 1 (week 2) is RIR 3 in
+        // Family A's real schedule.
+        XCTAssertTrue(primaryWeek1.orderedSetPrescriptions.allSatisfy { $0.targetRir == 3 }, "Family A's real RIR schedule, never a fabricated RIR 0")
+        XCTAssertTrue(primaryWeek1.orderedSetPrescriptions.allSatisfy { $0.repRangeLow == nil }, "never a fabricated fixed rep count for an RIR-based prescription")
 
         // G: the paired/accessory's own linkedToPairedSlot load and fixed
         // set schedule are unchanged by primary now also having its own
@@ -357,6 +362,10 @@ final class TacticalPlanningOrchestrationTests: XCTestCase {
             phase: fixture.phase, mix: recommended.mix, asOf: asOf, ownerUserID: ownerUserID,
             performanceProfile: nil, availability: availability(),
             materializationContext: materializationContext, context: context
+        )
+        try CalibrationTestSupport.completeAnyPendingCalibrationAndMaterialize(
+            phase: fixture.phase, performanceProfile: nil, availability: availability(),
+            materializationContext: materializationContext, asOf: asOf, context: context
         )
 
         let instance = try XCTUnwrap(fixture.phase.primaryInstance)
@@ -439,6 +448,14 @@ final class TacticalPlanningOrchestrationTests: XCTestCase {
             performanceProfile: nil, availability: availability(),
             materializationContext: materializationContext, context: context
         )
+        // Stage 10R.1C: the 3-Day Full Body Hypertrophy component is
+        // `.rmBased` and defers materialization until source RM
+        // calibration exists — complete it here (the real onboarding flow
+        // would show "Set your starting weights" at exactly this point).
+        try CalibrationTestSupport.completeAnyPendingCalibrationAndMaterialize(
+            phase: fixture.phase, performanceProfile: nil, availability: availability(),
+            materializationContext: materializationContext, asOf: asOf, context: context
+        )
 
         let instance = try XCTUnwrap(fixture.phase.primaryInstance)
         XCTAssertEqual(instance.programDefinition?.name, "3-Day Full Body Hypertrophy — Basic Hypertrophy", "real onboarding chose the exact V2 reference configuration, not a hand-picked one")
@@ -453,19 +470,22 @@ final class TacticalPlanningOrchestrationTests: XCTestCase {
         let dayAPrescriptions = dayA.orderedBlocks.flatMap(\.orderedPrescriptions)
         XCTAssertEqual(dayAPrescriptions.count, 8, "the real recovered 8-category Push Emphasis structure")
 
-        // Week 1 Hypertrophy V2 numbers, read from the REAL materialized
-        // SetPrescriptions. Every real Mesocycle-1 slot is `.primary` role
-        // (no `.secondary`/`.accessory` in the real recovered content —
-        // Slice 1A's own "do not modify progression" scope keeps the
-        // underlying rep-range/RIR table unchanged, just applied uniformly
-        // now instead of per-tier).
+        // Week 1 numbers, read from the REAL materialized SetPrescriptions
+        // — Stage 10R.1 Slice 1B restored the source-compatible `.rmBased`
+        // progression/literal rep-failure schedule for this configuration
+        // (Stage 10B.6's V2 rep-range/RIR trajectory is retired from this
+        // program's routing). Every real Mesocycle-1 slot is `.primary`
+        // role and the very first slot ("Horizontal Push") carries the
+        // literal Week-1 target: "3/fail" -> RIR 3, no fixed rep count
+        // (Stage 10R.1D correction — this used to assert the fabricated
+        // "3 reps, RIR 0" reading).
         for prescription in dayAPrescriptions {
             guard let role = prescription.sourcePrescriptionTemplate?.slotRole, let firstSet = prescription.orderedSetPrescriptions.first else { continue }
             XCTAssertEqual(role, .primary)
-            XCTAssertEqual(firstSet.repRangeLow, 5); XCTAssertEqual(firstSet.repRangeHigh, 10); XCTAssertEqual(firstSet.targetRir, 3)
+            XCTAssertNil(firstSet.repRangeLow); XCTAssertNil(firstSet.repRangeHigh); XCTAssertEqual(firstSet.targetRir, 3)
         }
-        // Sanity: this is NOT the legacy 3-3@0RIR/12-12-no-RIR shape.
-        XCTAssertFalse(dayAPrescriptions.contains { $0.orderedSetPrescriptions.first?.targetRir == 0 }, "no legacy toFailure-derived RIR 0 anywhere in this real V2 session")
+        // Sanity: this is NOT Stage 10B.6's V2 rep-range/RIR shape.
+        XCTAssertFalse(dayAPrescriptions.contains { $0.orderedSetPrescriptions.first?.repRangeHigh == 10 }, "no Stage 10B.6 rep range anywhere in this real source-restored session")
 
         // Now prove the SAME real session travels through Readiness ->
         // Warm-up -> Execution without replacing or degrading any of the
@@ -487,6 +507,8 @@ final class TacticalPlanningOrchestrationTests: XCTestCase {
         let dayAAfterExecution = dayA.orderedBlocks.flatMap(\.orderedPrescriptions)
         XCTAssertEqual(dayAAfterExecution.count, 8, "still all 8 exercises after readiness/warm-up — nothing was dropped or replaced")
         let primaryAfter = try XCTUnwrap(dayAAfterExecution.first { $0.sourcePrescriptionTemplate?.slotRole == .primary })
-        XCTAssertEqual(primaryAfter.orderedSetPrescriptions.first?.targetRir, 3, "the V2 prescription survives readiness/warm-up unchanged")
+        // Stage 10R.1D: Week 1's real RIR is 3 ("3/fail"), never a
+        // fabricated 0.
+        XCTAssertEqual(primaryAfter.orderedSetPrescriptions.first?.targetRir, 3, "the source-restored prescription survives readiness/warm-up unchanged")
     }
 }

@@ -105,7 +105,12 @@ enum DoubleProgressionHistoryResolver {
 
     private static func exposure(from prescription: ExercisePrescription) -> Exposure? {
         let executable = prescription.executableSetPrescriptions
-        let targets = executable.map { SetTarget(repRangeLow: $0.repRangeLow, repRangeHigh: $0.repRangeHigh, targetRir: $0.targetRir) }
+        // Stage 10R.1D: an RIR-only prescription (or an unresolved deload
+        // rep target) has no fixed rep range — not a usable Double
+        // Progression exposure at all, exactly like any other incomplete
+        // exposure this function already declines to return.
+        guard executable.allSatisfy({ $0.repRangeLow != nil && $0.repRangeHigh != nil }) else { return nil }
+        let targets = executable.map { SetTarget(repRangeLow: $0.repRangeLow!, repRangeHigh: $0.repRangeHigh!, targetRir: $0.targetRir) }
         guard !targets.isEmpty else { return nil }
         let loggedResults = prescription.loggedSetResults.sorted { $0.setIndex < $1.setIndex }
         guard let lastWeight = loggedResults.last?.weight, loggedResults.count == targets.count else { return nil }

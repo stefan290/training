@@ -112,13 +112,34 @@ enum StrengthProgressionEngine {
                 guard let previousWeekSetCount else { return (nil, .calibrationRequired) }
                 return (previousWeekSetCount, .autoregulatedSetFinalWeekUnchanged)
             }
-            guard let previousWeekSetCount, let autoregulationRating else {
+            guard let previousWeekSetCount else {
                 return (nil, .calibrationRequired)
             }
-            let resolvedSets = max(0, previousWeekSetCount + autoregulationRating)
-            let reasonCode: StrengthReasonCode = autoregulationRating > 0
+            // Stage 10R.1 Slice 1B: `treatMissingRatingAsNoChange` reproduces
+            // the real source workbook's own Excel arithmetic — a blank
+            // rating cell is read as `0` by `=previousSets+rating`, never
+            // an error state — for the one source-recovered program whose
+            // content requires it. Every other caller (`false`, the
+            // default) keeps the original `.calibrationRequired` behavior
+            // for a genuinely missing rating exactly as before.
+            let effectiveRating: Int
+            if let autoregulationRating {
+                effectiveRating = autoregulationRating
+            } else if config.treatMissingRatingAsNoChange {
+                effectiveRating = 0
+            } else {
+                return (nil, .calibrationRequired)
+            }
+            // `max(0, ...)` pre-dates Slice 1B — a technical floor
+            // preventing a negative literal set count, not a
+            // TrainingOS-designed training-policy minimum (no MEV/MAV/MRV,
+            // no "baseline - 1"). Left unmodified; see
+            // `STAGE10R1_SLICE1B_IMPLEMENTATION_REPORT.md` for why this is
+            // not itself a Slice 1B invention.
+            let resolvedSets = max(0, previousWeekSetCount + effectiveRating)
+            let reasonCode: StrengthReasonCode = effectiveRating > 0
                 ? .autoregulatedSetIncrease
-                : (autoregulationRating < 0 ? .autoregulatedSetDecrease : .autoregulatedSetHold)
+                : (effectiveRating < 0 ? .autoregulatedSetDecrease : .autoregulatedSetHold)
             return (resolvedSets, reasonCode)
         }
     }

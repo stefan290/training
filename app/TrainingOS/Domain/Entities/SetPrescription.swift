@@ -12,8 +12,14 @@ final class SetPrescription {
     /// `ExercisePrescription.addSetPrescription(_:)`. This is what "set 1,
     /// set 2, set 3" means — never the raw collection order.
     var sortIndex: Int
-    var repRangeLow: Int
-    var repRangeHigh: Int
+    /// Stage 10R.1D: `nil` for an RIR-only prescription (`targetRir`
+    /// carries the effort target instead) or for a deload set whose rep
+    /// target could not be resolved from primary source evidence — see
+    /// `StrengthReasonCode.deloadRepsRequireLoggedPerformanceData`. Never
+    /// fabricated to avoid a `nil` — the pre-Stage-10R.1D defect this
+    /// corrects.
+    var repRangeLow: Int?
+    var repRangeHigh: Int?
     var targetWeight: Double?
     var targetRir: Int?
     var isWarmup: Bool
@@ -38,8 +44,8 @@ final class SetPrescription {
 
     init(
         id: UUID = UUID(),
-        repRangeLow: Int,
-        repRangeHigh: Int,
+        repRangeLow: Int? = nil,
+        repRangeHigh: Int? = nil,
         targetWeight: Double? = nil,
         targetRir: Int? = nil,
         isWarmup: Bool = false,

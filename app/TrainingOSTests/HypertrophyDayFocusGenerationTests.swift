@@ -57,10 +57,10 @@ final class HypertrophyDayFocusGenerationTests: XCTestCase {
             "Vertical Pull", "Horizontal Pull", "Hamstrings Isolation", "Quads",
         ])
         XCTAssertEqual(slots.map { $0.rules?.setCountRule }, [
-            .autoregulated(AutoregulatedSetCount(baselineSets: 3)), .autoregulated(AutoregulatedSetCount(baselineSets: 3)),
-            .autoregulated(AutoregulatedSetCount(baselineSets: 3)), .autoregulated(AutoregulatedSetCount(baselineSets: 3)),
-            .autoregulated(AutoregulatedSetCount(baselineSets: 3)), .autoregulated(AutoregulatedSetCount(baselineSets: 3)),
-            .autoregulated(AutoregulatedSetCount(baselineSets: 2)), .autoregulated(AutoregulatedSetCount(baselineSets: 2)),
+            .autoregulated(AutoregulatedSetCount(baselineSets: 3, treatMissingRatingAsNoChange: true)), .autoregulated(AutoregulatedSetCount(baselineSets: 3, treatMissingRatingAsNoChange: true)),
+            .autoregulated(AutoregulatedSetCount(baselineSets: 3, treatMissingRatingAsNoChange: true)), .autoregulated(AutoregulatedSetCount(baselineSets: 3, treatMissingRatingAsNoChange: true)),
+            .autoregulated(AutoregulatedSetCount(baselineSets: 3, treatMissingRatingAsNoChange: true)), .autoregulated(AutoregulatedSetCount(baselineSets: 3, treatMissingRatingAsNoChange: true)),
+            .autoregulated(AutoregulatedSetCount(baselineSets: 2, treatMissingRatingAsNoChange: true)), .autoregulated(AutoregulatedSetCount(baselineSets: 2, treatMissingRatingAsNoChange: true)),
         ], "Week-1 baseline sets must be the literal recovered source value per slot, not a flat role-derived constant")
     }
 
@@ -73,10 +73,10 @@ final class HypertrophyDayFocusGenerationTests: XCTestCase {
             "Horizontal Pull", "Incline Push or Front Delts", "Horizontal Push",
         ])
         XCTAssertEqual(slots.map(\.rules?.setCountRule), [
-            .autoregulated(AutoregulatedSetCount(baselineSets: 3)), .autoregulated(AutoregulatedSetCount(baselineSets: 3)),
-            .autoregulated(AutoregulatedSetCount(baselineSets: 3)), .autoregulated(AutoregulatedSetCount(baselineSets: 3)),
-            .autoregulated(AutoregulatedSetCount(baselineSets: 3)), .autoregulated(AutoregulatedSetCount(baselineSets: 3)),
-            .autoregulated(AutoregulatedSetCount(baselineSets: 2)), .autoregulated(AutoregulatedSetCount(baselineSets: 2)),
+            .autoregulated(AutoregulatedSetCount(baselineSets: 3, treatMissingRatingAsNoChange: true)), .autoregulated(AutoregulatedSetCount(baselineSets: 3, treatMissingRatingAsNoChange: true)),
+            .autoregulated(AutoregulatedSetCount(baselineSets: 3, treatMissingRatingAsNoChange: true)), .autoregulated(AutoregulatedSetCount(baselineSets: 3, treatMissingRatingAsNoChange: true)),
+            .autoregulated(AutoregulatedSetCount(baselineSets: 3, treatMissingRatingAsNoChange: true)), .autoregulated(AutoregulatedSetCount(baselineSets: 3, treatMissingRatingAsNoChange: true)),
+            .autoregulated(AutoregulatedSetCount(baselineSets: 2, treatMissingRatingAsNoChange: true)), .autoregulated(AutoregulatedSetCount(baselineSets: 2, treatMissingRatingAsNoChange: true)),
         ])
     }
 
@@ -183,51 +183,95 @@ final class HypertrophyDayFocusGenerationTests: XCTestCase {
         XCTAssertTrue(SourceHypertrophyCategory.hamstringsHipHinge.sourceApprovedExerciseNames.contains("Stiff-Legged Deadlift"))
     }
 
-    // MARK: - Progression non-regression (Slice 1A is content-only)
+    // MARK: - Progression restoration (Stage 10R.1 Slice 1B)
 
-    /// Every slot in this Mesocycle uses `.primary`'s numeric shape
-    /// (`.doubleProgression` load, the 5-10 rep range, the 3→2→2→1 RIR
-    /// trajectory) — unchanged code, unchanged formulas, now just applied
-    /// to the real recovered categories instead of the retired invented
-    /// ones. No slot in the real Mesocycle 1 matches `.accessory`'s
-    /// fixed/never-autoregulated shape (every real category autoregulates
-    /// to a rated set count), so none is assigned that role — a content
-    /// fact, not a progression change.
-    func testEverySlotUsesTheUnchangedPrimaryRoleProgressionShape() throws {
+    /// Every slot in this Mesocycle uses the restored source-compatible
+    /// `.rmBased` load (Week-1 factor 0.85, the shared Family A later-week
+    /// multipliers) and the literal fixed rep/failure schedule — Stage
+    /// 10B.6's `.doubleProgression`/rep-range/RIR mechanism is retired
+    /// from this program's path entirely (kept as infrastructure
+    /// elsewhere, per the Slice 1B design doc's routing/authority
+    /// distinction).
+    func testEverySlotUsesTheRestoredSourceCompatibleLoadAndRepSchedule() throws {
         let definition = try generateReferenceConfig()
         for session in definition.orderedTemplateSessions {
             for template in session.orderedBlockTemplates.flatMap(\.orderedPrescriptionTemplates) {
-                XCTAssertEqual(template.slotRole, .primary)
-                XCTAssertEqual(template.rules?.loadRule, .doubleProgression, "Stage 10B.6's progression mechanism is untouched by Slice 1A")
+                guard case .rmBased(let payload) = try XCTUnwrap(template.rules?.loadRule) else {
+                    return XCTFail("every real Mesocycle 1 slot must use the restored source-compatible .rmBased load")
+                }
+                XCTAssertEqual(payload.rmType, .rm10)
+                XCTAssertEqual(payload.weekOneFactor, 0.85, accuracy: 0.0001)
+                XCTAssertEqual(payload.laterWeekMultipliers, [1.05, 1.075, 1.1])
+                // Stage 10R.1D: "N/fail" is RIR N, never a fixed rep count.
                 let schedule = try XCTUnwrap(template.rules?.repGoalSchedule)
-                XCTAssertEqual(schedule.map(\.reps), Array(repeating: 5, count: 4))
-                XCTAssertEqual(schedule.map(\.repRangeHigh), Array(repeating: 10, count: 4))
-                XCTAssertEqual(schedule.map(\.targetRir), [3, 2, 2, 1], "the exact pre-existing primary RIR trajectory, unchanged")
+                let rirValues = schedule.map { goal -> Int? in
+                    guard case .rir(let n) = goal.prescription else { return nil }
+                    return n
+                }
+                XCTAssertEqual(rirValues, [3, 3, 2, 1], "the literal source RIR schedule, never a fabricated fixed rep count")
+                XCTAssertTrue(schedule.allSatisfy { $0.repRangeHigh == nil }, "no Stage 10B.6 rep range on a source-recovered slot")
+                XCTAssertTrue(schedule.allSatisfy { $0.targetRir == nil }, "no Stage 10B.6 explicit RIR companion value — the .rir(_:) prescription IS the effort target")
+                if case .autoregulated(let config) = try XCTUnwrap(template.rules?.setCountRule) {
+                    XCTAssertTrue(config.treatMissingRatingAsNoChange, "Decision A: a blank source rating is 'no change,' not .calibrationRequired, for this program")
+                } else {
+                    XCTFail("every real Mesocycle 1 slot autoregulates its set count")
+                }
             }
         }
     }
 
-    /// Stage 10B.6's self-attribution fix (KEEP, per the Stage 10R.1
-    /// classification) still applies to every slot — no fan-out, no
-    /// sibling-driven rating.
-    func testAutoregulationRatingSourceIsSelfAttributedForEverySlot() throws {
+    /// Stage 10R.1 Slice 1B: every slot's `pairedSlot` must match the real,
+    /// fixed, cell-cited source rating-pairing table exactly — never
+    /// Slice 1A's temporary self-reference, and never a re-derived
+    /// "nearest same-category" heuristic.
+    func testEverySlotsPairedSlotMatchesTheRealRecoveredSourcePairingTable() throws {
         let definition = try generateReferenceConfig()
-        let allTemplates = definition.orderedTemplateSessions.flatMap { $0.orderedBlockTemplates.flatMap(\.orderedPrescriptionTemplates) }
-        XCTAssertFalse(allTemplates.isEmpty)
-        for template in allTemplates {
-            XCTAssertEqual(template.pairedSlot?.id, template.id, "every slot must rate itself — Slice 1A explicitly defers the real chronological source pairing web to Slice 1B")
+        let templatesByDay = definition.orderedTemplateSessions.map { $0.orderedBlockTemplates.flatMap(\.orderedPrescriptionTemplates) }
+        XCTAssertEqual(templatesByDay.map(\.count), [8, 8, 8])
+
+        for pairing in HypertrophyProgramGenerator.threeDayFullBodyMesocycle1RatingPairings {
+            let template = templatesByDay[pairing.dayIndex][pairing.slotIndex]
+            let expectedPaired = templatesByDay[pairing.pairedDayIndex][pairing.pairedSlotIndex]
+            XCTAssertEqual(template.pairedSlot?.id, expectedPaired.id, "day \(pairing.dayIndex) slot \(pairing.slotIndex) must be paired exactly per the recovered source table")
         }
-        XCTAssertEqual(Set(allTemplates.compactMap { $0.pairedSlot?.id }).count, allTemplates.count, "no fan-out")
+        // No slot is left self-paired (Slice 1A's retired placeholder).
+        for day in templatesByDay {
+            for template in day {
+                XCTAssertNotEqual(template.pairedSlot?.id, template.id, "Slice 1A's temporary self-pairing must be fully replaced")
+            }
+        }
+    }
+
+    /// Part 3 of the Slice 1B design: which exercise a category resolves
+    /// to must never influence its `pairedSlot` — pairing is by source
+    /// slot/row identity, completely orthogonal to exercise resolution.
+    /// The two "Quads" slots on Legs Emphasis resolve to two different
+    /// exercises (Front Squat vs. Leg Press) yet both correctly pair back
+    /// to the same Push Emphasis Quads slot, per the recovered table.
+    func testExerciseResolutionNeverAffectsTheSourcePairingRelationship() throws {
+        let (definition, _) = try generateReferenceConfigWithCatalogSeeded()
+        let day2 = try XCTUnwrap(definition.orderedTemplateSessions[1])
+        let quadsSlots = try XCTUnwrap(day2.orderedBlockTemplates.first).orderedPrescriptionTemplates.filter { $0.exerciseSlot?.name == "Quads" }
+        XCTAssertEqual(quadsSlots.count, 2)
+        XCTAssertEqual(Set(quadsSlots.compactMap { $0.exerciseSlot?.resolvedExercise?.canonicalName }).count, 2, "sanity: the two Quads slots really do resolve differently")
+        let day1 = try XCTUnwrap(definition.orderedTemplateSessions.first)
+        let pushQuads = try XCTUnwrap(try XCTUnwrap(day1.orderedBlockTemplates.first).orderedPrescriptionTemplates.first { $0.exerciseSlot?.name == "Quads" })
+        for slot in quadsSlots {
+            XCTAssertEqual(slot.pairedSlot?.id, pushQuads.id, "both distinctly-resolved Quads slots pair to the identical source row, regardless of which exercise each resolves to")
+        }
     }
 
     func testPrimarySlotWeightResolutionRequiresCalibrationWithNoHistoryAtAnyWeek() throws {
         let definition = try generateReferenceConfig()
         let day1 = try XCTUnwrap(definition.orderedTemplateSessions.first)
         let firstTemplate = try XCTUnwrap(try XCTUnwrap(day1.orderedBlockTemplates.first).orderedPrescriptionTemplates.first)
-        XCTAssertEqual(firstTemplate.rules?.loadRule, .doubleProgression)
+        let rules = try XCTUnwrap(firstTemplate.rules)
+        guard case .rmBased = rules.loadRule else { return XCTFail("expected .rmBased") }
 
-        let exercise = Exercise(canonicalName: "Test Exercise", modality: .strength, equipment: "barbell", movementPattern: "squat")
-        let resolution = HypertrophyV2ProgressionEngine.resolveWeight(exercise: exercise, performanceProfile: nil, equipmentIncrement: 2.5)
+        let resolution = StrengthProgressionEngine.resolveWeight(
+            rules: rules, weekIndex: 0, rmKilograms: nil, weekOneResolvedWeightKg: nil,
+            pairedSlotResolvedWeightKg: nil, equipmentProfile: equipment
+        )
         XCTAssertEqual(resolution.reasonCode, .calibrationRequired)
         XCTAssertNil(resolution.weightKg)
     }

@@ -206,15 +206,23 @@ enum RollTacticalWindowUseCase {
         }
 
         if weekIndex == 0 {
-            let selectedProfile = performanceProfile?.profile(for: exercise)
-            let candidates = slot.allowedExercises.filter { $0.id != exercise.id }
-            let curated = (try? context.fetch(FetchDescriptor<ExerciseRelationship>())) ?? []
-            let output = SubstitutionAwareRecommendation.resolve(SubstitutionAwareRecommendation.Input(
-                selectedExercise: exercise, selectedExerciseProfile: selectedProfile,
-                candidatesForEstimate: candidates, curatedRelationships: curated,
-                relatedProfileLookup: { performanceProfile?.profile(for: $0) }
-            ))
-            return StrengthMaterializer.SlotContext(rmKilograms: output.referenceOneRepMax)
+            // Stage 10R.1C: for `.rmBased` slots, the source workbooks
+            // require a literal, physically-tested RM (10RM/8RM/5RM,
+            // per the slot's own `RMType`) — never derived from
+            // `PerformanceProfile`/`SubstitutionAwareRecommendation`'s
+            // "estimated 1RM" mechanism, which is both a different basis
+            // and a different scope (permanent-per-exercise vs. fresh-
+            // per-mesocycle). See
+            // `STAGE10R1C_SOURCE_RM_CALIBRATION_DESIGN.md`. Non-`.rmBased`
+            // loadRules (`.linkedToPairedSlot`/`.none`) need no
+            // `rmKilograms` at week 0 at all — `rmKilograms` simply stays
+            // `nil` for them, exactly as `StrengthProgressionEngine
+            // .resolveWeight` already expects.
+            guard let loadRule = slot.prescriptionTemplate?.rules?.loadRule, case .rmBased(let payload) = loadRule else {
+                return .init()
+            }
+            let calibration = instance.sourceRMCalibration(for: exercise, rmType: payload.rmType)
+            return StrengthMaterializer.SlotContext(rmKilograms: calibration?.kilograms)
         }
 
         guard let template = slot.prescriptionTemplate else { return .init() }

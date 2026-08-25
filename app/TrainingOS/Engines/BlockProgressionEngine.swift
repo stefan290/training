@@ -87,8 +87,21 @@ struct StrengthBlockProgressionEngine: BlockProgressionEngine {
             )
         }
 
+        // Stage 10R.1D: an RIR-only prescription (or an unresolved deload
+        // rep target) has no fixed rep range for `SetTarget` to represent
+        // — `DoubleProgressionEngine`'s "did this clear the target range"
+        // comparison does not apply. Held, not guessed, exactly like the
+        // "no usable history" case below.
+        guard exercisePrescription.orderedSetPrescriptions.allSatisfy({ $0.repRangeLow != nil && $0.repRangeHigh != nil }) else {
+            return BlockProgressionOutput(
+                recommendation: .none,
+                reasonCode: .calibrationRequired,
+                confidence: 0,
+                inputsSummary: "This prescription has no fixed rep range (an RIR/effort target, or an unresolved deload rep target) — holding rather than guessing a range-based progression."
+            )
+        }
         let targets = exercisePrescription.orderedSetPrescriptions.map {
-            SetTarget(repRangeLow: $0.repRangeLow, repRangeHigh: $0.repRangeHigh, targetRir: $0.targetRir)
+            SetTarget(repRangeLow: $0.repRangeLow!, repRangeHigh: $0.repRangeHigh!, targetRir: $0.targetRir)
         }
 
         let latestStrengthResult: StrengthBlockResult? = input.relevantHistory.compactMap {

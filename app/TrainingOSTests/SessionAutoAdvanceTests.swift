@@ -44,10 +44,15 @@ final class SessionAutoAdvanceTests: XCTestCase {
         context.insert(instance)
         instance.programDefinition = definition
 
+        // Stage 10R.1 Slice 1B: every real Mesocycle 1 slot is now
+        // `.rmBased` (never `.doubleProgression`), so week 0 needs only
+        // the plain `rmKilograms` calibration input — the same fixed
+        // value used everywhere else in this file, since these tests
+        // exercise readiness/warm-up/execution, not progression itself.
         let materialized = StrengthMaterializer.materializeWeek(
             definition: definition, instance: instance, weekIndex: 0, isDeload: false,
             startDate: Date(timeIntervalSince1970: 0), ownerUserID: ownerUserID, equipmentProfile: equipment,
-            slotContext: { slot in Self.stage10B6SlotContext(slot: slot, weekIndex: 0, isDeload: false) }, context: context
+            slotContext: { _ in .init(rmKilograms: 100) }, context: context
         )
         // "Pull Emphasis" specifically — the real recovered source's
         // Biceps/Barbell Curl slot only exists there (Stage 10R.1 Slice
@@ -55,24 +60,6 @@ final class SessionAutoAdvanceTests: XCTestCase {
         // appears on every day).
         let session = try XCTUnwrap(materialized.sessions.first { $0.name == "Pull Emphasis" })
         return (session, catalog)
-    }
-
-    /// Stage 10B.6: a real `.doubleProgression` template needs its own 3
-    /// resolved fields, not the legacy `rmKilograms` stub — mirrors what
-    /// `RollTacticalWindowUseCase.strengthSlotContext` does in production,
-    /// just with a fixed calibration weight (100) rather than real
-    /// history, since these tests exercise readiness/warm-up/execution,
-    /// not progression itself.
-    private static func stage10B6SlotContext(slot: ExerciseSlot, weekIndex: Int, isDeload: Bool) -> StrengthMaterializer.SlotContext {
-        guard let template = slot.prescriptionTemplate, let rules = template.rules, rules.loadRule == .doubleProgression else {
-            return .init(rmKilograms: 100)
-        }
-        let role = template.slotRole ?? .accessory
-        let repGoal = HypertrophyV2ProgressionEngine.resolveRepGoal(rules: rules, weekIndex: weekIndex, isDeload: isDeload)
-        let setCount = HypertrophyV2ProgressionEngine.resolveSetCount(
-            role: role, rules: rules, isDeload: isDeload, previousWeekSetCount: nil, autoregulationRating: nil
-        )
-        return .init(doubleProgressionWeightKg: 100, doubleProgressionRepGoal: repGoal, doubleProgressionSetCount: setCount)
     }
 
     private func goodCheckIn() -> ReadinessCheckIn {

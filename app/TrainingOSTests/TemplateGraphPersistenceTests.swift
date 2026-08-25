@@ -61,10 +61,10 @@ final class TemplateGraphPersistenceTests: XCTestCase {
                 loadRule: .rmBased(RMBasedLoad(rmType: .rm10, weekOneFactor: 0.85, laterWeekMultipliers: [1.05, 1.075, 1.1])),
                 setCountRule: .autoregulated(AutoregulatedSetCount(baselineSets: 3)),
                 repGoalSchedule: [
-                    RepGoal(reps: 3, toFailure: true),
-                    RepGoal(reps: 3, toFailure: true),
-                    RepGoal(reps: 2, toFailure: true),
-                    RepGoal(reps: 1, toFailure: true)
+                    RepGoal.rir(3),
+                    RepGoal.rir(3),
+                    RepGoal.rir(2),
+                    RepGoal.rir(1)
                 ],
                 deloadWeightAction: .standard,
                 deloadRepAction: .standard
@@ -84,10 +84,10 @@ final class TemplateGraphPersistenceTests: XCTestCase {
                 loadRule: .linkedToPairedSlot(fractionOfSourceResult: 0.6),
                 setCountRule: .fixed(setsByWeek: [2, 2, 2, 2]),
                 repGoalSchedule: [
-                    RepGoal(reps: 12, toFailure: false),
-                    RepGoal(reps: 12, toFailure: false),
-                    RepGoal(reps: 12, toFailure: false),
-                    RepGoal(reps: 12, toFailure: false)
+                    RepGoal.fixedReps(12),
+                    RepGoal.fixedReps(12),
+                    RepGoal.fixedReps(12),
+                    RepGoal.fixedReps(12)
                 ],
                 deloadWeightAction: .omit,
                 deloadRepAction: .omit
@@ -130,8 +130,8 @@ final class TemplateGraphPersistenceTests: XCTestCase {
         XCTAssertEqual(reloadedPrimary.rules?.loadRule, .rmBased(RMBasedLoad(rmType: .rm10, weekOneFactor: 0.85, laterWeekMultipliers: [1.05, 1.075, 1.1])))
         XCTAssertEqual(reloadedPrimary.rules?.setCountRule, .autoregulated(AutoregulatedSetCount(baselineSets: 3)))
         XCTAssertEqual(reloadedPrimary.rules?.repGoalSchedule, [
-            RepGoal(reps: 3, toFailure: true), RepGoal(reps: 3, toFailure: true),
-            RepGoal(reps: 2, toFailure: true), RepGoal(reps: 1, toFailure: true)
+            RepGoal.rir(3), RepGoal.rir(3),
+            RepGoal.rir(2), RepGoal.rir(1)
         ])
         XCTAssertEqual(reloadedPrimary.exerciseSlot?.name, "Horizontal Push")
         XCTAssertEqual(reloadedPrimary.exerciseSlot?.allowedTargets, [.chest, .shoulders])
@@ -182,7 +182,7 @@ final class TemplateGraphPersistenceTests: XCTestCase {
         let templateID = UUID()
         let template = PrescriptionTemplate(
             id: templateID,
-            rules: StrengthProgressionRules(loadRule: .none, setCountRule: .fixed(setsByWeek: [2]), repGoalSchedule: [RepGoal(reps: 15)])
+            rules: StrengthProgressionRules(loadRule: .none, setCountRule: .fixed(setsByWeek: [2]), repGoalSchedule: [RepGoal.fixedReps(15)])
         )
         context.insert(template)
         let session = TemplateSession(name: "Day 1")
@@ -270,13 +270,13 @@ final class TemplateGraphPersistenceTests: XCTestCase {
     func testDiagnosticTwoSiblingRowsWithDifferentLoadRuleCases() throws {
         let firstID = UUID()
         let first = PrescriptionTemplate(id: firstID, rules: StrengthProgressionRules(
-            loadRule: .none, setCountRule: .fixed(setsByWeek: [3]), repGoalSchedule: [RepGoal(reps: 10)]
+            loadRule: .none, setCountRule: .fixed(setsByWeek: [3]), repGoalSchedule: [RepGoal.fixedReps(10)]
         ))
         context.insert(first)
 
         let secondID = UUID()
         let second = PrescriptionTemplate(id: secondID, rules: StrengthProgressionRules(
-            loadRule: .linkedToPairedSlot(fractionOfSourceResult: 0.6), setCountRule: .fixed(setsByWeek: [3]), repGoalSchedule: [RepGoal(reps: 10)]
+            loadRule: .linkedToPairedSlot(fractionOfSourceResult: 0.6), setCountRule: .fixed(setsByWeek: [3]), repGoalSchedule: [RepGoal.fixedReps(10)]
         ))
         context.insert(second)
         try context.save()
@@ -325,13 +325,13 @@ final class TemplateGraphPersistenceTests: XCTestCase {
     func testDiagnosticTwoSiblingRowsWithDifferentNonEmptyLoadRuleCases() throws {
         let firstID = UUID()
         let first = PrescriptionTemplate(id: firstID, rules: StrengthProgressionRules(
-            loadRule: .linkedToPairedSlot(fractionOfSourceResult: 0.5), setCountRule: .fixed(setsByWeek: [3]), repGoalSchedule: [RepGoal(reps: 10)]
+            loadRule: .linkedToPairedSlot(fractionOfSourceResult: 0.5), setCountRule: .fixed(setsByWeek: [3]), repGoalSchedule: [RepGoal.fixedReps(10)]
         ))
         context.insert(first)
 
         let secondID = UUID()
         let second = PrescriptionTemplate(id: secondID, rules: StrengthProgressionRules(
-            loadRule: .rmBased(RMBasedLoad(rmType: .rm10, weekOneFactor: 0.85, laterWeekMultipliers: [1.05])), setCountRule: .fixed(setsByWeek: [3]), repGoalSchedule: [RepGoal(reps: 10)]
+            loadRule: .rmBased(RMBasedLoad(rmType: .rm10, weekOneFactor: 0.85, laterWeekMultipliers: [1.05])), setCountRule: .fixed(setsByWeek: [3]), repGoalSchedule: [RepGoal.fixedReps(10)]
         ))
         context.insert(second)
         try context.save()
@@ -359,7 +359,7 @@ final class TemplateGraphPersistenceTests: XCTestCase {
         let familyBTemplate = PrescriptionTemplate(id: familyBID, rules: StrengthProgressionRules(
             loadRule: .rmBased(RMBasedLoad(rmType: .rm5, weekOneFactor: 0.7, laterWeekMultipliers: [1.05, 1.075, 1.1])),
             setCountRule: .autoregulated(AutoregulatedSetCount(baselineSets: 3, applyRatingOnFinalWeek: false)),
-            repGoalSchedule: [RepGoal(reps: 3, toFailure: true)],
+            repGoalSchedule: [RepGoal.rir(3)],
             deloadRepPositionOverride: DeloadPositionOverride(boundaryDayIndex: 2, fullPositionFactor: 2.0 / 3.0, halfPositionFactor: 0.5),
             deloadWeightPositionOverride: DeloadPositionOverride(boundaryDayIndex: 2, fullPositionFactor: 0.7, halfPositionFactor: 0.5)
         ))
@@ -369,7 +369,7 @@ final class TemplateGraphPersistenceTests: XCTestCase {
         let familyCTemplate = PrescriptionTemplate(id: familyCID, rules: StrengthProgressionRules(
             loadRule: .rmBased(RMBasedLoad(rmType: .rm10, weekOneFactor: 0.95, laterWeekMultipliers: [1.05, 1.075, 1.1])),
             setCountRule: .autoregulated(AutoregulatedSetCount(baselineSets: 2, freezeAfterWeek: 2)),
-            repGoalSchedule: [RepGoal(reps: 8, toFailure: true)],
+            repGoalSchedule: [RepGoal.rir(8)],
             deloadWeightPositionOverride: DeloadPositionOverride(boundaryDayIndex: 2, fullPositionFactor: 1.0, halfPositionFactor: 0.5)
         ))
         context.insert(familyCTemplate)
