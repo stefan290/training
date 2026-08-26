@@ -90,7 +90,34 @@ struct PhaseDetailView: View {
         }
 
         componentList
+        startNextHypertrophyPhaseCard
         nextPhaseCard
+    }
+
+    /// Stage 10R.2B: the smallest clear transition action — a single
+    /// explicit button, never an automatic advance
+    /// (`STAGE3_DECISION_MEMO.md` Decision A1). Tapping it starts the
+    /// real next mesocycle; the already-existing "Set your starting
+    /// weights" calibration gate (`RootTabView`/`SourceRMCalibrationView`)
+    /// picks up its fresh calibration requirement automatically — no
+    /// separate review/calibration screen is built here.
+    @ViewBuilder private var startNextHypertrophyPhaseCard: some View {
+        if viewModel.canStartNextHypertrophyPhase, let label = viewModel.nextHypertrophyPhaseTypeLabel {
+            InfoCard(title: "NEXT MESOCYCLE") {
+                Text("Start \(label) when you're ready to move on from this mesocycle. You'll enter fresh starting weights — nothing carries over automatically.")
+                    .font(Theme.label)
+                    .foregroundStyle(Theme.textSecondary)
+                Button("Start \(label)") {
+                    if viewModel.startNextHypertrophyPhase(modelContext: modelContext) {
+                        viewModel.load(phase: phase, modelContext: modelContext)
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Theme.primary)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 4)
+            }
+        }
     }
 
     // MARK: Completed — historical, read-only

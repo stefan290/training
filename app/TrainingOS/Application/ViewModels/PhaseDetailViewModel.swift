@@ -8,9 +8,14 @@ import Observation
 /// branching on `phase.status` at the View layer, never a parallel
 /// phase-detail mechanism per system/status.
 ///
-/// **Never writes anything.** Every property here is derived from
-/// already-persisted state — `load` never creates, materializes, or
-/// mutates a `Session`/`ProgramInstance`/`TrainingMix`.
+/// **`load` never writes anything.** Every property `load` populates is
+/// derived from already-persisted state — it never creates, materializes,
+/// or mutates a `Session`/`ProgramInstance`/`TrainingMix`. Stage 10R.2B
+/// adds the one deliberate exception: `startNextHypertrophyPhase`, a
+/// single, explicit, user-initiated write (never called by `load` or any
+/// other read path) that starts the real Mesocycle-to-Mesocycle
+/// transition (`STAGE3_DECISION_MEMO.md` Decision A1 — user-initiated,
+/// never automatic).
 @Observable
 final class PhaseDetailViewModel {
     /// One component of an upcoming phase's *preview* mix, paired with
@@ -63,6 +68,17 @@ final class PhaseDetailViewModel {
     /// `PlannerDecision.explanation` for why that component's specific
     /// program was selected, if one exists.
     private(set) var componentExplanations: [UUID: String] = [:]
+    /// Stage 10R.2B: `true` only when this phase's primary component is
+    /// an already-materialized Hypertrophy instance whose configuration
+    /// has a real next mesocycle (`HypertrophyProgramJourney.orderedPhaseTypes`)
+    /// AND no next phase already exists in the plan yet — the second half
+    /// doubles as the idempotency signal: once `startNextHypertrophyPhase`
+    /// succeeds, `nextPhase` becomes non-nil on the next `load`, hiding
+    /// the action rather than offering to repeat it.
+    private(set) var canStartNextHypertrophyPhase = false
+    /// The next mesocycle's display name, for the action's own label —
+    /// `nil` whenever `canStartNextHypertrophyPhase` is `false`.
+    private(set) var nextHypertrophyPhaseTypeLabel: String?
 
     func load(phase: TrainingPhase, modelContext: ModelContext) {
         self.phase = phase
@@ -130,6 +146,53 @@ final class PhaseDetailViewModel {
         } else {
             upcomingPreviewMix = nil
             upcomingComponentPreviews = []
+        }
+
+        canStartNextHypertrophyPhase = false
+        nextHypertrophyPhaseTypeLabel = nil
+        if phase.status == .active, nextPhase == nil,
+           let primaryInstance = phase.primaryInstance, !primaryInstance.sessions.isEmpty,
+           activeComponents.first(where: { $0.priority == .primary })?.programmingSystem == .hypertrophy,
+           let configuration = primaryInstance.programDefinition?.hypertrophyConfiguration,
+           let currentIndex = HypertrophyProgramJourney.orderedPhaseTypes.firstIndex(of: configuration.phaseType),
+           HypertrophyProgramJourney.orderedPhaseTypes.indices.contains(currentIndex + 1) {
+            canStartNextHypertrophyPhase = true
+            nextHypertrophyPhaseTypeLabel = Self.phaseTypeDisplayName(HypertrophyProgramJourney.orderedPhaseTypes[currentIndex + 1])
+        }
+    }
+
+    private static func phaseTypeDisplayName(_ phaseType: HypertrophyPhaseType) -> String {
+        switch phaseType {
+        case .basicHypertrophy: return "Basic Hypertrophy"
+        case .metaboliteFocus: return "Metabolite Focus"
+        case .resensitization: return "Resensitization"
+        }
+    }
+
+    /// Stage 10R.2B: the one deliberate write this ViewModel performs —
+    /// see this type's own top-level doc comment. Never called by `load`;
+    /// only ever in direct response to an explicit user action (a button
+    /// tap), matching `STAGE3_DECISION_MEMO.md` Decision A1's
+    /// `transitionTrigger: .userInitiated`.
+    @discardableResult
+    func startNextHypertrophyPhase(modelContext: ModelContext) -> Bool {
+        guard let phase, let primaryInstance = phase.primaryInstance else { return false }
+        let candidates = (try? modelContext.fetch(FetchDescriptor<Exercise>())) ?? []
+        do {
+            try StartNextHypertrophyPhaseUseCase.start(
+                previousPhase: phase, previousInstance: primaryInstance, asOf: Date(),
+                ownerUserID: primaryInstance.ownerUserID,
+                availability: UserAvailability(trainingDaysPerWeek: 7, allowsDoubleSessions: false, maxSessionsPerDay: 1),
+                materializationContext: TacticalMaterializationContext(
+                    equipmentProfile: EquipmentProfile(equipmentType: .barbell, smallestIncrementKg: 2.5),
+                    strengthCandidateExercises: candidates
+                ),
+                context: modelContext
+            )
+            try? modelContext.save()
+            return true
+        } catch {
+            return false
         }
     }
 }

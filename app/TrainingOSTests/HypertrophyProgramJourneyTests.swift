@@ -68,13 +68,22 @@ final class HypertrophyProgramJourneyTests: XCTestCase {
     /// Stage 3 decision A1: each phase remains independently startable —
     /// materializing (starting) one phase must not require any other
     /// phase to exist or have been materialized.
+    ///
+    /// Stage 10R.2A: uses `dayCount: 4, split: .fullBody` (the legacy
+    /// generator path), not `dayCount: 3, split: .fullBody` — the
+    /// day-focus-driven path now has real recovered content only for
+    /// Mesocycle 1/2, and correctly throws `.phaseNotYetRecovered` for
+    /// Mesocycle 3 rather than silently reusing another phase's content
+    /// (the exact bug 10R.2A corrects). This test's own claim
+    /// (independent startability) doesn't depend on which configuration
+    /// proves it.
     func testEachPhaseIsIndependentlyStartable() throws {
         let ownerUserID = UUID()
         let plan = TrainingPlan(status: .active)
         context.insert(plan)
 
         let results = try HypertrophyProgramJourney.build(
-            dayCount: 3, split: .fullBody, plan: plan, ownerUserID: ownerUserID,
+            dayCount: 4, split: .fullBody, plan: plan, ownerUserID: ownerUserID,
             firstPhaseStartDate: Date(timeIntervalSince1970: 0), context: context
         )
 
@@ -87,7 +96,7 @@ final class HypertrophyProgramJourneyTests: XCTestCase {
             ownerUserID: ownerUserID, equipmentProfile: EquipmentProfile(equipmentType: .barbell, smallestIncrementKg: 2.5),
             slotContext: { _ in .init(rmKilograms: 100) }, context: context
         )
-        XCTAssertEqual(materialized.sessions.count, 3)
+        XCTAssertEqual(materialized.sessions.count, 4)
 
         // The other two phases remain unmaterialized (no Sessions), which
         // is a valid, unrelated state, not a dependency violation.

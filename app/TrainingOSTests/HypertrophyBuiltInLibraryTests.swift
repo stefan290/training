@@ -43,10 +43,30 @@ final class HypertrophyBuiltInLibraryTests: XCTestCase {
     /// Each of the 6 configs ships as a full 3-phase journey
     /// (`V1_PROGRAM_LIBRARY.md`'s own statement), same `{dayCount,split}`
     /// throughout.
+    ///
+    /// **Stage 10R.2A exception:** 3-Day Full Body's day-focus-driven
+    /// path now has real recovered source content for Mesocycle 1/2, and
+    /// correctly throws `HypertrophyGenerationError.phaseNotYetRecovered`
+    /// for Mesocycle 3 rather than silently reusing another phase's
+    /// content (the exact pre-10R.2A bug this stage corrects) — so this
+    /// one configuration genuinely cannot build a full 3-phase journey
+    /// yet, proven by asserting the throw rather than skipped silently.
+    /// The other 5 configurations are unaffected (legacy generator path,
+    /// unchanged) and still build all 3 phases.
     func testEveryBuiltInConfigurationBuildsAFullThreePhaseJourney() throws {
         for config in HypertrophyBuiltInLibrary.all {
             let plan = TrainingPlan(status: .active)
             context.insert(plan)
+
+            if config.dayCount == 3 && config.split == .fullBody {
+                XCTAssertThrowsError(try HypertrophyProgramJourney.build(
+                    dayCount: config.dayCount, split: config.split, plan: plan, ownerUserID: UUID(),
+                    firstPhaseStartDate: Date(timeIntervalSince1970: 0), context: context
+                )) { error in
+                    XCTAssertEqual(error as? HypertrophyGenerationError, .phaseNotYetRecovered(phaseType: .resensitization))
+                }
+                continue
+            }
 
             let results = try HypertrophyProgramJourney.build(
                 dayCount: config.dayCount, split: config.split, plan: plan, ownerUserID: UUID(),

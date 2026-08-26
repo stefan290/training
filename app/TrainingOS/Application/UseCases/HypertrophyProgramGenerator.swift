@@ -27,6 +27,13 @@ enum HypertrophyGenerationError: Error, Equatable {
     /// disappears, no day repeats" would be violated even though every
     /// individual group technically appears somewhere in the week.
     case duplicateDayFocus(dayNames: [String])
+    /// Stage 10R.2A: the day-focus-driven path (3-Day Full Body) has no
+    /// recovered source content for this phase yet — thrown rather than
+    /// silently falling back to another phase's content (the exact
+    /// pre-10R.2A bug this stage corrects) or fabricating placeholder
+    /// content. Only `.resensitization` currently throws this; `.basicHypertrophy`/
+    /// `.metaboliteFocus` both have real recovered content.
+    case phaseNotYetRecovered(phaseType: HypertrophyPhaseType)
 }
 
 /// One muscle group whose actual weekly exposure count (across the
@@ -77,14 +84,16 @@ enum HypertrophyProgramGenerator {
     /// cell-cited Mesocycle 1 "Basic Hypertrophy" content AND progression
     /// (source-compatible `.rmBased` load, the real 24-slot rating-pairing
     /// web, `SourceCompatibleDeloadStrategy`) recovered from
-    /// `3 day full body_Novice.xlsx`. One bump covers both slices' combined
-    /// change to this path's output shape (Slice 1A alone did not bump
-    /// this, a gap this bump also corrects) — every other configuration's
-    /// generated shape is completely unaffected by either slice. Existing
-    /// `ProgramDefinition`s keep whichever version they were generated
-    /// under (`generatorVersion` doc comment); only a newly-generated
-    /// definition receives version 2's content.
-    static let currentVersion = 2
+    /// `3 day full body_Novice.xlsx`. `3`: Stage 10R.2A — the day-focus
+    /// path is now phase-aware; `.metaboliteFocus` generates the real,
+    /// cell-cited Mesocycle 2 "Metabolite Focus" content (27 slots, the
+    /// superset mechanic, 0.75/0.6 load factors) instead of silently
+    /// reusing Mesocycle 1's content/factor regardless of phase (the
+    /// pre-10R.2A bug this stage corrects). Existing `ProgramDefinition`s
+    /// keep whichever version they were generated under (`generatorVersion`
+    /// doc comment); only a newly-generated definition receives the
+    /// current version's content.
+    static let currentVersion = 3
 
     /// The 3 non-deload weeks' multipliers of the *resolved* Week-1 value
     /// — identical across every Family A phase and (per
@@ -559,6 +568,31 @@ enum HypertrophyProgramGenerator {
         var sourceLabel: String
         var category: SourceHypertrophyCategory
         var weekOneSets: Int
+        /// Stage 10R.2A: Mesocycle 2's confirmed superset mechanic
+        /// (`3 day full body_Novice.xlsx`, cells `'Super set this
+        /// exercise'`/`'with this one'`) — `true` only for the 3
+        /// confirmed partner rows. Defaults to `false`, so
+        /// `threeDayFullBodyMesocycle1BasicHypertrophy` needs zero
+        /// changes. Governs 3 cell-confirmed things: the partner's own RM
+        /// tests at `metaboliteFocusPairedWeekOneFactor` (0.6) rather than
+        /// the phase's normal primary factor (0.75); the partner is
+        /// completely omitted from deload (its deload-week cells are
+        /// blank, not zero — `STAGE3_DECISION_MEMO.md` Decision A2); and
+        /// its rating-pairing target is the SAME external row its own
+        /// primary reads (`SourceRatingPairing`, not a new mechanism).
+        var isSupersetPartner: Bool = false
+        /// Stage 10R.2A: confirmed by direct formula trace that exactly
+        /// one of the 3 Mesocycle 2 superset partners (Pull Emphasis's
+        /// Biceps partner) does not cascade through its primary's later-
+        /// week values the way the other two do — its Week 2 value
+        /// (`=I38+(S16)`) is reused unchanged for Weeks 3 and 4 rather
+        /// than advancing. Mathematically identical to `AutoregulatedSetCount
+        /// .freezeAfterWeek`'s existing semantics (already proven for
+        /// Family C) — `1` (0-indexed weekIndex) pins this slot's set
+        /// count at whatever weekIndex 1 (Week 2) resolves to. `nil`
+        /// (default) for every other row, including the other 2 superset
+        /// partners, which cascade normally.
+        var freezeAfterWeek: Int? = nil
     }
 
     /// One real source training day — `sourceEmphasisName` is the literal
@@ -669,6 +703,105 @@ enum HypertrophyProgramGenerator {
         SourceRatingPairing(dayIndex: 2, slotIndex: 7, pairedDayIndex: 0, pairedSlotIndex: 6), // Hamstrings Isolation <- Push Hamstrings Isolation (row40<-row17)
     ]
 
+    // MARK: - Stage 10R.2A: real source content, Mesocycle 2 (Metabolite Focus)
+
+    /// Recovered verbatim from `3 day full body_Novice.xlsx`, sheet
+    /// "Mesocycle 2 Metabolite Focus," rows 11-19 (Push), 23-31 (Legs),
+    /// 35-43 (Pull) — the ONLY source of day/category truth for this
+    /// configuration's Mesocycle 2. Same day names, and largely the same
+    /// categories, as Mesocycle 1, but NOT copied from it — every row
+    /// below was independently read from the Mesocycle 2 sheet itself,
+    /// including its own Week-1 baseline sets (which differ from
+    /// Mesocycle 1's in several rows) and its own superset mechanic (3
+    /// pairs, one per day, cell-confirmed via `'Super set this
+    /// exercise'`/`'with this one'` markers — not present in Mesocycle 1
+    /// at all). Mesocycle 3 ("Resensitization") is out of this stage's
+    /// scope — see `HypertrophyGenerationError.phaseNotYetRecovered`.
+    static let threeDayFullBodyMesocycle2MetaboliteFocus: [SourceDay] = [
+        SourceDay(sourceEmphasisName: "Push Emphasis", categories: [
+            SourceCategorySlot(sourceLabel: "Horizontal Push", category: .horizontalPush, weekOneSets: 4),
+            SourceCategorySlot(sourceLabel: "Chest Isolation or Triceps", category: .chestIsolationOrTriceps, weekOneSets: 4),
+            SourceCategorySlot(sourceLabel: "Incline Push or Front Delts", category: .inclinePushOrFrontDelts, weekOneSets: 4, isSupersetPartner: true),
+            SourceCategorySlot(sourceLabel: "Incline Push or Front Delts", category: .inclinePushOrFrontDelts, weekOneSets: 4),
+            SourceCategorySlot(sourceLabel: "Side Delts", category: .sideDelts, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Vertical Pull", category: .verticalPull, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Horizontal Pull", category: .horizontalPull, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Hamstrings Isolation", category: .hamstringsIsolation, weekOneSets: 2),
+            SourceCategorySlot(sourceLabel: "Quads", category: .quads, weekOneSets: 2),
+        ]),
+        SourceDay(sourceEmphasisName: "Legs Emphasis", categories: [
+            SourceCategorySlot(sourceLabel: "Quads", category: .quads, weekOneSets: 4),
+            SourceCategorySlot(sourceLabel: "Quads", category: .quads, weekOneSets: 4),
+            SourceCategorySlot(sourceLabel: "Hamstrings Hip Hinge", category: .hamstringsHipHinge, weekOneSets: 4),
+            SourceCategorySlot(sourceLabel: "Side Delts", category: .sideDelts, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Side Delts", category: .sideDelts, weekOneSets: 3, isSupersetPartner: true),
+            SourceCategorySlot(sourceLabel: "Vertical Pull", category: .verticalPull, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Horizontal Pull", category: .horizontalPull, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Incline Push or Front Delts", category: .inclinePushOrFrontDelts, weekOneSets: 2),
+            SourceCategorySlot(sourceLabel: "Horizontal Push", category: .horizontalPush, weekOneSets: 2),
+        ]),
+        SourceDay(sourceEmphasisName: "Pull Emphasis", categories: [
+            SourceCategorySlot(sourceLabel: "Vertical Pull", category: .verticalPull, weekOneSets: 4),
+            SourceCategorySlot(sourceLabel: "Horizontal Pull", category: .horizontalPull, weekOneSets: 4),
+            SourceCategorySlot(sourceLabel: "Rear Delts or Side Delts", category: .rearOrSideDelts, weekOneSets: 4),
+            SourceCategorySlot(sourceLabel: "Biceps", category: .biceps, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Biceps", category: .biceps, weekOneSets: 3, isSupersetPartner: true, freezeAfterWeek: 1),
+            SourceCategorySlot(sourceLabel: "Horizontal Push", category: .horizontalPush, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Incline Push", category: .inclinePush, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Glutes", category: .glutes, weekOneSets: 2),
+            SourceCategorySlot(sourceLabel: "Hamstrings Isolation", category: .hamstringsIsolation, weekOneSets: 2),
+        ]),
+    ]
+
+    /// Stage 10R.2A: Mesocycle 2's real, fixed, authoring-time rating-
+    /// pairing web, recovered cell-by-cell from the same sheet — same
+    /// `(dayIndex, slotIndex)` convention as `threeDayFullBodyMesocycle1RatingPairings`,
+    /// indexing into `threeDayFullBodyMesocycle2MetaboliteFocus` itself.
+    /// Every superset partner's own pairing target is confirmed to be the
+    /// SAME external row its own primary reads (never its own,
+    /// independent rating column, and never a different target) — the
+    /// existing `PrescriptionTemplate.pairedSlot`/`SourceRatingPairing`
+    /// mechanism reproduces this exactly with no new architecture: giving
+    /// the partner an ordinary `.autoregulated` rule pointed at the same
+    /// external target its primary uses means the partner's resolved set
+    /// count is mathematically identical to (or, for the one frozen pair,
+    /// derived once from) the primary's own — never the partner's own
+    /// independent feedback.
+    static let threeDayFullBodyMesocycle2RatingPairings: [SourceRatingPairing] = [
+        // Push Emphasis (day 0), rows 11-19
+        SourceRatingPairing(dayIndex: 0, slotIndex: 0, pairedDayIndex: 1, pairedSlotIndex: 8), // Horizontal Push <- Legs Horizontal Push
+        SourceRatingPairing(dayIndex: 0, slotIndex: 1, pairedDayIndex: 1, pairedSlotIndex: 8), // Chest Isolation or Triceps <- Legs Horizontal Push
+        SourceRatingPairing(dayIndex: 0, slotIndex: 2, pairedDayIndex: 1, pairedSlotIndex: 8), // Incline Push or Front Delts (partner) <- same target as slot 1's own primary
+        SourceRatingPairing(dayIndex: 0, slotIndex: 3, pairedDayIndex: 1, pairedSlotIndex: 7), // Incline Push or Front Delts (standalone) <- Legs Incline Push or Front Delts
+        SourceRatingPairing(dayIndex: 0, slotIndex: 4, pairedDayIndex: 1, pairedSlotIndex: 3), // Side Delts <- Legs Side Delts
+        SourceRatingPairing(dayIndex: 0, slotIndex: 5, pairedDayIndex: 1, pairedSlotIndex: 5), // Vertical Pull <- Legs Vertical Pull
+        SourceRatingPairing(dayIndex: 0, slotIndex: 6, pairedDayIndex: 1, pairedSlotIndex: 6), // Horizontal Pull <- Legs Horizontal Pull
+        SourceRatingPairing(dayIndex: 0, slotIndex: 7, pairedDayIndex: 1, pairedSlotIndex: 2), // Hamstrings Isolation <- Legs Hamstrings Hip Hinge
+        SourceRatingPairing(dayIndex: 0, slotIndex: 8, pairedDayIndex: 1, pairedSlotIndex: 0), // Quads <- Legs Quads 1st
+
+        // Legs Emphasis (day 1), rows 23-31
+        SourceRatingPairing(dayIndex: 1, slotIndex: 0, pairedDayIndex: 0, pairedSlotIndex: 8), // Quads 1st <- Push Quads
+        SourceRatingPairing(dayIndex: 1, slotIndex: 1, pairedDayIndex: 0, pairedSlotIndex: 8), // Quads 2nd <- Push Quads
+        SourceRatingPairing(dayIndex: 1, slotIndex: 2, pairedDayIndex: 2, pairedSlotIndex: 8), // Hamstrings Hip Hinge <- Pull Hamstrings Isolation
+        SourceRatingPairing(dayIndex: 1, slotIndex: 3, pairedDayIndex: 2, pairedSlotIndex: 2), // Side Delts (primary) <- Pull Rear Delts or Side Delts
+        SourceRatingPairing(dayIndex: 1, slotIndex: 4, pairedDayIndex: 2, pairedSlotIndex: 2), // Side Delts (partner) <- same target as slot 3's own primary
+        SourceRatingPairing(dayIndex: 1, slotIndex: 5, pairedDayIndex: 2, pairedSlotIndex: 0), // Vertical Pull <- Pull Vertical Pull
+        SourceRatingPairing(dayIndex: 1, slotIndex: 6, pairedDayIndex: 2, pairedSlotIndex: 1), // Horizontal Pull <- Pull Horizontal Pull
+        SourceRatingPairing(dayIndex: 1, slotIndex: 7, pairedDayIndex: 2, pairedSlotIndex: 6), // Incline Push or Front Delts <- Pull Incline Push
+        SourceRatingPairing(dayIndex: 1, slotIndex: 8, pairedDayIndex: 2, pairedSlotIndex: 5), // Horizontal Push <- Pull Horizontal Push
+
+        // Pull Emphasis (day 2), rows 35-43
+        SourceRatingPairing(dayIndex: 2, slotIndex: 0, pairedDayIndex: 0, pairedSlotIndex: 5), // Vertical Pull <- Push Vertical Pull
+        SourceRatingPairing(dayIndex: 2, slotIndex: 1, pairedDayIndex: 0, pairedSlotIndex: 6), // Horizontal Pull <- Push Horizontal Pull
+        SourceRatingPairing(dayIndex: 2, slotIndex: 2, pairedDayIndex: 0, pairedSlotIndex: 4), // Rear Delts or Side Delts <- Push Side Delts
+        SourceRatingPairing(dayIndex: 2, slotIndex: 3, pairedDayIndex: 0, pairedSlotIndex: 5), // Biceps (primary) <- Push Vertical Pull
+        SourceRatingPairing(dayIndex: 2, slotIndex: 4, pairedDayIndex: 0, pairedSlotIndex: 5), // Biceps (partner) <- same target as slot 3's own primary
+        SourceRatingPairing(dayIndex: 2, slotIndex: 5, pairedDayIndex: 0, pairedSlotIndex: 0), // Horizontal Push <- Push Horizontal Push
+        SourceRatingPairing(dayIndex: 2, slotIndex: 6, pairedDayIndex: 0, pairedSlotIndex: 0), // Incline Push <- Push Horizontal Push
+        SourceRatingPairing(dayIndex: 2, slotIndex: 7, pairedDayIndex: 1, pairedSlotIndex: 2), // Glutes <- Legs Hamstrings Hip Hinge
+        SourceRatingPairing(dayIndex: 2, slotIndex: 8, pairedDayIndex: 0, pairedSlotIndex: 7), // Hamstrings Isolation <- Push Hamstrings Isolation
+    ]
+
     /// **TrainingOS execution-layer selection** (explicitly distinct from
     /// source content, per the Stage 10R.1 architecture) — which ONE of a
     /// category's several source-approved exercises this configuration
@@ -711,15 +844,38 @@ enum HypertrophyProgramGenerator {
         return try? context.fetch(descriptor).first
     }
 
+    /// Stage 10R.2A: the one place `generateDayFocusDriven` decides which
+    /// mesocycle's real content to generate — a typed switch over
+    /// `HypertrophyPhaseType`, never a week-index/display-string check.
+    /// `.resensitization` throws rather than falling back to another
+    /// phase's content or fabricating placeholder content — the exact
+    /// pre-10R.2A bug (this path silently reused Mesocycle 1's content/
+    /// factor "regardless of which `HypertrophyPhaseType` a caller
+    /// passes") this stage corrects.
+    private static func sourceContent(
+        for phaseType: HypertrophyPhaseType
+    ) throws -> (days: [SourceDay], pairings: [SourceRatingPairing]) {
+        switch phaseType {
+        case .basicHypertrophy:
+            return (threeDayFullBodyMesocycle1BasicHypertrophy, threeDayFullBodyMesocycle1RatingPairings)
+        case .metaboliteFocus:
+            return (threeDayFullBodyMesocycle2MetaboliteFocus, threeDayFullBodyMesocycle2RatingPairings)
+        case .resensitization:
+            throw HypertrophyGenerationError.phaseNotYetRecovered(phaseType: .resensitization)
+        }
+    }
+
     private static func generateDayFocusDriven(
         configuration: HypertrophyProgramConfiguration,
         provenance: ProgramProvenance,
         context: ModelContext
     ) throws -> ProgramDefinition {
+        let (days, pairings) = try sourceContent(for: configuration.phaseType)
+
         let definition = ProgramDefinition(
             name: "3-Day Full Body Hypertrophy — \(phaseName(configuration.phaseType))",
             lengthWeeks: 5,
-            intent: "\(phaseName(configuration.phaseType)), 3-day Full Body — Mesocycle 1 Basic Hypertrophy, recovered verbatim from the real source workbook (SOURCE_PROGRAM_MANIFEST.md §3)",
+            intent: "\(phaseName(configuration.phaseType)), 3-day Full Body — \(phaseName(configuration.phaseType)), recovered verbatim from the real source workbook (SOURCE_PROGRAM_MANIFEST.md §3)",
             programmingSystem: .hypertrophy,
             generatorVersion: currentVersion,
             provenance: provenance,
@@ -744,7 +900,7 @@ enum HypertrophyProgramGenerator {
         // per-day-local numbering.
         var templatesByDayIndex: [[PrescriptionTemplate]] = []
 
-        for day in threeDayFullBodyMesocycle1BasicHypertrophy {
+        for day in days {
             let session = TemplateSession(name: day.sourceEmphasisName, role: .hypertrophy)
             context.insert(session)
             definition.addTemplateSession(session)
@@ -757,7 +913,12 @@ enum HypertrophyProgramGenerator {
             var quadsSeenThisDay = 0
 
             for categorySlot in day.categories {
-                let template = makeSourceCategoryTemplate(baselineSets: categorySlot.weekOneSets)
+                let template = makeSourceCategoryTemplate(
+                    phaseType: configuration.phaseType,
+                    baselineSets: categorySlot.weekOneSets,
+                    isSupersetPartner: categorySlot.isSupersetPartner,
+                    freezeAfterWeek: categorySlot.freezeAfterWeek
+                )
                 let slot = ExerciseSlot(
                     name: categorySlot.sourceLabel,
                     allowedTargets: categorySlot.category.allowedTargets,
@@ -792,15 +953,19 @@ enum HypertrophyProgramGenerator {
             templatesByDayIndex.append(templatesThisDay)
         }
 
-        // Stage 10R.1 Slice 1B: wire every slot's real, fixed source
-        // rating-pairing target (`threeDayFullBodyMesocycle1RatingPairings`)
-        // — replaces Slice 1A's temporary self-reference. Each pairing is
-        // a structural, authoring-time `PrescriptionTemplate` reference
+        // Stage 10R.1 Slice 1B / Stage 10R.2A: wire every slot's real,
+        // fixed source rating-pairing target for whichever mesocycle
+        // `sourceContent(for:)` selected above. Each pairing is a
+        // structural, authoring-time `PrescriptionTemplate` reference
         // (Stage 3 decision A5), never re-derived from live training
         // history or from which exercise a slot happens to resolve to
         // (`SourceHypertrophyCategory` resolution is completely orthogonal
-        // to this table — Part 3 of the Slice 1B design).
-        for pairing in threeDayFullBodyMesocycle1RatingPairings {
+        // to this table — Part 3 of the Slice 1B design). A superset
+        // partner's pairing target is set exactly like any other row's —
+        // it happens to be the same external target its own primary uses
+        // (confirmed cell-by-cell), which is what makes its resolved set
+        // count track the primary's, with no separate mechanism needed.
+        for pairing in pairings {
             guard
                 templatesByDayIndex.indices.contains(pairing.dayIndex),
                 templatesByDayIndex[pairing.dayIndex].indices.contains(pairing.slotIndex),
@@ -815,40 +980,55 @@ enum HypertrophyProgramGenerator {
     }
 
     /// Builds one `PrescriptionTemplate`'s rules for the real, recovered
-    /// Mesocycle 1 "Basic Hypertrophy" source progression (Stage 10R.1
-    /// Slice 1B) — source-compatible `.rmBased` load (Week 1 = 10RM ×
-    /// 0.85, Weeks 2-4 = the resolved Week-1 value × the shared Family A
-    /// `laterWeekMultipliers`, both already-existing top-level constants
-    /// on this type — confirmed by direct trace to be the exact mechanism
-    /// `StrengthProgressionEngine.resolveWeight`'s `.rmBased` case already
-    /// implements), the literal fixed rep/failure schedule
-    /// (`repGoalSchedule`, also an existing top-level constant: `3/fail,
-    /// 3/fail, 2/fail, 1/fail`, identical for every one of the 24 real
-    /// slots), and autoregulated set count with
-    /// `treatMissingRatingAsNoChange: true` (Decision A — a blank source
-    /// rating is "no change," never `.calibrationRequired`, for this
-    /// program specifically). `weekOneFactor` is the literal `0.85`
-    /// Mesocycle-1-is-always-Basic-Hypertrophy factor
-    /// (`primaryWeekOneFactor(for: .basicHypertrophy)`) rather than
-    /// `configuration.phaseType`-dependent — this day-focus path only
-    /// ever generates Mesocycle 1's own content regardless of which
-    /// `HypertrophyPhaseType` a caller passes (Mesocycle 2/3 remain
-    /// unimplemented; see the Slice 1B design doc Part 9) — reading a
-    /// per-phase factor here would silently imply phase-switching support
-    /// that does not exist for this specific day-count/split path.
-    /// **Deliberately, explicitly unchanged from before this slice:** the
-    /// deload path (`SourceCompatibleDeloadStrategy`, reached automatically
-    /// once `loadRule` is `.rmBased`, never `.doubleProgression`) and every
+    /// source progression of whichever mesocycle `phaseType` selects
+    /// (Stage 10R.1 Slice 1B for Mesocycle 1, Stage 10R.2A for Mesocycle
+    /// 2) — source-compatible `.rmBased` load (Week 1 = 10RM × the
+    /// phase's own factor, Weeks 2-4 = the resolved Week-1 value × the
+    /// shared Family A `laterWeekMultipliers`, both already-existing
+    /// top-level constants on this type — confirmed by direct trace to be
+    /// the exact mechanism `StrengthProgressionEngine.resolveWeight`'s
+    /// `.rmBased` case already implements), the literal fixed rep/failure
+    /// schedule (`repGoalSchedule`, also an existing top-level constant:
+    /// `3/fail, 3/fail, 2/fail, 1/fail`, identical across both recovered
+    /// mesocycles and every slot in each), and autoregulated set count
+    /// with `treatMissingRatingAsNoChange: true` (Decision A — a blank
+    /// source rating is "no change," never `.calibrationRequired,"
+    /// confirmed identical Excel-arithmetic convention in both recovered
+    /// mesocycles).
+    ///
+    /// **Stage 10R.2A addition:** `isSupersetPartner`/`freezeAfterWeek`
+    /// (both default `false`/`nil`, so every Mesocycle 1 call site is
+    /// byte-for-byte unaffected) represent Mesocycle 2's confirmed
+    /// superset mechanic — a partner's own RM tests at
+    /// `metaboliteFocusPairedWeekOneFactor` (0.6) rather than the phase's
+    /// normal primary factor, off its own independently-entered RM
+    /// (never the primary's resolved weight — `LoadRule.rmBased`, never
+    /// `.linkedToPairedSlot`, for either row), and is completely omitted
+    /// from deload (`STAGE3_DECISION_MEMO.md` Decision A2 — the source's
+    /// own deload-week cells for these 3 rows are blank, not zero).
+    /// **Deliberately, explicitly unchanged:** the deload path
+    /// (`SourceCompatibleDeloadStrategy`, reached automatically once
+    /// `loadRule` is `.rmBased`, never `.doubleProgression`) and every
     /// other `StrengthProgressionRules` default.
-    private static func makeSourceCategoryTemplate(baselineSets: Int) -> PrescriptionTemplate {
-        PrescriptionTemplate(rules: StrengthProgressionRules(
+    private static func makeSourceCategoryTemplate(
+        phaseType: HypertrophyPhaseType,
+        baselineSets: Int,
+        isSupersetPartner: Bool = false,
+        freezeAfterWeek: Int? = nil
+    ) -> PrescriptionTemplate {
+        let weekOneFactor = isSupersetPartner ? metaboliteFocusPairedWeekOneFactor : primaryWeekOneFactor(for: phaseType)
+        return PrescriptionTemplate(rules: StrengthProgressionRules(
             loadRule: .rmBased(RMBasedLoad(
                 rmType: .rm10,
-                weekOneFactor: primaryWeekOneFactor(for: .basicHypertrophy),
+                weekOneFactor: weekOneFactor,
                 laterWeekMultipliers: laterWeekMultipliers
             )),
-            setCountRule: .autoregulated(AutoregulatedSetCount(baselineSets: baselineSets, treatMissingRatingAsNoChange: true)),
-            repGoalSchedule: repGoalSchedule
+            setCountRule: .autoregulated(AutoregulatedSetCount(
+                baselineSets: baselineSets, freezeAfterWeek: freezeAfterWeek, treatMissingRatingAsNoChange: true
+            )),
+            repGoalSchedule: repGoalSchedule,
+            deloadWeightAction: isSupersetPartner ? .omit : .standard,
+            deloadRepAction: isSupersetPartner ? .omit : .standard
         ))
     }
 }
