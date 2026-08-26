@@ -110,8 +110,21 @@ enum RollTacticalWindowUseCase {
             // generator) structurally unreachable in production — see
             // `STAGE10B6_HYPERTROPHY_PRESCRIPTION_REDESIGN.md` §12. Reads
             // the real, already-persisted flag instead of assuming.
+            //
+            // Stage 10R.4B defense-in-depth bounds guard
+            // (`STAGE10R4_TACTICAL_ROLLFORWARD_DESIGN.md` §3/§17): the
+            // real caller-side gate (`AdvanceTacticalWeekUseCase`/
+            // `TacticalWeekCompletion.canAdvanceTacticalWeek`) already
+            // never invokes `rollForward` once a component is exhausted
+            // — this guard exists only so a bug or a future caller that
+            // skips that gate fails safely (this component is simply
+            // skipped, `continue`) rather than fabricating a bogus week
+            // past the definition's own final, source-defined week. Never
+            // reached for any in-range call — behavior for every existing
+            // valid `weekIndex` is unchanged.
             let weeks = definition.orderedWeeks
-            let isDeload = weeks.indices.contains(weekIndex) ? weeks[weekIndex].isDeload : false
+            guard weeks.indices.contains(weekIndex) else { continue }
+            let isDeload = weeks[weekIndex].isDeload
 
             let sessions: [Session]
             switch system {

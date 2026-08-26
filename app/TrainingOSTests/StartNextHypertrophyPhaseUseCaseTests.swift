@@ -142,6 +142,38 @@ final class StartNextHypertrophyPhaseUseCaseTests: XCTestCase {
         return Fixture(plan: mesocycle1.plan, phase: transition.phase, instance: transition.instance, mix: mix, component: component, catalog: mesocycle1.catalog)
     }
 
+    /// Stage 10R.4A: `PhaseDetailViewModel.canStartNextHypertrophyPhase`
+    /// now requires the outgoing instance to be tactically EXHAUSTED
+    /// (`STAGE10R4_TACTICAL_ROLLFORWARD_DESIGN.md` §5/§16 — the
+    /// previously-existing gate, gated only on `!sessions.isEmpty`, let
+    /// the action appear after only Week 1 materialized). Walks
+    /// `instance` from wherever it currently is to real exhaustion using
+    /// only skips (Locked Decision 3 — terminal, zero fabricated
+    /// performance data) + the real, safe `AdvanceTacticalWeekUseCase`.
+    private func rollDate(afterWeekIndex weekIndex: Int) -> Date {
+        Calendar.current.date(byAdding: .day, value: (weekIndex + 1) * 7, to: startDate) ?? startDate
+    }
+
+    @discardableResult
+    private func skipToExhaustion(phase: TrainingPhase, instance: ProgramInstance) throws -> Int {
+        var rolls = 0
+        while !TacticalWeekCompletion.isInstanceExhausted(for: instance) {
+            guard let weekIndex = TacticalWeekCompletion.currentMaterializedWeekIndex(for: instance) else { break }
+            for session in ProgramWeekGrouping.realSessions(in: instance, forWeek: weekIndex) {
+                try ChangeSessionStatusUseCase.skip(session, modelContext: context)
+            }
+            let outcome = try AdvanceTacticalWeekUseCase.advance(
+                phase: phase, asOf: rollDate(afterWeekIndex: weekIndex), ownerUserID: ownerUserID, performanceProfile: nil,
+                availability: availability(),
+                materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>())),
+                context: context
+            )
+            guard outcome == .advanced else { break }
+            rolls += 1
+        }
+        return rolls
+    }
+
     // MARK: 21/22 — fresh calibration required; Mesocycle 1's does not satisfy Mesocycle 2
 
     func testTransitionRequiresFreshCalibrationNeverSatisfiedByMesocycleOnes() throws {
@@ -277,10 +309,11 @@ final class StartNextHypertrophyPhaseUseCaseTests: XCTestCase {
     /// on to never offer a repeat tap).
     func testPhaseDetailViewModelOffersAndPerformsTheRealTransition() throws {
         let fixture = try makeCalibratedMesocycle1()
+        try skipToExhaustion(phase: fixture.phase, instance: fixture.instance)
         let viewModel = PhaseDetailViewModel()
         viewModel.load(phase: fixture.phase, modelContext: context)
 
-        XCTAssertTrue(viewModel.canStartNextHypertrophyPhase, "a real, materialized Hypertrophy phase with a next mesocycle must offer the action")
+        XCTAssertTrue(viewModel.canStartNextHypertrophyPhase, "a real, TACTICALLY EXHAUSTED Hypertrophy phase with a next mesocycle must offer the action")
         XCTAssertEqual(viewModel.nextHypertrophyPhaseTypeLabel, "Metabolite Focus")
 
         XCTAssertTrue(viewModel.startNextHypertrophyPhase(modelContext: context), "the real transition must succeed")
@@ -300,10 +333,11 @@ final class StartNextHypertrophyPhaseUseCaseTests: XCTestCase {
     /// transition.
     func testPhaseDetailViewModelOffersAndPerformsTheRealMesocycleTwoToThreeTransition() throws {
         let fixture = try makeCalibratedMesocycle2()
+        try skipToExhaustion(phase: fixture.phase, instance: fixture.instance)
         let viewModel = PhaseDetailViewModel()
         viewModel.load(phase: fixture.phase, modelContext: context)
 
-        XCTAssertTrue(viewModel.canStartNextHypertrophyPhase, "a real, materialized Mesocycle 2 with a next mesocycle must offer the action")
+        XCTAssertTrue(viewModel.canStartNextHypertrophyPhase, "a real, TACTICALLY EXHAUSTED Mesocycle 2 with a next mesocycle must offer the action")
         XCTAssertEqual(viewModel.nextHypertrophyPhaseTypeLabel, "Resensitization")
 
         XCTAssertTrue(viewModel.startNextHypertrophyPhase(modelContext: context), "the real transition must succeed")

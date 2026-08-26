@@ -90,8 +90,36 @@ struct PhaseDetailView: View {
         }
 
         componentList
+        advanceTacticalWeekCard
         startNextHypertrophyPhaseCard
         nextPhaseCard
+    }
+
+    /// Stage 10R.4B: the smallest clear tactical-week-advancement action
+    /// — a single explicit button, never automatic
+    /// (`STAGE10R4_TACTICAL_ROLLFORWARD_DESIGN.md` Locked Decision 2).
+    /// Tapping it re-derives eligibility and rolls exactly once via
+    /// `AdvanceTacticalWeekUseCase` — never wired directly to
+    /// `RollTacticalWindowUseCase.rollForward`. No new screen: Today
+    /// naturally picks up the newly-scheduled Sessions once this view
+    /// reloads.
+    @ViewBuilder private var advanceTacticalWeekCard: some View {
+        if viewModel.canAdvanceTacticalWeek, let nextWeekNumber = viewModel.nextTacticalWeekNumber {
+            InfoCard(title: "NEXT WEEK") {
+                Text("Week \(nextWeekNumber - 1) complete.")
+                    .font(Theme.label)
+                    .foregroundStyle(Theme.textSecondary)
+                Button("Start Week \(nextWeekNumber)") {
+                    if viewModel.advanceTacticalWeek(modelContext: modelContext) {
+                        viewModel.load(phase: phase, modelContext: modelContext)
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Theme.primary)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 4)
+            }
+        }
     }
 
     /// Stage 10R.2B: the smallest clear transition action — a single

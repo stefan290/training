@@ -79,6 +79,19 @@ final class PhaseDetailViewModel {
     /// The next mesocycle's display name, for the action's own label —
     /// `nil` whenever `canStartNextHypertrophyPhase` is `false`.
     private(set) var nextHypertrophyPhaseTypeLabel: String?
+    /// Stage 10R.4B: `true` only when `TacticalWeekCompletion
+    /// .canAdvanceTacticalWeek(for:)` says every component this phase's
+    /// active mix would actually roll is itself ready — a purely derived
+    /// read, recomputed on every `load`, never a stored flag. This is
+    /// display/gating state only; `advanceTacticalWeek` below
+    /// independently re-derives the same thing at the moment it's
+    /// actually invoked (`AdvanceTacticalWeekUseCase`'s own contract),
+    /// so a stale read of this property can never cause a duplicate roll.
+    private(set) var canAdvanceTacticalWeek = false
+    /// 1-indexed display label for the button ("Start Week 2") — derived
+    /// from the primary instance's own current materialized week, `nil`
+    /// whenever `canAdvanceTacticalWeek` is `false`.
+    private(set) var nextTacticalWeekNumber: Int?
 
     func load(phase: TrainingPhase, modelContext: ModelContext) {
         self.phase = phase
@@ -148,16 +161,40 @@ final class PhaseDetailViewModel {
             upcomingComponentPreviews = []
         }
 
+        // Stage 10R.4A fix: previously gated only on `!sessions.isEmpty`
+        // ("has materialized at all"), which let a user reach "Start
+        // [next mesocycle]" the moment Week 1 alone existed — Weeks 2
+        // through deload never having been reached. Now requires the
+        // outgoing instance to be TACTICALLY EXHAUSTED (its final
+        // source-defined week is terminal) — a purely derived read, never
+        // a persisted status (Locked Decision 4).
         canStartNextHypertrophyPhase = false
         nextHypertrophyPhaseTypeLabel = nil
         if phase.status == .active, nextPhase == nil,
-           let primaryInstance = phase.primaryInstance, !primaryInstance.sessions.isEmpty,
+           let primaryInstance = phase.primaryInstance,
+           TacticalWeekCompletion.isInstanceExhausted(for: primaryInstance),
            activeComponents.first(where: { $0.priority == .primary })?.programmingSystem == .hypertrophy,
            let configuration = primaryInstance.programDefinition?.hypertrophyConfiguration,
            let currentIndex = HypertrophyProgramJourney.orderedPhaseTypes.firstIndex(of: configuration.phaseType),
            HypertrophyProgramJourney.orderedPhaseTypes.indices.contains(currentIndex + 1) {
             canStartNextHypertrophyPhase = true
             nextHypertrophyPhaseTypeLabel = Self.phaseTypeDisplayName(HypertrophyProgramJourney.orderedPhaseTypes[currentIndex + 1])
+        }
+
+        // Stage 10R.4B: the tactical week-advancement gate — see this
+        // property's own doc comment. Uses whichever mix `activeComponents`
+        // itself is already sourced from (selected, falling back to
+        // recommended), so this never disagrees with what's actually
+        // displayed above.
+        canAdvanceTacticalWeek = false
+        nextTacticalWeekNumber = nil
+        if phase.status == .active, let mix = selectedMix ?? recommendedMix,
+           TacticalWeekCompletion.canAdvanceTacticalWeek(for: mix) {
+            canAdvanceTacticalWeek = true
+            if let primaryInstance = phase.primaryInstance,
+               let currentWeekIndex = TacticalWeekCompletion.currentMaterializedWeekIndex(for: primaryInstance) {
+                nextTacticalWeekNumber = currentWeekIndex + 2 // 1-indexed display, one past the current (also 1-indexed) week
+            }
         }
     }
 
@@ -191,6 +228,35 @@ final class PhaseDetailViewModel {
             )
             try? modelContext.save()
             return true
+        } catch {
+            return false
+        }
+    }
+
+    /// Stage 10R.4B: the second deliberate write this ViewModel
+    /// performs — same discipline as `startNextHypertrophyPhase` above
+    /// (never called by `load`, only in direct response to an explicit
+    /// user tap). Delegates entirely to `AdvanceTacticalWeekUseCase`,
+    /// which re-derives eligibility from persisted state itself — this
+    /// method's own `canAdvanceTacticalWeek` read is only ever used to
+    /// decide whether to SHOW the button, never trusted as proof it's
+    /// still safe to actually roll.
+    @discardableResult
+    func advanceTacticalWeek(modelContext: ModelContext) -> Bool {
+        guard let phase, let primaryInstance = phase.primaryInstance else { return false }
+        let candidates = (try? modelContext.fetch(FetchDescriptor<Exercise>())) ?? []
+        do {
+            let outcome = try AdvanceTacticalWeekUseCase.advance(
+                phase: phase, asOf: Date(), ownerUserID: primaryInstance.ownerUserID,
+                performanceProfile: nil,
+                availability: UserAvailability(trainingDaysPerWeek: 7, allowsDoubleSessions: false, maxSessionsPerDay: 1),
+                materializationContext: TacticalMaterializationContext(
+                    equipmentProfile: EquipmentProfile(equipmentType: .barbell, smallestIncrementKg: 2.5),
+                    strengthCandidateExercises: candidates
+                ),
+                context: modelContext
+            )
+            return outcome == .advanced
         } catch {
             return false
         }
