@@ -88,6 +88,7 @@
 		4293F3B083F9E4CF85A24735 /* StrengthSetPresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DABBE258B9472550BED14A43 /* StrengthSetPresentationTests.swift */; };
 		EDA58732290FD9AF1CEAF8A0 /* HypertrophyMesocycle2SourceProgressionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BE04BE2E8B314B81F435915 /* HypertrophyMesocycle2SourceProgressionTests.swift */; };
 		3FF71F3B9BD74912835D298D /* StartNextHypertrophyPhaseUseCaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00E5F7846FA8AACD0B76D502 /* StartNextHypertrophyPhaseUseCaseTests.swift */; };
+		816A417D6660A1081FD79B18 /* HypertrophyMesocycle3SourceProgressionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14D0F75E7B7120940149AC07 /* HypertrophyMesocycle3SourceProgressionTests.swift */; };
 		3FDDAAFBAC984F749D9A6209 /* LogSetUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35CBF47813A240BD8386EC7F /* LogSetUseCase.swift */; };
 		401D1E6865FD462CA64C4040 /* FunctionalFitnessStimulusValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3074468F2262484EBDC8FA65 /* FunctionalFitnessStimulusValidator.swift */; };
 		40FF4EC2955E9A470AFFA219 /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49DE4515B6FEC3892FBABD84 /* UserProfile.swift */; };
@@ -592,6 +593,7 @@
 		D098DAEF3C214A069AE21CA9 /* MultiExerciseExecutionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MultiExerciseExecutionTests.swift; path = MultiExerciseExecutionTests.swift; sourceTree = "<group>"; };
 		DABBE258B9472550BED14A43 /* StrengthSetPresentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = StrengthSetPresentationTests.swift; path = StrengthSetPresentationTests.swift; sourceTree = "<group>"; };
 		2BE04BE2E8B314B81F435915 /* HypertrophyMesocycle2SourceProgressionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HypertrophyMesocycle2SourceProgressionTests.swift; path = HypertrophyMesocycle2SourceProgressionTests.swift; sourceTree = "<group>"; };
+		14D0F75E7B7120940149AC07 /* HypertrophyMesocycle3SourceProgressionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HypertrophyMesocycle3SourceProgressionTests.swift; path = HypertrophyMesocycle3SourceProgressionTests.swift; sourceTree = "<group>"; };
 		00E5F7846FA8AACD0B76D502 /* StartNextHypertrophyPhaseUseCaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = StartNextHypertrophyPhaseUseCaseTests.swift; path = StartNextHypertrophyPhaseUseCaseTests.swift; sourceTree = "<group>"; };
 		D1720DD3AB5743FFB9F2AD0E /* ChangeSessionStatusUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChangeSessionStatusUseCase.swift; path = ChangeSessionStatusUseCase.swift; sourceTree = "<group>"; };
 		D313C63745C1473A938DB863 /* FunctionalFitnessStressProfileMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FunctionalFitnessStressProfileMapper.swift; path = FunctionalFitnessStressProfileMapper.swift; sourceTree = "<group>"; };
@@ -1001,6 +1003,7 @@
 				D098DAEF3C214A069AE21CA9 /* MultiExerciseExecutionTests.swift */,
 				DABBE258B9472550BED14A43 /* StrengthSetPresentationTests.swift */,
 				2BE04BE2E8B314B81F435915 /* HypertrophyMesocycle2SourceProgressionTests.swift */,
+				14D0F75E7B7120940149AC07 /* HypertrophyMesocycle3SourceProgressionTests.swift */,
 				00E5F7846FA8AACD0B76D502 /* StartNextHypertrophyPhaseUseCaseTests.swift */,
 				B05E126C771B4BA4B3E27692 /* WeekViewModelTests.swift */,
 				DF3AD5B7F198450890ABC119 /* PlanHierarchyTests.swift */,
@@ -1322,6 +1325,7 @@
 				3FD3ADCC73FC49D99F349587 /* MultiExerciseExecutionTests.swift in Sources */,
 				4293F3B083F9E4CF85A24735 /* StrengthSetPresentationTests.swift in Sources */,
 				EDA58732290FD9AF1CEAF8A0 /* HypertrophyMesocycle2SourceProgressionTests.swift in Sources */,
+				816A417D6660A1081FD79B18 /* HypertrophyMesocycle3SourceProgressionTests.swift in Sources */,
 				3FF71F3B9BD74912835D298D /* StartNextHypertrophyPhaseUseCaseTests.swift in Sources */,
 				764FBE9822C941AAB6AF78E2 /* WeekViewModelTests.swift in Sources */,
 				94B16BD5E84E43A89CEC8290 /* PlanHierarchyTests.swift in Sources */,

@@ -44,29 +44,18 @@ final class HypertrophyBuiltInLibraryTests: XCTestCase {
     /// (`V1_PROGRAM_LIBRARY.md`'s own statement), same `{dayCount,split}`
     /// throughout.
     ///
-    /// **Stage 10R.2A exception:** 3-Day Full Body's day-focus-driven
-    /// path now has real recovered source content for Mesocycle 1/2, and
-    /// correctly throws `HypertrophyGenerationError.phaseNotYetRecovered`
-    /// for Mesocycle 3 rather than silently reusing another phase's
-    /// content (the exact pre-10R.2A bug this stage corrects) — so this
-    /// one configuration genuinely cannot build a full 3-phase journey
-    /// yet, proven by asserting the throw rather than skipped silently.
-    /// The other 5 configurations are unaffected (legacy generator path,
-    /// unchanged) and still build all 3 phases.
+    /// **Stage 10R.3A update:** 3-Day Full Body's day-focus-driven path
+    /// now has real recovered source content for all 3 mesocycles
+    /// (Mesocycle 3 "Resensitization" landed in Stage 10R.3A), so this
+    /// configuration now builds a full 3-phase journey exactly like the
+    /// other 5 — the Stage 10R.2A-era `XCTAssertThrowsError` branch this
+    /// test used to have (proving the honest `phaseNotYetRecovered` throw
+    /// while Mesocycle 3 was unrecovered) is removed; a single assertion
+    /// path now covers all 6 configurations.
     func testEveryBuiltInConfigurationBuildsAFullThreePhaseJourney() throws {
         for config in HypertrophyBuiltInLibrary.all {
             let plan = TrainingPlan(status: .active)
             context.insert(plan)
-
-            if config.dayCount == 3 && config.split == .fullBody {
-                XCTAssertThrowsError(try HypertrophyProgramJourney.build(
-                    dayCount: config.dayCount, split: config.split, plan: plan, ownerUserID: UUID(),
-                    firstPhaseStartDate: Date(timeIntervalSince1970: 0), context: context
-                )) { error in
-                    XCTAssertEqual(error as? HypertrophyGenerationError, .phaseNotYetRecovered(phaseType: .resensitization))
-                }
-                continue
-            }
 
             let results = try HypertrophyProgramJourney.build(
                 dayCount: config.dayCount, split: config.split, plan: plan, ownerUserID: UUID(),

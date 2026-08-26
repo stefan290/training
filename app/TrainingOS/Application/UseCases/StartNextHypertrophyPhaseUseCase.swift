@@ -84,10 +84,7 @@ enum StartNextHypertrophyPhaseUseCase {
         )
         let nextDefinition = try HypertrophyProgramGenerator.generate(
             configuration: nextConfiguration,
-            provenance: .sourced(
-                file: "3 day full body_Novice.xlsx", sheet: "Mesocycle 2 Metabolite Focus",
-                cell: "rows 11-19, 23-31, 35-43"
-            ),
+            provenance: sourceProvenance(for: nextPhaseType),
             context: context
         )
 
@@ -112,7 +109,7 @@ enum StartNextHypertrophyPhaseUseCase {
         // exact same deterministic resolution a brand-new instance
         // already uses — never a TrainingOS-invented substitute
         // presented as source content.
-        carryForwardExerciseSelections(from: previousInstance, to: nextDefinition)
+        carryForwardExerciseSelections(from: previousInstance, to: nextDefinition, previousPhaseType: previousConfiguration.phaseType)
         ResolveProgramInstanceExerciseSlotsUseCase.resolve(
             definition: nextDefinition, candidateExercises: materializationContext.strengthCandidateExercises
         )
@@ -156,6 +153,28 @@ enum StartNextHypertrophyPhaseUseCase {
             )
         }
         return Result(phase: nextPhase, instance: nextInstance, awaitingCalibration: false)
+    }
+
+    /// Stage 10R.3B: the correct source citation for whichever mesocycle
+    /// `phaseType` names — corrects the Stage 10R.2B version, which
+    /// hardcoded Mesocycle 2's own sheet name here regardless of which
+    /// phase was actually being started (harmless while Mesocycle 2 was
+    /// the only reachable next phase, but wrong in principle, and a real
+    /// bug once Mesocycle 3 became reachable —
+    /// `STAGE10R3_MESOCYCLE3_SOURCE_RECOVERY_DESIGN.md` §12/§17).
+    /// `.basicHypertrophy` is unreachable in practice (Mesocycle 1 is
+    /// always the plan's first phase, built by `HypertrophyProgramJourney
+    /// .build`, never by this use case) but included for switch
+    /// exhaustiveness and future-proofing rather than a `fatalError`.
+    private static func sourceProvenance(for phaseType: HypertrophyPhaseType) -> ProgramProvenance {
+        switch phaseType {
+        case .basicHypertrophy:
+            return .sourced(file: "3 day full body_Novice.xlsx", sheet: "Mesocycle 1 Basic Hypertrophy", cell: "rows 10-40")
+        case .metaboliteFocus:
+            return .sourced(file: "3 day full body_Novice.xlsx", sheet: "Mesocycle 2 Metabolite Focus", cell: "rows 11-19, 23-31, 35-43")
+        case .resensitization:
+            return .sourced(file: "3 day full body_Novice.xlsx", sheet: "Mesocycle 3 Resensitization", cell: "rows 11-17, 21-27, 31-38")
+        }
     }
 
     /// Idempotency guard's lookup — a phase in `plan` whose primary
@@ -232,7 +251,64 @@ enum StartNextHypertrophyPhaseUseCase {
         CarryForwardMapping(fromDayIndex: 2, fromSlotIndex: 7, toDayIndex: 2, toSlotIndex: 8), // Hamstrings Isolation
     ]
 
-    private static func carryForwardExerciseSelections(from previousInstance: ProgramInstance, to nextDefinition: ProgramDefinition) {
+    /// Stage 10R.3B: the literal, authored `(previous slot) -> (next
+    /// slot)` correspondence for 3-Day Full Body Mesocycle 2 -> Mesocycle
+    /// 3 — a genuinely NEW table, not `threeDayFullBodyMesocycle1ToMesocycle2`
+    /// reused, because Mesocycle 3 has a different slot count/shape (22,
+    /// not 24 or 27) and drops "Chest Isolation or Triceps" entirely
+    /// (`STAGE10R3_MESOCYCLE3_SOURCE_RECOVERY_DESIGN.md` §10/§14). Every
+    /// Mesocycle-2-only row — the 3 superset partners, "Chest Isolation or
+    /// Triceps," and the 2nd Legs-day Quads occurrence (Mesocycle 3 has
+    /// only 1) — has no Mesocycle-3 equivalent and is intentionally left
+    /// unmapped here, falling through to the same deterministic
+    /// resolution a fresh instance already uses, exactly like
+    /// Mesocycle 1 -> 2's own unmapped rows already do.
+    private static let threeDayFullBodyMesocycle2ToMesocycle3: [CarryForwardMapping] = [
+        // Push Emphasis
+        CarryForwardMapping(fromDayIndex: 0, fromSlotIndex: 0, toDayIndex: 0, toSlotIndex: 0), // Horizontal Push
+        CarryForwardMapping(fromDayIndex: 0, fromSlotIndex: 3, toDayIndex: 0, toSlotIndex: 1), // Incline Push or Front Delts (standalone, not the M2 superset partner)
+        CarryForwardMapping(fromDayIndex: 0, fromSlotIndex: 4, toDayIndex: 0, toSlotIndex: 2), // Side Delts
+        CarryForwardMapping(fromDayIndex: 0, fromSlotIndex: 5, toDayIndex: 0, toSlotIndex: 3), // Vertical Pull
+        CarryForwardMapping(fromDayIndex: 0, fromSlotIndex: 6, toDayIndex: 0, toSlotIndex: 4), // Horizontal Pull
+        CarryForwardMapping(fromDayIndex: 0, fromSlotIndex: 7, toDayIndex: 0, toSlotIndex: 5), // Hamstrings Isolation
+        CarryForwardMapping(fromDayIndex: 0, fromSlotIndex: 8, toDayIndex: 0, toSlotIndex: 6), // Quads
+
+        // Legs Emphasis
+        CarryForwardMapping(fromDayIndex: 1, fromSlotIndex: 0, toDayIndex: 1, toSlotIndex: 0), // Quads (1st occurrence — M3 has only 1)
+        CarryForwardMapping(fromDayIndex: 1, fromSlotIndex: 2, toDayIndex: 1, toSlotIndex: 1), // Hamstrings Hip Hinge
+        CarryForwardMapping(fromDayIndex: 1, fromSlotIndex: 3, toDayIndex: 1, toSlotIndex: 2), // Side Delts (standalone/primary, not the M2 superset partner)
+        CarryForwardMapping(fromDayIndex: 1, fromSlotIndex: 5, toDayIndex: 1, toSlotIndex: 3), // Vertical Pull
+        CarryForwardMapping(fromDayIndex: 1, fromSlotIndex: 6, toDayIndex: 1, toSlotIndex: 4), // Horizontal Pull
+        CarryForwardMapping(fromDayIndex: 1, fromSlotIndex: 7, toDayIndex: 1, toSlotIndex: 5), // Incline Push or Front Delts
+        CarryForwardMapping(fromDayIndex: 1, fromSlotIndex: 8, toDayIndex: 1, toSlotIndex: 6), // Horizontal Push
+
+        // Pull Emphasis
+        CarryForwardMapping(fromDayIndex: 2, fromSlotIndex: 0, toDayIndex: 2, toSlotIndex: 0), // Vertical Pull
+        CarryForwardMapping(fromDayIndex: 2, fromSlotIndex: 1, toDayIndex: 2, toSlotIndex: 1), // Horizontal Pull
+        CarryForwardMapping(fromDayIndex: 2, fromSlotIndex: 2, toDayIndex: 2, toSlotIndex: 2), // Rear Delts or Side Delts
+        CarryForwardMapping(fromDayIndex: 2, fromSlotIndex: 3, toDayIndex: 2, toSlotIndex: 3), // Biceps (standalone/primary, not the M2 superset partner)
+        CarryForwardMapping(fromDayIndex: 2, fromSlotIndex: 5, toDayIndex: 2, toSlotIndex: 4), // Horizontal Push
+        CarryForwardMapping(fromDayIndex: 2, fromSlotIndex: 6, toDayIndex: 2, toSlotIndex: 5), // Incline Push
+        CarryForwardMapping(fromDayIndex: 2, fromSlotIndex: 7, toDayIndex: 2, toSlotIndex: 6), // Glutes
+        CarryForwardMapping(fromDayIndex: 2, fromSlotIndex: 8, toDayIndex: 2, toSlotIndex: 7), // Hamstrings Isolation
+    ]
+
+    /// Stage 10R.3B: which authored table applies to a `previous ->
+    /// next` transition — selected by the PREVIOUS phase's type, since
+    /// that's whose slot layout the `fromDayIndex`/`fromSlotIndex` side of
+    /// each mapping indexes into. `.resensitization` returns `[]`
+    /// (unreachable in practice — `start()` already throws `.noNextPhase`
+    /// before this point once Mesocycle 3 has no successor — included for
+    /// exhaustiveness, not a silent guess at a 4th mesocycle's mapping).
+    private static func carryForwardMapping(fromPreviousPhaseType phaseType: HypertrophyPhaseType) -> [CarryForwardMapping] {
+        switch phaseType {
+        case .basicHypertrophy: return threeDayFullBodyMesocycle1ToMesocycle2
+        case .metaboliteFocus: return threeDayFullBodyMesocycle2ToMesocycle3
+        case .resensitization: return []
+        }
+    }
+
+    private static func carryForwardExerciseSelections(from previousInstance: ProgramInstance, to nextDefinition: ProgramDefinition, previousPhaseType: HypertrophyPhaseType) {
         guard let previousDefinition = previousInstance.programDefinition else { return }
         let previousSlotsByDay = previousDefinition.orderedTemplateSessions.map { session in
             session.orderedBlockTemplates.flatMap(\.orderedPrescriptionTemplates).compactMap(\.exerciseSlot)
@@ -241,7 +317,7 @@ enum StartNextHypertrophyPhaseUseCase {
             session.orderedBlockTemplates.flatMap(\.orderedPrescriptionTemplates).compactMap(\.exerciseSlot)
         }
 
-        for mapping in threeDayFullBodyMesocycle1ToMesocycle2 {
+        for mapping in carryForwardMapping(fromPreviousPhaseType: previousPhaseType) {
             guard
                 previousSlotsByDay.indices.contains(mapping.fromDayIndex),
                 previousSlotsByDay[mapping.fromDayIndex].indices.contains(mapping.fromSlotIndex),

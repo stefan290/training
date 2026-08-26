@@ -108,6 +108,40 @@ final class StartNextHypertrophyPhaseUseCaseTests: XCTestCase {
         return Fixture(plan: plan, phase: phase, instance: instance, mix: mix, component: component, catalog: catalog)
     }
 
+    /// Stage 10R.3B: real Mesocycle 1 -> Mesocycle 2 -> a real, calibrated,
+    /// materialized Mesocycle 2 — the fixture the M2 -> M3 transition
+    /// tests below build on, exactly mirroring `makeCalibratedMesocycle1`'s
+    /// own discipline one mesocycle later.
+    @discardableResult
+    private func makeCalibratedMesocycle2() throws -> Fixture {
+        let mesocycle1 = try makeCalibratedMesocycle1()
+        let transition = try StartNextHypertrophyPhaseUseCase.start(
+            previousPhase: mesocycle1.phase, previousInstance: mesocycle1.instance, asOf: startDate,
+            ownerUserID: ownerUserID, availability: availability(),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>())),
+            context: context
+        )
+        XCTAssertTrue(transition.awaitingCalibration, "precondition: Mesocycle 2 requires fresh calibration")
+        for requirement in RequiredSourceCalibrationsUseCase.stillRequired(for: try XCTUnwrap(transition.instance.programDefinition), instance: transition.instance) {
+            RecordSourceRMCalibrationUseCase.record(exercise: requirement.exercise, rmType: requirement.rmType, kilograms: 90, for: transition.instance, modelContext: context)
+        }
+        try context.save()
+        XCTAssertTrue(RequiredSourceCalibrationsUseCase.stillRequired(for: try XCTUnwrap(transition.instance.programDefinition), instance: transition.instance).isEmpty)
+
+        _ = try StartPhaseUseCase.materializeOnceCalibrationComplete(
+            component: try XCTUnwrap(transition.instance.trainingMixComponents.first),
+            instance: transition.instance, phase: transition.phase, mix: try XCTUnwrap(transition.instance.trainingMixComponents.first?.trainingMix),
+            asOf: startDate, ownerUserID: ownerUserID, performanceProfile: nil, availability: availability(),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>())),
+            context: context
+        )
+        XCTAssertFalse(transition.instance.sessions.isEmpty, "precondition: Mesocycle 2 Week 1 really materialized")
+
+        let component = try XCTUnwrap(transition.instance.trainingMixComponents.first)
+        let mix = try XCTUnwrap(component.trainingMix)
+        return Fixture(plan: mesocycle1.plan, phase: transition.phase, instance: transition.instance, mix: mix, component: component, catalog: mesocycle1.catalog)
+    }
+
     // MARK: 21/22 — fresh calibration required; Mesocycle 1's does not satisfy Mesocycle 2
 
     func testTransitionRequiresFreshCalibrationNeverSatisfiedByMesocycleOnes() throws {
@@ -256,6 +290,30 @@ final class StartNextHypertrophyPhaseUseCaseTests: XCTestCase {
         XCTAssertFalse(viewModel.canStartNextHypertrophyPhase, "hidden after a successful transition — the UI's own idempotency signal")
     }
 
+    /// Stage 10R.3B: the same honest substitute as
+    /// `testPhaseDetailViewModelOffersAndPerformsTheRealTransition`
+    /// (this file's own top-level note on the sandbox's lack of UI-tap
+    /// automation applies identically here), one mesocycle later — proves
+    /// the ViewModel correctly offers "Start Resensitization" (not a
+    /// stale "Start Metabolite Focus" label) once a real, calibrated
+    /// Mesocycle 2 exists, and that tapping it performs the real M2 -> M3
+    /// transition.
+    func testPhaseDetailViewModelOffersAndPerformsTheRealMesocycleTwoToThreeTransition() throws {
+        let fixture = try makeCalibratedMesocycle2()
+        let viewModel = PhaseDetailViewModel()
+        viewModel.load(phase: fixture.phase, modelContext: context)
+
+        XCTAssertTrue(viewModel.canStartNextHypertrophyPhase, "a real, materialized Mesocycle 2 with a next mesocycle must offer the action")
+        XCTAssertEqual(viewModel.nextHypertrophyPhaseTypeLabel, "Resensitization")
+
+        XCTAssertTrue(viewModel.startNextHypertrophyPhase(modelContext: context), "the real transition must succeed")
+        XCTAssertEqual(fixture.plan.orderedPhases.count, 3, "the real StartNextHypertrophyPhaseUseCase actually ran")
+
+        viewModel.load(phase: fixture.phase, modelContext: context)
+        XCTAssertFalse(viewModel.canStartNextHypertrophyPhase, "hidden after a successful transition — Mesocycle 3 has no successor")
+        XCTAssertNil(viewModel.nextHypertrophyPhaseTypeLabel)
+    }
+
     // MARK: 27/28 — idempotent; only one Mesocycle-2 ProgramInstance created
 
     func testTransitionIsIdempotentOnlyOneMesocycleTwoInstanceEverCreated() throws {
@@ -336,5 +394,174 @@ final class StartNextHypertrophyPhaseUseCaseTests: XCTestCase {
         let day1 = try XCTUnwrap(transition.instance.sessions.first { $0.name == "Push Emphasis" })
         let prescriptions = day1.orderedBlocks.flatMap(\.orderedPrescriptions)
         XCTAssertEqual(prescriptions.count, 9, "the real recovered Mesocycle 2 Day 1 (9 slots, including the superset partner)")
+    }
+
+    // MARK: Stage 10R.3B — Mesocycle 2 -> Mesocycle 3 transition
+
+    func testMesocycle2ToMesocycle3TransitionRequiresFreshCalibrationNeverSatisfiedByEarlierMesocycles() throws {
+        let fixture = try makeCalibratedMesocycle2()
+
+        let result = try StartNextHypertrophyPhaseUseCase.start(
+            previousPhase: fixture.phase, previousInstance: fixture.instance, asOf: startDate,
+            ownerUserID: ownerUserID, availability: availability(),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>())),
+            context: context
+        )
+
+        XCTAssertTrue(result.awaitingCalibration, "Mesocycle 3 requires fresh RM — never satisfied by Mesocycle 1 or 2's own calibration rows")
+        XCTAssertTrue(result.instance.sessions.isEmpty, "materialization must be deferred until fresh calibration is entered")
+        let nextDefinition = try XCTUnwrap(result.instance.programDefinition)
+        XCTAssertEqual(nextDefinition.hypertrophyConfiguration?.phaseType, .resensitization)
+        XCTAssertFalse(RequiredSourceCalibrationsUseCase.stillRequired(for: nextDefinition, instance: result.instance).isEmpty)
+    }
+
+    /// Stage 10R.3B: provenance is now phase-aware — proves the Mesocycle
+    /// 3 instance's generated `ProgramDefinition` cites the real
+    /// Mesocycle 3 sheet, not the Mesocycle 2 sheet this use case
+    /// previously hardcoded regardless of which phase was being started.
+    func testMesocycle3ProvenanceCitesItsOwnSheetNotMesocycleTwos() throws {
+        let fixture = try makeCalibratedMesocycle2()
+        let result = try StartNextHypertrophyPhaseUseCase.start(
+            previousPhase: fixture.phase, previousInstance: fixture.instance, asOf: startDate,
+            ownerUserID: ownerUserID, availability: availability(),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>())),
+            context: context
+        )
+        let nextDefinition = try XCTUnwrap(result.instance.programDefinition)
+        guard case .sourced(let file, let sheet, _) = nextDefinition.provenance else {
+            return XCTFail("expected .sourced provenance")
+        }
+        XCTAssertEqual(file, "3 day full body_Novice.xlsx")
+        XCTAssertEqual(sheet, "Mesocycle 3 Resensitization", "must never cite Mesocycle 2's sheet for a Mesocycle 3 instance")
+    }
+
+    func testMesocycle2ToMesocycle3CarryForwardUsesTheDedicatedMappingAndNeverTheM1ToM2Table() throws {
+        let fixture = try makeCalibratedMesocycle2()
+        let pushDay = try XCTUnwrap(fixture.instance.programDefinition?.orderedTemplateSessions.first { $0.name == "Push Emphasis" })
+        let horizontalPushSlot = try XCTUnwrap(pushDay.orderedBlockTemplates.flatMap(\.orderedPrescriptionTemplates).first { $0.exerciseSlot?.name == "Horizontal Push" }?.exerciseSlot)
+        let originalExercise = try XCTUnwrap(SubstituteExerciseUseCase.resolvedExercise(for: horizontalPushSlot, in: fixture.instance))
+        XCTAssertEqual(originalExercise.canonicalName, "Barbell Bench Press", "precondition: the deterministic Mesocycle 2 default")
+
+        let result = try StartNextHypertrophyPhaseUseCase.start(
+            previousPhase: fixture.phase, previousInstance: fixture.instance, asOf: startDate,
+            ownerUserID: ownerUserID, availability: availability(),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>())),
+            context: context
+        )
+
+        let nextDefinition = try XCTUnwrap(result.instance.programDefinition)
+        XCTAssertEqual(nextDefinition.orderedTemplateSessions.flatMap { $0.orderedBlockTemplates.flatMap(\.orderedPrescriptionTemplates) }.count, 22, "Mesocycle 3's real 22-slot structure")
+
+        let nextPushDay = try XCTUnwrap(nextDefinition.orderedTemplateSessions.first { $0.name == "Push Emphasis" })
+        let nextHorizontalPushSlot = try XCTUnwrap(nextPushDay.orderedBlockTemplates.flatMap(\.orderedPrescriptionTemplates).first { $0.exerciseSlot?.name == "Horizontal Push" }?.exerciseSlot)
+        XCTAssertEqual(nextHorizontalPushSlot.resolvedExercise?.canonicalName, "Barbell Bench Press", "the athlete's actual Mesocycle 2 exercise carries forward via the dedicated M2->M3 table")
+    }
+
+    /// Proves the M2-only rows (the 3 superset partners, "Chest Isolation
+    /// or Triceps," and the 2nd Legs-day Quads occurrence) never create a
+    /// phantom Mesocycle 3 slot or leak a leftover selection — they simply
+    /// have no mapping entry, and Mesocycle 3 genuinely has fewer/different
+    /// slots than Mesocycle 2.
+    func testDroppedAndMesocycleTwoOnlyRowsDoNotLeakIntoMesocycleThree() throws {
+        let fixture = try makeCalibratedMesocycle2()
+        let result = try StartNextHypertrophyPhaseUseCase.start(
+            previousPhase: fixture.phase, previousInstance: fixture.instance, asOf: startDate,
+            ownerUserID: ownerUserID, availability: availability(),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>())),
+            context: context
+        )
+        let nextDefinition = try XCTUnwrap(result.instance.programDefinition)
+        XCTAssertFalse(
+            nextDefinition.orderedTemplateSessions.contains { session in
+                session.orderedBlockTemplates.flatMap(\.orderedPrescriptionTemplates).contains { $0.exerciseSlot?.name == "Chest Isolation or Triceps" }
+            },
+            "the dropped Mesocycle-2-only category must never reappear in Mesocycle 3"
+        )
+        let nextLegsDay = try XCTUnwrap(nextDefinition.orderedTemplateSessions.first { $0.name == "Legs Emphasis" })
+        let quadsSlots = nextLegsDay.orderedBlockTemplates.flatMap(\.orderedPrescriptionTemplates).filter { $0.exerciseSlot?.name == "Quads" }
+        XCTAssertEqual(quadsSlots.count, 1, "Mesocycle 3's Legs day has exactly 1 Quads slot, never Mesocycle 2's 2")
+        XCTAssertNotNil(quadsSlots.first?.exerciseSlot?.resolvedExercise, "even the sole Quads slot still resolves to something, never left unresolved")
+    }
+
+    func testMesocycle2ToMesocycle3TransitionIsIdempotent() throws {
+        let fixture = try makeCalibratedMesocycle2()
+        let materializationContext = TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>()))
+
+        let first = try StartNextHypertrophyPhaseUseCase.start(
+            previousPhase: fixture.phase, previousInstance: fixture.instance, asOf: startDate,
+            ownerUserID: ownerUserID, availability: availability(), materializationContext: materializationContext, context: context
+        )
+        let second = try StartNextHypertrophyPhaseUseCase.start(
+            previousPhase: fixture.phase, previousInstance: fixture.instance, asOf: startDate,
+            ownerUserID: ownerUserID, availability: availability(), materializationContext: materializationContext, context: context
+        )
+
+        XCTAssertEqual(first.instance.id, second.instance.id, "a repeated call returns the same instance, never a duplicate")
+        XCTAssertEqual(fixture.plan.orderedPhases.count, 3, "exactly one Mesocycle 3 phase, regardless of how many times start() is called")
+        let resensitizationPhases = fixture.plan.orderedPhases.filter { $0.primaryInstance?.programDefinition?.hypertrophyConfiguration?.phaseType == .resensitization }
+        XCTAssertEqual(resensitizationPhases.count, 1)
+    }
+
+    func testMesocycle3TransitionPersistsAcrossRelaunch() throws {
+        let fixture = try makeCalibratedMesocycle2()
+        let planID = fixture.plan.id
+
+        let result = try StartNextHypertrophyPhaseUseCase.start(
+            previousPhase: fixture.phase, previousInstance: fixture.instance, asOf: startDate,
+            ownerUserID: ownerUserID, availability: availability(),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>())),
+            context: context
+        )
+        for requirement in RequiredSourceCalibrationsUseCase.stillRequired(for: try XCTUnwrap(result.instance.programDefinition), instance: result.instance) {
+            RecordSourceRMCalibrationUseCase.record(exercise: requirement.exercise, rmType: requirement.rmType, kilograms: 80, for: result.instance, modelContext: context)
+        }
+        try context.save()
+
+        let reloadedPlan = try XCTUnwrap(freshContext().fetch(FetchDescriptor<TrainingPlan>(predicate: #Predicate { $0.id == planID })).first)
+        XCTAssertEqual(reloadedPlan.orderedPhases.count, 3, "all 3 phases survive relaunch")
+        let reloadedMesocycle3 = try XCTUnwrap(reloadedPlan.orderedPhases.first { $0.primaryInstance?.programDefinition?.hypertrophyConfiguration?.phaseType == .resensitization })
+        XCTAssertFalse(reloadedMesocycle3.primaryInstance?.sourceRMCalibrations.isEmpty ?? true, "the entered Mesocycle 3 calibration survives relaunch")
+        XCTAssertEqual(reloadedMesocycle3.primaryInstance?.programDefinition?.lengthWeeks, 3, "Mesocycle 3's own 3-week length survives relaunch")
+    }
+
+    /// The real production path: a calibrated Mesocycle 1 -> Mesocycle 2
+    /// -> Mesocycle 3, exercising the full 3-phase lifecycle end to end
+    /// (the "explain the boundary" fixture discipline this file's own
+    /// top-level doc comment already establishes: real materialized
+    /// Week-1 state per phase, not every set of every week logged).
+    func testRealProductionLifecycleFromMesocycleOneThroughCalibratedMesocycleThree() throws {
+        let fixture = try makeCalibratedMesocycle2()
+
+        let transition = try StartNextHypertrophyPhaseUseCase.start(
+            previousPhase: fixture.phase, previousInstance: fixture.instance, asOf: startDate,
+            ownerUserID: ownerUserID, availability: availability(),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>())),
+            context: context
+        )
+        XCTAssertTrue(transition.awaitingCalibration)
+        let nextDefinition = try XCTUnwrap(transition.instance.programDefinition)
+        XCTAssertEqual(nextDefinition.hypertrophyConfiguration?.phaseType, .resensitization)
+        XCTAssertEqual(nextDefinition.lengthWeeks, 3)
+
+        let required = RequiredSourceCalibrationsUseCase.stillRequired(for: nextDefinition, instance: transition.instance)
+        XCTAssertFalse(required.isEmpty)
+        for requirement in required {
+            RecordSourceRMCalibrationUseCase.record(exercise: requirement.exercise, rmType: requirement.rmType, kilograms: 85, for: transition.instance, modelContext: context)
+        }
+        try context.save()
+
+        _ = try StartPhaseUseCase.materializeOnceCalibrationComplete(
+            component: try XCTUnwrap(transition.instance.trainingMixComponents.first),
+            instance: transition.instance, phase: transition.phase, mix: try XCTUnwrap(transition.instance.trainingMixComponents.first?.trainingMix),
+            asOf: startDate, ownerUserID: ownerUserID, performanceProfile: nil, availability: availability(),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>())),
+            context: context
+        )
+
+        XCTAssertFalse(transition.instance.sessions.isEmpty, "Mesocycle 3 Week 1 really materialized")
+        let day1 = try XCTUnwrap(transition.instance.sessions.first { $0.name == "Push Emphasis" })
+        let prescriptions = day1.orderedBlocks.flatMap(\.orderedPrescriptions)
+        XCTAssertEqual(prescriptions.count, 7, "the real recovered Mesocycle 3 Day 1 (7 slots, no superset partner, no Chest Isolation or Triceps)")
+        XCTAssertEqual(fixture.plan.orderedPhases.count, 3, "all 3 phases of the real lifecycle now exist")
     }
 }

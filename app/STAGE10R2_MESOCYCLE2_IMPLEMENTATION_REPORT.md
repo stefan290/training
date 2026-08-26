@@ -194,10 +194,31 @@ own resulting hash).
 is now thrown explicitly whenever the day-focus path is asked for
 Resensitization — a real, typed, honest failure rather than silently
 reusing Mesocycle 1 or 2's content (the exact defect this stage
-corrected for Mesocycle 2). `StartNextHypertrophyPhaseUseCase` already
-generalizes to a 3rd phase with zero changes once real Mesocycle 3
-content exists (it reads `HypertrophyProgramJourney.orderedPhaseTypes`
-generically) — the only work a future Mesocycle 3 stage needs is source
-content recovery and the corresponding `HypertrophyProgramGenerator`
-tables, mirroring this stage's own pattern exactly. Not started, per
-explicit instruction.
+corrected for Mesocycle 2). Not started, per explicit instruction.
+
+**Correction (Stage 10R.3, added after this report was written):** the
+claim below — "`StartNextHypertrophyPhaseUseCase` already generalizes to
+a 3rd phase with zero changes" — was **overstated**. It was accurate for
+*phase-sequencing and UI gating* (`HypertrophyProgramJourney
+.orderedPhaseTypes`-driven, and `PhaseDetailViewModel`'s gating logic,
+both genuinely generic with zero changes), but not for two other things
+this use case does: the `provenance` literal inside `start()` was
+hardcoded to Mesocycle 2's own sheet name regardless of which phase was
+actually being started, and the exercise carry-forward table
+(`threeDayFullBodyMesocycle1ToMesocycle2`) was specifically scoped to
+that one transition, not generic across any two mesocycles. Both were
+real gaps, not hypothetical — Stage 10R.3B closed them (phase-aware
+`sourceProvenance(for:)`, and a dedicated
+`threeDayFullBodyMesocycle2ToMesocycle3` table selected via
+`carryForwardMapping(fromPreviousPhaseType:)`). See
+`STAGE10R3_MESOCYCLE3_IMPLEMENTATION_REPORT.md` §11/§17 for the full
+account. The original (inaccurate) sentence is left below, struck
+through in spirit but not in fact, so this correction is traceable to
+what it's correcting:
+
+> ~~`StartNextHypertrophyPhaseUseCase` already generalizes to a 3rd phase
+> with zero changes once real Mesocycle 3 content exists (it reads
+> `HypertrophyProgramJourney.orderedPhaseTypes` generically) — the only
+> work a future Mesocycle 3 stage needs is source content recovery and
+> the corresponding `HypertrophyProgramGenerator` tables, mirroring this
+> stage's own pattern exactly.~~
