@@ -26,18 +26,15 @@ struct TacticalMaterializationContext {
     /// caller, same discipline as the Functional Fitness pool.
     var strengthCandidateExercises: [Exercise] = []
     var functionalFitnessCandidateExercises: [Exercise] = []
-    var functionalFitnessExposureHistory: [VarianceExposureRecord] = []
 
     init(
         equipmentProfile: EquipmentProfile,
         strengthCandidateExercises: [Exercise] = [],
-        functionalFitnessCandidateExercises: [Exercise] = [],
-        functionalFitnessExposureHistory: [VarianceExposureRecord] = []
+        functionalFitnessCandidateExercises: [Exercise] = []
     ) {
         self.equipmentProfile = equipmentProfile
         self.strengthCandidateExercises = strengthCandidateExercises
         self.functionalFitnessCandidateExercises = functionalFitnessCandidateExercises
-        self.functionalFitnessExposureHistory = functionalFitnessExposureHistory
     }
 }
 

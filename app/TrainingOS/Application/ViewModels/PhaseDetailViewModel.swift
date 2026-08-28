@@ -221,8 +221,11 @@ final class PhaseDetailViewModel {
                 ownerUserID: primaryInstance.ownerUserID,
                 availability: UserAvailability(trainingDaysPerWeek: 7, allowsDoubleSessions: false, maxSessionsPerDay: 1),
                 materializationContext: TacticalMaterializationContext(
+                    // KNOWN DOMAIN GAP — see the identical note in
+                    // `advanceTacticalWeek` below.
                     equipmentProfile: EquipmentProfile(equipmentType: .barbell, smallestIncrementKg: 2.5),
-                    strengthCandidateExercises: candidates
+                    strengthCandidateExercises: candidates,
+                    functionalFitnessCandidateExercises: candidates
                 ),
                 context: modelContext
             )
@@ -251,8 +254,19 @@ final class PhaseDetailViewModel {
                 performanceProfile: nil,
                 availability: UserAvailability(trainingDaysPerWeek: 7, allowsDoubleSessions: false, maxSessionsPerDay: 1),
                 materializationContext: TacticalMaterializationContext(
+                    // KNOWN DOMAIN GAP (Stage 10R.6, D-10R6-11 — deferred by
+                    // explicit product decision): TrainingOS has no
+                    // persisted training-environment/equipment-inventory
+                    // model yet, only a coarse per-equipment-key increment
+                    // preference (`UserProfile.equipmentIncrements`). This
+                    // placeholder is NOT an authoritative equipment profile
+                    // — it is left exactly as it was before Stage 10R.6,
+                    // deliberately not replaced with a more convincing but
+                    // still-fabricated substitute. See
+                    // `STAGE10R6_MIXED_MODALITY_ROLLFORWARD_IMPLEMENTATION_REPORT.md`.
                     equipmentProfile: EquipmentProfile(equipmentType: .barbell, smallestIncrementKg: 2.5),
-                    strengthCandidateExercises: candidates
+                    strengthCandidateExercises: candidates,
+                    functionalFitnessCandidateExercises: candidates
                 ),
                 context: modelContext
             )

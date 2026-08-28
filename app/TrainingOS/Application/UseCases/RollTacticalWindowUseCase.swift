@@ -54,13 +54,13 @@ enum RollTacticalWindowUseCase {
         case .interval:
             return try IntervalMaterializer.materializeWeek(
                 definition: definition, instance: instance, weekIndex: 0, startDate: startDate, ownerUserID: ownerUserID,
-                weekContext: { _ in .init() }, context: context
+                weekContext: IntervalWeekContextBuilder.build(instance: instance, weekIndex: 0), context: context
             )
         case .functionalFitness:
             return try FunctionalFitnessMaterializer.materializeWeek(
                 definition: definition, instance: instance, weekIndex: 0, startDate: startDate, ownerUserID: ownerUserID,
                 candidateExercises: materializationContext.functionalFitnessCandidateExercises,
-                exposureHistory: materializationContext.functionalFitnessExposureHistory, context: context
+                exposureHistory: FunctionalFitnessExposureHistoryBuilder.build(fromCompletedSessionsIn: instance), context: context
             )
         }
     }
@@ -144,13 +144,13 @@ enum RollTacticalWindowUseCase {
             case .interval:
                 sessions = try IntervalMaterializer.materializeWeek(
                     definition: definition, instance: instance, weekIndex: weekIndex, startDate: instance.startDate, ownerUserID: ownerUserID,
-                    weekContext: { _ in .init() }, context: context
+                    weekContext: IntervalWeekContextBuilder.build(instance: instance, weekIndex: weekIndex), context: context
                 )
             case .functionalFitness:
                 sessions = try FunctionalFitnessMaterializer.materializeWeek(
                     definition: definition, instance: instance, weekIndex: weekIndex, startDate: instance.startDate, ownerUserID: ownerUserID,
                     candidateExercises: materializationContext.functionalFitnessCandidateExercises,
-                    exposureHistory: materializationContext.functionalFitnessExposureHistory, context: context
+                    exposureHistory: FunctionalFitnessExposureHistoryBuilder.build(fromCompletedSessionsIn: instance), context: context
                 )
             case .steadyState:
                 continue
