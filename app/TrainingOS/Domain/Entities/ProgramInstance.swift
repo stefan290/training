@@ -25,6 +25,14 @@ final class ProgramInstance {
     /// primary instance — see `TrainingPhase.primaryInstance`/
     /// `.secondaryInstances` below.
     var priority: GoalPriority
+    /// Stage 10R.5, D-10R5-15: this instance's own override of the
+    /// profile-level progression-style default (`nil` = defer to
+    /// `UserProfile.preferredProgressionStyle`) — same shape as
+    /// `adherenceModeOverride` above. Load-first evidence/streak state is
+    /// always scoped to one `ProgramInstance` (D-10R5-13: resets at every
+    /// new mesocycle boundary), so this override travels with it
+    /// naturally rather than needing separate reset plumbing.
+    var progressionStyleOverride: ProgressionStyle?
 
     @Relationship(deleteRule: .nullify, inverse: \Session.programInstance)
     var sessions: [Session] = []
@@ -88,12 +96,14 @@ final class ProgramInstance {
         startDate: Date = Date(),
         adherenceModeOverride: AdherenceMode? = nil,
         status: PhaseStatus = .active,
-        priority: GoalPriority = .primary
+        priority: GoalPriority = .primary,
+        progressionStyleOverride: ProgressionStyle? = nil
     ) {
         self.id = id
         self.ownerUserID = ownerUserID
         self.startDate = startDate
         self.adherenceModeOverride = adherenceModeOverride
+        self.progressionStyleOverride = progressionStyleOverride
         self.status = status
         self.priority = priority
     }
@@ -153,5 +163,13 @@ final class ProgramInstance {
     /// require the identical `RMType` is satisfied by one entry.
     func sourceRMCalibration(for exercise: Exercise, rmType: RMType) -> SourceRMCalibration? {
         sourceRMCalibrations.first { $0.exercise?.id == exercise.id && $0.rmType == rmType }
+    }
+
+    /// Stage 10R.5, D-10R5-15: this instance's own override always wins;
+    /// otherwise defers to the owning profile's default. Falls back to
+    /// `.loadFocused` (matching `UserProfile`'s own default) if no
+    /// profile exists at all, rather than silently assuming `.source`.
+    func effectiveProgressionStyle(userProfile: UserProfile?) -> ProgressionStyle {
+        progressionStyleOverride ?? userProfile?.preferredProgressionStyle ?? .loadFocused
     }
 }

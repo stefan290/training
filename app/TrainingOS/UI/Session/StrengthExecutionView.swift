@@ -30,6 +30,12 @@ struct StrengthExecutionView: View {
     @State private var actualRir: Int?
     @State private var lastHighlight: LoggedResultHighlight?
     @State private var showingChangeExercise = false
+    /// Stage 10R.5: the effective (possibly overlay-adjusted) load for
+    /// the current exposure — computed once per movement in
+    /// `resetInputsForCurrentSet`, never inside `body`, since computing
+    /// it has a real side effect (freezing the recommendation onto
+    /// `ExercisePrescription` the first time, D-10R5-19).
+    @State private var effectiveTargetWeight: Double?
 
     init(block: WorkoutBlock, session: Session, executionState: SessionExecutionState) {
         _viewModel = State(initialValue: StrengthExecutionViewModel(block: block))
@@ -197,7 +203,16 @@ struct StrengthExecutionView: View {
                     + (targetText.isEmpty ? "" : " · \(targetText)"))
                     .font(Theme.body)
                     .foregroundStyle(Theme.textSecondary)
-                if let target = setPrescription.targetWeight {
+                // Stage 10R.5, D-10R5-18: shows the EFFECTIVE recommendation
+                // (the source's own untouched value in SOURCE mode, or
+                // LoadFirstOverlayEngine's recommendation once LOAD_FOCUSED
+                // is active) — never `setPrescription.targetWeight` read
+                // directly, so the athlete is never told a stale source
+                // number while the domain computed something else. Read
+                // from `@State` (computed once in `resetInputsForCurrentSet`,
+                // never inside `body` itself — computing it here would be a
+                // state mutation during view evaluation).
+                if let target = effectiveTargetWeight {
                     Text("Suggested load: \(target.formattedWeight) kg")
                         .font(Theme.numeric)
                         .foregroundStyle(Theme.primary)
@@ -315,7 +330,8 @@ struct StrengthExecutionView: View {
 
     private func resetInputsForCurrentSet() {
         guard let setPrescription = viewModel.currentSetPrescription else { return }
-        weightText = setPrescription.targetWeight.map { $0.formattedWeight } ?? ""
+        effectiveTargetWeight = viewModel.effectiveTargetWeight(modelContext: modelContext)
+        weightText = (effectiveTargetWeight ?? setPrescription.targetWeight).map { $0.formattedWeight } ?? ""
         // Stage 10R.1D: never prefill the actual-reps input with a
         // fabricated number for an RIR-only (or unresolved-deload)
         // prescription — `repRangeHigh` is only ever non-nil for a

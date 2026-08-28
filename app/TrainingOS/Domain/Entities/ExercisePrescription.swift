@@ -96,6 +96,25 @@ final class ExercisePrescription {
     /// prescription; `appliedLoadReasonCode` stays `nil` for every V2
     /// prescription — the two are mutually exclusive by rule family.
     var appliedProgressionReasonCode: ProgressionReasonCode?
+    /// Stage 10R.5: `LoadFirstOverlayEngine`'s own provenance for this
+    /// exposure — a THIRD, independently-typed reason-code track,
+    /// deliberately never folded into `appliedLoadReasonCode`
+    /// (`StrengthReasonCode` stays meaning "this is what the source
+    /// itself says") or `appliedProgressionReasonCode` (a different,
+    /// Hypertrophy-V2-era vocabulary). `nil` until the execution layer
+    /// first computes a recommendation for this exposure (`SOURCE` mode,
+    /// an ineligible slot, or simply "not opened yet" all leave this
+    /// `nil`) — once set, it is frozen and never recomputed
+    /// (`STAGE10R5_LOAD_FIRST_PROGRESSION_OVERLAY_DESIGN.md` D-10R5-19),
+    /// exactly like `SetResult.targetRir`'s own "snapshot at the moment
+    /// of use" precedent.
+    var appliedLoadOverlayReasonCode: LoadOverlayReasonCode?
+    /// The frozen effective weight `LoadFirstOverlayEngine` recommended
+    /// for this exposure — `nil` until first computed, then permanent.
+    /// **Never** a replacement for `SetPrescription.targetWeight`, which
+    /// remains the source's own untouched value forever; this is purely
+    /// additive execution-layer guidance sitting alongside it.
+    var loadOverlayRecommendedWeight: Double?
 
     @Relationship(deleteRule: .cascade, inverse: \SetPrescription.exercisePrescription)
     var setPrescriptions: [SetPrescription] = []

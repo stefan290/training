@@ -47,6 +47,49 @@ final class StrengthExecutionViewModel {
         return ordered.indices.contains(currentSetIndex) ? ordered[currentSetIndex] : nil
     }
 
+    /// Stage 10R.5, D-10R5-18: the weight the execution UI should
+    /// actually show/prefill — the source's own untouched
+    /// `SetPrescription.targetWeight` in SOURCE mode or for any exposure
+    /// `LoadFirstOverlayEngine` doesn't apply to, or the frozen/computed
+    /// `LoadFirstOverlayEngine` recommendation once LOAD_FOCUSED mode is
+    /// active for an eligible `.rmBased` 3-Day-Full-Body exposure
+    /// (D-10R5-20 — never silently activated elsewhere). Computed and
+    /// frozen onto `ExercisePrescription.loadOverlayRecommendedWeight`
+    /// the FIRST time this is read for a given exposure (D-10R5-19 — a
+    /// completed exposure's provenance is never subject to later
+    /// recomputation drift); every subsequent read of the same exposure
+    /// simply returns the already-frozen value. Never mutates
+    /// `SetPrescription.targetWeight` itself.
+    func effectiveTargetWeight(modelContext: ModelContext) -> Double? {
+        guard let movement = currentMovement, let setPrescription = currentSetPrescription else { return nil }
+        guard let sourceWeight = setPrescription.targetWeight else { return nil }
+
+        if let frozen = movement.loadOverlayRecommendedWeight { return frozen }
+
+        guard let instance = movement.workoutBlock?.session?.programInstance else { return sourceWeight }
+        let users = (try? modelContext.fetch(FetchDescriptor<User>())) ?? []
+        let style = instance.effectiveProgressionStyle(userProfile: users.first?.profile)
+        guard style == .loadFocused else { return sourceWeight }
+        guard LoadFirstEligibility.isEligible(movement) else { return sourceWeight }
+        guard let exercise = movement.exercise else { return sourceWeight }
+
+        let isDeload = movement.appliedLoadReasonCode.map { LoadFirstOverlayEngine.deloadReasonCodes.contains($0) } ?? false
+        let exposures = LoadFirstExposureResolver.recentEligibleExposures(for: exercise, in: instance, excluding: movement, limit: 2)
+        let increment = users.first?.profile?.equipmentIncrements[exercise.equipment] ?? 2.5
+
+        let recommendation = LoadFirstOverlayEngine.recommend(
+            sourceWeight: sourceWeight,
+            previousEffectiveWeight: exposures.first?.effectiveWeightUsed,
+            isDeloadWeek: isDeload,
+            recentEligibleExposureSurpluses: exposures.map(\.setSurpluses),
+            equipmentIncrement: increment
+        )
+        movement.loadOverlayRecommendedWeight = recommendation.finalWeight
+        movement.appliedLoadOverlayReasonCode = recommendation.reasonCode
+        try? modelContext.save()
+        return recommendation.finalWeight
+    }
+
     /// Deterministic from authoritative persisted state alone (Part I):
     /// every required `SetPrescription` has a logged `SetResult`. No
     /// separate "ExerciseCompleted" entity — this is always recomputed,
