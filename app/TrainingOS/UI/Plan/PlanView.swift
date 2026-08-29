@@ -7,6 +7,10 @@ import SwiftData
 struct PlanView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var viewModel = PlanViewModel()
+    /// Stage 10R.7B: PlanView is the primary strategic lifecycle surface
+    /// (D-10R7B-4) — this is the one place `StrategicPhaseTransitionSheet`
+    /// is presented from as the phase list's own primary action.
+    @State private var transitionPhase: TrainingPhase?
 
     var body: some View {
         NavigationStack {
@@ -14,6 +18,9 @@ struct PlanView: View {
                 VStack(alignment: .leading, spacing: 20) {
                     if let goal = viewModel.goal {
                         GoalCard(goal: goal)
+                    }
+                    if let phase = viewModel.phaseAwaitingStrategicTransition {
+                        StrategicTransitionBanner(phase: phase) { transitionPhase = phase }
                     }
                     Text("ANNUAL PLAN")
                         .font(Theme.label)
@@ -33,6 +40,43 @@ struct PlanView: View {
             .navigationTitle("Plan")
         }
         .task { viewModel.load(modelContext: modelContext) }
+        .sheet(item: $transitionPhase) { phase in
+            StrategicPhaseTransitionSheet(currentPhase: phase) {
+                viewModel.load(modelContext: modelContext)
+            }
+        }
+    }
+}
+
+/// Stage 10R.7B (D-10R7B-1/D-10R7B-3): deliberately NOT styled like
+/// `PhaseCard` below — this is a strategic action, not another entry in
+/// the annual-plan list, and must never be visually mistaken for a
+/// tactical/mesocycle action either.
+private struct StrategicTransitionBanner: View {
+    let phase: TrainingPhase
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("CURRENT PHASE COMPLETE")
+                        .font(Theme.label)
+                        .foregroundStyle(.white.opacity(0.85))
+                    Text("Start Next Phase")
+                        .font(Theme.heading)
+                        .foregroundStyle(.white)
+                }
+                Spacer()
+                Image(systemName: "arrow.right.circle.fill")
+                    .foregroundStyle(.white)
+                    .font(.title2)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(14)
+            .background(Theme.primary, in: RoundedRectangle(cornerRadius: 12))
+        }
+        .buttonStyle(.plain)
     }
 }
 

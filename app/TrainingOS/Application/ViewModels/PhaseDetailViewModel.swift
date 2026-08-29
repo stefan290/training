@@ -101,6 +101,18 @@ final class PhaseDetailViewModel {
     /// from the primary instance's own current materialized week, `nil`
     /// whenever `canAdvanceTacticalWeek` is `false`.
     private(set) var nextTacticalWeekNumber: Int?
+    /// Stage 10R.7B (D-10R7B-2): `true` only when this ACTIVE phase is
+    /// genuinely STRATEGIC-lifecycle terminal
+    /// (`TrainingPhaseCompletion.isPhaseTerminal`) and has a real,
+    /// still-`.planned` next strategic phase — the gate for showing the
+    /// "Start Next Phase" action here (secondary to `PlanView`, D-10R7B-4).
+    private(set) var canPresentStrategicTransition = false
+    /// Stage 10R.7B (D-10R7B-10): `true` when this ACTIVE phase is
+    /// strategic-lifecycle terminal but is the last phase in its plan's
+    /// pre-planned sequence — a distinct, non-actionable, neutral state.
+    /// Never implies `TrainingPlan`/`Goal` completion is persisted
+    /// anywhere; nothing here mutates either.
+    private(set) var isFinalStrategicPhaseComplete = false
 
     func load(phase: TrainingPhase, modelContext: ModelContext) {
         self.phase = phase
@@ -211,6 +223,21 @@ final class PhaseDetailViewModel {
             if let primaryInstance = phase.primaryInstance,
                let currentWeekIndex = TacticalWeekCompletion.currentMaterializedWeekIndex(for: primaryInstance) {
                 nextTacticalWeekNumber = currentWeekIndex + 2 // 1-indexed display, one past the current (also 1-indexed) week
+            }
+        }
+
+        // Stage 10R.7B (D-10R7B-2/D-10R7B-10): the STRATEGIC transition
+        // gate — a wholly separate question from `canStartNextHypertrophyMesocycle`
+        // above (that's program-level succession INSIDE this same phase;
+        // this is the phase itself ending). Never derived from dates,
+        // never merely "current ProgramInstance exhausted."
+        canPresentStrategicTransition = false
+        isFinalStrategicPhaseComplete = false
+        if phase.status == .active, TrainingPhaseCompletion.isPhaseTerminal(phase) {
+            if TrainingPhaseCompletion.isFinalStrategicPhase(phase) {
+                isFinalStrategicPhaseComplete = true
+            } else if TrainingPhaseCompletion.nextStrategicPhase(for: phase)?.status == .planned {
+                canPresentStrategicTransition = true
             }
         }
     }

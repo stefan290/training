@@ -10,11 +10,16 @@ struct PhaseDetailView: View {
     let phase: TrainingPhase
     @Environment(\.modelContext) private var modelContext
     @State private var viewModel = PhaseDetailViewModel()
+    /// Stage 10R.7B (D-10R7B-4): secondary to `PlanView`'s own primary
+    /// surface — presents the exact same sheet, since this view already
+    /// lives inside Plan's own `NavigationStack`, not a different tab.
+    @State private var showingStrategicTransition = false
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 header
+                strategicTransitionCard
                 switch phase.status {
                 case .active:
                     activeContent
@@ -29,6 +34,46 @@ struct PhaseDetailView: View {
         .background(Theme.ground)
         .navigationTitle(PlanPresentation.phaseTypeLabel(phase.type))
         .task { viewModel.load(phase: phase, modelContext: modelContext) }
+        .sheet(isPresented: $showingStrategicTransition) {
+            StrategicPhaseTransitionSheet(currentPhase: phase) {
+                viewModel.load(phase: phase, modelContext: modelContext)
+            }
+        }
+    }
+
+    // MARK: Strategic transition — deliberately separate from `activeContent`'s
+    // tactical/mesocycle action cards (D-10R7B-1/D-10R7B-4): never styled
+    // like "Start Week"/"Start [Mesocycle]" below.
+
+    @ViewBuilder private var strategicTransitionCard: some View {
+        if viewModel.canPresentStrategicTransition {
+            Button { showingStrategicTransition = true } label: {
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("STRATEGIC PHASE COMPLETE")
+                            .font(Theme.label)
+                            .foregroundStyle(.white.opacity(0.85))
+                        Text("Start Next Phase")
+                            .font(Theme.heading)
+                            .foregroundStyle(.white)
+                    }
+                    Spacer()
+                    Image(systemName: "arrow.right.circle.fill")
+                        .foregroundStyle(.white)
+                        .font(.title2)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(14)
+                .background(Theme.primary, in: RoundedRectangle(cornerRadius: 12))
+            }
+            .buttonStyle(.plain)
+        } else if viewModel.isFinalStrategicPhaseComplete {
+            InfoCard(title: "PLAN") {
+                Text("This was the last planned phase in your plan. It's complete.")
+                    .font(Theme.body)
+                    .foregroundStyle(Theme.textPrimary)
+            }
+        }
     }
 
     // MARK: Header — shared across every status

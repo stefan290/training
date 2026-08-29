@@ -35,6 +35,15 @@ struct RootTabView: View {
             }
         }
         .onAppear { calibrationViewModel.load(modelContext: modelContext) }
+        // Stage 10R.7B (D-10R7B-7): a successful strategic transition can
+        // legitimately leave a component awaiting fresh source RM
+        // calibration — this re-runs the exact same, already-existing
+        // check rather than building a second routing mechanism. Cheap
+        // and idempotent (`SourceRMCalibrationViewModel.load`'s own doc
+        // comment) — safe to call again even when nothing changed.
+        .onReceive(NotificationCenter.default.publisher(for: .strategicPhaseTransitionCompleted)) { _ in
+            calibrationViewModel.load(modelContext: modelContext)
+        }
     }
 }
 

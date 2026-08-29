@@ -93,6 +93,7 @@
 		A84401C7C2368616DF188FA4 /* AdvanceTacticalWeekUseCaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85B4B7C6BE9DF46610F9D1BB /* AdvanceTacticalWeekUseCaseTests.swift */; };
 		3C637176E6F7AF57A1E733D5 /* ExerciseCatalogIdempotencyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01477AC558C84C632F2A735E /* ExerciseCatalogIdempotencyTests.swift */; };
 		FB15A4F084B703B94F36CECA /* StrategicPhaseLifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD7DFE79EE05985085B85153 /* StrategicPhaseLifecycleTests.swift */; };
+		0AC8B59F3C8FF55C0B6023E3 /* StrategicPhaseTransitionUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1160A685F640DF57DBE4EB37 /* StrategicPhaseTransitionUITests.swift */; };
 		5582DBF8EA418AAA60F62328 /* MixedModalityTacticalAtomicityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20001F5B16ADD640ED2ABE3B /* MixedModalityTacticalAtomicityTests.swift */; };
 		29232F0DE6EDAF463A1AF06C /* LoadFirstOverlayEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4A2CDCD3AED6DA58E4149F8 /* LoadFirstOverlayEngineTests.swift */; };
 		80740F60BD068D3AE9C52BA3 /* LoadFirstExposureResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C05F2B2717EA8FB15DA222C7 /* LoadFirstExposureResolverTests.swift */; };
@@ -164,6 +165,7 @@
 		6E944A5AAE11C32004A17E54 /* PersonalRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E4C4FD6B699AD7F0CF2AB3D /* PersonalRecord.swift */; };
 		6EDCA72839E44950802812B6 /* FunctionalFitnessMovementSlotTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2677A31E672F4132BD46B5BD /* FunctionalFitnessMovementSlotTemplate.swift */; };
 		707CFA9E1A3ED8B9F58C949D /* PhaseDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3D1ADE8538361C49C4E75BA /* PhaseDetailViewModel.swift */; };
+		43B7F89827348CAAEAC04391 /* StrategicTransitionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22A33D18F9EA2486715D47FE /* StrategicTransitionViewModel.swift */; };
 		71F7400B8026DD2FE41CCE96 /* Goal.swift in Sources */ = {isa = PBXBuildFile; fileRef = B875478EA0A0B59BC2ADD02C /* Goal.swift */; };
 		72F44ABD965B7257258B34D2 /* BlockPrescription.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60554B31BA8A4E000BEC1DA5 /* BlockPrescription.swift */; };
 		740706C4A1F84465B26B0B63 /* SteadyStateConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FBA8E92C3C44360A9A70AD2 /* SteadyStateConfiguration.swift */; };
@@ -338,6 +340,7 @@
 		F576A2B994D94377ACA71AE2 /* ExecutionStatePersistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 746B30C56378476785960AD9 /* ExecutionStatePersistenceTests.swift */; };
 		F722416DAB84DBA157BBCF2F /* ModalityPersistenceRoundTripTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B341C8944D07EB6D80553D /* ModalityPersistenceRoundTripTests.swift */; };
 		F7C3EE0B5EE21DB907682359 /* PhaseDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3D150AD03C8492E1FF8D00B /* PhaseDetailView.swift */; };
+		FE745E3F528AFF27057B94F9 /* StrategicPhaseTransitionSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AF8F99B2BD96508A3F1BD30 /* StrategicPhaseTransitionSheet.swift */; };
 		F9854D9FE44B4972B386FC58 /* StrengthProgressionEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50A2E014698D42C98D0E8C46 /* StrengthProgressionEngineTests.swift */; };
 		FA334A52AA8CE4F7E4B15A91 /* TodayViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCFA48EE8EA729613F37D526 /* TodayViewModel.swift */; };
 		A1B2C3D4E5F6070809101112 /* SourceRMCalibrationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F60708091011213A /* SourceRMCalibrationViewModel.swift */; };
@@ -559,6 +562,7 @@
 		A2D2C2BAA5E96E19751E5E40 /* WarmupCatalog.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WarmupCatalog.swift; sourceTree = "<group>"; };
 		A36C5B87A8D1D6EDD9F5C536 /* ReadinessAdaptationDecision.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReadinessAdaptationDecision.swift; sourceTree = "<group>"; };
 		A3D150AD03C8492E1FF8D00B /* PhaseDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PhaseDetailView.swift; path = PhaseDetailView.swift; sourceTree = "<group>"; };
+		0AF8F99B2BD96508A3F1BD30 /* StrategicPhaseTransitionSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = StrategicPhaseTransitionSheet.swift; path = StrategicPhaseTransitionSheet.swift; sourceTree = "<group>"; };
 		A3D9A752F4704351BF2B938A /* ActivityPerformanceProfileIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ActivityPerformanceProfileIntegrationTests.swift; path = ActivityPerformanceProfileIntegrationTests.swift; sourceTree = "<group>"; };
 		A4DB4B7F4C824AEAA75C3AB8 /* RestTimerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RestTimerView.swift; path = RestTimerView.swift; sourceTree = "<group>"; };
 		A7149EEB71E3433D986C35F9 /* TemporaryPreferenceEvaluator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TemporaryPreferenceEvaluator.swift; path = TemporaryPreferenceEvaluator.swift; sourceTree = "<group>"; };
@@ -623,6 +627,7 @@
 		85B4B7C6BE9DF46610F9D1BB /* AdvanceTacticalWeekUseCaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AdvanceTacticalWeekUseCaseTests.swift; path = AdvanceTacticalWeekUseCaseTests.swift; sourceTree = "<group>"; };
 		01477AC558C84C632F2A735E /* ExerciseCatalogIdempotencyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExerciseCatalogIdempotencyTests.swift; path = ExerciseCatalogIdempotencyTests.swift; sourceTree = "<group>"; };
 		DD7DFE79EE05985085B85153 /* StrategicPhaseLifecycleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = StrategicPhaseLifecycleTests.swift; path = StrategicPhaseLifecycleTests.swift; sourceTree = "<group>"; };
+		1160A685F640DF57DBE4EB37 /* StrategicPhaseTransitionUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = StrategicPhaseTransitionUITests.swift; path = StrategicPhaseTransitionUITests.swift; sourceTree = "<group>"; };
 		20001F5B16ADD640ED2ABE3B /* MixedModalityTacticalAtomicityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MixedModalityTacticalAtomicityTests.swift; path = MixedModalityTacticalAtomicityTests.swift; sourceTree = "<group>"; };
 		F4A2CDCD3AED6DA58E4149F8 /* LoadFirstOverlayEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LoadFirstOverlayEngineTests.swift; path = LoadFirstOverlayEngineTests.swift; sourceTree = "<group>"; };
 		C05F2B2717EA8FB15DA222C7 /* LoadFirstExposureResolverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LoadFirstExposureResolverTests.swift; path = LoadFirstExposureResolverTests.swift; sourceTree = "<group>"; };
@@ -631,6 +636,7 @@
 		D1720DD3AB5743FFB9F2AD0E /* ChangeSessionStatusUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChangeSessionStatusUseCase.swift; path = ChangeSessionStatusUseCase.swift; sourceTree = "<group>"; };
 		D313C63745C1473A938DB863 /* FunctionalFitnessStressProfileMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FunctionalFitnessStressProfileMapper.swift; path = FunctionalFitnessStressProfileMapper.swift; sourceTree = "<group>"; };
 		D3D1ADE8538361C49C4E75BA /* PhaseDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PhaseDetailViewModel.swift; path = PhaseDetailViewModel.swift; sourceTree = "<group>"; };
+		22A33D18F9EA2486715D47FE /* StrategicTransitionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = StrategicTransitionViewModel.swift; path = StrategicTransitionViewModel.swift; sourceTree = "<group>"; };
 		D4B08F99A1E54BA59B002A11 /* PlannerDecisionTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PlannerDecisionTypes.swift; path = PlannerDecisionTypes.swift; sourceTree = "<group>"; };
 		D60B555E4695443AAD252362 /* AcceptScheduleProposalUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AcceptScheduleProposalUseCase.swift; path = AcceptScheduleProposalUseCase.swift; sourceTree = "<group>"; };
 		D610205E7D344C0199028EB3 /* LongTermPlannerStrategicPlanTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LongTermPlannerStrategicPlanTests.swift; path = LongTermPlannerStrategicPlanTests.swift; sourceTree = "<group>"; };
@@ -897,6 +903,7 @@
 			children = (
 				338F413189BA70F30B6518DE /* PlanViewModel.swift */,
 				D3D1ADE8538361C49C4E75BA /* PhaseDetailViewModel.swift */,
+				22A33D18F9EA2486715D47FE /* StrategicTransitionViewModel.swift */,
 				BCFA48EE8EA729613F37D526 /* TodayViewModel.swift */,
 				B2C3D4E5F60708091011213A /* SourceRMCalibrationViewModel.swift */,
 				1793CF229B5B4ECEA2495970 /* StrengthExecutionViewModel.swift */,
@@ -1051,6 +1058,7 @@
 				85B4B7C6BE9DF46610F9D1BB /* AdvanceTacticalWeekUseCaseTests.swift */,
 				01477AC558C84C632F2A735E /* ExerciseCatalogIdempotencyTests.swift */,
 				DD7DFE79EE05985085B85153 /* StrategicPhaseLifecycleTests.swift */,
+				1160A685F640DF57DBE4EB37 /* StrategicPhaseTransitionUITests.swift */,
 				20001F5B16ADD640ED2ABE3B /* MixedModalityTacticalAtomicityTests.swift */,
 				F4A2CDCD3AED6DA58E4149F8 /* LoadFirstOverlayEngineTests.swift */,
 				C05F2B2717EA8FB15DA222C7 /* LoadFirstExposureResolverTests.swift */,
@@ -1167,6 +1175,7 @@
 				CC8803845AE248AF80D2BA1D /* TemplateSessionPreviewView.swift */,
 				2FE0FFCA13024C1AB23160AC /* ProgramDetailView.swift */,
 				A3D150AD03C8492E1FF8D00B /* PhaseDetailView.swift */,
+				0AF8F99B2BD96508A3F1BD30 /* StrategicPhaseTransitionSheet.swift */,
 			);
 			name = Plan;
 			path = Plan;
@@ -1384,6 +1393,7 @@
 				A84401C7C2368616DF188FA4 /* AdvanceTacticalWeekUseCaseTests.swift in Sources */,
 				3C637176E6F7AF57A1E733D5 /* ExerciseCatalogIdempotencyTests.swift in Sources */,
 				FB15A4F084B703B94F36CECA /* StrategicPhaseLifecycleTests.swift in Sources */,
+				0AC8B59F3C8FF55C0B6023E3 /* StrategicPhaseTransitionUITests.swift in Sources */,
 				5582DBF8EA418AAA60F62328 /* MixedModalityTacticalAtomicityTests.swift in Sources */,
 				29232F0DE6EDAF463A1AF06C /* LoadFirstOverlayEngineTests.swift in Sources */,
 				80740F60BD068D3AE9C52BA3 /* LoadFirstExposureResolverTests.swift in Sources */,
@@ -1463,6 +1473,7 @@
 				76987EF448DE4FA1A070E757 /* TemplateSessionPreviewView.swift in Sources */,
 				14FE2A9B9A1441A69BE6CF07 /* ProgramDetailView.swift in Sources */,
 				F7C3EE0B5EE21DB907682359 /* PhaseDetailView.swift in Sources */,
+				FE745E3F528AFF27057B94F9 /* StrategicPhaseTransitionSheet.swift in Sources */,
 				B6D54E9A81CD9A6CAE70C838 /* Theme.swift in Sources */,
 				355E4F519569B26DB7E6814D /* RootTabView.swift in Sources */,
 				E8BC41AAB80633416FED8810 /* ProgressView.swift in Sources */,
@@ -1618,6 +1629,7 @@
 				3D7248C398566C80F74071DE /* PersistenceController.swift in Sources */,
 				19A84DD2B076029285474FCD /* PlanViewModel.swift in Sources */,
 				707CFA9E1A3ED8B9F58C949D /* PhaseDetailViewModel.swift in Sources */,
+				43B7F89827348CAAEAC04391 /* StrategicTransitionViewModel.swift in Sources */,
 				FA334A52AA8CE4F7E4B15A91 /* TodayViewModel.swift in Sources */,
 				A1B2C3D4E5F6070809101112 /* SourceRMCalibrationViewModel.swift in Sources */,
 				EDFB17DF42464241A6AFC8C7 /* StrengthExecutionViewModel.swift in Sources */,
