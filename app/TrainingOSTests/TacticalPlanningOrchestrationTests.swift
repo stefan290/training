@@ -424,7 +424,7 @@ final class TacticalPlanningOrchestrationTests: XCTestCase {
         XCTAssertEqual(selected.mix.name, "Strength Plus Variety")
         selected.mix.kind = .selected
 
-        let catalog = ExerciseCatalog.makeAndInsert(context: context)
+        let catalog = ExerciseCatalog.resolveOrInsert(context: context)
         let strengthCandidates = [
             catalog.backSquat, catalog.benchPress, catalog.inclineDumbbellPress, catalog.romanianDeadlift,
             catalog.legPress, catalog.frontSquat, catalog.legCurl, catalog.calfRaise,

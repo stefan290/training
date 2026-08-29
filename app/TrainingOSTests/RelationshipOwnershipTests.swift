@@ -107,7 +107,7 @@ final class RelationshipOwnershipTests: XCTestCase {
         let block = WorkoutBlock(id: blockID, type: .amrap)
         context.insert(block)
 
-        let catalog = ExerciseCatalog.makeAndInsert(context: context)
+        let catalog = ExerciseCatalog.resolveOrInsert(context: context)
         for exercise in [catalog.wallBall, catalog.pullUp, catalog.burpee] {
             let movement = ExercisePrescription(exercise: exercise)
             context.insert(movement)
@@ -181,5 +181,97 @@ final class RelationshipOwnershipTests: XCTestCase {
 
         XCTAssertEqual(instance.sessions.count, 1)
         XCTAssertTrue(session.programInstance === instance)
+    }
+
+    // MARK: Stage 10R.7A-TX — `ExerciseSlot.resolvedExercise` <-> `Exercise.resolvedSlots`
+
+    /// Assigning `slot.resolvedExercise` (the documented, single-sided
+    /// convention every other relationship in this file follows) must
+    /// maintain `Exercise.resolvedSlots` from the declared inverse —
+    /// exactly like `block.session`/`result.workoutBlock` above. Before
+    /// Stage 10R.7A-TX, `resolvedExercise` had no inverse at all, which is
+    /// what let SwiftData's `canonicalName` uniqueness-conflict merge
+    /// corrupt an unrelated row instead of cleanly repairing the
+    /// relationship (`STAGE10R7A_TX_ROOT_CAUSE_REPORT.md`).
+    func testAssigningResolvedExerciseEstablishesInverseWithoutManualAssignment() {
+        let container = PersistenceController.makeInMemoryContainer()
+        let context = container.mainContext
+
+        let catalog = ExerciseCatalog.resolveOrInsert(context: context)
+        let slot = ExerciseSlot(name: "Squat Slot")
+        context.insert(slot)
+
+        slot.resolvedExercise = catalog.backSquat
+
+        XCTAssertTrue(catalog.backSquat.resolvedSlots.contains { $0 === slot }, "SwiftData did not maintain Exercise.resolvedSlots from a single-sided resolvedExercise assignment.")
+    }
+
+    /// Item 6 — many `ExerciseSlot`s legitimately share one canonical
+    /// `Exercise`; that's the entire point of a canonical catalog, and
+    /// must never be treated as a conflict.
+    func testMultipleExerciseSlotsCanReferenceTheSameCanonicalExercise() throws {
+        let container = PersistenceController.makeInMemoryContainer()
+        let context = container.mainContext
+
+        let catalog = ExerciseCatalog.resolveOrInsert(context: context)
+        let slots = (0..<3).map { ExerciseSlot(name: "Squat Slot \($0)") }
+        for slot in slots {
+            context.insert(slot)
+            slot.resolvedExercise = catalog.backSquat
+        }
+        try context.save()
+
+        XCTAssertEqual(catalog.backSquat.resolvedSlots.count, 3, "all three slots must be reflected on the shared Exercise's inverse collection")
+
+        let all = try context.fetch(FetchDescriptor<Exercise>())
+        XCTAssertEqual(all.filter { $0.canonicalName == "Back Squat" }.count, 1, "sharing one Exercise across slots must never duplicate the canonical row")
+    }
+
+    /// Item 7 — deleting a slot must never cascade into deleting the
+    /// shared canonical Exercise it resolved to (`.nullify`, never
+    /// `.cascade` — canonical Exercise data is shared catalog data, not
+    /// owned by any one slot; see `DELETE_RULE_MATRIX.md`).
+    func testDeletingASlotDoesNotDeleteTheSharedCanonicalExercise() throws {
+        let container = PersistenceController.makeInMemoryContainer()
+        let context = container.mainContext
+
+        let catalog = ExerciseCatalog.resolveOrInsert(context: context)
+        let keepSlot = ExerciseSlot(name: "Kept Slot")
+        context.insert(keepSlot)
+        keepSlot.resolvedExercise = catalog.backSquat
+        let deleteSlot = ExerciseSlot(name: "Deleted Slot")
+        context.insert(deleteSlot)
+        deleteSlot.resolvedExercise = catalog.backSquat
+        try context.save()
+
+        context.delete(deleteSlot)
+        try context.save()
+
+        let all = try context.fetch(FetchDescriptor<Exercise>())
+        XCTAssertTrue(all.contains { $0.canonicalName == "Back Squat" }, "deleting an ExerciseSlot must never delete the shared canonical Exercise it resolved to")
+        XCTAssertTrue(keepSlot.resolvedExercise === catalog.backSquat, "the surviving slot's own resolvedExercise must be unaffected by a sibling slot's deletion")
+    }
+
+    /// Item 8 — a historical `ExerciseSlot.resolvedExercise` reference
+    /// must survive a save + fresh-context refetch (the closest in-process
+    /// approximation of "quit and relaunch the app," same convention as
+    /// every other survives-refetch test in this file).
+    func testHistoricalResolvedExerciseReferenceSurvivesSaveAndRefetch() throws {
+        let container = PersistenceController.makeInMemoryContainer()
+        let context = container.mainContext
+
+        let catalog = ExerciseCatalog.resolveOrInsert(context: context)
+        let slotID = UUID()
+        let slot = ExerciseSlot(id: slotID, name: "Historical Slot")
+        context.insert(slot)
+        slot.resolvedExercise = catalog.backSquat
+        try context.save()
+
+        let reloadContext = ModelContext(container)
+        let reloaded = try XCTUnwrap(
+            reloadContext.fetch(FetchDescriptor<ExerciseSlot>(predicate: #Predicate { $0.id == slotID })).first
+        )
+
+        XCTAssertEqual(reloaded.resolvedExercise?.canonicalName, "Back Squat", "a historical slot's resolvedExercise must remain valid after save + relaunch-equivalent refetch")
     }
 }

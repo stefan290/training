@@ -1,40 +1,62 @@
 import Foundation
 import SwiftData
 
-enum StartNextHypertrophyPhaseError: Error, Equatable {
-    case previousPhaseHasNoPlan
+enum StartNextHypertrophyMesocycleError: Error, Equatable {
     case previousInstanceHasNoDefinition
-    /// `previousInstance`'s `HypertrophyPhaseType` has no next phase in
-    /// `HypertrophyProgramJourney.orderedPhaseTypes` (i.e. it was already
-    /// `.resensitization`).
-    case noNextPhase
+    /// No `TrainingMixComponent` exists to attach the next mesocycle's
+    /// `ProgramInstance` to — `previousInstance` was never really wired
+    /// into a mix (a caller bug, since every real instantiation path
+    /// already sets this).
+    case previousInstanceHasNoComponent
+    /// `previousInstance`'s `HypertrophyPhaseType` has no next mesocycle
+    /// in `HypertrophyProgramJourney.orderedPhaseTypes` (i.e. it was
+    /// already `.resensitization`).
+    case noNextMesocycle
 }
 
-/// Stage 10R.2B: the real production entry point for the explicit,
-/// user-initiated Mesocycle-to-Mesocycle transition
+/// Stage 10R.2B, corrected by Stage 10R.7A
+/// (`STAGE10R7_STRATEGIC_PHASE_LIFECYCLE_DESIGN.md`, D-10R7-1/D-10R7-3):
+/// the real production entry point for the explicit, user-initiated
+/// Hypertrophy Mesocycle-to-Mesocycle transition
 /// (`STAGE3_DECISION_MEMO.md` Decision A1 — `transitionTrigger:
-/// .userInitiated`, never automatic; `PROGRAMMING_SYSTEM_MODEL.md` §5.1).
-/// A new mesocycle is represented exactly like Decision A1 already
-/// specifies — a new `ProgramDefinition` + new `ProgramInstance` + next
-/// `TrainingPhase`, never a new "mesocycle" entity, and never a mutation
-/// of the previous (now-historical, immutable) phase/instance.
+/// .userInitiated`, never automatic).
 ///
-/// **Reuses, never duplicates, existing orchestration:** the per-phase
-/// `ProgramDefinition`/`TrainingPhase`/`ProgramInstance` construction
-/// shape is the same one `HypertrophyProgramJourney.build`'s own loop
-/// body already establishes (that type's own doc comment: "No new
-/// 'ProgramJourney' entity exists — `TrainingPlan.orderedPhases`...
-/// already provides the sequencing"); calibration gating and
-/// materialization reuse `RequiredSourceCalibrationsUseCase`/
-/// `StartPhaseUseCase.materializeOnceCalibrationComplete` exactly as
-/// Stage 10R.1C already built them — this use case adds only what
-/// neither of those already does: building the next phase from an
-/// existing predecessor (rather than all phases up front), exercise
-/// carry-forward, and wiring a `TrainingMix`/`TrainingMixComponent` so
-/// the existing "Set your starting weights" screen picks the new
-/// instance up automatically.
-enum StartNextHypertrophyPhaseUseCase {
+/// **Locked hierarchy correction:** a `TrainingPhase` is a strategic
+/// period in the accepted annual plan — `TrainingPlan.orderedPhases`
+/// alone owns the strategic sequence, pre-planned up front by
+/// `AcceptStrategicPlanUseCase`. A Hypertrophy mesocycle succession is
+/// program-level progression INSIDE that same strategic phase, never
+/// strategic phase creation. Before this correction, this use case
+/// incorrectly created a brand-new `TrainingPhase` (and a brand-new
+/// `TrainingMix`/`TrainingMixComponent`) per mesocycle, silently
+/// appending it to `TrainingPlan.orderedPhases` — which both taught the
+/// wrong hierarchy and could scramble a plan's own pre-planned phase
+/// sequence the moment a real multi-phase strategic plan existed. Now:
+/// the SAME `previousPhase`/`TrainingMix`/`TrainingMixComponent` are
+/// reused unchanged; only a fresh `ProgramInstance` (new
+/// `ProgramDefinition`, fresh calibration, carried-forward exercise
+/// selections, its own provenance) is created and the existing
+/// component's `.programInstance` pointer is reassigned to it. The
+/// mesocycle this succeeds is never mutated or deleted — it remains
+/// reachable, historical, forever, via `TrainingPhase.programInstances`
+/// (`.nullify`, never `.cascade`) — only no longer the component's
+/// *current* pointer. `TrainingPhase.primaryInstance`/`.secondaryInstances`
+/// already read the mix component's current pointer first for exactly
+/// this reason (Stage 10R.7A).
+///
+/// **Reuses, never duplicates, existing orchestration:** calibration
+/// gating and materialization still reuse
+/// `RequiredSourceCalibrationsUseCase`/`StartPhaseUseCase
+/// .materializeOnceCalibrationComplete` exactly as Stage 10R.1C built
+/// them. Provenance, exercise carry-forward, and the Mesocycle 1->2/
+/// 2->3 mapping tables below are UNCHANGED — this correction touches only
+/// the incorrect phase/mix/component-creation responsibility, never the
+/// source-program-progression behavior itself (D-10R7-12).
+enum StartNextHypertrophyMesocycleUseCase {
     struct Result {
+        /// The strategic phase this mesocycle runs inside — always the
+        /// SAME `TrainingPhase` passed in as `previousPhase`; a mesocycle
+        /// succession never changes which strategic phase is active.
         var phase: TrainingPhase
         var instance: ProgramInstance
         /// Matches `StartPhaseUseCase.Result.componentsAwaitingCalibration`'s
@@ -55,29 +77,43 @@ enum StartNextHypertrophyPhaseUseCase {
         materializationContext: TacticalMaterializationContext,
         context: ModelContext
     ) throws -> Result {
-        guard let plan = previousPhase.plan else { throw StartNextHypertrophyPhaseError.previousPhaseHasNoPlan }
         guard
             let previousDefinition = previousInstance.programDefinition,
             let previousConfiguration = previousDefinition.hypertrophyConfiguration
-        else { throw StartNextHypertrophyPhaseError.previousInstanceHasNoDefinition }
+        else { throw StartNextHypertrophyMesocycleError.previousInstanceHasNoDefinition }
+
+        // Found via the phase's own mix, never via `previousInstance
+        // .trainingMixComponents` — the latter goes stale the instant a
+        // succession reassigns the component's pointer away from
+        // `previousInstance` (SwiftData maintains the declared inverse
+        // immediately), which would make a repeated/idempotent call with
+        // a now-stale `previousInstance` argument unable to find the
+        // component at all. The phase's mix component is the stable
+        // handle regardless of which instance it currently points to.
+        guard let component = (previousPhase.selectedTrainingMix ?? previousPhase.recommendedTrainingMix)?
+            .orderedComponents.first(where: { $0.programmingSystem == .hypertrophy })
+        else { throw StartNextHypertrophyMesocycleError.previousInstanceHasNoComponent }
+
+        // Idempotency: a repeated tap / repeated SwiftUI lifecycle
+        // evaluation must never create a second next-mesocycle
+        // `ProgramInstance` for the same predecessor. Since succession
+        // reassigns the SAME component's `.programInstance` pointer (never
+        // creates a new component), a call whose `previousInstance` is no
+        // longer that pointer's current value means this exact succession
+        // already happened — return the existing successor instead of
+        // creating a duplicate.
+        if let current = component.programInstance, current.id != previousInstance.id {
+            let stillRequired = current.programDefinition.map {
+                RequiredSourceCalibrationsUseCase.stillRequired(for: $0, instance: current)
+            } ?? []
+            return Result(phase: previousPhase, instance: current, awaitingCalibration: !stillRequired.isEmpty)
+        }
 
         guard
             let currentIndex = HypertrophyProgramJourney.orderedPhaseTypes.firstIndex(of: previousConfiguration.phaseType),
             HypertrophyProgramJourney.orderedPhaseTypes.indices.contains(currentIndex + 1)
-        else { throw StartNextHypertrophyPhaseError.noNextPhase }
+        else { throw StartNextHypertrophyMesocycleError.noNextMesocycle }
         let nextPhaseType = HypertrophyProgramJourney.orderedPhaseTypes[currentIndex + 1]
-
-        // Idempotency: a repeated tap / repeated SwiftUI lifecycle
-        // evaluation must never create a second next-phase for the same
-        // predecessor — return the already-created phase/instance
-        // instead of duplicating `TrainingPhase`/`ProgramInstance`/
-        // sessions/calibration requirements.
-        if let existing = existingNextPhase(in: plan, matching: nextPhaseType, configuration: previousConfiguration) {
-            let stillRequired = existing.instance.programDefinition.map {
-                RequiredSourceCalibrationsUseCase.stillRequired(for: $0, instance: existing.instance)
-            } ?? []
-            return Result(phase: existing.phase, instance: existing.instance, awaitingCalibration: !stillRequired.isEmpty)
-        }
 
         let nextConfiguration = HypertrophyProgramConfiguration(
             dayCount: previousConfiguration.dayCount, split: previousConfiguration.split, phaseType: nextPhaseType
@@ -88,14 +124,11 @@ enum StartNextHypertrophyPhaseUseCase {
             context: context
         )
 
-        let nextPhase = TrainingPhase(type: previousPhase.type, startDate: asOf, priorityRule: previousPhase.priorityRule, status: .active)
-        context.insert(nextPhase)
-        plan.addPhase(nextPhase)
-
         let nextInstance = ProgramInstance(ownerUserID: ownerUserID, startDate: asOf, status: .active, priority: previousInstance.priority)
         nextInstance.programDefinition = nextDefinition
         context.insert(nextInstance)
-        nextPhase.addProgramInstance(nextInstance)
+        // Attached to the SAME strategic phase — never a new one.
+        previousPhase.addProgramInstance(nextInstance)
 
         // Stage 10R.2B, Locked Decision 1 — exercise carry-forward: a
         // TrainingOS UX convenience, never claimed as source behavior
@@ -114,30 +147,15 @@ enum StartNextHypertrophyPhaseUseCase {
             definition: nextDefinition, candidateExercises: materializationContext.strengthCandidateExercises
         )
 
-        // Mirror the previous phase's own TrainingMix/Component shape —
-        // never guessed values; this is the same cadence/day-count
-        // program continuing under a new mesocycle, so its scheduling
-        // metadata should too. `nextComponent.programInstance` is set
-        // immediately (never left dangling) so `SourceRMCalibrationViewModel
-        // .attemptMaterialization`'s existing `instance.trainingMixComponents.first`
-        // lookup finds it with zero changes to that already-shipped code.
-        if let previousComponent = previousInstance.trainingMixComponents.first {
-            let nextMix = TrainingMix(kind: .selected, name: previousComponent.trainingMix?.name ?? nextDefinition.name)
-            context.insert(nextMix)
-            nextPhase.addTrainingMix(nextMix)
-            let nextComponent = TrainingMixComponent(
-                label: previousComponent.label, programmingSystem: .hypertrophy, priority: previousComponent.priority,
-                frequency: previousComponent.frequency, flexibility: previousComponent.flexibility,
-                allowsDoubleSessionPairing: previousComponent.allowsDoubleSessionPairing,
-                preferredDays: previousComponent.preferredDays, requiredSpacingDays: previousComponent.requiredSpacingDays
-            )
-            context.insert(nextComponent)
-            nextMix.addComponent(nextComponent)
-            nextComponent.programInstance = nextInstance
-        }
+        // Reassign the SAME component's current pointer — never a new
+        // `TrainingMix`/`TrainingMixComponent`. The previous instance is
+        // left exactly as it is: still attached to `previousPhase
+        // .programInstances`, still fully queryable, just no longer this
+        // component's *current* instance.
+        component.programInstance = nextInstance
 
         guard RequiredSourceCalibrationsUseCase.stillRequired(for: nextDefinition, instance: nextInstance).isEmpty else {
-            return Result(phase: nextPhase, instance: nextInstance, awaitingCalibration: true)
+            return Result(phase: previousPhase, instance: nextInstance, awaitingCalibration: true)
         }
 
         // Reachable only if calibration somehow already existed (e.g. a
@@ -145,14 +163,14 @@ enum StartNextHypertrophyPhaseUseCase {
         // `StartPhaseUseCase.materializeOnceCalibrationComplete` via the
         // "Set your starting weights" screen instead, exactly like a
         // first phase start already does.
-        if let component = nextInstance.trainingMixComponents.first, let mix = component.trainingMix {
+        if let mix = component.trainingMix {
             _ = try StartPhaseUseCase.materializeOnceCalibrationComplete(
-                component: component, instance: nextInstance, phase: nextPhase, mix: mix, asOf: asOf,
+                component: component, instance: nextInstance, phase: previousPhase, mix: mix, asOf: asOf,
                 ownerUserID: ownerUserID, performanceProfile: nil, availability: availability,
                 materializationContext: materializationContext, context: context
             )
         }
-        return Result(phase: nextPhase, instance: nextInstance, awaitingCalibration: false)
+        return Result(phase: previousPhase, instance: nextInstance, awaitingCalibration: false)
     }
 
     /// Stage 10R.3B: the correct source citation for whichever mesocycle
@@ -175,23 +193,6 @@ enum StartNextHypertrophyPhaseUseCase {
         case .resensitization:
             return .sourced(file: "3 day full body_Novice.xlsx", sheet: "Mesocycle 3 Resensitization", cell: "rows 11-17, 21-27, 31-38")
         }
-    }
-
-    /// Idempotency guard's lookup — a phase in `plan` whose primary
-    /// instance's definition already matches `phaseType`/the same
-    /// day-count and split as the phase being started.
-    private static func existingNextPhase(
-        in plan: TrainingPlan, matching phaseType: HypertrophyPhaseType, configuration: HypertrophyProgramConfiguration
-    ) -> (phase: TrainingPhase, instance: ProgramInstance)? {
-        for phase in plan.orderedPhases {
-            guard
-                let instance = phase.primaryInstance,
-                let config = instance.programDefinition?.hypertrophyConfiguration,
-                config.phaseType == phaseType, config.dayCount == configuration.dayCount, config.split == configuration.split
-            else { continue }
-            return (phase, instance)
-        }
-        return nil
     }
 
     /// Stage 10R.2A/B: the literal, authored `(previous slot) -> (next

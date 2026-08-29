@@ -29,7 +29,7 @@ final class SessionAutoAdvanceTests: XCTestCase {
     // MARK: - Fixtures (real production path, never hand-faked)
 
     private func makeStage10BSession() throws -> (session: Session, catalog: ExerciseCatalog) {
-        let catalog = ExerciseCatalog.makeAndInsert(context: context)
+        let catalog = ExerciseCatalog.resolveOrInsert(context: context)
         let candidates = [
             catalog.backSquat, catalog.benchPress, catalog.inclineDumbbellPress, catalog.romanianDeadlift,
             catalog.legPress, catalog.frontSquat, catalog.legCurl, catalog.calfRaise,
@@ -234,7 +234,7 @@ final class SessionAutoAdvanceTests: XCTestCase {
     // MARK: 7 — legacy (non-Stage-10B) Hypertrophy path still auto-opens correctly
 
     func testLegacyHypertrophySessionAlsoAutoOpensItsSoleBlock() throws {
-        let catalog = ExerciseCatalog.makeAndInsert(context: context)
+        let catalog = ExerciseCatalog.resolveOrInsert(context: context)
         let definition = try HypertrophyProgramGenerator.generate(
             configuration: HypertrophyProgramConfiguration(dayCount: 5, split: .fullBody, phaseType: .basicHypertrophy),
             provenance: .constructed(reason: "test fixture"), context: context
@@ -257,7 +257,7 @@ final class SessionAutoAdvanceTests: XCTestCase {
     // MARK: 8 — Powerlifting shares the same single-block-per-day shape and navigation pipeline
 
     func testPowerliftingSessionAlsoAutoOpensItsSoleBlock() throws {
-        let catalog = ExerciseCatalog.makeAndInsert(context: context)
+        let catalog = ExerciseCatalog.resolveOrInsert(context: context)
         let entry = try XCTUnwrap(PowerliftingBuiltInLibrary.all.first)
         let definition = PowerliftingProgramGenerator.generate(
             configuration: entry.configuration, provenance: .constructed(reason: "test fixture"), context: context

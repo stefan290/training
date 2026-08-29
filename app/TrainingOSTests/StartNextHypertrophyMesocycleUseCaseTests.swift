@@ -2,11 +2,17 @@ import XCTest
 import SwiftData
 @testable import TrainingOS
 
-/// Stage 10R.2B: proves the real, user-initiated Mesocycle 1 -> Mesocycle
-/// 2 transition — fresh calibration required (never satisfied by
-/// Mesocycle 1's own), exercise carry-forward (only when source-approved,
-/// with the athlete free to change it before Mesocycle 2 starts),
-/// idempotency, and persistence.
+/// Stage 10R.2B, corrected by Stage 10R.7A
+/// (`STAGE10R7_STRATEGIC_PHASE_LIFECYCLE_DESIGN.md`, D-10R7-1/D-10R7-3):
+/// proves the real, user-initiated Mesocycle 1 -> Mesocycle 2 transition —
+/// fresh calibration required (never satisfied by Mesocycle 1's own),
+/// exercise carry-forward (only when source-approved, with the athlete
+/// free to change it before Mesocycle 2 starts), idempotency, and
+/// persistence. **Also proves the Stage 10R.7A correction itself**: a
+/// mesocycle succession never creates a new `TrainingPhase` — the whole
+/// M1->M2->M3 sequence runs inside the SAME strategic phase, and the
+/// SAME `TrainingMixComponent`'s `.programInstance` pointer is simply
+/// reassigned to each new mesocycle's `ProgramInstance` in turn.
 ///
 /// **Fixture boundary, stated plainly (mirrors `HypertrophyV2EndToEndTests`'s
 /// own documented precedent):** `LongTermPlanner`'s goal/mix candidate
@@ -19,16 +25,16 @@ import SwiftData
 /// production path: `ResolveProgramInstanceExerciseSlotsUseCase`,
 /// `RequiredSourceCalibrationsUseCase`, `RecordSourceRMCalibrationUseCase`,
 /// `StartPhaseUseCase.materializeOnceCalibrationComplete`, and
-/// `StartNextHypertrophyPhaseUseCase` itself. "Mesocycle 1 complete" is
+/// `StartNextHypertrophyMesocycleUseCase` itself. "Mesocycle 1 complete" is
 /// represented as a real, materialized Week-1 `ProgramInstance` state
 /// (calibrated and materialized through the real gating flow) — not as
 /// 4 real weeks + deload logged through every set, which would be an
 /// excessively large fixture to prove something
-/// `StartNextHypertrophyPhaseUseCase` doesn't itself depend on (it only
+/// `StartNextHypertrophyMesocycleUseCase` doesn't itself depend on (it only
 /// reads the previous instance's own definition/config/exercise
 /// resolution state, never whether every week was logged).
 @MainActor
-final class StartNextHypertrophyPhaseUseCaseTests: XCTestCase {
+final class StartNextHypertrophyMesocycleUseCaseTests: XCTestCase {
     var container: ModelContainer!
     var context: ModelContext!
     let ownerUserID = UUID()
@@ -60,7 +66,7 @@ final class StartNextHypertrophyPhaseUseCaseTests: XCTestCase {
     /// required RM as `100`, ending with a real materialized Week 1.
     @discardableResult
     private func makeCalibratedMesocycle1() throws -> Fixture {
-        let catalog = ExerciseCatalog.makeAndInsert(context: context)
+        let catalog = ExerciseCatalog.resolveOrInsert(context: context)
         let goal = Goal(ownerUserID: ownerUserID, primaryType: .muscleGain)
         context.insert(goal)
         let plan = TrainingPlan(status: .active)
@@ -115,7 +121,7 @@ final class StartNextHypertrophyPhaseUseCaseTests: XCTestCase {
     @discardableResult
     private func makeCalibratedMesocycle2() throws -> Fixture {
         let mesocycle1 = try makeCalibratedMesocycle1()
-        let transition = try StartNextHypertrophyPhaseUseCase.start(
+        let transition = try StartNextHypertrophyMesocycleUseCase.start(
             previousPhase: mesocycle1.phase, previousInstance: mesocycle1.instance, asOf: startDate,
             ownerUserID: ownerUserID, availability: availability(),
             materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>())),
@@ -142,7 +148,7 @@ final class StartNextHypertrophyPhaseUseCaseTests: XCTestCase {
         return Fixture(plan: mesocycle1.plan, phase: transition.phase, instance: transition.instance, mix: mix, component: component, catalog: mesocycle1.catalog)
     }
 
-    /// Stage 10R.4A: `PhaseDetailViewModel.canStartNextHypertrophyPhase`
+    /// Stage 10R.4A: `PhaseDetailViewModel.canStartNextHypertrophyMesocycle`
     /// now requires the outgoing instance to be tactically EXHAUSTED
     /// (`STAGE10R4_TACTICAL_ROLLFORWARD_DESIGN.md` §5/§16 — the
     /// previously-existing gate, gated only on `!sessions.isEmpty`, let
@@ -179,7 +185,7 @@ final class StartNextHypertrophyPhaseUseCaseTests: XCTestCase {
     func testTransitionRequiresFreshCalibrationNeverSatisfiedByMesocycleOnes() throws {
         let fixture = try makeCalibratedMesocycle1()
 
-        let result = try StartNextHypertrophyPhaseUseCase.start(
+        let result = try StartNextHypertrophyMesocycleUseCase.start(
             previousPhase: fixture.phase, previousInstance: fixture.instance, asOf: startDate,
             ownerUserID: ownerUserID, availability: availability(),
             materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>())),
@@ -202,7 +208,7 @@ final class StartNextHypertrophyPhaseUseCaseTests: XCTestCase {
         let originalExercise = try XCTUnwrap(SubstituteExerciseUseCase.resolvedExercise(for: horizontalPushSlot, in: fixture.instance))
         XCTAssertEqual(originalExercise.canonicalName, "Barbell Bench Press", "precondition: the deterministic Mesocycle 1 default")
 
-        let result = try StartNextHypertrophyPhaseUseCase.start(
+        let result = try StartNextHypertrophyMesocycleUseCase.start(
             previousPhase: fixture.phase, previousInstance: fixture.instance, asOf: startDate,
             ownerUserID: ownerUserID, availability: availability(),
             materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>())),
@@ -226,7 +232,7 @@ final class StartNextHypertrophyPhaseUseCaseTests: XCTestCase {
 
     func testCarriedForwardSelectionCanStillBeChangedByTheAthlete() throws {
         let fixture = try makeCalibratedMesocycle1()
-        let result = try StartNextHypertrophyPhaseUseCase.start(
+        let result = try StartNextHypertrophyMesocycleUseCase.start(
             previousPhase: fixture.phase, previousInstance: fixture.instance, asOf: startDate,
             ownerUserID: ownerUserID, availability: availability(),
             materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>())),
@@ -250,7 +256,7 @@ final class StartNextHypertrophyPhaseUseCaseTests: XCTestCase {
     }
 
     /// Every carry-forward mapping is same-category-to-same-category (see
-    /// `StartNextHypertrophyPhaseUseCase`'s own table doc comment), so a
+    /// `StartNextHypertrophyMesocycleUseCase`'s own table doc comment), so a
     /// genuinely incompatible carry-forward cannot occur through the
     /// normal, validated `SubstituteExerciseUseCase` path in this
     /// specific configuration — categories' `allowedTargets`/
@@ -259,7 +265,7 @@ final class StartNextHypertrophyPhaseUseCaseTests: XCTestCase {
     /// intentionally-invalid override (bypassing `SubstituteExerciseUseCase`'s
     /// own validation on purpose, simulating "somehow an incompatible
     /// override exists") must still never carry forward — proving
-    /// `StartNextHypertrophyPhaseUseCase`'s carry-forward runs its OWN
+    /// `StartNextHypertrophyMesocycleUseCase`'s carry-forward runs its OWN
     /// independent compatibility check rather than blindly trusting
     /// whatever a previous instance's override says.
     func testIncompatiblePreviousSelectionDoesNotCarryForward() throws {
@@ -274,7 +280,7 @@ final class StartNextHypertrophyPhaseUseCaseTests: XCTestCase {
         context.insert(override)
         fixture.instance.addSlotSelectionOverride(override)
 
-        let result = try StartNextHypertrophyPhaseUseCase.start(
+        let result = try StartNextHypertrophyMesocycleUseCase.start(
             previousPhase: fixture.phase, previousInstance: fixture.instance, asOf: startDate,
             ownerUserID: ownerUserID, availability: availability(),
             materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>())),
@@ -293,9 +299,10 @@ final class StartNextHypertrophyPhaseUseCaseTests: XCTestCase {
     func testTransitionIsNeverAutomaticOnlyExplicitCallTriggersIt() throws {
         let fixture = try makeCalibratedMesocycle1()
         // Merely having a real, materialized Mesocycle 1 instance must
-        // never, by itself, create a Mesocycle 2 phase — only an explicit
-        // `StartNextHypertrophyPhaseUseCase.start` call does.
-        XCTAssertEqual(fixture.plan.orderedPhases.count, 1, "no automatic second phase appears on its own")
+        // never, by itself, create a second ProgramInstance — only an
+        // explicit `StartNextHypertrophyMesocycleUseCase.start` call does.
+        XCTAssertEqual(fixture.plan.orderedPhases.count, 1, "a mesocycle succession never creates a new strategic phase")
+        XCTAssertEqual(fixture.phase.programInstances.count, 1, "no automatic second ProgramInstance appears on its own")
     }
 
     /// The Simulator sandbox this project develops in has no UI-tap
@@ -313,14 +320,15 @@ final class StartNextHypertrophyPhaseUseCaseTests: XCTestCase {
         let viewModel = PhaseDetailViewModel()
         viewModel.load(phase: fixture.phase, modelContext: context)
 
-        XCTAssertTrue(viewModel.canStartNextHypertrophyPhase, "a real, TACTICALLY EXHAUSTED Hypertrophy phase with a next mesocycle must offer the action")
-        XCTAssertEqual(viewModel.nextHypertrophyPhaseTypeLabel, "Metabolite Focus")
+        XCTAssertTrue(viewModel.canStartNextHypertrophyMesocycle, "a real, TACTICALLY EXHAUSTED Hypertrophy phase with a next mesocycle must offer the action")
+        XCTAssertEqual(viewModel.nextHypertrophyMesocycleTypeLabel, "Metabolite Focus")
 
-        XCTAssertTrue(viewModel.startNextHypertrophyPhase(modelContext: context), "the real transition must succeed")
-        XCTAssertEqual(fixture.plan.orderedPhases.count, 2, "the real StartNextHypertrophyPhaseUseCase actually ran")
+        XCTAssertTrue(viewModel.startNextHypertrophyMesocycle(modelContext: context), "the real transition must succeed")
+        XCTAssertEqual(fixture.plan.orderedPhases.count, 1, "Stage 10R.7A: a mesocycle succession never creates a new strategic phase")
+        XCTAssertEqual(fixture.phase.programInstances.count, 2, "the real StartNextHypertrophyMesocycleUseCase actually ran — a second ProgramInstance now exists under the SAME phase")
 
         viewModel.load(phase: fixture.phase, modelContext: context)
-        XCTAssertFalse(viewModel.canStartNextHypertrophyPhase, "hidden after a successful transition — the UI's own idempotency signal")
+        XCTAssertFalse(viewModel.canStartNextHypertrophyMesocycle, "hidden after a successful transition — the UI's own idempotency signal")
     }
 
     /// Stage 10R.3B: the same honest substitute as
@@ -337,15 +345,16 @@ final class StartNextHypertrophyPhaseUseCaseTests: XCTestCase {
         let viewModel = PhaseDetailViewModel()
         viewModel.load(phase: fixture.phase, modelContext: context)
 
-        XCTAssertTrue(viewModel.canStartNextHypertrophyPhase, "a real, TACTICALLY EXHAUSTED Mesocycle 2 with a next mesocycle must offer the action")
-        XCTAssertEqual(viewModel.nextHypertrophyPhaseTypeLabel, "Resensitization")
+        XCTAssertTrue(viewModel.canStartNextHypertrophyMesocycle, "a real, TACTICALLY EXHAUSTED Mesocycle 2 with a next mesocycle must offer the action")
+        XCTAssertEqual(viewModel.nextHypertrophyMesocycleTypeLabel, "Resensitization")
 
-        XCTAssertTrue(viewModel.startNextHypertrophyPhase(modelContext: context), "the real transition must succeed")
-        XCTAssertEqual(fixture.plan.orderedPhases.count, 3, "the real StartNextHypertrophyPhaseUseCase actually ran")
+        XCTAssertTrue(viewModel.startNextHypertrophyMesocycle(modelContext: context), "the real transition must succeed")
+        XCTAssertEqual(fixture.plan.orderedPhases.count, 1, "Stage 10R.7A: a mesocycle succession never creates a new strategic phase")
+        XCTAssertEqual(fixture.phase.programInstances.count, 3, "the real StartNextHypertrophyMesocycleUseCase actually ran — a third ProgramInstance now exists under the SAME phase")
 
         viewModel.load(phase: fixture.phase, modelContext: context)
-        XCTAssertFalse(viewModel.canStartNextHypertrophyPhase, "hidden after a successful transition — Mesocycle 3 has no successor")
-        XCTAssertNil(viewModel.nextHypertrophyPhaseTypeLabel)
+        XCTAssertFalse(viewModel.canStartNextHypertrophyMesocycle, "hidden after a successful transition — Mesocycle 3 has no successor")
+        XCTAssertNil(viewModel.nextHypertrophyMesocycleTypeLabel)
     }
 
     // MARK: 27/28 — idempotent; only one Mesocycle-2 ProgramInstance created
@@ -354,19 +363,20 @@ final class StartNextHypertrophyPhaseUseCaseTests: XCTestCase {
         let fixture = try makeCalibratedMesocycle1()
         let materializationContext = TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>()))
 
-        let first = try StartNextHypertrophyPhaseUseCase.start(
+        let first = try StartNextHypertrophyMesocycleUseCase.start(
             previousPhase: fixture.phase, previousInstance: fixture.instance, asOf: startDate,
             ownerUserID: ownerUserID, availability: availability(), materializationContext: materializationContext, context: context
         )
-        let second = try StartNextHypertrophyPhaseUseCase.start(
+        let second = try StartNextHypertrophyMesocycleUseCase.start(
             previousPhase: fixture.phase, previousInstance: fixture.instance, asOf: startDate,
             ownerUserID: ownerUserID, availability: availability(), materializationContext: materializationContext, context: context
         )
 
         XCTAssertEqual(first.instance.id, second.instance.id, "a repeated call returns the same instance, never a duplicate")
-        XCTAssertEqual(fixture.plan.orderedPhases.count, 2, "exactly one Mesocycle 2 phase, regardless of how many times start() is called")
-        let metaboliteFocusPhases = fixture.plan.orderedPhases.filter { $0.primaryInstance?.programDefinition?.hypertrophyConfiguration?.phaseType == .metaboliteFocus }
-        XCTAssertEqual(metaboliteFocusPhases.count, 1)
+        XCTAssertEqual(fixture.plan.orderedPhases.count, 1, "Stage 10R.7A: never a new strategic phase, regardless of how many times start() is called")
+        let metaboliteFocusInstances = fixture.phase.programInstances.filter { $0.programDefinition?.hypertrophyConfiguration?.phaseType == .metaboliteFocus }
+        XCTAssertEqual(metaboliteFocusInstances.count, 1, "exactly one Mesocycle 2 ProgramInstance, regardless of how many times start() is called")
+        XCTAssertEqual(fixture.component.programInstance?.id, first.instance.id, "the SAME component's current pointer, never a new component")
     }
 
     // MARK: 29 — persistence survives terminate/relaunch
@@ -375,7 +385,7 @@ final class StartNextHypertrophyPhaseUseCaseTests: XCTestCase {
         let fixture = try makeCalibratedMesocycle1()
         let planID = fixture.plan.id
 
-        let result = try StartNextHypertrophyPhaseUseCase.start(
+        let result = try StartNextHypertrophyMesocycleUseCase.start(
             previousPhase: fixture.phase, previousInstance: fixture.instance, asOf: startDate,
             ownerUserID: ownerUserID, availability: availability(),
             materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>())),
@@ -387,9 +397,12 @@ final class StartNextHypertrophyPhaseUseCaseTests: XCTestCase {
         try context.save()
 
         let reloadedPlan = try XCTUnwrap(freshContext().fetch(FetchDescriptor<TrainingPlan>(predicate: #Predicate { $0.id == planID })).first)
-        XCTAssertEqual(reloadedPlan.orderedPhases.count, 2, "both phases survive relaunch")
-        let reloadedMesocycle2 = try XCTUnwrap(reloadedPlan.orderedPhases.first { $0.primaryInstance?.programDefinition?.hypertrophyConfiguration?.phaseType == .metaboliteFocus })
-        XCTAssertFalse(reloadedMesocycle2.primaryInstance?.sourceRMCalibrations.isEmpty ?? true, "the entered Mesocycle 2 calibration survives relaunch")
+        XCTAssertEqual(reloadedPlan.orderedPhases.count, 1, "Stage 10R.7A: still just the one strategic phase after relaunch")
+        let reloadedPhase = try XCTUnwrap(reloadedPlan.orderedPhases.first)
+        XCTAssertEqual(reloadedPhase.programInstances.count, 2, "both Mesocycle 1 and Mesocycle 2 ProgramInstances survive relaunch, under the same phase")
+        let reloadedMesocycle2 = try XCTUnwrap(reloadedPhase.programInstances.first { $0.programDefinition?.hypertrophyConfiguration?.phaseType == .metaboliteFocus })
+        XCTAssertFalse(reloadedMesocycle2.sourceRMCalibrations.isEmpty, "the entered Mesocycle 2 calibration survives relaunch")
+        XCTAssertEqual(reloadedPhase.primaryInstance?.id, reloadedMesocycle2.id, "the phase's CURRENT primary instance is the successor mesocycle, not the original")
     }
 
     // MARK: Real production integration — Mesocycle 1 -> Mesocycle 2, full lifecycle
@@ -399,7 +412,7 @@ final class StartNextHypertrophyPhaseUseCaseTests: XCTestCase {
     func testRealProductionLifecycleFromMesocycleOneThroughCalibratedMesocycleTwo() throws {
         let fixture = try makeCalibratedMesocycle1()
 
-        let transition = try StartNextHypertrophyPhaseUseCase.start(
+        let transition = try StartNextHypertrophyMesocycleUseCase.start(
             previousPhase: fixture.phase, previousInstance: fixture.instance, asOf: startDate,
             ownerUserID: ownerUserID, availability: availability(),
             materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>())),
@@ -435,7 +448,7 @@ final class StartNextHypertrophyPhaseUseCaseTests: XCTestCase {
     func testMesocycle2ToMesocycle3TransitionRequiresFreshCalibrationNeverSatisfiedByEarlierMesocycles() throws {
         let fixture = try makeCalibratedMesocycle2()
 
-        let result = try StartNextHypertrophyPhaseUseCase.start(
+        let result = try StartNextHypertrophyMesocycleUseCase.start(
             previousPhase: fixture.phase, previousInstance: fixture.instance, asOf: startDate,
             ownerUserID: ownerUserID, availability: availability(),
             materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>())),
@@ -455,7 +468,7 @@ final class StartNextHypertrophyPhaseUseCaseTests: XCTestCase {
     /// previously hardcoded regardless of which phase was being started.
     func testMesocycle3ProvenanceCitesItsOwnSheetNotMesocycleTwos() throws {
         let fixture = try makeCalibratedMesocycle2()
-        let result = try StartNextHypertrophyPhaseUseCase.start(
+        let result = try StartNextHypertrophyMesocycleUseCase.start(
             previousPhase: fixture.phase, previousInstance: fixture.instance, asOf: startDate,
             ownerUserID: ownerUserID, availability: availability(),
             materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>())),
@@ -476,7 +489,7 @@ final class StartNextHypertrophyPhaseUseCaseTests: XCTestCase {
         let originalExercise = try XCTUnwrap(SubstituteExerciseUseCase.resolvedExercise(for: horizontalPushSlot, in: fixture.instance))
         XCTAssertEqual(originalExercise.canonicalName, "Barbell Bench Press", "precondition: the deterministic Mesocycle 2 default")
 
-        let result = try StartNextHypertrophyPhaseUseCase.start(
+        let result = try StartNextHypertrophyMesocycleUseCase.start(
             previousPhase: fixture.phase, previousInstance: fixture.instance, asOf: startDate,
             ownerUserID: ownerUserID, availability: availability(),
             materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>())),
@@ -498,7 +511,7 @@ final class StartNextHypertrophyPhaseUseCaseTests: XCTestCase {
     /// slots than Mesocycle 2.
     func testDroppedAndMesocycleTwoOnlyRowsDoNotLeakIntoMesocycleThree() throws {
         let fixture = try makeCalibratedMesocycle2()
-        let result = try StartNextHypertrophyPhaseUseCase.start(
+        let result = try StartNextHypertrophyMesocycleUseCase.start(
             previousPhase: fixture.phase, previousInstance: fixture.instance, asOf: startDate,
             ownerUserID: ownerUserID, availability: availability(),
             materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>())),
@@ -521,26 +534,26 @@ final class StartNextHypertrophyPhaseUseCaseTests: XCTestCase {
         let fixture = try makeCalibratedMesocycle2()
         let materializationContext = TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>()))
 
-        let first = try StartNextHypertrophyPhaseUseCase.start(
+        let first = try StartNextHypertrophyMesocycleUseCase.start(
             previousPhase: fixture.phase, previousInstance: fixture.instance, asOf: startDate,
             ownerUserID: ownerUserID, availability: availability(), materializationContext: materializationContext, context: context
         )
-        let second = try StartNextHypertrophyPhaseUseCase.start(
+        let second = try StartNextHypertrophyMesocycleUseCase.start(
             previousPhase: fixture.phase, previousInstance: fixture.instance, asOf: startDate,
             ownerUserID: ownerUserID, availability: availability(), materializationContext: materializationContext, context: context
         )
 
         XCTAssertEqual(first.instance.id, second.instance.id, "a repeated call returns the same instance, never a duplicate")
-        XCTAssertEqual(fixture.plan.orderedPhases.count, 3, "exactly one Mesocycle 3 phase, regardless of how many times start() is called")
-        let resensitizationPhases = fixture.plan.orderedPhases.filter { $0.primaryInstance?.programDefinition?.hypertrophyConfiguration?.phaseType == .resensitization }
-        XCTAssertEqual(resensitizationPhases.count, 1)
+        XCTAssertEqual(fixture.plan.orderedPhases.count, 1, "Stage 10R.7A: never a new strategic phase, regardless of how many times start() is called")
+        let resensitizationInstances = fixture.phase.programInstances.filter { $0.programDefinition?.hypertrophyConfiguration?.phaseType == .resensitization }
+        XCTAssertEqual(resensitizationInstances.count, 1, "exactly one Mesocycle 3 ProgramInstance, regardless of how many times start() is called")
     }
 
     func testMesocycle3TransitionPersistsAcrossRelaunch() throws {
         let fixture = try makeCalibratedMesocycle2()
         let planID = fixture.plan.id
 
-        let result = try StartNextHypertrophyPhaseUseCase.start(
+        let result = try StartNextHypertrophyMesocycleUseCase.start(
             previousPhase: fixture.phase, previousInstance: fixture.instance, asOf: startDate,
             ownerUserID: ownerUserID, availability: availability(),
             materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>())),
@@ -552,10 +565,13 @@ final class StartNextHypertrophyPhaseUseCaseTests: XCTestCase {
         try context.save()
 
         let reloadedPlan = try XCTUnwrap(freshContext().fetch(FetchDescriptor<TrainingPlan>(predicate: #Predicate { $0.id == planID })).first)
-        XCTAssertEqual(reloadedPlan.orderedPhases.count, 3, "all 3 phases survive relaunch")
-        let reloadedMesocycle3 = try XCTUnwrap(reloadedPlan.orderedPhases.first { $0.primaryInstance?.programDefinition?.hypertrophyConfiguration?.phaseType == .resensitization })
-        XCTAssertFalse(reloadedMesocycle3.primaryInstance?.sourceRMCalibrations.isEmpty ?? true, "the entered Mesocycle 3 calibration survives relaunch")
-        XCTAssertEqual(reloadedMesocycle3.primaryInstance?.programDefinition?.lengthWeeks, 3, "Mesocycle 3's own 3-week length survives relaunch")
+        XCTAssertEqual(reloadedPlan.orderedPhases.count, 1, "Stage 10R.7A: still just the one strategic phase after relaunch")
+        let reloadedPhase = try XCTUnwrap(reloadedPlan.orderedPhases.first)
+        XCTAssertEqual(reloadedPhase.programInstances.count, 3, "all 3 mesocycle ProgramInstances survive relaunch, under the same phase")
+        let reloadedMesocycle3 = try XCTUnwrap(reloadedPhase.programInstances.first { $0.programDefinition?.hypertrophyConfiguration?.phaseType == .resensitization })
+        XCTAssertFalse(reloadedMesocycle3.sourceRMCalibrations.isEmpty, "the entered Mesocycle 3 calibration survives relaunch")
+        XCTAssertEqual(reloadedMesocycle3.programDefinition?.lengthWeeks, 3, "Mesocycle 3's own 3-week length survives relaunch")
+        XCTAssertEqual(reloadedPhase.primaryInstance?.id, reloadedMesocycle3.id, "the phase's CURRENT primary instance is Mesocycle 3, not an earlier one")
     }
 
     /// The real production path: a calibrated Mesocycle 1 -> Mesocycle 2
@@ -566,7 +582,7 @@ final class StartNextHypertrophyPhaseUseCaseTests: XCTestCase {
     func testRealProductionLifecycleFromMesocycleOneThroughCalibratedMesocycleThree() throws {
         let fixture = try makeCalibratedMesocycle2()
 
-        let transition = try StartNextHypertrophyPhaseUseCase.start(
+        let transition = try StartNextHypertrophyMesocycleUseCase.start(
             previousPhase: fixture.phase, previousInstance: fixture.instance, asOf: startDate,
             ownerUserID: ownerUserID, availability: availability(),
             materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>())),
@@ -596,6 +612,7 @@ final class StartNextHypertrophyPhaseUseCaseTests: XCTestCase {
         let day1 = try XCTUnwrap(transition.instance.sessions.first { $0.name == "Push Emphasis" })
         let prescriptions = day1.orderedBlocks.flatMap(\.orderedPrescriptions)
         XCTAssertEqual(prescriptions.count, 7, "the real recovered Mesocycle 3 Day 1 (7 slots, no superset partner, no Chest Isolation or Triceps)")
-        XCTAssertEqual(fixture.plan.orderedPhases.count, 3, "all 3 phases of the real lifecycle now exist")
+        XCTAssertEqual(fixture.plan.orderedPhases.count, 1, "Stage 10R.7A: the full 3-mesocycle lifecycle runs inside one strategic phase")
+        XCTAssertEqual(fixture.phase.programInstances.count, 3, "all 3 mesocycles of the real lifecycle now exist under that one phase")
     }
 }

@@ -84,15 +84,37 @@ final class TrainingPhase {
     /// state, but this property does not crash on it; it simply returns
     /// `nil`, matching the model's general preference for surfacing gaps
     /// via tests rather than runtime traps.
+    ///
+    /// **Stage 10R.7A:** once a program-level succession (e.g. a
+    /// Hypertrophy mesocycle transition) can attach more than one
+    /// `ProgramInstance` to the SAME strategic `TrainingPhase` over its
+    /// lifetime (`STAGE10R7_STRATEGIC_PHASE_LIFECYCLE_DESIGN.md`), `.first`
+    /// over the unordered, purely historical `programInstances` bag is no
+    /// longer safe — it could return a long-superseded instance instead of
+    /// the current one. The authoritative "current" pointer is instead
+    /// each mix's own `TrainingMixComponent.programInstance` (reassigned
+    /// at each succession, exactly the mechanism that makes it current) —
+    /// read through the phase's active mix first, falling back to the raw
+    /// historical scan only when no mix exists yet (unchanged behavior for
+    /// every phase that predates any mix, e.g. `HypertrophyProgramJourney
+    /// .build`'s own standalone fixture phases).
     var primaryInstance: ProgramInstance? {
-        programInstances.first { $0.priority == .primary }
+        guard let mix = selectedTrainingMix ?? recommendedTrainingMix else {
+            return programInstances.first { $0.priority == .primary }
+        }
+        return mix.orderedComponents.first { $0.priority == .primary }?.programInstance
     }
 
     /// Zero or more secondary Modules running alongside the primary
     /// instance this Phase — e.g. an Aerobic Base module alongside a
-    /// primary Hypertrophy instance.
+    /// primary Hypertrophy instance. Same "current pointer via the mix
+    /// component" discipline as `primaryInstance` above, and for the same
+    /// reason.
     var secondaryInstances: [ProgramInstance] {
-        programInstances.filter { $0.priority == .secondary }
+        guard let mix = selectedTrainingMix ?? recommendedTrainingMix else {
+            return programInstances.filter { $0.priority == .secondary }
+        }
+        return mix.orderedComponents.filter { $0.priority == .secondary }.compactMap(\.programInstance)
     }
 
     /// The only way application code should attach a `TrainingMix`.

@@ -233,7 +233,7 @@ final class HypertrophyMesocycle1SourceProgressionTests: XCTestCase {
     /// itself from "Push Emphasis"'s Quads slot (row 18) — a real
     /// cross-day relationship from the recovered table.
     func testRealCrossDayPairingDrivesTheNextWeeksSetCountEndToEnd() throws {
-        let catalog = ExerciseCatalog.makeAndInsert(context: context)
+        let catalog = ExerciseCatalog.resolveOrInsert(context: context)
         let definition = try generateDefinition()
         ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: definition, candidateExercises: [
             catalog.backSquat, catalog.frontSquat, catalog.legPress, catalog.benchPress, catalog.inclineDumbbellPress,

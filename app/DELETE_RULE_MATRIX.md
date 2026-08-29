@@ -487,3 +487,30 @@ data yet — same documented, deferred risk, not a new one).
 - `ProgramDefinition`/`TrainingWeek`/the template graph gained no new
   fields this stage — warm-up is a session-local, generated artifact,
   never template-level state.
+
+## Stage 10R.7A-TX addition
+
+`ExerciseSlot.resolvedExercise` — previously listed among the accepted,
+un-inversed "one-directional references" (Stage-3C-era note above,
+"nothing in this app deletes a canonical `Exercise` out from under active
+data yet") — turned out to be a real, not merely latent, corruption risk:
+`Exercise.canonicalName`'s `@Attribute(.unique)` constraint means SwiftData
+itself, not application code, can create a second row colliding with an
+existing one (via `ExerciseCatalog`'s pre-fix non-idempotent construction);
+when that happens, SwiftData's own uniqueness-conflict merge has no
+inverse to walk from the merged-away row back to the slot(s) referencing
+it, and corrupts an unrelated `Exercise` row instead of cleanly nullifying
+the relationship (`STAGE10R7A_TX_ROOT_CAUSE_REPORT.md` — reproduced with
+zero scratch context, zero `TransitionPhaseUseCase`/`StartPhaseUseCase`
+involvement).
+
+| Parent | Child | Relationship | Delete rule | Expected behaviour | Why |
+|---|---|---|---|---|---|
+| `Exercise` | `ExerciseSlot` | `resolvedSlots: [ExerciseSlot]` (required inverse only; nothing reads it), inverse `ExerciseSlot.resolvedExercise` | `.nullify` | Deleting an `ExerciseSlot` (or the `ProgramDefinition` it cascades away with) never touches the canonical Exercise it resolved to. Deleting a canonical `Exercise` (not a real feature — nothing in this app does this) would nullify `resolvedExercise` on every slot that referenced it rather than crashing or corrupting an unrelated row. | Canonical Exercise is shared catalog data, referenced by many slots simultaneously by design (`ExerciseCatalogIdempotencyTests`/`RelationshipOwnershipTests`) — never owned by any one slot, so cascade-from-slot would be actively wrong, and no inverse at all is what let SwiftData's own constraint-merge machinery corrupt data instead of safely nullifying. |
+
+`ExerciseSlot.allowedExercises` and the other Exercise-typed one-directional
+references listed above (`ExercisePrescription.exercise`,
+`FunctionalFitnessMovement.exercise`, `WarmupMovement.exercise`, etc.)
+are **unchanged** — this fix is scoped to `resolvedExercise` specifically,
+the one relationship the investigation actually implicated. They remain
+the same accepted, documented latent risk as before; not addressed here.

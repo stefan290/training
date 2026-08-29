@@ -91,7 +91,7 @@ struct PhaseDetailView: View {
 
         componentList
         advanceTacticalWeekCard
-        startNextHypertrophyPhaseCard
+        startNextHypertrophyMesocycleCard
         nextPhaseCard
     }
 
@@ -129,14 +129,14 @@ struct PhaseDetailView: View {
     /// weights" calibration gate (`RootTabView`/`SourceRMCalibrationView`)
     /// picks up its fresh calibration requirement automatically — no
     /// separate review/calibration screen is built here.
-    @ViewBuilder private var startNextHypertrophyPhaseCard: some View {
-        if viewModel.canStartNextHypertrophyPhase, let label = viewModel.nextHypertrophyPhaseTypeLabel {
+    @ViewBuilder private var startNextHypertrophyMesocycleCard: some View {
+        if viewModel.canStartNextHypertrophyMesocycle, let label = viewModel.nextHypertrophyMesocycleTypeLabel {
             InfoCard(title: "NEXT MESOCYCLE") {
                 Text("Start \(label) when you're ready to move on from this mesocycle. You'll enter fresh starting weights — nothing carries over automatically.")
                     .font(Theme.label)
                     .foregroundStyle(Theme.textSecondary)
                 Button("Start \(label)") {
-                    if viewModel.startNextHypertrophyPhase(modelContext: modelContext) {
+                    if viewModel.startNextHypertrophyMesocycle(modelContext: modelContext) {
                         viewModel.load(phase: phase, modelContext: modelContext)
                     }
                 }

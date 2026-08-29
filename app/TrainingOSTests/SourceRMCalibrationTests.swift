@@ -26,7 +26,7 @@ final class SourceRMCalibrationTests: XCTestCase {
     }
 
     private func hypertrophyDefinition() throws -> ProgramDefinition {
-        let catalog = ExerciseCatalog.makeAndInsert(context: context)
+        let catalog = ExerciseCatalog.resolveOrInsert(context: context)
         let definition = try HypertrophyProgramGenerator.generate(
             configuration: HypertrophyProgramConfiguration(dayCount: 3, split: .fullBody, phaseType: .basicHypertrophy),
             provenance: .constructed(reason: "test fixture"), context: context
@@ -167,7 +167,7 @@ final class SourceRMCalibrationTests: XCTestCase {
     func testMissingCalibrationDefersRatherThanFabricatingAndCalibrationCompletionMaterializesExactlyOnce() throws {
         let asOf = date(2026, 1, 5)
         let fixture = try makeAcceptedPlan(asOf: asOf)
-        let catalog = ExerciseCatalog.makeAndInsert(context: context)
+        let catalog = ExerciseCatalog.resolveOrInsert(context: context)
         let mixCandidates = LongTermPlanner.proposeTrainingMix(phase: fixture.phase, goal: fixture.goal)
         let recommended = try XCTUnwrap(mixCandidates.first { $0.roles.contains(.recommended) })
         let materializationContext = TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: [
@@ -209,7 +209,7 @@ final class SourceRMCalibrationTests: XCTestCase {
     func testNonRMBasedProgramsAreNeverGated() throws {
         let asOf = date(2026, 1, 5)
         let fixture = try makeAcceptedPlan(asOf: asOf)
-        let catalog = ExerciseCatalog.makeAndInsert(context: context)
+        let catalog = ExerciseCatalog.resolveOrInsert(context: context)
         let mixCandidates = LongTermPlanner.proposeTrainingMix(phase: fixture.phase, goal: fixture.goal)
         // Any accepted mix's non-strength component (Steady State/Functional
         // Fitness) must materialize immediately regardless of Strength's
@@ -309,7 +309,7 @@ final class SourceRMCalibrationTests: XCTestCase {
 
     func testFamilyBMixedRM5RM8RequirementsRemainDistinct() throws {
         let entry = try XCTUnwrap(PowerliftingBuiltInLibrary.all.first { $0.name.contains("Strength") })
-        let catalog = ExerciseCatalog.makeAndInsert(context: context)
+        let catalog = ExerciseCatalog.resolveOrInsert(context: context)
         let definition = PowerliftingProgramGenerator.generate(configuration: entry.configuration, provenance: .constructed(reason: "test"), context: context)
         ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: definition, candidateExercises: [
             catalog.backSquat, catalog.benchPress, catalog.romanianDeadlift, catalog.deadlift, catalog.barbellRow, catalog.dumbbellLateralRaise,
@@ -333,7 +333,7 @@ final class SourceRMCalibrationTests: XCTestCase {
 
     func testFamilyCUniformRM10UsesTheSameGenericMechanism() throws {
         let entry = try XCTUnwrap(PowerliftingBuiltInLibrary.all.first { $0.name.contains("Hypertrophy") })
-        let catalog = ExerciseCatalog.makeAndInsert(context: context)
+        let catalog = ExerciseCatalog.resolveOrInsert(context: context)
         let definition = PowerliftingProgramGenerator.generate(configuration: entry.configuration, provenance: .constructed(reason: "test"), context: context)
         ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: definition, candidateExercises: [
             catalog.backSquat, catalog.benchPress, catalog.romanianDeadlift, catalog.deadlift, catalog.barbellRow, catalog.dumbbellLateralRaise,

@@ -30,7 +30,7 @@ final class SourceRMCalibrationOnDiskReproTests: XCTestCase {
         let container = try makeOnDiskContainer()
         let context = container.mainContext
 
-        let catalog = ExerciseCatalog.makeAndInsert(context: context)
+        let catalog = ExerciseCatalog.resolveOrInsert(context: context)
         let definition = try HypertrophyProgramGenerator.generate(
             configuration: HypertrophyProgramConfiguration(dayCount: 3, split: .fullBody, phaseType: .basicHypertrophy),
             provenance: .constructed(reason: "on-disk repro"), context: context
@@ -68,7 +68,7 @@ final class SourceRMCalibrationOnDiskReproTests: XCTestCase {
         let profile = PerformanceProfile()
         context.insert(profile)
         user.attachPerformanceProfile(profile)
-        let catalog = ExerciseCatalog.makeAndInsert(context: context)
+        let catalog = ExerciseCatalog.resolveOrInsert(context: context)
         try context.save()
 
         let journey = try SeedAnnualPlanJourney.seed(user: user, performanceProfile: profile, catalog: catalog, context: context)

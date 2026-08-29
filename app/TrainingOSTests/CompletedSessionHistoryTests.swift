@@ -31,7 +31,7 @@ final class CompletedSessionHistoryTests: XCTestCase {
 
     private func makeLowerA() -> (session: Session, catalog: ExerciseCatalog, performanceProfile: PerformanceProfile) {
         let performanceProfile = makeUserWithPerformanceProfile()
-        let catalog = ExerciseCatalog.makeAndInsert(context: context)
+        let catalog = ExerciseCatalog.resolveOrInsert(context: context)
         let day = Day(ownerUserID: ownerUserID, date: Date(timeIntervalSince1970: 1_700_000_000))
         context.insert(day)
         let fixture = SeedScenarios.materializedLowerASession(day: day, catalog: catalog, ownerUserID: ownerUserID, modelContext: context)
@@ -308,7 +308,7 @@ final class CompletedSessionHistoryTests: XCTestCase {
     func testCompletedFunctionalFitnessResultExposesScoreContextAndScaling() throws {
         let profile = PerformanceProfile()
         context.insert(profile)
-        let catalog = ExerciseCatalog.makeAndInsert(context: context)
+        let catalog = ExerciseCatalog.resolveOrInsert(context: context)
         let block = WorkoutBlock(type: .functionalFitness, status: .completed)
         context.insert(block)
 

@@ -24,7 +24,7 @@ final class AnnualPlanOrchestrationTests: XCTestCase {
         let profile = PerformanceProfile()
         context.insert(profile)
         user.attachPerformanceProfile(profile)
-        let catalog = ExerciseCatalog.makeAndInsert(context: context)
+        let catalog = ExerciseCatalog.resolveOrInsert(context: context)
         return try SeedAnnualPlanJourney.seed(user: user, performanceProfile: profile, catalog: catalog, context: context)
     }
 

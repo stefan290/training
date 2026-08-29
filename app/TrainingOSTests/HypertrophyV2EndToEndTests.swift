@@ -133,7 +133,7 @@ final class HypertrophyV2EndToEndTests: XCTestCase {
     /// `ProgramInstance` so `RollTacticalWindowUseCase` can be called
     /// exactly as production would.
     private func makeFixture() throws -> Fixture {
-        let catalog = ExerciseCatalog.makeAndInsert(context: context)
+        let catalog = ExerciseCatalog.resolveOrInsert(context: context)
         let definition = makeDoubleProgressionTemplateGraph(catalog: catalog)
 
         let startDate = Date(timeIntervalSince1970: 1_700_000_000)

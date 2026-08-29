@@ -47,7 +47,7 @@ final class LoadFirstProgressionIntegrationTests: XCTestCase {
         // only ever be inserted once per test, or duplicate
         // `canonicalName`-unique Exercise rows fail SwiftData validation.
         if try context.fetch(FetchDescriptor<Exercise>()).isEmpty {
-            _ = ExerciseCatalog.makeAndInsert(context: context)
+            _ = ExerciseCatalog.resolveOrInsert(context: context)
         }
         let user = User(displayName: "Test User")
         context.insert(user)

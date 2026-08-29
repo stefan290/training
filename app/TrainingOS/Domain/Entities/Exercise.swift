@@ -55,6 +55,22 @@ final class Exercise {
     @Relationship(deleteRule: .cascade, inverse: \ExerciseAlias.exercise)
     var aliases: [ExerciseAlias] = []
 
+    /// Stage 10R.7A-TX addition: `ExerciseSlot.resolvedExercise`'s required
+    /// inverse — nothing reads this collection. Many `ExerciseSlot`s may
+    /// legitimately resolve to the same shared canonical Exercise (that's
+    /// the whole point of a canonical catalog); `.nullify` because a
+    /// canonical Exercise is shared catalog data never owned by any one
+    /// slot — deleting a slot (or its `ProgramDefinition`) must never
+    /// touch the Exercise, and nothing in this app deletes a canonical
+    /// Exercise out from under active slots. Without a declared inverse,
+    /// SwiftData's own uniqueness-constraint conflict resolution (fired by
+    /// `Exercise.canonicalName`'s `@Attribute(.unique)`) has no path to
+    /// correctly repair a to-one relationship pointing at a row it merges
+    /// away, and instead corrupts an unrelated `Exercise` row — see
+    /// `STAGE10R7A_TX_ROOT_CAUSE_REPORT.md`.
+    @Relationship(deleteRule: .nullify, inverse: \ExerciseSlot.resolvedExercise)
+    var resolvedSlots: [ExerciseSlot] = []
+
     init(
         id: UUID = UUID(),
         canonicalName: String,

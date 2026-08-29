@@ -36,7 +36,7 @@ final class HypertrophyDayFocusGenerationTests: XCTestCase {
     /// (catalog exists before any program is generated).
     @discardableResult
     private func generateReferenceConfigWithCatalogSeeded() throws -> (definition: ProgramDefinition, catalog: ExerciseCatalog) {
-        let catalog = ExerciseCatalog.makeAndInsert(context: context)
+        let catalog = ExerciseCatalog.resolveOrInsert(context: context)
         let definition = try generateReferenceConfig()
         return (definition, catalog)
     }
@@ -178,7 +178,7 @@ final class HypertrophyDayFocusGenerationTests: XCTestCase {
     }
 
     func testTheOneNewCatalogExerciseIsARealSourceNamedMovementNotATrainingOSInvention() {
-        let catalog = ExerciseCatalog.makeAndInsert(context: context)
+        let catalog = ExerciseCatalog.resolveOrInsert(context: context)
         XCTAssertEqual(catalog.stiffLeggedDeadlift.canonicalName, "Stiff-Legged Deadlift")
         XCTAssertTrue(SourceHypertrophyCategory.hamstringsHipHinge.sourceApprovedExerciseNames.contains("Stiff-Legged Deadlift"))
     }
@@ -321,13 +321,13 @@ final class HypertrophyDayFocusGenerationTests: XCTestCase {
     }
 
     func testResolvingTwiceIsDeterministicAcrossIndependentDefinitions() throws {
-        let catalogA = ExerciseCatalog.makeAndInsert(context: context)
+        let catalogA = ExerciseCatalog.resolveOrInsert(context: context)
         let definitionA = try generateReferenceConfig()
         // A second, independent context+catalog+definition, so this
         // proves determinism isn't an artifact of sharing one context.
         let containerB = PersistenceController.makeInMemoryContainer()
         let contextB = containerB.mainContext
-        _ = ExerciseCatalog.makeAndInsert(context: contextB)
+        _ = ExerciseCatalog.resolveOrInsert(context: contextB)
         let definitionB = try HypertrophyProgramGenerator.generate(
             configuration: HypertrophyProgramConfiguration(dayCount: 3, split: .fullBody, phaseType: .basicHypertrophy),
             provenance: .constructed(reason: "test fixture"), context: contextB
@@ -417,7 +417,7 @@ final class HypertrophyDayFocusGenerationTests: XCTestCase {
     }
 
     func testWarmupGenerationStillProducesASequenceForARealSourceSession() throws {
-        let exerciseCatalog = ExerciseCatalog.makeAndInsert(context: context)
+        let exerciseCatalog = ExerciseCatalog.resolveOrInsert(context: context)
         WarmupCatalog.makeAndInsert(exerciseCatalog: exerciseCatalog, context: context)
 
         let definition = try generateReferenceConfig()
@@ -521,7 +521,7 @@ final class HypertrophyDayFocusGenerationTests: XCTestCase {
     }
 
     func testNewAccessoryExerciseRowsHaveCorrectDomainMetadata() {
-        let catalog = ExerciseCatalog.makeAndInsert(context: context)
+        let catalog = ExerciseCatalog.resolveOrInsert(context: context)
         XCTAssertEqual(catalog.barbellCurl.canonicalName, "Barbell Curl")
         XCTAssertEqual(catalog.barbellCurl.primaryTargets, [.biceps])
         XCTAssertEqual(catalog.barbellCurl.modality, .hypertrophy)

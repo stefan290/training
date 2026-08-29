@@ -155,6 +155,13 @@ enum SeedAnnualPlanJourney {
         phase2.addTrainingMix(recommended.mix)
         selected.mix.kind = .selected
 
+        // Stage 10R.7A: `TransitionPhaseUseCase.transition` now runs the
+        // whole attempt against an isolated scratch context that only
+        // ever sees already-committed store state (the same atomicity
+        // guarantee Stage 10R.6 established for tactical rollforward) —
+        // everything built above must be persisted first.
+        try context.save()
+
         let transitionResult = try TransitionPhaseUseCase.transition(
             from: phase1, toNextPhaseWithMix: selected.mix, asOf: transitionAsOf, ownerUserID: user.id,
             performanceProfile: performanceProfile, availability: availability,

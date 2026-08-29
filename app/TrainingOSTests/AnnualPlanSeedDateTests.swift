@@ -27,7 +27,7 @@ final class AnnualPlanSeedDateTests: XCTestCase {
         let profile = PerformanceProfile()
         context.insert(profile)
         user.attachPerformanceProfile(profile)
-        let catalog = ExerciseCatalog.makeAndInsert(context: context)
+        let catalog = ExerciseCatalog.resolveOrInsert(context: context)
         return try SeedAnnualPlanJourney.seed(user: user, performanceProfile: profile, catalog: catalog, context: context)
     }
 
@@ -160,7 +160,7 @@ final class AnnualPlanSeedDateTests: XCTestCase {
         let secondProfile = PerformanceProfile()
         context.insert(secondProfile)
         secondUser.attachPerformanceProfile(secondProfile)
-        let secondCatalog = ExerciseCatalog.makeAndInsert(context: context)
+        let secondCatalog = ExerciseCatalog.resolveOrInsert(context: context)
         _ = try SeedAnnualPlanJourney.seed(user: secondUser, performanceProfile: secondProfile, catalog: secondCatalog, context: context)
 
         let survivingPlans = try context.fetch(FetchDescriptor<TrainingPlan>())

@@ -143,6 +143,12 @@ final class PhaseTransitionOrchestrationTests: XCTestCase {
         let mix2 = try XCTUnwrap(phase2Candidates.first { $0.mix.name == "Strength Plus Variety" })
         XCTAssertNotEqual(mix1.mix.name, mix2.mix.name)
 
+        // `TransitionPhaseUseCase` (Stage 10R.7A) runs the whole attempt
+        // against an isolated scratch context that only ever sees
+        // COMMITTED store state — every fixture step above must be saved
+        // first, mirroring Stage 10R.6's identical discipline.
+        try context.save()
+
         let transitionResult = try TransitionPhaseUseCase.transition(
             from: phase1, toNextPhaseWithMix: mix2.mix, asOf: transitionAsOf, ownerUserID: ownerUserID,
             performanceProfile: performanceProfile, availability: availability(),

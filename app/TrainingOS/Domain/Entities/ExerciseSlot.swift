@@ -59,6 +59,12 @@ final class ExerciseSlot {
     /// Un-inversed like `ExercisePrescription.exercise` — the same
     /// documented, deferred risk (`DELETE_RULE_MATRIX.md`).
     var allowedExercises: [Exercise]
+    /// Stage 10R.7A-TX: now inversed by `Exercise.resolvedSlots`
+    /// (`.nullify`) — no longer the un-inversed reference this property
+    /// used to be. See that property's own doc comment and
+    /// `STAGE10R7A_TX_ROOT_CAUSE_REPORT.md` for why an un-inversed to-one
+    /// reference to a `@Attribute(.unique)`-constrained entity was a real
+    /// persistence-corruption risk, not just a latent one.
     var resolvedExercise: Exercise?
 
     /// Stage 4C addition: `SlotSelectionOverride`'s required inverse —

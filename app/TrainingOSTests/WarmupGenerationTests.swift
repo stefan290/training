@@ -22,7 +22,7 @@ final class WarmupGenerationTests: XCTestCase {
 
     @discardableResult
     private func seedCatalogs() -> (exercise: ExerciseCatalog, warmup: [WarmupMovement]) {
-        let exerciseCatalog = ExerciseCatalog.makeAndInsert(context: context)
+        let exerciseCatalog = ExerciseCatalog.resolveOrInsert(context: context)
         let warmupCatalog = WarmupCatalog.makeAndInsert(exerciseCatalog: exerciseCatalog, context: context)
         return (exerciseCatalog, warmupCatalog)
     }
@@ -255,7 +255,7 @@ final class WarmupGenerationTests: XCTestCase {
         // activation item — no squat/hinge/press-specific coverage at all.
         let fallback = WarmupMovement(name: "Marching in Place", emphasis: [.generalActivation], instructionText: "March in place.", defaultDurationSeconds: 30)
         context.insert(fallback)
-        let exerciseCatalog = ExerciseCatalog.makeAndInsert(context: context)
+        let exerciseCatalog = ExerciseCatalog.resolveOrInsert(context: context)
         let session = makeUpperBodyPressingSession(exerciseCatalog: exerciseCatalog)
 
         let sequence = try XCTUnwrap(GenerateWarmupSequenceUseCase.generate(
@@ -493,7 +493,7 @@ final class WarmupGenerationTests: XCTestCase {
     /// ceiling, using a dedicated catalog with enough real pressing
     /// coverage to legitimately approach the target window.
     func testRefinement2_SufficientRelevantCoverageDoesNotTerminateAtTwoMinutes() throws {
-        let exerciseCatalog = ExerciseCatalog.makeAndInsert(context: context)
+        let exerciseCatalog = ExerciseCatalog.resolveOrInsert(context: context)
         // A dedicated, deliberately richer press-relevant candidate set —
         // proves the architecture fills toward the budget from RELEVANT
         // content alone when enough of it exists, rather than being

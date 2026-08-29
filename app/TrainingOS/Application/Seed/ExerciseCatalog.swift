@@ -85,7 +85,16 @@ struct ExerciseCatalog {
     // plain "Deadlift" belongs to.
     let stiffLeggedDeadlift: Exercise
 
-    static func makeAndInsert(context: ModelContext) -> ExerciseCatalog {
+    /// Stage 10R.7A-TX rename (was `makeAndInsert`) — the old name implied
+    /// "always construct fresh objects," which is exactly the behavior
+    /// that corrupted `Exercise` rows under repeated resolution
+    /// (`STAGE10R7A_TX_ROOT_CAUSE_REPORT.md`). The real domain semantics
+    /// are "resolve the canonical catalog into this context" — for a
+    /// given store, repeated calls must resolve to the SAME persisted
+    /// canonical `Exercise` identity for the same `canonicalName`, never
+    /// construct a second colliding row and rely on the `@Attribute(.unique)`
+    /// conflict-merge to paper over it.
+    static func resolveOrInsert(context: ModelContext) -> ExerciseCatalog {
         func make(
             _ name: String, _ modality: TrainingModality, _ equipment: String, _ pattern: String,
             primaryTargets: [MuscleGroup] = [],
@@ -93,6 +102,9 @@ struct ExerciseCatalog {
             functionalModality: FunctionalModality? = nil,
             requiredEquipment: [EquipmentRequirement] = []
         ) -> Exercise {
+            if let existing = try? context.fetch(FetchDescriptor<Exercise>(predicate: #Predicate { $0.canonicalName == name })).first {
+                return existing
+            }
             let exercise = Exercise(
                 canonicalName: name, modality: modality, equipment: equipment, movementPattern: pattern,
                 primaryTargets: primaryTargets, movementFunctions: movementFunctions, functionalModality: functionalModality,
@@ -100,6 +112,18 @@ struct ExerciseCatalog {
             )
             context.insert(exercise)
             return exercise
+        }
+        /// Aliases aren't the identity key (`canonicalName` is) and carry
+        /// no uniqueness constraint, but attaching the same alias twice on
+        /// a second resolution against an already-populated store would
+        /// still silently accumulate duplicate `ExerciseAlias` rows — not
+        /// a corruption risk, just not actually idempotent. Skip any
+        /// `sourceName` already attached to this exercise.
+        func addAliasIfMissing(_ sourceName: String, confidence: Double, to exercise: Exercise) {
+            guard !exercise.aliases.contains(where: { $0.sourceName == sourceName }) else { return }
+            let alias = ExerciseAlias(sourceName: sourceName, confidence: confidence)
+            context.insert(alias)
+            exercise.addAlias(alias)
         }
 
         // Stage 10B (Blocker 2): `.pressLoaded` distinguishes a genuine
@@ -122,9 +146,7 @@ struct ExerciseCatalog {
         // an import pipeline: several source spellings resolve to one
         // canonical exercise.
         for aliasName in ["DB Incline Press", "Incline DB Press", "Incline Dumbbell Bench"] {
-            let alias = ExerciseAlias(sourceName: aliasName, confidence: 0.94)
-            context.insert(alias)
-            inclineDumbbellPress.addAlias(alias)
+            addAliasIfMissing(aliasName, confidence: 0.94, to: inclineDumbbellPress)
         }
 
         let backSquat = make(

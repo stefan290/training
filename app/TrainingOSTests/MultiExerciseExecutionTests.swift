@@ -37,7 +37,7 @@ final class MultiExerciseExecutionTests: XCTestCase {
 
     @discardableResult
     private func makeLowerA() -> (session: Session, programInstance: ProgramInstance, multiAlternativeSlot: ExerciseSlot, catalog: ExerciseCatalog) {
-        let catalog = ExerciseCatalog.makeAndInsert(context: context)
+        let catalog = ExerciseCatalog.resolveOrInsert(context: context)
         let day = Day(ownerUserID: ownerUserID, date: Date(timeIntervalSince1970: 1_700_000_000))
         context.insert(day)
         let fixture = SeedScenarios.materializedLowerASession(

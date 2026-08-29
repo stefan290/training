@@ -25,7 +25,7 @@ final class CatalogSemanticFoundationTests: XCTestCase {
     // MARK: D — promoted exercises participate in candidate resolution
 
     func testPromotedExercisesSatisfyTheSameSlotsTheyAlwaysCouldHave() throws {
-        let catalog = ExerciseCatalog.makeAndInsert(context: context)
+        let catalog = ExerciseCatalog.resolveOrInsert(context: context)
         let unilateralQuadSlot = ExerciseSlot(name: "Unilateral Knee-Dominant", allowedTargets: [.quadriceps, .glutes], allowedMovementFunctions: [.squatLoaded])
         context.insert(unilateralQuadSlot)
         XCTAssertTrue(isValid(catalog.bulgarianSplitSquat, for: unilateralQuadSlot))
@@ -50,7 +50,7 @@ final class CatalogSemanticFoundationTests: XCTestCase {
     // MARK: E — new exercises resolve from the correct slot intent
 
     func testNewExercisesResolveFromTheirIntendedSlotIntent() throws {
-        let catalog = ExerciseCatalog.makeAndInsert(context: context)
+        let catalog = ExerciseCatalog.resolveOrInsert(context: context)
 
         let verticalPushSlot = ExerciseSlot(name: "Vertical Push", allowedTargets: [.shoulders], allowedMovementFunctions: [.verticalPushLoaded])
         context.insert(verticalPushSlot)
@@ -80,7 +80,7 @@ final class CatalogSemanticFoundationTests: XCTestCase {
     // MARK: F/G — horizontal pull and vertical pull are mutually exclusive
 
     func testHorizontalPullSlotNeverResolvesAVerticalPullOnlyExercise() throws {
-        let catalog = ExerciseCatalog.makeAndInsert(context: context)
+        let catalog = ExerciseCatalog.resolveOrInsert(context: context)
         let horizontalPullSlot = ExerciseSlot(name: "Horizontal Pull", allowedTargets: [.back], allowedMovementFunctions: [.horizontalPullLoaded])
         context.insert(horizontalPullSlot)
 
@@ -91,7 +91,7 @@ final class CatalogSemanticFoundationTests: XCTestCase {
     }
 
     func testVerticalPullSlotNeverResolvesAHorizontalPullOnlyExercise() throws {
-        let catalog = ExerciseCatalog.makeAndInsert(context: context)
+        let catalog = ExerciseCatalog.resolveOrInsert(context: context)
         let verticalPullSlot = ExerciseSlot(name: "Vertical Pull", allowedTargets: [.back], allowedMovementFunctions: [.verticalPullLoaded])
         context.insert(verticalPullSlot)
 
@@ -110,7 +110,7 @@ final class CatalogSemanticFoundationTests: XCTestCase {
     /// fixes it; this test proves the fix, not just the new exercise's
     /// own positive case (already covered by `testNewExercisesResolveFromTheirIntendedSlotIntent`).
     func testVerticalPushNeverSatisfiesTheExistingHorizontalPushSlotGrouping() throws {
-        let catalog = ExerciseCatalog.makeAndInsert(context: context)
+        let catalog = ExerciseCatalog.resolveOrInsert(context: context)
         let horizontalPushSlot = ExerciseSlot(name: "Horizontal Push", allowedTargets: [.chest, .shoulders], allowedMovementFunctions: [.pressLoaded])
         context.insert(horizontalPushSlot)
 
@@ -121,7 +121,7 @@ final class CatalogSemanticFoundationTests: XCTestCase {
     // MARK: H — lateral delt and rear delt are distinguishable
 
     func testLateralDeltAndRearDeltSlotsAreMutuallyExclusive() throws {
-        let catalog = ExerciseCatalog.makeAndInsert(context: context)
+        let catalog = ExerciseCatalog.resolveOrInsert(context: context)
         let lateralDeltSlot = ExerciseSlot(name: "Lateral Delt", allowedTargets: [.lateralDelt])
         context.insert(lateralDeltSlot)
         let rearDeltSlot = ExerciseSlot(name: "Rear Delt", allowedTargets: [.rearDelt])
@@ -143,7 +143,7 @@ final class CatalogSemanticFoundationTests: XCTestCase {
     // MARK: I — equipment requirements are structured and deterministic
 
     func testEquipmentRequirementsAreStructuredNotFreeStrings() throws {
-        let catalog = ExerciseCatalog.makeAndInsert(context: context)
+        let catalog = ExerciseCatalog.resolveOrInsert(context: context)
         XCTAssertEqual(Set(catalog.benchPress.requiredEquipment), [.barbell, .rack, .bench])
         XCTAssertEqual(Set(catalog.backSquat.requiredEquipment), [.barbell, .rack])
         XCTAssertEqual(Set(catalog.inclineDumbbellPress.requiredEquipment), [.dumbbells, .bench])
@@ -170,7 +170,7 @@ final class CatalogSemanticFoundationTests: XCTestCase {
     // MARK: J — existing substitution behavior does not regress
 
     func testExistingBenchPressSubstitutionStillResolvesInclineDumbbellPress() throws {
-        let catalog = ExerciseCatalog.makeAndInsert(context: context)
+        let catalog = ExerciseCatalog.resolveOrInsert(context: context)
         let horizontalPushSlot = ExerciseSlot(name: "Horizontal Push", allowedTargets: [.chest, .shoulders], allowedMovementFunctions: [.pressLoaded])
         context.insert(horizontalPushSlot)
         XCTAssertTrue(isValid(catalog.benchPress, for: horizontalPushSlot))

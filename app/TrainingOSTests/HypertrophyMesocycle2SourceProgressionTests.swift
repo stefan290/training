@@ -204,7 +204,7 @@ final class HypertrophyMesocycle2SourceProgressionTests: XCTestCase {
     // MARK: 16/17 — no fabricated rep prescription anywhere; actual reps remain athlete output
 
     func testNoFabricatedRepPrescriptionAndActualRepsRemainAthleteOutput() throws {
-        _ = ExerciseCatalog.makeAndInsert(context: context) // resolves `.exercise` for every slot, needed by `LogSetUseCase` below
+        _ = ExerciseCatalog.resolveOrInsert(context: context) // resolves `.exercise` for every slot, needed by `LogSetUseCase` below
         let definition = try generateMesocycle2()
         let instance = ProgramInstance(ownerUserID: ownerUserID)
         context.insert(instance)

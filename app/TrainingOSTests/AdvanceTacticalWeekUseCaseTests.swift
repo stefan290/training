@@ -69,7 +69,7 @@ final class AdvanceTacticalWeekUseCaseTests: XCTestCase {
     @discardableResult
     private func makeCalibratedInstance(phaseType: HypertrophyPhaseType, rmKilograms: Double = 100, startDateOverride: Date? = nil) throws -> Fixture {
         let effectiveStartDate = startDateOverride ?? startDate
-        _ = ExerciseCatalog.makeAndInsert(context: context)
+        _ = ExerciseCatalog.resolveOrInsert(context: context)
         let goal = Goal(ownerUserID: ownerUserID, primaryType: .muscleGain)
         context.insert(goal)
         let plan = TrainingPlan(status: .active)
@@ -413,14 +413,14 @@ final class AdvanceTacticalWeekUseCaseTests: XCTestCase {
         XCTAssertEqual(prematureOutcome, .notEligible)
     }
 
-    // MARK: Mesocycle-transition gate fix (canStartNextHypertrophyPhase requires tactical exhaustion)
+    // MARK: Mesocycle-transition gate fix (canStartNextHypertrophyMesocycle requires tactical exhaustion)
 
     func testCannotStartMesocycleTwoWhileMesocycleOneWeeksRemain() throws {
         let fixture = try makeCalibratedInstance(phaseType: .basicHypertrophy)
         try skipEveryRealSession(in: fixture.instance, weekIndex: 0) // Week 1 terminal, but source weeks remain
         let viewModel = PhaseDetailViewModel()
         viewModel.load(phase: fixture.phase, modelContext: context)
-        XCTAssertFalse(viewModel.canStartNextHypertrophyPhase, "must not offer the next mesocycle while M1 tactical weeks remain")
+        XCTAssertFalse(viewModel.canStartNextHypertrophyMesocycle, "must not offer the next mesocycle while M1 tactical weeks remain")
     }
 
     func testCanStartMesocycleTwoOnceMesocycleOneFinalDeloadIsTerminal() throws {
@@ -428,8 +428,8 @@ final class AdvanceTacticalWeekUseCaseTests: XCTestCase {
         try skipToExhaustion(fixture)
         let viewModel = PhaseDetailViewModel()
         viewModel.load(phase: fixture.phase, modelContext: context)
-        XCTAssertTrue(viewModel.canStartNextHypertrophyPhase, "M1 is tactically exhausted — the next mesocycle should now be offered")
-        XCTAssertEqual(viewModel.nextHypertrophyPhaseTypeLabel, "Metabolite Focus")
+        XCTAssertTrue(viewModel.canStartNextHypertrophyMesocycle, "M1 is tactically exhausted — the next mesocycle should now be offered")
+        XCTAssertEqual(viewModel.nextHypertrophyMesocycleTypeLabel, "Metabolite Focus")
     }
 
     func testCannotStartMesocycleThreeWhileMesocycleTwoWeeksRemain() throws {
@@ -437,7 +437,7 @@ final class AdvanceTacticalWeekUseCaseTests: XCTestCase {
         try skipEveryRealSession(in: fixture.instance, weekIndex: 0)
         let viewModel = PhaseDetailViewModel()
         viewModel.load(phase: fixture.phase, modelContext: context)
-        XCTAssertFalse(viewModel.canStartNextHypertrophyPhase)
+        XCTAssertFalse(viewModel.canStartNextHypertrophyMesocycle)
     }
 
     func testCanStartMesocycleThreeOnceMesocycleTwoFinalDeloadIsTerminal() throws {
@@ -445,8 +445,8 @@ final class AdvanceTacticalWeekUseCaseTests: XCTestCase {
         try skipToExhaustion(fixture)
         let viewModel = PhaseDetailViewModel()
         viewModel.load(phase: fixture.phase, modelContext: context)
-        XCTAssertTrue(viewModel.canStartNextHypertrophyPhase)
-        XCTAssertEqual(viewModel.nextHypertrophyPhaseTypeLabel, "Resensitization")
+        XCTAssertTrue(viewModel.canStartNextHypertrophyMesocycle)
+        XCTAssertEqual(viewModel.nextHypertrophyMesocycleTypeLabel, "Resensitization")
     }
 
     /// M3's final deload terminal -> no next source mesocycle exists in
@@ -456,8 +456,8 @@ final class AdvanceTacticalWeekUseCaseTests: XCTestCase {
         try skipToExhaustion(fixture)
         let viewModel = PhaseDetailViewModel()
         viewModel.load(phase: fixture.phase, modelContext: context)
-        XCTAssertFalse(viewModel.canStartNextHypertrophyPhase, "Resensitization has no next phase in HypertrophyProgramJourney.orderedPhaseTypes")
-        XCTAssertNil(viewModel.nextHypertrophyPhaseTypeLabel)
+        XCTAssertFalse(viewModel.canStartNextHypertrophyMesocycle, "Resensitization has no next phase in HypertrophyProgramJourney.orderedPhaseTypes")
+        XCTAssertNil(viewModel.nextHypertrophyMesocycleTypeLabel)
     }
 
     /// Regression: the previously-existing M1->M2 real transition must
@@ -467,10 +467,10 @@ final class AdvanceTacticalWeekUseCaseTests: XCTestCase {
         try skipToExhaustion(fixture)
         let viewModel = PhaseDetailViewModel()
         viewModel.load(phase: fixture.phase, modelContext: context)
-        XCTAssertTrue(viewModel.canStartNextHypertrophyPhase)
-        XCTAssertTrue(viewModel.startNextHypertrophyPhase(modelContext: context))
-        XCTAssertEqual(fixture.plan.orderedPhases.count, 2)
-        let nextDefinition = try XCTUnwrap(fixture.plan.orderedPhases.last?.primaryInstance?.programDefinition)
+        XCTAssertTrue(viewModel.canStartNextHypertrophyMesocycle)
+        XCTAssertTrue(viewModel.startNextHypertrophyMesocycle(modelContext: context))
+        XCTAssertEqual(fixture.plan.orderedPhases.count, 1, "Stage 10R.7A: a mesocycle succession never creates a new strategic phase")
+        let nextDefinition = try XCTUnwrap(fixture.phase.primaryInstance?.programDefinition)
         XCTAssertEqual(nextDefinition.hypertrophyConfiguration?.phaseType, .metaboliteFocus)
     }
 

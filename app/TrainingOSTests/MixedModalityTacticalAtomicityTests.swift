@@ -155,7 +155,7 @@ final class MixedModalityTacticalAtomicityTests: XCTestCase {
     // MARK: 4 — successful multi-component advance
 
     func testSuccessfulAdvanceRollsHypertrophyAndFunctionalFitnessTogetherInOneCall() throws {
-        _ = ExerciseCatalog.makeAndInsert(context: context)
+        _ = ExerciseCatalog.resolveOrInsert(context: context)
         let strengthCandidates = try context.fetch(FetchDescriptor<Exercise>())
         let ffCandidates = [Exercise(canonicalName: "Test Wall Ball", modality: .functionalFitness, equipment: "medicineBall", movementPattern: "squat", movementFunctions: [.squatLoaded], functionalModality: .weightlifting)]
         ffCandidates.forEach { context.insert($0) }
@@ -195,7 +195,7 @@ final class MixedModalityTacticalAtomicityTests: XCTestCase {
     // MARK: 6/7 — preflight blocks before ANY mutation
 
     func testPreflightBlocksFunctionalFitnessAdvanceBeforeAnyComponentIsMutated() throws {
-        _ = ExerciseCatalog.makeAndInsert(context: context)
+        _ = ExerciseCatalog.resolveOrInsert(context: context)
         let strengthCandidates = try context.fetch(FetchDescriptor<Exercise>())
         let ffCandidates = [Exercise(canonicalName: "Test Wall Ball", modality: .functionalFitness, equipment: "medicineBall", movementPattern: "squat", movementFunctions: [.squatLoaded], functionalModality: .weightlifting)]
         ffCandidates.forEach { context.insert($0) }
@@ -226,7 +226,7 @@ final class MixedModalityTacticalAtomicityTests: XCTestCase {
     }
 
     func testPreflightBlocksIntervalAdvanceBeforeAnyComponentIsMutated() throws {
-        _ = ExerciseCatalog.makeAndInsert(context: context)
+        _ = ExerciseCatalog.resolveOrInsert(context: context)
         let strengthCandidates = try context.fetch(FetchDescriptor<Exercise>())
         let (phase, mix) = makePhaseAndMix()
         let hyp = try addHypertrophyComponent(to: mix, phase: phase, strengthCandidates: strengthCandidates)
@@ -324,7 +324,7 @@ final class MixedModalityTacticalAtomicityTests: XCTestCase {
     // MARK: 8/10/11 — the mandatory D-10R6-4 scenario: FF throws mid-loop after Hypertrophy already mutated; U survives; retry advances exactly once
 
     func testUnrelatedPendingMutationSurvivesAndRetryAfterFixingBlockerAdvancesExactlyOnceForEveryComponent() throws {
-        _ = ExerciseCatalog.makeAndInsert(context: context)
+        _ = ExerciseCatalog.resolveOrInsert(context: context)
         let strengthCandidates = try context.fetch(FetchDescriptor<Exercise>())
         let realFFCandidates = [Exercise(canonicalName: "Test Wall Ball", modality: .functionalFitness, equipment: "medicineBall", movementPattern: "squat", movementFunctions: [.squatLoaded], functionalModality: .weightlifting)]
         realFFCandidates.forEach { context.insert($0) }
@@ -488,7 +488,7 @@ final class MixedModalityTacticalAtomicityTests: XCTestCase {
     /// no NEW equipment inference, no per-exercise lookup, no silent
     /// default substitution.
     func testAdvanceStillUsesExactlyTheCallerSuppliedEquipmentProfileNoNewInferenceIntroduced() throws {
-        _ = ExerciseCatalog.makeAndInsert(context: context)
+        _ = ExerciseCatalog.resolveOrInsert(context: context)
         let strengthCandidates = try context.fetch(FetchDescriptor<Exercise>())
         let (phase, mix) = makePhaseAndMix()
         let hyp = try addHypertrophyComponent(to: mix, phase: phase, strengthCandidates: strengthCandidates)

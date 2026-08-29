@@ -68,17 +68,26 @@ final class PhaseDetailViewModel {
     /// `PlannerDecision.explanation` for why that component's specific
     /// program was selected, if one exists.
     private(set) var componentExplanations: [UUID: String] = [:]
-    /// Stage 10R.2B: `true` only when this phase's primary component is
-    /// an already-materialized Hypertrophy instance whose configuration
-    /// has a real next mesocycle (`HypertrophyProgramJourney.orderedPhaseTypes`)
-    /// AND no next phase already exists in the plan yet — the second half
-    /// doubles as the idempotency signal: once `startNextHypertrophyPhase`
-    /// succeeds, `nextPhase` becomes non-nil on the next `load`, hiding
-    /// the action rather than offering to repeat it.
-    private(set) var canStartNextHypertrophyPhase = false
+    /// Stage 10R.2B, corrected by Stage 10R.7A
+    /// (`STAGE10R7_STRATEGIC_PHASE_LIFECYCLE_DESIGN.md`, D-10R7-3): `true`
+    /// only when this phase's primary component is an already-materialized
+    /// Hypertrophy instance that is tactically EXHAUSTED and whose
+    /// configuration has a real next mesocycle
+    /// (`HypertrophyProgramJourney.orderedPhaseTypes`). **Never gated on
+    /// whether a next STRATEGIC phase already exists in the plan** — a
+    /// Hypertrophy mesocycle succession happens INSIDE this same strategic
+    /// phase (`StartNextHypertrophyMesocycleUseCase` never creates a new
+    /// `TrainingPhase`), so a pre-planned future phase must never suppress
+    /// it. The idempotency signal instead comes from `primaryInstance`
+    /// itself: once the succession succeeds, `phase.primaryInstance`
+    /// (Stage 10R.7A: reads the mix component's current pointer) becomes
+    /// the freshly-materialized next mesocycle, which is not yet
+    /// exhausted — hiding the action automatically, the same self-hiding
+    /// discipline `canAdvanceTacticalWeek` already uses.
+    private(set) var canStartNextHypertrophyMesocycle = false
     /// The next mesocycle's display name, for the action's own label —
-    /// `nil` whenever `canStartNextHypertrophyPhase` is `false`.
-    private(set) var nextHypertrophyPhaseTypeLabel: String?
+    /// `nil` whenever `canStartNextHypertrophyMesocycle` is `false`.
+    private(set) var nextHypertrophyMesocycleTypeLabel: String?
     /// Stage 10R.4B: `true` only when `TacticalWeekCompletion
     /// .canAdvanceTacticalWeek(for:)` says every component this phase's
     /// active mix would actually roll is itself ready — a purely derived
@@ -168,17 +177,25 @@ final class PhaseDetailViewModel {
         // outgoing instance to be TACTICALLY EXHAUSTED (its final
         // source-defined week is terminal) — a purely derived read, never
         // a persisted status (Locked Decision 4).
-        canStartNextHypertrophyPhase = false
-        nextHypertrophyPhaseTypeLabel = nil
-        if phase.status == .active, nextPhase == nil,
+        //
+        // Stage 10R.7A fix: previously ALSO required `nextPhase == nil`
+        // (no next STRATEGIC phase already existed in the plan) — wrong,
+        // since a Hypertrophy mesocycle succession happens inside this
+        // SAME strategic phase and must never be suppressed merely
+        // because a later, unrelated strategic phase already exists in
+        // `TrainingPlan.orderedPhases`. See this property's own doc
+        // comment for the corrected idempotency signal.
+        canStartNextHypertrophyMesocycle = false
+        nextHypertrophyMesocycleTypeLabel = nil
+        if phase.status == .active,
            let primaryInstance = phase.primaryInstance,
            TacticalWeekCompletion.isInstanceExhausted(for: primaryInstance),
            activeComponents.first(where: { $0.priority == .primary })?.programmingSystem == .hypertrophy,
            let configuration = primaryInstance.programDefinition?.hypertrophyConfiguration,
            let currentIndex = HypertrophyProgramJourney.orderedPhaseTypes.firstIndex(of: configuration.phaseType),
            HypertrophyProgramJourney.orderedPhaseTypes.indices.contains(currentIndex + 1) {
-            canStartNextHypertrophyPhase = true
-            nextHypertrophyPhaseTypeLabel = Self.phaseTypeDisplayName(HypertrophyProgramJourney.orderedPhaseTypes[currentIndex + 1])
+            canStartNextHypertrophyMesocycle = true
+            nextHypertrophyMesocycleTypeLabel = Self.phaseTypeDisplayName(HypertrophyProgramJourney.orderedPhaseTypes[currentIndex + 1])
         }
 
         // Stage 10R.4B: the tactical week-advancement gate — see this
@@ -212,11 +229,11 @@ final class PhaseDetailViewModel {
     /// tap), matching `STAGE3_DECISION_MEMO.md` Decision A1's
     /// `transitionTrigger: .userInitiated`.
     @discardableResult
-    func startNextHypertrophyPhase(modelContext: ModelContext) -> Bool {
+    func startNextHypertrophyMesocycle(modelContext: ModelContext) -> Bool {
         guard let phase, let primaryInstance = phase.primaryInstance else { return false }
         let candidates = (try? modelContext.fetch(FetchDescriptor<Exercise>())) ?? []
         do {
-            try StartNextHypertrophyPhaseUseCase.start(
+            try StartNextHypertrophyMesocycleUseCase.start(
                 previousPhase: phase, previousInstance: primaryInstance, asOf: Date(),
                 ownerUserID: primaryInstance.ownerUserID,
                 availability: UserAvailability(trainingDaysPerWeek: 7, allowsDoubleSessions: false, maxSessionsPerDay: 1),
