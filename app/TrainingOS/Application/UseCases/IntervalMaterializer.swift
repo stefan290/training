@@ -102,6 +102,14 @@ enum IntervalMaterializer {
                     )
                     context.insert(prescription)
                     block.attachSteadyStatePrescription(prescription)
+
+                    // Stage CP.1: this embedded warm-up/cool-down block is
+                    // a real SteadyStatePrescription, mapped exactly like
+                    // SteadyStateMaterializer's own blocks.
+                    block.trainingStressProfile = SteadyStateTrainingStressMapper.map(
+                        activityType: activityType, durationSeconds: durationResult.durationSeconds,
+                        primaryIntensity: steadyStateTemplate.primaryIntensity
+                    )
                     continue
                 }
 
@@ -145,6 +153,14 @@ enum IntervalMaterializer {
                 prescription.sourceWorkoutBlockTemplate = blockTemplate
                 context.insert(prescription)
                 block.attachIntervalPrescription(prescription)
+
+                // Stage CP.1: observes exactly this resolved prescription
+                // — never influences IntervalProgressionEngine's own output.
+                block.trainingStressProfile = IntervalTrainingStressMapper.map(
+                    activityType: activityType, intervalCount: countResult.count,
+                    workDurationSeconds: durationResult.durationSeconds, recoveryDurationSeconds: recoveryResult.recoveryDurationSeconds,
+                    workIntensity: intensityResult.intensity ?? intervalTemplate.workIntensity
+                )
             }
         }
 

@@ -150,6 +150,12 @@ enum StrengthMaterializer {
                 let orderedTemplates = blockTemplate.orderedPrescriptionTemplates
                     .sorted { ($0.loadRuleKind == .linkedToPairedSlot ? 1 : 0) < ($1.loadRuleKind == .linkedToPairedSlot ? 1 : 0) }
 
+                // Stage CP.1: accumulated across every prescription this
+                // block ends up containing, then mapped once after the
+                // loop below — "the whole programmed block matters," never
+                // one exercise classifying the whole block.
+                var resolvedPrescriptionsForStressMapping: [StrengthTrainingStressMapper.ResolvedPrescription] = []
+
                 for template in orderedTemplates {
                     guard let rules = template.rules, let slot = template.exerciseSlot else { continue }
                     let ctx = slotContext(slot)
@@ -274,7 +280,26 @@ enum StrengthMaterializer {
                         context.insert(setPrescription)
                         prescription.addSetPrescription(setPrescription)
                     }
+
+                    // Stage CP.1: the mapper observes exactly this
+                    // resolved prescription — the real, already-deload-
+                    // adjusted-if-applicable weight/repGoal/set count —
+                    // and nothing else. No isDeload branch here or in the
+                    // mapper: a deload week's genuinely reduced values
+                    // simply classify lower on their own merits. An
+                    // unresolvable slot (no candidate Exercise available)
+                    // has nothing to observe and is simply excluded, same
+                    // as any other genuinely-missing input.
+                    if let resolvedExercise {
+                        resolvedPrescriptionsForStressMapping.append(
+                            StrengthTrainingStressMapper.ResolvedPrescription(
+                                exercise: resolvedExercise, weightKg: weightKg, repGoal: repGoal, setCount: finalSetCount
+                            )
+                        )
+                    }
                 }
+
+                block.trainingStressProfile = StrengthTrainingStressMapper.map(prescriptions: resolvedPrescriptionsForStressMapping)
             }
         }
 

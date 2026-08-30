@@ -80,6 +80,14 @@ enum SteadyStateMaterializer {
                     prescription.sourceWorkoutBlockTemplate = blockTemplate
                     context.insert(prescription)
                     block.attachSteadyStatePrescription(prescription)
+
+                    // Stage CP.1: observes exactly this resolved
+                    // prescription — never influences SteadyStateProgressionEngine's
+                    // own output.
+                    block.trainingStressProfile = SteadyStateTrainingStressMapper.map(
+                        activityType: activityType, durationSeconds: durationResult.durationSeconds,
+                        primaryIntensity: intensityResult.intensity
+                    )
                 }
             }
         }
