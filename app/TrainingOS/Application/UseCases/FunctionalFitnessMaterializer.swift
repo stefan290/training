@@ -87,7 +87,12 @@ enum FunctionalFitnessMaterializer {
                     throw FunctionalFitnessMaterializationError.previousExposureRequired
                 }
 
-                let decision = FunctionalFitnessDecisionEngine().decide(ProgrammingDecisionInput(
+                // Stage FF.L1: one real decision flow yields both INTENDED
+                // (Phase 1, pre-CP.2 intent) and FINAL (Phase 2, post-CP.2
+                // adaptation) — everything below that used to read
+                // `decision.nextStimulus` wants FINAL specifically (what
+                // was actually prescribed), exactly as before.
+                let decision = FunctionalFitnessDecisionEngine().decideWithIntent(ProgrammingDecisionInput(
                     exposureHistory: exposureHistory,
                     stimulusRequirements: ffTemplate.stimulus,
                     varianceConstraints: ffTemplate.varianceConstraints ?? VarianceConstraints(),
@@ -95,14 +100,21 @@ enum FunctionalFitnessMaterializer {
                     protectedSiblingStressProfilesThisWeek: protectedSiblingStressProfilesThisWeek,
                     currentWeekContext: currentWeekContext
                 ))
-                currentWeekContext.record(stimulus: decision.nextStimulus)
+                // Same-week FF complementarity coordinates against what a
+                // sibling session is ACTUALLY programmed to do after CP.2
+                // adaptation, not its pre-adaptation intent — FINAL, not
+                // INTENDED (verified against CP.2's own same-week pairing
+                // contract; see the design doc's Design Lock, item 9).
+                currentWeekContext.record(stimulus: decision.finalStimulus)
 
                 let block = WorkoutBlock(type: blockTemplate.type)
                 context.insert(block)
                 session.addBlock(block)
-                block.trainingStressProfile = FunctionalFitnessStressProfileMapper.map(stimulus: decision.nextStimulus)
+                block.trainingStressProfile = FunctionalFitnessStressProfileMapper.map(stimulus: decision.finalStimulus)
 
-                let prescription = FunctionalFitnessPrescription(stimulus: decision.nextStimulus, format: ffTemplate.format)
+                let prescription = FunctionalFitnessPrescription(
+                    stimulus: decision.finalStimulus, intendedStimulus: decision.intendedStimulus, format: ffTemplate.format
+                )
                 context.insert(prescription)
                 block.attachFunctionalFitnessPrescription(prescription)
 
@@ -143,7 +155,7 @@ enum FunctionalFitnessMaterializer {
                 // equipment specifically.
                 let validation = FunctionalFitnessStimulusValidator.validate(
                     format: ffTemplate.format, resolvedModalities: resolvedModalities,
-                    resolvedLoadingRoles: resolvedLoadingRoles, against: decision.nextStimulus
+                    resolvedLoadingRoles: resolvedLoadingRoles, against: decision.finalStimulus
                 )
                 guard validation.passes else {
                     throw FunctionalFitnessMaterializationError.stimulusValidationFailed(validation)

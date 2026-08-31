@@ -55,7 +55,13 @@ struct VarianceConstraints: Codable, Equatable {
 /// (`MODALITY_ARCHITECTURE_VALIDATION.md` §5; Stage 3C §25).
 struct ProgrammingDecisionInput {
     let exposureHistory: [VarianceExposureRecord]
-    let stimulusRequirements: Stimulus
+    /// Stage FF.L1: `var`, not `let` — `FunctionalFitnessDecisionEngine
+    /// .decideWithIntent` needs to evaluate its Phase 2 (CP.2 adaptation)
+    /// check against Phase 1's own INTENDED output rather than this raw
+    /// configured value, by constructing a copy with this one field
+    /// overridden. Every other real caller still supplies the raw
+    /// configured baseline exactly as before.
+    var stimulusRequirements: Stimulus
     let varianceConstraints: VarianceConstraints
     /// Stage CP.2 addition. This component's own real, locked
     /// `AdaptationObjective`s (empty when the owning `LongTermPlanner`
@@ -109,4 +115,43 @@ struct ProgrammingDecisionOutput {
 /// this protocol existed to settle.
 protocol ProgrammingDecisionEngine {
     func decide(_ input: ProgrammingDecisionInput) -> ProgrammingDecisionOutput
+}
+
+/// Stage FF.L1 ("Intended vs. Final Stimulus Foundation") — makes the
+/// intent/adaptation boundary `FunctionalFitnessDecisionEngine` already
+/// reasons about internally (`FUNCTIONAL_FITNESS_LONGITUDINAL_PROGRAMMING_DESIGN.md`'s
+/// Design Lock) an explicit, durable output shape rather than a single
+/// collapsed `ProgrammingDecisionOutput`.
+///
+/// `intendedStimulus` is what Functional Fitness's own intent-shaping
+/// checks (today: the 4 original variance checks; future: any real
+/// longitudinal-programming/purposeful-variance check) decided BEFORE
+/// concurrent-training adaptation ran. `finalStimulus` is what Stage
+/// CP.2's cross-modality/same-week checks decided AFTER seeing that
+/// intent — the only value ever exposed to execution, exposure history,
+/// or `CurrentWeekFunctionalFitnessProgrammingContext` (all of which want
+/// what was ACTUALLY prescribed, not what was originally intended).
+///
+/// Never reconstructed after the fact from a reason code or by re-running
+/// current engine logic against historical state — an intended value that
+/// isn't captured at the moment it's decided is not honestly recoverable
+/// later, since a repair/mapping function's CURRENT behavior may not match
+/// what an OLDER app version's engine actually did for a historical
+/// session. See the design doc's Design Lock, item 5, for the full proof.
+struct FunctionalFitnessProgrammingDecision {
+    let intendedStimulus: Stimulus
+    /// Why INTENDED differs from the configured baseline. Transient —
+    /// never persisted (Stage FF.L1 explicitly declines to add a
+    /// persisted `intendedReasonCode`, since no real intent-shaping
+    /// behavior is active in production today; a future stage that adds
+    /// one can do so when it becomes necessary, not before).
+    let intendedReasonCode: FunctionalFitnessReasonCode
+    let finalStimulus: Stimulus
+    /// Why FINAL differs from INTENDED (or, if it doesn't, mirrors
+    /// `intendedReasonCode`) — this is the one reason code
+    /// `FunctionalFitnessPrescription` has ever persisted, unchanged in
+    /// meaning by this stage.
+    let finalReasonCode: FunctionalFitnessReasonCode
+    let confidence: Double
+    let inputsSummary: String
 }

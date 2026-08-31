@@ -18,19 +18,64 @@ import Foundation
 /// 4D's progression-priority discipline ("do not change several things
 /// at once").
 struct FunctionalFitnessDecisionEngine: ProgrammingDecisionEngine {
-    /// Stage CP.2 addition: two new checks run FIRST, ahead of the
-    /// original 4 — a hard discouragement/eligibility fact (or a
-    /// same-week complementarity preference) must be able to override
-    /// whatever the existing variance chain would otherwise produce. If
-    /// either fires, the original 4 checks do not run against the
-    /// baseline this same call — an accepted consequence of this
-    /// engine's own "adjust one dimension per decision" design, and moot
-    /// in practice today since `LongTermPlanner`'s real production
-    /// `VarianceConstraints()` is all-`nil` (the original 4 checks never
-    /// fire regardless).
+    /// Stage FF.L1: the single source of truth for both INTENDED and
+    /// FINAL. Two literal, ordered phases, never one flat "first match
+    /// wins" list across both concerns — Phase 1 (intent: the original 4
+    /// variance checks, unchanged, still "first match wins" among
+    /// themselves) decides INTENDED; Phase 2 (adaptation: Stage CP.2's
+    /// existing two checks, unchanged internally) evaluates against
+    /// Phase 1's own INTENDED output — never the raw configured
+    /// baseline directly — producing FINAL. This is the smallest
+    /// refactor that lets a future longitudinal-programming/purposeful-
+    /// variance check join Phase 1 without ever bypassing CP.2's safety
+    /// checks (inserting before Phase 2 in the old flat list) or being
+    /// starved by them (inserting after). Their own relative order
+    /// within Phase 1 is deliberately undecided — variance != progression,
+    /// and this stage adds neither.
+    ///
+    /// Calling both original phases here (never re-deriving one from the
+    /// other, never calling this type twice with different arguments) is
+    /// what keeps `decide(_:)` below and `decideWithIntent(_:)`
+    /// impossible to desynchronize — one real decision flow, two views
+    /// onto it.
+    func decideWithIntent(_ input: ProgrammingDecisionInput) -> FunctionalFitnessProgrammingDecision {
+        let intended = intentPhase(input)
+
+        var adaptationInput = input
+        adaptationInput.stimulusRequirements = intended.nextStimulus
+        let final = adaptationPhase(adaptationInput) ?? intended
+
+        return FunctionalFitnessProgrammingDecision(
+            intendedStimulus: intended.nextStimulus,
+            intendedReasonCode: intended.reasonCode,
+            finalStimulus: final.nextStimulus,
+            finalReasonCode: final.reasonCode,
+            confidence: final.confidence,
+            inputsSummary: final.inputsSummary
+        )
+    }
+
+    /// Preserved for every existing caller that only ever wanted the
+    /// single, final, actually-prescribed result (execution, exposure
+    /// history, every pre-FF.L1 test) — delegates to `decideWithIntent`
+    /// so there is exactly one real decision flow, never two that could
+    /// diverge.
     func decide(_ input: ProgrammingDecisionInput) -> ProgrammingDecisionOutput {
-        if let output = adjustForCrossModalityConstraint(input) { return output }
-        if let output = adjustForSameWeekComplementarity(input) { return output }
+        let decision = decideWithIntent(input)
+        return ProgrammingDecisionOutput(
+            nextStimulus: decision.finalStimulus,
+            reasonCode: decision.finalReasonCode,
+            confidence: decision.confidence,
+            inputsSummary: decision.inputsSummary
+        )
+    }
+
+    /// Phase 1 (intent): the original 4 variance checks, unchanged,
+    /// "first match wins" among themselves — exactly today's pre-CP.2
+    /// behavior, run against the raw configured baseline. In production
+    /// this is always a no-op (`VarianceConstraints()` is all-`nil`,
+    /// §Design Lock item 2) — no real longitudinal check exists yet.
+    private func intentPhase(_ input: ProgrammingDecisionInput) -> ProgrammingDecisionOutput {
         if let output = adjustForDurationDomain(input) { return output }
         if let output = adjustForLoading(input) { return output }
         if let output = adjustForModality(input) { return output }
@@ -42,6 +87,15 @@ struct FunctionalFitnessDecisionEngine: ProgrammingDecisionEngine {
             confidence: 1.0,
             inputsSummary: "No configured variance constraint was violated by recent exposure (or none is configured); using the configured stimulus unchanged."
         )
+    }
+
+    /// Phase 2 (adaptation): Stage CP.2's existing two checks, unchanged
+    /// internally — `nil` means CP.2 has nothing to add, in which case
+    /// FINAL simply equals whatever Phase 1 already decided (INTENDED).
+    private func adaptationPhase(_ input: ProgrammingDecisionInput) -> ProgrammingDecisionOutput? {
+        if let output = adjustForCrossModalityConstraint(input) { return output }
+        if let output = adjustForSameWeekComplementarity(input) { return output }
+        return nil
     }
 
     // MARK: - Stage CP.2: cross-modality soft discouragement (checked first)

@@ -95,6 +95,7 @@
 		FB15A4F084B703B94F36CECA /* StrategicPhaseLifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD7DFE79EE05985085B85153 /* StrategicPhaseLifecycleTests.swift */; };
 		5C7EF022AD9CC59C4E0E11D4 /* TrainingStressProfileParityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E16FD478E95665AA315DFF54 /* TrainingStressProfileParityTests.swift */; };
 		63DF8EF46302F88EFB384C8B /* CrossModalityFunctionalFitnessProgrammingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D80B65816A3F237F7ADA1F4 /* CrossModalityFunctionalFitnessProgrammingTests.swift */; };
+		690EF60DDE2274237CC5EA69 /* FunctionalFitnessIntendedVsFinalStimulusTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58FD1135ABB2ED8BAF23DA69 /* FunctionalFitnessIntendedVsFinalStimulusTests.swift */; };
 		0AC8B59F3C8FF55C0B6023E3 /* StrategicPhaseTransitionUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1160A685F640DF57DBE4EB37 /* StrategicPhaseTransitionUITests.swift */; };
 		5582DBF8EA418AAA60F62328 /* MixedModalityTacticalAtomicityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20001F5B16ADD640ED2ABE3B /* MixedModalityTacticalAtomicityTests.swift */; };
 		29232F0DE6EDAF463A1AF06C /* LoadFirstOverlayEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4A2CDCD3AED6DA58E4149F8 /* LoadFirstOverlayEngineTests.swift */; };
@@ -640,6 +641,7 @@
 		DD7DFE79EE05985085B85153 /* StrategicPhaseLifecycleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = StrategicPhaseLifecycleTests.swift; path = StrategicPhaseLifecycleTests.swift; sourceTree = "<group>"; };
 		E16FD478E95665AA315DFF54 /* TrainingStressProfileParityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TrainingStressProfileParityTests.swift; path = TrainingStressProfileParityTests.swift; sourceTree = "<group>"; };
 		2D80B65816A3F237F7ADA1F4 /* CrossModalityFunctionalFitnessProgrammingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CrossModalityFunctionalFitnessProgrammingTests.swift; path = CrossModalityFunctionalFitnessProgrammingTests.swift; sourceTree = "<group>"; };
+		58FD1135ABB2ED8BAF23DA69 /* FunctionalFitnessIntendedVsFinalStimulusTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FunctionalFitnessIntendedVsFinalStimulusTests.swift; path = FunctionalFitnessIntendedVsFinalStimulusTests.swift; sourceTree = "<group>"; };
 		1160A685F640DF57DBE4EB37 /* StrategicPhaseTransitionUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = StrategicPhaseTransitionUITests.swift; path = StrategicPhaseTransitionUITests.swift; sourceTree = "<group>"; };
 		20001F5B16ADD640ED2ABE3B /* MixedModalityTacticalAtomicityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MixedModalityTacticalAtomicityTests.swift; path = MixedModalityTacticalAtomicityTests.swift; sourceTree = "<group>"; };
 		F4A2CDCD3AED6DA58E4149F8 /* LoadFirstOverlayEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LoadFirstOverlayEngineTests.swift; path = LoadFirstOverlayEngineTests.swift; sourceTree = "<group>"; };
@@ -1088,6 +1090,7 @@
 				DD7DFE79EE05985085B85153 /* StrategicPhaseLifecycleTests.swift */,
 				E16FD478E95665AA315DFF54 /* TrainingStressProfileParityTests.swift */,
 				2D80B65816A3F237F7ADA1F4 /* CrossModalityFunctionalFitnessProgrammingTests.swift */,
+				58FD1135ABB2ED8BAF23DA69 /* FunctionalFitnessIntendedVsFinalStimulusTests.swift */,
 				1160A685F640DF57DBE4EB37 /* StrategicPhaseTransitionUITests.swift */,
 				20001F5B16ADD640ED2ABE3B /* MixedModalityTacticalAtomicityTests.swift */,
 				F4A2CDCD3AED6DA58E4149F8 /* LoadFirstOverlayEngineTests.swift */,
@@ -1425,6 +1428,7 @@
 				FB15A4F084B703B94F36CECA /* StrategicPhaseLifecycleTests.swift in Sources */,
 				5C7EF022AD9CC59C4E0E11D4 /* TrainingStressProfileParityTests.swift in Sources */,
 				63DF8EF46302F88EFB384C8B /* CrossModalityFunctionalFitnessProgrammingTests.swift in Sources */,
+				690EF60DDE2274237CC5EA69 /* FunctionalFitnessIntendedVsFinalStimulusTests.swift in Sources */,
 				0AC8B59F3C8FF55C0B6023E3 /* StrategicPhaseTransitionUITests.swift in Sources */,
 				5582DBF8EA418AAA60F62328 /* MixedModalityTacticalAtomicityTests.swift in Sources */,
 				29232F0DE6EDAF463A1AF06C /* LoadFirstOverlayEngineTests.swift in Sources */,

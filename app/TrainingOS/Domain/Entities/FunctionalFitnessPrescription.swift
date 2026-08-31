@@ -17,7 +17,26 @@ import SwiftData
 final class FunctionalFitnessPrescription {
     @Attribute(.unique) var id: UUID
     var workoutBlock: WorkoutBlock?
+    /// The FINAL, actually-prescribed Stimulus — after Stage CP.2's
+    /// cross-modality/same-week adaptation, if any ran. Kept as `stimulus`
+    /// (not renamed to `finalStimulus`) since every real consumer
+    /// (execution scoring, `FunctionalFitnessExposureHistoryBuilder`,
+    /// `CurrentWeekFunctionalFitnessProgrammingContext`) already wants
+    /// exactly this value and already reads this field name — this is
+    /// the one, single persisted source of truth for FINAL.
     var stimulus: Stimulus
+    /// Stage FF.L1 addition. What Functional Fitness's own intent-shaping
+    /// checks decided BEFORE Stage CP.2 adaptation ran — a genuine,
+    /// independent, immutable snapshot captured at materialization time,
+    /// never reconstructed later from `stimulus`/`reasonCode`/current
+    /// engine logic (`FUNCTIONAL_FITNESS_LONGITUDINAL_PROGRAMMING_DESIGN.md`'s
+    /// Design Lock proves reconstruction is dishonest). `nil` for every
+    /// prescription persisted before this field existed — Stage CP.2 may
+    /// already have adapted that old prescription's single stored value,
+    /// so it is NOT safe to assume a legacy record's intended equaled its
+    /// final; representing that historical fact as genuinely unknown
+    /// (`nil`) is the honest choice, never a fabricated guess.
+    var intendedStimulus: Stimulus?
     var format: WorkoutFormat
 
     @Relationship(deleteRule: .cascade, inverse: \FunctionalFitnessMovement.functionalFitnessPrescription)
@@ -26,10 +45,12 @@ final class FunctionalFitnessPrescription {
     init(
         id: UUID = UUID(),
         stimulus: Stimulus,
+        intendedStimulus: Stimulus? = nil,
         format: WorkoutFormat
     ) {
         self.id = id
         self.stimulus = stimulus
+        self.intendedStimulus = intendedStimulus
         self.format = format
     }
 
