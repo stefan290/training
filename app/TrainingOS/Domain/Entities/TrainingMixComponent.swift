@@ -41,6 +41,14 @@ final class TrainingMixComponent {
     /// even before instantiation, unlike `programInstance`.
     var programmingSystem: ProgrammingSystemKind?
     var priority: GoalPriority
+    /// Stage CP.2 addition: this component's own real
+    /// `AdaptationObjective`s — orthogonal to `priority` (which answers
+    /// "how protected," never "why present"). Empty is a real, honest
+    /// state (not every `LongTermPlanner` builder yet has per-sub-
+    /// objective signal for every component it constructs — see
+    /// `TRAINING_MIX_CONCURRENT_PROGRAMMING_DESIGN.md`'s product-decision
+    /// table), never defaulted to a fabricated non-empty guess.
+    var adaptationObjectives: [AdaptationObjective]
     var frequency: SessionFrequency
     var flexibility: ComponentFlexibility
     /// §4: "whether double sessions are permitted" — this component's
@@ -63,6 +71,7 @@ final class TrainingMixComponent {
         label: String,
         programmingSystem: ProgrammingSystemKind? = nil,
         priority: GoalPriority,
+        adaptationObjectives: [AdaptationObjective] = [],
         frequency: SessionFrequency,
         flexibility: ComponentFlexibility = .preferred,
         allowsDoubleSessionPairing: Bool = true,
@@ -73,6 +82,7 @@ final class TrainingMixComponent {
         self.label = label
         self.programmingSystem = programmingSystem
         self.priority = priority
+        self.adaptationObjectives = adaptationObjectives
         self.frequency = frequency
         self.flexibility = flexibility
         self.allowsDoubleSessionPairing = allowsDoubleSessionPairing

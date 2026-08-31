@@ -186,7 +186,8 @@ enum StartPhaseUseCase {
             let sessions = try RollTacticalWindowUseCase.materializeFirstWindow(
                 system: system, definition: chosen.programDefinition, instance: instance,
                 startDate: phase.startDate, ownerUserID: ownerUserID,
-                performanceProfile: performanceProfile, materializationContext: materializationContext, context: context
+                performanceProfile: performanceProfile, componentAdaptationObjectives: component.adaptationObjectives,
+                materializationContext: materializationContext, context: context
             )
             inputs.append(ScheduledProgramInput(component: component, sessions: sessions))
         }
@@ -246,7 +247,8 @@ enum StartPhaseUseCase {
         let sessions = try RollTacticalWindowUseCase.materializeFirstWindow(
             system: system, definition: definition, instance: instance,
             startDate: phase.startDate, ownerUserID: ownerUserID,
-            performanceProfile: performanceProfile, materializationContext: materializationContext, context: context
+            performanceProfile: performanceProfile, componentAdaptationObjectives: component.adaptationObjectives,
+            materializationContext: materializationContext, context: context
         )
 
         // KNOWN, DOCUMENTED LIMITATION (not solved by this slice — see

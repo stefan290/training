@@ -18,7 +18,19 @@ import Foundation
 /// 4D's progression-priority discipline ("do not change several things
 /// at once").
 struct FunctionalFitnessDecisionEngine: ProgrammingDecisionEngine {
+    /// Stage CP.2 addition: two new checks run FIRST, ahead of the
+    /// original 4 — a hard discouragement/eligibility fact (or a
+    /// same-week complementarity preference) must be able to override
+    /// whatever the existing variance chain would otherwise produce. If
+    /// either fires, the original 4 checks do not run against the
+    /// baseline this same call — an accepted consequence of this
+    /// engine's own "adjust one dimension per decision" design, and moot
+    /// in practice today since `LongTermPlanner`'s real production
+    /// `VarianceConstraints()` is all-`nil` (the original 4 checks never
+    /// fire regardless).
     func decide(_ input: ProgrammingDecisionInput) -> ProgrammingDecisionOutput {
+        if let output = adjustForCrossModalityConstraint(input) { return output }
+        if let output = adjustForSameWeekComplementarity(input) { return output }
         if let output = adjustForDurationDomain(input) { return output }
         if let output = adjustForLoading(input) { return output }
         if let output = adjustForModality(input) { return output }
@@ -30,6 +42,94 @@ struct FunctionalFitnessDecisionEngine: ProgrammingDecisionEngine {
             confidence: 1.0,
             inputsSummary: "No configured variance constraint was violated by recent exposure (or none is configured); using the configured stimulus unchanged."
         )
+    }
+
+    // MARK: - Stage CP.2: cross-modality soft discouragement (checked first)
+
+    /// Same-tactical-week `.primary` sibling stress is NEVER equivalent to
+    /// true calendar adjacency (that's `ConcurrentScheduler`'s own,
+    /// separate, downstream job) — so this can only ever produce a SOFT
+    /// discouragement, repaired when a clean, objective-preserving
+    /// one-field alternative exists, and left as the original, unmodified,
+    /// still-eligible baseline when it does not. There is no hard
+    /// `.ineligible` verdict anywhere in this check.
+    private func adjustForCrossModalityConstraint(_ input: ProgrammingDecisionInput) -> ProgrammingDecisionOutput? {
+        guard !input.protectedSiblingStressProfilesThisWeek.isEmpty else { return nil }
+        let baseline = input.stimulusRequirements
+        let candidateProfile = FunctionalFitnessStressProfileMapper.map(stimulus: baseline)
+
+        guard let triggeringRule = InterferenceAvoidanceRule.conservativeDefault.first(where: { rule in
+            input.protectedSiblingStressProfilesThisWeek.contains { rule.triggers($0, candidateProfile) }
+        }) else { return nil }
+
+        guard let repaired = CrossModalityStimulusRepair.minimalRepair(
+            stimulus: baseline, for: triggeringRule.dimension, threshold: triggeringRule.threshold,
+            preservingAtLeastOneOf: input.componentAdaptationObjectives
+        ) else {
+            // No clean one-field repair preserves this component's own
+            // objectives — the baseline is discouraged but remains
+            // eligible; never progressively destroyed to silence the
+            // discouragement. Falls through unchanged to the remaining
+            // checks.
+            return nil
+        }
+
+        return ProgrammingDecisionOutput(
+            nextStimulus: repaired,
+            reasonCode: .crossModalityDiscouraged,
+            confidence: 1.0,
+            inputsSummary: "This week's real, already-materialized primary-priority training already carries \(triggeringRule.dimension) at or above \(triggeringRule.threshold); adjusted \(triggeringRule.dimension == .lowerBodyLoad ? "loading" : "the driving field") to avoid compounding it while still serving at least one of this component's own objectives."
+        )
+    }
+
+    // MARK: - Stage CP.2: same-week FF complementarity (checked second)
+
+    /// Reached only when the cross-modality check above did not fire.
+    /// Never hardcodes which session is "first"/"second" — driven purely
+    /// by which objectives `input.currentWeekContext` shows are already
+    /// covered by whatever this SAME component already programmed earlier
+    /// in this SAME tactical week.
+    private func adjustForSameWeekComplementarity(_ input: ProgrammingDecisionInput) -> ProgrammingDecisionOutput? {
+        guard !input.componentAdaptationObjectives.isEmpty, !input.currentWeekContext.alreadyProgrammedThisWeek.isEmpty else { return nil }
+
+        let servedSoFar = Set(input.currentWeekContext.alreadyProgrammedThisWeek.flatMap {
+            AdaptationObjectiveStimulusMapping.objectivesServed(by: $0.stimulus)
+        })
+        let underCovered = Set(input.componentAdaptationObjectives).subtracting(servedSoFar)
+        guard !underCovered.isEmpty else { return nil }
+
+        let baseline = input.stimulusRequirements
+        let baselineServes = AdaptationObjectiveStimulusMapping.objectivesServed(by: baseline)
+        // The baseline already covers something under-covered — nothing
+        // to nudge toward.
+        guard baselineServes.isDisjoint(with: underCovered) else { return nil }
+
+        // Deterministic order: the enum's own declared case order, never
+        // a random/unordered pick among candidates.
+        for objective in AdaptationObjective.allCases where underCovered.contains(objective) {
+            guard let nudged = AdaptationObjectiveStimulusMapping.nudge(baseline, toward: objective) else { continue }
+
+            // Must not re-introduce the cross-modality soft
+            // discouragement this same call already cleared (or never
+            // triggered).
+            let nudgedProfile = FunctionalFitnessStressProfileMapper.map(stimulus: nudged)
+            let violatesProtection = InterferenceAvoidanceRule.conservativeDefault.contains { rule in
+                input.protectedSiblingStressProfilesThisWeek.contains { rule.triggers($0, nudgedProfile) }
+            }
+            guard !violatesProtection else { continue }
+
+            // Never abandon ALL objective alignment for the sake of
+            // variety.
+            guard !AdaptationObjectiveStimulusMapping.objectivesServed(by: nudged).isEmpty else { continue }
+
+            return ProgrammingDecisionOutput(
+                nextStimulus: nudged,
+                reasonCode: .sameWeekComplementarityPreferred,
+                confidence: 1.0,
+                inputsSummary: "An earlier session this same tactical week already covers \(servedSoFar); nudging toward \(objective), one of this component's own real objectives that remains under-covered so far."
+            )
+        }
+        return nil
     }
 
     // MARK: - Duration domain balance

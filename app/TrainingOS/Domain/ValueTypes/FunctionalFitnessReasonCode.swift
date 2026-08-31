@@ -52,4 +52,18 @@ enum FunctionalFitnessReasonCode: String, Codable, CaseIterable {
     /// recent exposure history is empty or doesn't violate any configured
     /// `VarianceConstraints`.
     case stimulusAsConfigured
+    /// Stage CP.2: this week's real, already-materialized `.primary`
+    /// sibling stress made the baseline `Stimulus` discouraged (same
+    /// tactical week, same `StressDimension` at or above
+    /// `InterferenceAvoidanceRule.conservativeDefault`'s threshold) and a
+    /// minimal, objective-preserving one-field repair was found and
+    /// applied. Never a hard-ineligible verdict — true calendar adjacency
+    /// remains `ConcurrentScheduler`'s own, separate, downstream concern.
+    case crossModalityDiscouraged
+    /// Stage CP.2: this component already programmed an earlier session
+    /// this same tactical week (`CurrentWeekFunctionalFitnessProgrammingContext`,
+    /// never completed-exposure history) that left one of this
+    /// component's own real `AdaptationObjective`s under-covered — a
+    /// one-field nudge toward that objective was applied instead.
+    case sameWeekComplementarityPreferred
 }

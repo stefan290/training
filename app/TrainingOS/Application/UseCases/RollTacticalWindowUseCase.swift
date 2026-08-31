@@ -31,6 +31,18 @@ enum RollTacticalWindowUseCase {
     static func materializeFirstWindow(
         system: ProgrammingSystemKind, definition: ProgramDefinition, instance: ProgramInstance,
         startDate: Date, ownerUserID: UUID, performanceProfile: PerformanceProfile?, userProfile: UserProfile? = nil,
+        /// Stage CP.2 addition: this component's own real
+        /// `AdaptationObjective`s, threaded through to Functional
+        /// Fitness's same-week complementarity check. No cross-modality
+        /// `protectedSiblingStressProfilesThisWeek` signal exists at
+        /// first-window time — `StartPhaseUseCase` materializes every
+        /// component in one single-pass loop, not the two-pass producer/
+        /// consumer split `RollTacticalWindowUseCase.rollForward` uses;
+        /// restructuring that loop is out of Stage CP.2's authorized
+        /// scope. Cross-modality discouragement is therefore only live
+        /// from the first ROLLED-forward week onward — a disclosed,
+        /// deliberate limitation, not a silent gap.
+        componentAdaptationObjectives: [AdaptationObjective] = [],
         materializationContext: TacticalMaterializationContext, context: ModelContext
     ) throws -> [Session] {
         switch system {
@@ -60,7 +72,9 @@ enum RollTacticalWindowUseCase {
             return try FunctionalFitnessMaterializer.materializeWeek(
                 definition: definition, instance: instance, weekIndex: 0, startDate: startDate, ownerUserID: ownerUserID,
                 candidateExercises: materializationContext.functionalFitnessCandidateExercises,
-                exposureHistory: FunctionalFitnessExposureHistoryBuilder.build(fromCompletedSessionsIn: instance), context: context
+                exposureHistory: FunctionalFitnessExposureHistoryBuilder.build(fromCompletedSessionsIn: instance),
+                componentAdaptationObjectives: componentAdaptationObjectives,
+                context: context
             )
         }
     }
@@ -88,9 +102,19 @@ enum RollTacticalWindowUseCase {
         var inputs: [ScheduledProgramInput] = []
         var newSessionsByComponent: [UUID: [Session]] = [:]
 
+        // Stage CP.2: Pass 1 — every component whose `ProgrammingSystem`
+        // has no constraint-CONSUMING stage today (`.hypertrophy`,
+        // `.powerlifting`, `.interval`; `.steadyState` never rolls here at
+        // all, unchanged). Producer/consumer role is keyed purely on
+        // `programmingSystem`, never `GoalPriority` — `GoalPriority`
+        // stays "how protected," never "materializes first"
+        // (`TRAINING_MIX_CONCURRENT_PROGRAMMING_DESIGN.md`'s CP.2 §1/§2).
+        var protectedSiblingStressProfilesThisWeek: [TrainingStressProfile] = []
+
         for component in mix.orderedComponents {
             guard let instance = component.programInstance, let definition = instance.programDefinition else { continue }
-            guard let system = component.programmingSystem, system != .steadyState else { continue }
+            guard let system = component.programmingSystem else { continue }
+            guard system == .hypertrophy || system == .powerlifting || system == .interval else { continue }
 
             let weekIndex = ProgramWeekGrouping.nextWeekIndex(for: instance)
             // `StrengthMaterializer.materializeWeek` treats `startDate` as
@@ -146,15 +170,45 @@ enum RollTacticalWindowUseCase {
                     definition: definition, instance: instance, weekIndex: weekIndex, startDate: instance.startDate, ownerUserID: ownerUserID,
                     weekContext: IntervalWeekContextBuilder.build(instance: instance, weekIndex: weekIndex), context: context
                 )
-            case .functionalFitness:
-                sessions = try FunctionalFitnessMaterializer.materializeWeek(
-                    definition: definition, instance: instance, weekIndex: weekIndex, startDate: instance.startDate, ownerUserID: ownerUserID,
-                    candidateExercises: materializationContext.functionalFitnessCandidateExercises,
-                    exposureHistory: FunctionalFitnessExposureHistoryBuilder.build(fromCompletedSessionsIn: instance), context: context
-                )
-            case .steadyState:
+            case .steadyState, .functionalFitness:
                 continue
             }
+
+            guard !sessions.isEmpty else { continue }
+            newSessionsByComponent[component.id] = sessions
+            inputs.append(ScheduledProgramInput(component: component, sessions: sessions))
+
+            // Stage CP.2: visible to Pass 2's Functional Fitness
+            // component(s) ONLY when `.primary` — `GoalPriority` is what
+            // makes a dimension "protected," not what determines
+            // materialization order; every component reaching this line
+            // already materialized first purely because it's a producer,
+            // regardless of its own priority.
+            if component.priority == .primary {
+                protectedSiblingStressProfilesThisWeek.append(contentsOf: sessions.compactMap(SessionStressComposer.compose))
+            }
+        }
+
+        // Stage CP.2: Pass 2 — Functional Fitness, the one real
+        // constraint-CONSUMING `ProgrammingSystem` today. Reads Pass 1's
+        // real, already-materialized sibling stress; never blocked on any
+        // `GoalPriority` ordering of its own.
+        for component in mix.orderedComponents {
+            guard component.programmingSystem == .functionalFitness else { continue }
+            guard let instance = component.programInstance, let definition = instance.programDefinition else { continue }
+
+            let weekIndex = ProgramWeekGrouping.nextWeekIndex(for: instance)
+            let weeks = definition.orderedWeeks
+            guard weeks.indices.contains(weekIndex) else { continue }
+
+            let sessions = try FunctionalFitnessMaterializer.materializeWeek(
+                definition: definition, instance: instance, weekIndex: weekIndex, startDate: instance.startDate, ownerUserID: ownerUserID,
+                candidateExercises: materializationContext.functionalFitnessCandidateExercises,
+                exposureHistory: FunctionalFitnessExposureHistoryBuilder.build(fromCompletedSessionsIn: instance),
+                protectedSiblingStressProfilesThisWeek: protectedSiblingStressProfilesThisWeek,
+                componentAdaptationObjectives: component.adaptationObjectives,
+                context: context
+            )
 
             guard !sessions.isEmpty else { continue }
             newSessionsByComponent[component.id] = sessions
@@ -163,6 +217,16 @@ enum RollTacticalWindowUseCase {
 
         guard !inputs.isEmpty else { return nil }
 
+        // Stage CP.2 (Correction 1 — no post-scheduler regeneration): this
+        // remains the ONLY `SchedulingPipeline.propose` call in a
+        // successful `rollForward` attempt, exactly as before CP.2. If
+        // `ConcurrentScheduler` still can't avoid a real day-adjacency
+        // conflict, the existing typed `.interferenceConflict`
+        // `ScheduleIssue` behavior is retained completely unchanged —
+        // Concurrent Programming does not react to it. Post-scheduler
+        // reprogramming/negotiation is a DEFERRED FUTURE CAPABILITY, not
+        // built here (see `TRAINING_MIX_CONCURRENT_PROGRAMMING_DESIGN.md`'s
+        // CP.2 Corrections Before Implementation section).
         let constraints = SchedulingConstraints(availability: availability, window: SchedulingWindow(startDate: asOf, numberOfDays: 7))
         let scheduled = SchedulingPipeline.propose(mix: mix, inputs: inputs, constraints: constraints)
         try AcceptScheduleProposalUseCase.accept(scheduled.proposal, ownerUserID: ownerUserID, context: context)

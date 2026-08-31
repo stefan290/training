@@ -678,7 +678,8 @@ enum LongTermPlanner {
             guard let newTarget = decision.newTarget else { continue }
             mix.addComponent(TrainingMixComponent(
                 label: decision.sourceLabel, programmingSystem: decision.sourceSystem,
-                priority: decision.sourcePriority, frequency: SessionFrequency(target: newTarget)
+                priority: decision.sourcePriority, adaptationObjectives: decision.sourceAdaptationObjectives,
+                frequency: SessionFrequency(target: newTarget)
             ))
         }
         // Every component came from a genuinely omittable Supporting tier
@@ -712,6 +713,10 @@ enum LongTermPlanner {
         var sourceLabel: String
         var sourceSystem: ProgrammingSystemKind?
         var sourcePriority: GoalPriority
+        /// Stage CP.2 addition: Maintenance changes dose, never purpose —
+        /// carried forward unchanged from the preceding mix's own
+        /// component, never re-derived from `phase.type`.
+        var sourceAdaptationObjectives: [AdaptationObjective]
         var previousTarget: Int
         /// `nil` exactly when `outcome == .omittedAsRedundantSupporting`.
         var newTarget: Int?
@@ -792,8 +797,8 @@ enum LongTermPlanner {
 
             return MaintenanceComponentDecision(
                 sourceLabel: component.label, sourceSystem: component.programmingSystem,
-                sourcePriority: component.priority, previousTarget: previousTarget,
-                newTarget: flooredTarget, outcome: outcome
+                sourcePriority: component.priority, sourceAdaptationObjectives: component.adaptationObjectives,
+                previousTarget: previousTarget, newTarget: flooredTarget, outcome: outcome
             )
         }
     }
@@ -803,10 +808,12 @@ enum LongTermPlanner {
         let mix = TrainingMix(kind: .recommended, name: "Focused Hypertrophy")
         mix.addComponent(TrainingMixComponent(
             label: "Hypertrophy", programmingSystem: .hypertrophy, priority: .primary,
+            adaptationObjectives: [.muscleGain],
             frequency: SessionFrequency(target: 5)
         ))
         mix.addComponent(TrainingMixComponent(
             label: "Zone 2 Conditioning", programmingSystem: .steadyState, priority: .supporting,
+            adaptationObjectives: [.aerobicCapacity],
             frequency: SessionFrequency(target: 2)
         ))
         return mix
@@ -814,18 +821,29 @@ enum LongTermPlanner {
 
     /// §5d's exact worked-example candidate B: 3 Strength + 2 Functional
     /// Fitness + 1 Run.
+    ///
+    /// Stage CP.2 PRODUCT DECISION (not recovered/source behavior — see
+    /// `TRAINING_MIX_CONCURRENT_PROGRAMMING_DESIGN.md`'s CP.2 §3): this
+    /// mix's own name, "Strength Plus Variety," is itself the rationale
+    /// for the Functional Fitness component's `[.workCapacity,
+    /// .aerobicCapacity, .power]` — breadth across the three adaptation
+    /// domains a focused strength emphasis under-develops, not a narrow
+    /// physiological target.
     private static func muscleGainVariedMix() -> TrainingMix {
         let mix = TrainingMix(kind: .recommended, name: "Strength Plus Variety")
         mix.addComponent(TrainingMixComponent(
             label: "Strength", programmingSystem: .hypertrophy, priority: .primary,
+            adaptationObjectives: [.muscleGain],
             frequency: SessionFrequency(target: 3)
         ))
         mix.addComponent(TrainingMixComponent(
             label: "Functional Fitness", programmingSystem: .functionalFitness, priority: .supporting,
+            adaptationObjectives: [.workCapacity, .aerobicCapacity, .power],
             frequency: SessionFrequency(target: 2)
         ))
         mix.addComponent(TrainingMixComponent(
             label: "Running", programmingSystem: .steadyState, priority: .supporting,
+            adaptationObjectives: [.aerobicCapacity],
             frequency: SessionFrequency(target: 1)
         ))
         return mix
@@ -834,31 +852,53 @@ enum LongTermPlanner {
     /// `PHASE_PLANNING_RULES.md` §7's Fat Loss architecture: primary
     /// conditioning, `.secondary`+`.required` resistance training (the
     /// "protected" pattern — protects muscle, §2a).
+    ///
+    /// Stage CP.2 PRODUCT DECISION: the Resistance Training component's
+    /// real purpose here is muscle RETENTION during a caloric deficit —
+    /// mechanically the same training stimulus as gaining it (adequate
+    /// volume/intensity/proximity to failure on the same patterns), so it
+    /// uses `[.muscleGain]` rather than a separate, un-locked
+    /// "retention" concept (see CP.2 §4 — what differs is energy balance
+    /// and relative priority/dose, both already expressed elsewhere,
+    /// never the adaptation itself).
     private static func fatLossConditioningFocusedMix() -> TrainingMix {
         let mix = TrainingMix(kind: .recommended, name: "Conditioning-Focused Fat Loss")
         mix.addComponent(TrainingMixComponent(
             label: "Conditioning", programmingSystem: .interval, priority: .primary,
+            adaptationObjectives: [.anaerobicCapacity],
             frequency: SessionFrequency(target: 3)
         ))
         mix.addComponent(TrainingMixComponent(
             label: "Resistance Training", programmingSystem: .hypertrophy, priority: .secondary,
+            adaptationObjectives: [.muscleGain],
             frequency: SessionFrequency(target: 3, minimum: 2), flexibility: .required
         ))
         mix.addComponent(TrainingMixComponent(
             label: "Easy Aerobic", programmingSystem: .steadyState, priority: .supporting,
+            adaptationObjectives: [.aerobicCapacity],
             frequency: SessionFrequency(target: 1)
         ))
         return mix
     }
 
+    /// Stage CP.2 PRODUCT DECISION: this mix's own name, "Functional Fat
+    /// Loss," names the FF component's real purpose as metabolic
+    /// conditioning/caloric expenditure — `.power` is deliberately
+    /// excluded (unlike `muscleGainVariedMix`'s FF component) since
+    /// nothing in a fat-loss context calls for explosive-power
+    /// development. The paired Resistance Training component uses
+    /// `[.muscleGain]` for the same muscle-retention reasoning as
+    /// `fatLossConditioningFocusedMix` above.
     private static func fatLossVariedMix() -> TrainingMix {
         let mix = TrainingMix(kind: .recommended, name: "Functional Fat Loss")
         mix.addComponent(TrainingMixComponent(
             label: "Functional Fitness", programmingSystem: .functionalFitness, priority: .primary,
+            adaptationObjectives: [.workCapacity, .aerobicCapacity],
             frequency: SessionFrequency(target: 3)
         ))
         mix.addComponent(TrainingMixComponent(
             label: "Resistance Training", programmingSystem: .hypertrophy, priority: .secondary,
+            adaptationObjectives: [.muscleGain],
             frequency: SessionFrequency(target: 2, minimum: 2), flexibility: .required
         ))
         return mix
@@ -868,6 +908,7 @@ enum LongTermPlanner {
         let mix = TrainingMix(kind: .recommended, name: "Focused Powerlifting")
         mix.addComponent(TrainingMixComponent(
             label: "Powerlifting", programmingSystem: .powerlifting, priority: .primary,
+            adaptationObjectives: [.maxStrength],
             frequency: SessionFrequency(target: 4)
         ))
         return mix
@@ -888,10 +929,12 @@ enum LongTermPlanner {
         let mix = TrainingMix(kind: .recommended, name: "\(activityLabel) Performance")
         mix.addComponent(TrainingMixComponent(
             label: activityLabel, programmingSystem: .steadyState, priority: .primary,
+            adaptationObjectives: [.aerobicCapacity],
             frequency: SessionFrequency(target: 5)
         ))
         mix.addComponent(TrainingMixComponent(
             label: "Strength Maintenance", programmingSystem: .hypertrophy, priority: .supporting,
+            adaptationObjectives: [.muscleGain],
             frequency: SessionFrequency(target: 2)
         ))
         return mix
@@ -901,23 +944,36 @@ enum LongTermPlanner {
         let mix = TrainingMix(kind: .recommended, name: "\(activityLabel) Plus Interval Variety")
         mix.addComponent(TrainingMixComponent(
             label: activityLabel, programmingSystem: .steadyState, priority: .primary,
+            adaptationObjectives: [.aerobicCapacity],
             frequency: SessionFrequency(target: 3)
         ))
         mix.addComponent(TrainingMixComponent(
             label: "Interval Work", programmingSystem: .interval, priority: .secondary,
+            adaptationObjectives: [.anaerobicCapacity],
             frequency: SessionFrequency(target: 2)
         ))
         mix.addComponent(TrainingMixComponent(
             label: "Strength Maintenance", programmingSystem: .hypertrophy, priority: .supporting,
+            adaptationObjectives: [.muscleGain],
             frequency: SessionFrequency(target: 1)
         ))
         return mix
     }
 
+    /// Stage CP.2 PRODUCT DECISION: this is the one case where genuine
+    /// breadth across nearly every domain Functional Fitness can honestly
+    /// serve IS the stated product intent — the user's own strategic
+    /// goal here (`phase.type == .functionalFitness`) is general physical
+    /// preparedness itself, not FF-as-a-supporting-component-of-something-
+    /// else. Deliberately every objective FF's `Stimulus` model CAN
+    /// honestly express (`.maxStrength`/`.muscleGain` excluded — no
+    /// mapping exists for either, per CP.2's own audit), not merely "every
+    /// objective that exists."
     private static func functionalFitnessFocusedMix() -> TrainingMix {
         let mix = TrainingMix(kind: .recommended, name: "Focused Functional Fitness")
         mix.addComponent(TrainingMixComponent(
             label: "Functional Fitness", programmingSystem: .functionalFitness, priority: .primary,
+            adaptationObjectives: [.workCapacity, .aerobicCapacity, .anaerobicCapacity, .power, .skillAcquisition],
             frequency: SessionFrequency(target: 4, minimum: 3), flexibility: .required
         ))
         return mix
@@ -933,6 +989,7 @@ enum LongTermPlanner {
         let mix = TrainingMix(kind: .recommended, name: name)
         mix.addComponent(TrainingMixComponent(
             label: "General Conditioning", programmingSystem: .steadyState, priority: .primary,
+            adaptationObjectives: [.aerobicCapacity],
             frequency: SessionFrequency(target: 2)
         ))
         return mix

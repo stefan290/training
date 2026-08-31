@@ -37,11 +37,32 @@ enum FunctionalFitnessMaterializer {
         ownerUserID: UUID,
         candidateExercises: [Exercise],
         exposureHistory: [VarianceExposureRecord],
+        /// Stage CP.2 addition. Real, already-materialized SAME-WEEK
+        /// `.primary`-priority sibling stress (computed by the caller,
+        /// e.g. `RollTacticalWindowUseCase.rollForward`'s producer pass)
+        /// — empty when no such context is available (e.g. week 0, via
+        /// `materializeFirstWindow`, which has no cross-component pass to
+        /// draw this from). See `ProgrammingDecisionInput`'s own doc
+        /// comment.
+        protectedSiblingStressProfilesThisWeek: [TrainingStressProfile] = [],
+        /// Stage CP.2 addition. This component's own real, locked
+        /// `AdaptationObjective`s — see `TrainingMixComponent
+        /// .adaptationObjectives`.
+        componentAdaptationObjectives: [AdaptationObjective] = [],
         context: ModelContext
     ) throws -> [Session] {
         var sessions: [Session] = []
         let weekStartDate = Calendar.current.date(byAdding: .day, value: weekIndex * 7, to: startDate) ?? startDate
         let orderedTemplateSessions = definition.orderedTemplateSessions.filter { $0.activeFromWeek <= weekIndex }
+
+        // Stage CP.2: every real `LongTermPlanner`-built `TrainingMix` has
+        // at most ONE Functional Fitness `TrainingMixComponent` (confirmed
+        // by audit) — so "FF-A"/"FF-B" same-week coordination is not
+        // cross-component, it's this SAME component's own multiple weekly
+        // sessions, decided one after another within THIS one call.
+        // Started fresh per call, never persisted, never read from a
+        // `ModelContext`.
+        var currentWeekContext = CurrentWeekFunctionalFitnessProgrammingContext()
 
         for (dayIndex, templateSession) in orderedTemplateSessions.enumerated() {
             let date = Calendar.current.date(byAdding: .day, value: dayIndex, to: weekStartDate) ?? weekStartDate
@@ -69,8 +90,12 @@ enum FunctionalFitnessMaterializer {
                 let decision = FunctionalFitnessDecisionEngine().decide(ProgrammingDecisionInput(
                     exposureHistory: exposureHistory,
                     stimulusRequirements: ffTemplate.stimulus,
-                    varianceConstraints: ffTemplate.varianceConstraints ?? VarianceConstraints()
+                    varianceConstraints: ffTemplate.varianceConstraints ?? VarianceConstraints(),
+                    componentAdaptationObjectives: componentAdaptationObjectives,
+                    protectedSiblingStressProfilesThisWeek: protectedSiblingStressProfilesThisWeek,
+                    currentWeekContext: currentWeekContext
                 ))
+                currentWeekContext.record(stimulus: decision.nextStimulus)
 
                 let block = WorkoutBlock(type: blockTemplate.type)
                 context.insert(block)

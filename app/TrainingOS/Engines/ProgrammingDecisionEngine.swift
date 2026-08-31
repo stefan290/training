@@ -57,6 +57,26 @@ struct ProgrammingDecisionInput {
     let exposureHistory: [VarianceExposureRecord]
     let stimulusRequirements: Stimulus
     let varianceConstraints: VarianceConstraints
+    /// Stage CP.2 addition. This component's own real, locked
+    /// `AdaptationObjective`s (empty when the owning `LongTermPlanner`
+    /// builder has no honest per-sub-objective signal yet — see
+    /// `TRAINING_MIX_CONCURRENT_PROGRAMMING_DESIGN.md`'s product-decision
+    /// table). Drives preference/objective-preservation only — never
+    /// eligibility.
+    var componentAdaptationObjectives: [AdaptationObjective] = []
+    /// Stage CP.2 addition. Real, already-materialized SAME-TACTICAL-WEEK
+    /// sibling sessions' `TrainingStressProfile`s, from `.primary`-priority
+    /// components only (`GoalPriority` is what makes a dimension
+    /// "protected" — never a materialization-order field). Same-week
+    /// presence is not true calendar adjacency (that's `ConcurrentScheduler`'s
+    /// own job, downstream and unchanged) — this can only ever produce a
+    /// SOFT discouragement, never a hard pre-placement ineligibility.
+    var protectedSiblingStressProfilesThisWeek: [TrainingStressProfile] = []
+    /// Stage CP.2 addition. What this SAME component has already
+    /// programmed earlier in the SAME `materializeWeek` call — see
+    /// `CurrentWeekFunctionalFitnessProgrammingContext`'s own doc comment
+    /// for why this is deliberately distinct from `exposureHistory`.
+    var currentWeekContext: CurrentWeekFunctionalFitnessProgrammingContext = CurrentWeekFunctionalFitnessProgrammingContext()
 }
 
 /// Deliberately produces the *next stimulus*, not a fully materialized
