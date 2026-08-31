@@ -249,6 +249,117 @@ final class CrossModalityFunctionalFitnessProgrammingTests: XCTestCase {
         XCTAssertFalse(rule.triggers(strengthProfile, repairedProfile), "the repaired FF session must no longer trigger the real, unmodified interference rule against the real peak-week Strength session")
     }
 
+    /// Stage CP.2R regression: the real peak-week test above only ever
+    /// exercises `heavySquatMaterializableStimulus()`, which deliberately
+    /// sets `movementModalityMix: []` so NO real movement slot is
+    /// generated — dodging Stage-E validation's loading check entirely
+    /// (confirmed by that helper's own doc comment). This test is
+    /// IDENTICAL except it uses `heavySquatStimulus()` (a real, non-empty
+    /// `movementModalityMix`), so a real `ExerciseSlot`/
+    /// `FunctionalFitnessMovementSlotTemplate` IS generated, with a real
+    /// candidate `Exercise` available to resolve into it — the exact
+    /// shape every real production `muscleGainVariedMix`/
+    /// `functionalFitnessFocusedMix` FF component actually has.
+    ///
+    /// Before the Stage CP.2R fix, this exact test threw
+    /// `stimulusValidationFailed(matchesLoadingClassification: false)` —
+    /// proving the bug the Prescription Depth audit's §16 predicted was
+    /// real, not merely a synthetic-fixture artifact. It now passes,
+    /// proving the fix closes this specific, real production-shaped gap.
+    func testCP2RRealNonEmptyMovementSlotWithGenuineLoadingRepairProof() throws {
+        let definition = try HypertrophyProgramGenerator.generate(
+            configuration: HypertrophyProgramConfiguration(dayCount: 1, split: .fullBody, phaseType: .basicHypertrophy),
+            provenance: .constructed(reason: "test fixture"), context: context
+        )
+        resolveAllSlots(in: definition, to: exercise("Back Squat", targets: [.quadriceps, .glutes]))
+        let strengthInstance = ProgramInstance(ownerUserID: ownerUserID)
+        context.insert(strengthInstance)
+        strengthInstance.programDefinition = definition
+
+        let peakWeekResult = StrengthMaterializer.materializeWeek(
+            definition: definition, instance: strengthInstance, weekIndex: 3, isDeload: false,
+            startDate: Date(timeIntervalSince1970: 0), ownerUserID: ownerUserID, equipmentProfile: equipment,
+            slotContext: { _ in .init(rmKilograms: 140, weekOneResolvedWeightKg: 140 * 0.85) }, context: context
+        )
+        let strengthSession = try XCTUnwrap(peakWeekResult.sessions.first)
+        let strengthProfile = try XCTUnwrap(SessionStressComposer.compose(strengthSession))
+        XCTAssertEqual(strengthProfile.lowerBodyLoad, .high, "the real peak week (RIR 1)")
+
+        let realFFObjectives: [AdaptationObjective] = [.workCapacity, .aerobicCapacity, .power]
+
+        // The ONLY change from the CP.1-fixture test above: a real,
+        // non-empty movementModalityMix, so a real movement slot exists.
+        let ffConfiguration = FunctionalFitnessProgramConfiguration(
+            daysPerWeek: 1, lengthWeeks: 1, targetStimulus: heavySquatStimulus(), format: .maxLoad,
+            sessionRole: .functionalFitness, varianceConstraints: VarianceConstraints(),
+            requiresRecentExposureToProgress: false, includeStrengthBlock: false
+        )
+        let ffDefinition = FunctionalFitnessProgramGenerator.generate(configuration: ffConfiguration, provenance: .constructed(reason: "test"), context: context)
+        let ffInstance = ProgramInstance(ownerUserID: ownerUserID)
+        context.insert(ffInstance)
+        ffInstance.programDefinition = ffDefinition
+
+        // A real candidate exercise the slot (allowedMovementFunctions:
+        // [.squatLoaded], allowedModalities: [.weightlifting]) can
+        // actually resolve into.
+        let candidate = Exercise(
+            canonicalName: "Front Squat", modality: .functionalFitness, equipment: "barbell", movementPattern: "squat",
+            primaryTargets: [.quadriceps, .glutes], movementFunctions: [.squatLoaded], functionalModality: .weightlifting
+        )
+        context.insert(candidate)
+
+        let ffSessions = try FunctionalFitnessMaterializer.materializeWeek(
+            definition: ffDefinition, instance: ffInstance, weekIndex: 0, startDate: Date(timeIntervalSince1970: 0), ownerUserID: ownerUserID,
+            candidateExercises: [candidate], exposureHistory: [],
+            protectedSiblingStressProfilesThisWeek: [strengthProfile],
+            componentAdaptationObjectives: realFFObjectives, context: context
+        )
+
+        let ffBlock = try XCTUnwrap(ffSessions.first?.orderedBlocks.first { $0.type == .functionalFitness })
+        let prescription = try XCTUnwrap(ffBlock.functionalFitnessPrescription)
+        XCTAssertEqual(prescription.intendedStimulus?.loading, .heavy, "CONFIGURED/INTENDED loading is unchanged — the repair only ever affects FINAL")
+        XCTAssertEqual(prescription.stimulus.loading, .moderate, "FINAL loading was repaired by CP.2's real, minimal one-field repair")
+        XCTAssertNotNil(ffBlock.functionalFitnessPrescription?.movements.first?.exercise, "a real exercise resolved into the real, non-empty movement slot")
+    }
+
+    /// Stage CP.2R control case: the identical real, non-empty-slot setup
+    /// as the regression test above, but with NO protected sibling stress
+    /// at all — CP.2's cross-modality check never fires, so CONFIGURED ==
+    /// INTENDED == FINAL, exactly as it always did before Stage CP.2R
+    /// (and before Stage CP.2 existed at all). Proves the fix changes
+    /// nothing about the ordinary, no-adaptation case.
+    func testCP2RControlCaseConfiguredEqualsFinalUnchangedWithRealNonEmptySlots() throws {
+        let ffConfiguration = FunctionalFitnessProgramConfiguration(
+            daysPerWeek: 1, lengthWeeks: 1, targetStimulus: heavySquatStimulus(), format: .maxLoad,
+            sessionRole: .functionalFitness, varianceConstraints: VarianceConstraints(),
+            requiresRecentExposureToProgress: false, includeStrengthBlock: false
+        )
+        let ffDefinition = FunctionalFitnessProgramGenerator.generate(configuration: ffConfiguration, provenance: .constructed(reason: "test"), context: context)
+        let ffInstance = ProgramInstance(ownerUserID: ownerUserID)
+        context.insert(ffInstance)
+        ffInstance.programDefinition = ffDefinition
+
+        let candidate = Exercise(
+            canonicalName: "Front Squat", modality: .functionalFitness, equipment: "barbell", movementPattern: "squat",
+            primaryTargets: [.quadriceps, .glutes], movementFunctions: [.squatLoaded], functionalModality: .weightlifting
+        )
+        context.insert(candidate)
+
+        // No `protectedSiblingStressProfilesThisWeek` at all — the exact
+        // no-sibling-stress case, not merely a below-threshold one.
+        let ffSessions = try FunctionalFitnessMaterializer.materializeWeek(
+            definition: ffDefinition, instance: ffInstance, weekIndex: 0, startDate: Date(timeIntervalSince1970: 0), ownerUserID: ownerUserID,
+            candidateExercises: [candidate], exposureHistory: [],
+            componentAdaptationObjectives: [.workCapacity, .aerobicCapacity, .power], context: context
+        )
+
+        let ffBlock = try XCTUnwrap(ffSessions.first?.orderedBlocks.first { $0.type == .functionalFitness })
+        let prescription = try XCTUnwrap(ffBlock.functionalFitnessPrescription)
+        XCTAssertEqual(prescription.intendedStimulus, heavySquatStimulus(), "no CP.2 adaptation fires — INTENDED is the unmodified configured baseline")
+        XCTAssertEqual(prescription.stimulus, heavySquatStimulus(), "no CP.2 adaptation fires — FINAL equals CONFIGURED/INTENDED exactly, byte-for-byte")
+        XCTAssertNotNil(prescription.movements.first?.exercise, "a real exercise still resolves into the real, non-empty movement slot")
+    }
+
     // MARK: B. Cross-modality soft discouragement + minimal repair
 
     func testSameWeekHighHighIsDiscouragedNeverIneligible() {

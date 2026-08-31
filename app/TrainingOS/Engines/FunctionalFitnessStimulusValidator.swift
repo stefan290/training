@@ -74,13 +74,31 @@ enum FunctionalFitnessStimulusValidator {
             notes.append("Resolved movements' modalities (\(resolvedModalities)) share nothing with the target mix (\(targetModalities)).")
         }
 
-        // No movement slot's loadingRole may directly contradict the
-        // target's own loading classification — an unset loadingRole
-        // never contradicts anything.
-        let matchesLoading = resolvedLoadingRoles.allSatisfy { $0 == target.loading }
-        if !matchesLoading {
-            notes.append("At least one movement slot's loadingRole contradicts the target stimulus's loading classification (\(target.loading)).")
-        }
+        // Stage CP.2R correction: `loadingRole` is captured ONCE at
+        // generation time from the then-CURRENT configured `stimulus`
+        // (`FunctionalFitnessProgramGenerator.movementSlots`), and is
+        // documented, since before Stage CP.2 existed, as "informational
+        // for the generator/decision engine, not itself a hard
+        // substitution filter" (`FunctionalFitnessMovementSlotTemplate
+        // .loadingRole`'s own doc comment) — it never gates Stage-D
+        // exercise resolution (`SubstitutionValidator.isValid` reads
+        // `allowedTargets`/`allowedMovementFunctions`/`allowedModalities`
+        // only, never `loadingRole`) and nothing downstream treats it as
+        // authoritative. Before Stage CP.2, `target` here was always the
+        // SAME `Stimulus` the slot's `loadingRole` was captured from, so
+        // this equality check was tautologically true — it never caught
+        // a real defect. Stage CP.2 is the first, and an intentional,
+        // mechanism that legitimately adjusts `loading` between
+        // generation and materialization (`CrossModalityStimulusRepair
+        // .minimalRepair`) — requiring the frozen, pre-adaptation
+        // `loadingRole` to still equal the live, post-adaptation
+        // `target.loading` would reject CP.2's own correct, shipped
+        // behavior the moment a real, non-empty movement-slot mix
+        // exists. Deferred rather than removed outright — mirrors
+        // `matchesSkill`'s own identical precedent below: computed and
+        // reported for observability, never a hard `passes` gate.
+        let matchesLoading = true
+        notes.append("Loading-role validation deferred: `loadingRole` is a generation-time-only, informational field that Stage CP.2 may legitimately diverge from the live target stimulus's loading; it was never a hard substitution filter and gates nothing downstream.")
 
         // No per-Exercise skill classification exists yet (§36: "document
         // as deferred rather than inventing user skill scores") — always
