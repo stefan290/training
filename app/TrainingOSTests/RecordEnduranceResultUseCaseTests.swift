@@ -180,7 +180,9 @@ final class RecordEnduranceResultUseCaseTests: XCTestCase {
         let block = WorkoutBlock(type: .functionalFitness, status: .active)
         context.insert(block)
 
-        let result = FunctionalFitnessResult(scoreType: .time, scoreValue: .time(seconds: 298), scoreDirection: .lowerIsBetter)
+        // Stage FF.E1: explicitly confirmed — this test's subject is
+        // first-ever-entry-for-benchmark detection, not adherence.
+        let result = FunctionalFitnessResult(scoreType: .time, scoreValue: .time(seconds: 298), scoreDirection: .lowerIsBetter, adherence: .asPrescribed)
         let outcome = RecordFunctionalFitnessResultUseCase.recordResult(
             result, for: block, benchmark: benchmark, performanceProfile: profile, modelContext: context
         )

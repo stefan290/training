@@ -33,6 +33,12 @@ final class FunctionalFitnessResult {
     var scoreValue: ScoreValue
     var scoreDirection: ScoreDirection
     var resultContext: ResultContext
+    /// Stage FF.E1 addition. Separate from `resultContext` — see
+    /// `PrescriptionAdherence`'s own doc comment for why. Additive,
+    /// defaults `.unknown`: every prescription persisted before this
+    /// field existed reads `.unknown`, never fabricated as `.asPrescribed`
+    /// from `resultContext`'s own unconditional `.rx` default.
+    var adherence: PrescriptionAdherence
     var completedAt: Date
 
     @Relationship(deleteRule: .cascade, inverse: \FunctionalFitnessPerformedMovement.functionalFitnessResult)
@@ -50,6 +56,7 @@ final class FunctionalFitnessResult {
         scoreValue: ScoreValue,
         scoreDirection: ScoreDirection,
         resultContext: ResultContext = .rx,
+        adherence: PrescriptionAdherence = .unknown,
         completedAt: Date = Date()
     ) {
         self.id = id
@@ -57,6 +64,7 @@ final class FunctionalFitnessResult {
         self.scoreValue = scoreValue
         self.scoreDirection = scoreDirection
         self.resultContext = resultContext
+        self.adherence = adherence
         self.completedAt = completedAt
     }
 

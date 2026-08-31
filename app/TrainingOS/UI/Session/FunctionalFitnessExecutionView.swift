@@ -18,6 +18,17 @@ struct FunctionalFitnessExecutionView: View {
     @State private var repsEntry = 0
     @State private var lastHighlight: LoggedResultHighlight?
 
+    /// Stage FF.E1: every format body's own Finish action produces one of
+    /// these instead of calling `viewModel.finish` directly — the single
+    /// shared confirmation below is what actually calls `finish`, so there
+    /// is exactly one adherence-decision flow and one persistence path
+    /// regardless of which of the 8 typed bodies produced the score.
+    private struct PendingFinish {
+        let scoreValue: ScoreValue
+        let completionContext: BlockCompletionContext
+    }
+    @State private var pendingFinish: PendingFinish?
+
     init(block: WorkoutBlock, session: Session, executionState: SessionExecutionState) {
         self.session = session
         _viewModel = State(initialValue: FunctionalFitnessExecutionViewModel(block: block, executionState: executionState))
@@ -51,6 +62,35 @@ struct FunctionalFitnessExecutionView: View {
                 startClock(for: format)
             }
         }
+        // Stage FF.E1: the ONE shared adherence confirmation, regardless
+        // of which typed body produced the pending score. Nothing is
+        // persisted until the athlete makes this explicit choice —
+        // confirm-then-persist, a single `finish()` call either way.
+        // `.unknown` is deliberately not offered here — it is the safe
+        // default for legacy/interrupted records, never a normal choice
+        // for a newly logged workout.
+        .confirmationDialog(
+            "Did you follow the workout as prescribed?",
+            isPresented: Binding(get: { pendingFinish != nil }, set: { if !$0 { pendingFinish = nil } }),
+            titleVisibility: .visible
+        ) {
+            Button("As Prescribed") { completeFinish(adherence: .asPrescribed) }
+            Button("Modified") { completeFinish(adherence: .modified) }
+            Button("Cancel", role: .cancel) { pendingFinish = nil }
+        }
+    }
+
+    /// Cancelling leaves `pendingFinish` cleared and nothing persisted —
+    /// the block remains not-yet-completed, exactly as if Finish had never
+    /// been tapped, so no completed work can be lost to a dismissed prompt.
+    private func completeFinish(adherence: PrescriptionAdherence) {
+        guard let pending = pendingFinish else { return }
+        let highlight = viewModel.finish(
+            scoreValue: pending.scoreValue, completionContext: pending.completionContext,
+            benchmark: nil, adherence: adherence, modelContext: modelContext
+        )
+        lastHighlight = highlight
+        pendingFinish = nil
     }
 
     private func header(_ prescription: FunctionalFitnessPrescription) -> some View {
@@ -131,11 +171,10 @@ struct FunctionalFitnessExecutionView: View {
 
                         if enteringFinalScore || expired {
                             partialRepsEntryView(onSave: {
-                                let highlight = viewModel.finish(
+                                pendingFinish = PendingFinish(
                                     scoreValue: .roundsAndReps(rounds: viewModel.roundsCompleted, partialReps: partialRepsEntry),
-                                    completionContext: .full, benchmark: nil, modelContext: modelContext
+                                    completionContext: .full
                                 )
-                                lastHighlight = highlight
                             })
                         } else {
                             Button("+ ROUND") { viewModel.incrementRound() }
@@ -186,12 +225,10 @@ struct FunctionalFitnessExecutionView: View {
                                 Button("Mark Minute Incomplete") { viewModel.markMinuteIncomplete(asOf: Date()) }
                                 Button("Finish") {
                                     let completed = min(position.minuteIndex + 1, position.totalMinutes)
-                                    let highlight = viewModel.finish(
+                                    pendingFinish = PendingFinish(
                                         scoreValue: .completedIntervals(completed),
-                                        completionContext: completed >= position.totalMinutes ? .full : .partial,
-                                        benchmark: nil, modelContext: modelContext
+                                        completionContext: completed >= position.totalMinutes ? .full : .partial
                                     )
-                                    lastHighlight = highlight
                                 }
                             }
                             .buttonStyle(.bordered)
@@ -231,27 +268,21 @@ struct FunctionalFitnessExecutionView: View {
 
                         if enteringFinalScore {
                             partialRepsEntryView(onSave: {
-                                let highlight = viewModel.finish(
+                                pendingFinish = PendingFinish(
                                     scoreValue: .roundsAndReps(rounds: viewModel.roundsCompleted, partialReps: partialRepsEntry),
-                                    completionContext: .partial, benchmark: nil, modelContext: modelContext
+                                    completionContext: .partial
                                 )
-                                lastHighlight = highlight
                             })
                         } else if let targetRounds, viewModel.roundsCompleted >= targetRounds {
                             Button("Finish") {
-                                let highlight = viewModel.finish(
-                                    scoreValue: .time(seconds: Int(elapsed)), completionContext: .full, benchmark: nil, modelContext: modelContext
-                                )
-                                lastHighlight = highlight
+                                pendingFinish = PendingFinish(scoreValue: .time(seconds: Int(elapsed)), completionContext: .full)
                             }
                             .buttonStyle(.borderedProminent).tint(Theme.primary).frame(maxWidth: .infinity)
                         } else if targetRounds == nil {
                             Button("Finish") {
-                                let highlight = viewModel.finish(
-                                    scoreValue: .time(seconds: Int(elapsed)),
-                                    completionContext: timeCapped ? .partial : .full, benchmark: nil, modelContext: modelContext
+                                pendingFinish = PendingFinish(
+                                    scoreValue: .time(seconds: Int(elapsed)), completionContext: timeCapped ? .partial : .full
                                 )
-                                lastHighlight = highlight
                             }
                             .buttonStyle(.borderedProminent).tint(Theme.primary).frame(maxWidth: .infinity)
                         } else if timeCapped {
@@ -273,8 +304,7 @@ struct FunctionalFitnessExecutionView: View {
                 .font(Theme.numeric)
             Button("Save") {
                 guard let kg = Double(loadEntry) else { return }
-                let highlight = viewModel.finish(scoreValue: .load(kilograms: kg), completionContext: .full, benchmark: nil, modelContext: modelContext)
-                lastHighlight = highlight
+                pendingFinish = PendingFinish(scoreValue: .load(kilograms: kg), completionContext: .full)
             }
             .buttonStyle(.borderedProminent).tint(Theme.primary)
         }
@@ -296,8 +326,7 @@ struct FunctionalFitnessExecutionView: View {
                         if enteringFinalScore || expired {
                             Stepper("Reps: \(repsEntry)", value: $repsEntry, in: 0...500)
                             Button("Save") {
-                                let highlight = viewModel.finish(scoreValue: .repetitions(repsEntry), completionContext: .full, benchmark: nil, modelContext: modelContext)
-                                lastHighlight = highlight
+                                pendingFinish = PendingFinish(scoreValue: .repetitions(repsEntry), completionContext: .full)
                             }
                             .buttonStyle(.borderedProminent).tint(Theme.primary)
                         } else {
@@ -330,12 +359,10 @@ struct FunctionalFitnessExecutionView: View {
 
                             Button("Finish") {
                                 let completed = position.isSessionComplete ? count : position.legIndex / 2
-                                let highlight = viewModel.finish(
+                                pendingFinish = PendingFinish(
                                     scoreValue: .completedIntervals(completed),
-                                    completionContext: position.isSessionComplete ? .full : .partial,
-                                    benchmark: nil, modelContext: modelContext
+                                    completionContext: position.isSessionComplete ? .full : .partial
                                 )
-                                lastHighlight = highlight
                             }
                             .buttonStyle(.borderedProminent).tint(Theme.primary)
                         }

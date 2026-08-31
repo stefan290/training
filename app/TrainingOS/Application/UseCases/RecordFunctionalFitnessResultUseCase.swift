@@ -29,6 +29,15 @@ enum RecordFunctionalFitnessResultUseCase {
         benchmarkProfile.lastPerformedAt = result.completedAt
         benchmarkProfile.addResult(result)
 
+        // Stage FF.E1: `.modified`/`.unknown` results are real history —
+        // already attached above, already keeping their real score — but
+        // must never create or beat the canonical PersonalRecord. Only an
+        // explicitly-confirmed `.asPrescribed` result may compete here.
+        // `result.resultContext` (Rx/Scaled) is deliberately NOT read for
+        // this gate — it is unconfirmed, default-`.rx` data on every real
+        // Functional Fitness result today (`FUNCTIONAL_FITNESS_EXECUTION_TRUTH_DESIGN.md`).
+        guard result.adherence == .asPrescribed else { return (result, false) }
+
         let scoringDirection = mapToScoringDirection(result.scoreDirection)
         let candidateValue = comparableValue(for: result.scoreValue)
 

@@ -60,8 +60,11 @@ final class FunctionalFitnessSubstitutionAndBenchmarkTests: XCTestCase {
         context.insert(blockA)
         sessionA.addBlock(blockA)
 
-        // §48.20: Rx attempt.
-        let rxResult = FunctionalFitnessResult(scoreType: .time, scoreValue: .time(seconds: 245), scoreDirection: .lowerIsBetter, resultContext: .rx)
+        // §48.20: Rx attempt. Stage FF.E1: `PersonalRecord` eligibility is
+        // now gated on `adherence`, not `resultContext` — explicitly
+        // confirmed here since this test's own subject is Rx/Scaled
+        // bucketing independence, not adherence.
+        let rxResult = FunctionalFitnessResult(scoreType: .time, scoreValue: .time(seconds: 245), scoreDirection: .lowerIsBetter, resultContext: .rx, adherence: .asPrescribed)
         RecordFunctionalFitnessResultUseCase.recordResult(rxResult, for: blockA, benchmark: benchmark, performanceProfile: performanceProfile, modelContext: context)
 
         // §48.21: a later Scaled attempt is retained independently, never
@@ -69,7 +72,7 @@ final class FunctionalFitnessSubstitutionAndBenchmarkTests: XCTestCase {
         let blockA2 = WorkoutBlock(type: .functionalFitness)
         context.insert(blockA2)
         sessionA.addBlock(blockA2)
-        let scaledResult = FunctionalFitnessResult(scoreType: .time, scoreValue: .time(seconds: 200), scoreDirection: .lowerIsBetter, resultContext: .scaled)
+        let scaledResult = FunctionalFitnessResult(scoreType: .time, scoreValue: .time(seconds: 200), scoreDirection: .lowerIsBetter, resultContext: .scaled, adherence: .asPrescribed)
         RecordFunctionalFitnessResultUseCase.recordResult(scaledResult, for: blockA2, benchmark: benchmark, performanceProfile: performanceProfile, modelContext: context)
 
         let benchmarkProfile = try XCTUnwrap(performanceProfile.benchmarkProfile(for: benchmark))

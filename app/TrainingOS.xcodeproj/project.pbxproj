@@ -96,6 +96,7 @@
 		5C7EF022AD9CC59C4E0E11D4 /* TrainingStressProfileParityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E16FD478E95665AA315DFF54 /* TrainingStressProfileParityTests.swift */; };
 		63DF8EF46302F88EFB384C8B /* CrossModalityFunctionalFitnessProgrammingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D80B65816A3F237F7ADA1F4 /* CrossModalityFunctionalFitnessProgrammingTests.swift */; };
 		690EF60DDE2274237CC5EA69 /* FunctionalFitnessIntendedVsFinalStimulusTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58FD1135ABB2ED8BAF23DA69 /* FunctionalFitnessIntendedVsFinalStimulusTests.swift */; };
+		C277FE6C35C59C2B0598DE6D /* FunctionalFitnessPrescriptionAdherenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE441A0DBEA4A42B84C66FF3 /* FunctionalFitnessPrescriptionAdherenceTests.swift */; };
 		0AC8B59F3C8FF55C0B6023E3 /* StrategicPhaseTransitionUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1160A685F640DF57DBE4EB37 /* StrategicPhaseTransitionUITests.swift */; };
 		5582DBF8EA418AAA60F62328 /* MixedModalityTacticalAtomicityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20001F5B16ADD640ED2ABE3B /* MixedModalityTacticalAtomicityTests.swift */; };
 		29232F0DE6EDAF463A1AF06C /* LoadFirstOverlayEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4A2CDCD3AED6DA58E4149F8 /* LoadFirstOverlayEngineTests.swift */; };
@@ -123,6 +124,7 @@
 		5070F4CD6950A8579911F16A /* WarmupSequence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00B39E0790386710A7FA1E20 /* WarmupSequence.swift */; };
 		51E568351ADA4481BBDB1C74 /* ProgramProvenance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B06BE6A5A714AFDB8FA09D7 /* ProgramProvenance.swift */; };
 		1E5E0A65A25AC0D4864FB70C /* AdaptationObjective.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF6777CC7C95B2888B29A900 /* AdaptationObjective.swift */; };
+		95194261C717E0C614D494DB /* PrescriptionAdherence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3ADCDD0CD26CF4B1DAE9004A /* PrescriptionAdherence.swift */; };
 		52A1F877F76744B1921DD637 /* FunctionalFitnessProgramGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80B39257099744D18ACECC93 /* FunctionalFitnessProgramGeneratorTests.swift */; };
 		52A7D261DF0E4FD0A5C7C327 /* ExerciseRelationship.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9371B7F87D414C6D8FE13465 /* ExerciseRelationship.swift */; };
 		53B81AD6E82A45F1BAAC6C16 /* SteadyStatePersistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F814CB5247DB49D5B61BEB54 /* SteadyStatePersistenceTests.swift */; };
@@ -536,6 +538,7 @@
 		8AD5EB61AD054B5AB7EB3D48 /* ChangeActivityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChangeActivityView.swift; path = ChangeActivityView.swift; sourceTree = "<group>"; };
 		8B06BE6A5A714AFDB8FA09D7 /* ProgramProvenance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ProgramProvenance.swift; path = ProgramProvenance.swift; sourceTree = "<group>"; };
 		FF6777CC7C95B2888B29A900 /* AdaptationObjective.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AdaptationObjective.swift; path = AdaptationObjective.swift; sourceTree = "<group>"; };
+		3ADCDD0CD26CF4B1DAE9004A /* PrescriptionAdherence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PrescriptionAdherence.swift; path = PrescriptionAdherence.swift; sourceTree = "<group>"; };
 		8C61B6E8D75D4E7593DFD1AA /* ProgramCandidate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ProgramCandidate.swift; path = ProgramCandidate.swift; sourceTree = "<group>"; };
 		8DAEC226AF824209936AF212 /* SteadyStateExecutionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SteadyStateExecutionViewModel.swift; path = SteadyStateExecutionViewModel.swift; sourceTree = "<group>"; };
 		8E08F11449D2435FB502E093 /* LongTermPlannerTrainingMixRankingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LongTermPlannerTrainingMixRankingTests.swift; path = LongTermPlannerTrainingMixRankingTests.swift; sourceTree = "<group>"; };
@@ -642,6 +645,7 @@
 		E16FD478E95665AA315DFF54 /* TrainingStressProfileParityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TrainingStressProfileParityTests.swift; path = TrainingStressProfileParityTests.swift; sourceTree = "<group>"; };
 		2D80B65816A3F237F7ADA1F4 /* CrossModalityFunctionalFitnessProgrammingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CrossModalityFunctionalFitnessProgrammingTests.swift; path = CrossModalityFunctionalFitnessProgrammingTests.swift; sourceTree = "<group>"; };
 		58FD1135ABB2ED8BAF23DA69 /* FunctionalFitnessIntendedVsFinalStimulusTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FunctionalFitnessIntendedVsFinalStimulusTests.swift; path = FunctionalFitnessIntendedVsFinalStimulusTests.swift; sourceTree = "<group>"; };
+		DE441A0DBEA4A42B84C66FF3 /* FunctionalFitnessPrescriptionAdherenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FunctionalFitnessPrescriptionAdherenceTests.swift; path = FunctionalFitnessPrescriptionAdherenceTests.swift; sourceTree = "<group>"; };
 		1160A685F640DF57DBE4EB37 /* StrategicPhaseTransitionUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = StrategicPhaseTransitionUITests.swift; path = StrategicPhaseTransitionUITests.swift; sourceTree = "<group>"; };
 		20001F5B16ADD640ED2ABE3B /* MixedModalityTacticalAtomicityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MixedModalityTacticalAtomicityTests.swift; path = MixedModalityTacticalAtomicityTests.swift; sourceTree = "<group>"; };
 		F4A2CDCD3AED6DA58E4149F8 /* LoadFirstOverlayEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LoadFirstOverlayEngineTests.swift; path = LoadFirstOverlayEngineTests.swift; sourceTree = "<group>"; };
@@ -834,6 +838,7 @@
 				FEB93C5171CC401EA6090112 /* HypertrophyConfiguration.swift */,
 				8B06BE6A5A714AFDB8FA09D7 /* ProgramProvenance.swift */,
 				FF6777CC7C95B2888B29A900 /* AdaptationObjective.swift */,
+				3ADCDD0CD26CF4B1DAE9004A /* PrescriptionAdherence.swift */,
 				4C5B28D676A342FA9EBF0C73 /* TrainingMixTypes.swift */,
 				96493FA13905453CA63B421E /* SchedulingTypes.swift */,
 				355714B9D5E943ED9888B1F0 /* ScheduleProposal.swift */,
@@ -1091,6 +1096,7 @@
 				E16FD478E95665AA315DFF54 /* TrainingStressProfileParityTests.swift */,
 				2D80B65816A3F237F7ADA1F4 /* CrossModalityFunctionalFitnessProgrammingTests.swift */,
 				58FD1135ABB2ED8BAF23DA69 /* FunctionalFitnessIntendedVsFinalStimulusTests.swift */,
+				DE441A0DBEA4A42B84C66FF3 /* FunctionalFitnessPrescriptionAdherenceTests.swift */,
 				1160A685F640DF57DBE4EB37 /* StrategicPhaseTransitionUITests.swift */,
 				20001F5B16ADD640ED2ABE3B /* MixedModalityTacticalAtomicityTests.swift */,
 				F4A2CDCD3AED6DA58E4149F8 /* LoadFirstOverlayEngineTests.swift */,
@@ -1429,6 +1435,7 @@
 				5C7EF022AD9CC59C4E0E11D4 /* TrainingStressProfileParityTests.swift in Sources */,
 				63DF8EF46302F88EFB384C8B /* CrossModalityFunctionalFitnessProgrammingTests.swift in Sources */,
 				690EF60DDE2274237CC5EA69 /* FunctionalFitnessIntendedVsFinalStimulusTests.swift in Sources */,
+				C277FE6C35C59C2B0598DE6D /* FunctionalFitnessPrescriptionAdherenceTests.swift in Sources */,
 				0AC8B59F3C8FF55C0B6023E3 /* StrategicPhaseTransitionUITests.swift in Sources */,
 				5582DBF8EA418AAA60F62328 /* MixedModalityTacticalAtomicityTests.swift in Sources */,
 				29232F0DE6EDAF463A1AF06C /* LoadFirstOverlayEngineTests.swift in Sources */,
@@ -1658,6 +1665,7 @@
 				3627B7AE56D64170893E07DF /* HypertrophyConfiguration.swift in Sources */,
 				51E568351ADA4481BBDB1C74 /* ProgramProvenance.swift in Sources */,
 				1E5E0A65A25AC0D4864FB70C /* AdaptationObjective.swift in Sources */,
+				95194261C717E0C614D494DB /* PrescriptionAdherence.swift in Sources */,
 				7FDC24AB4D844FAE8DB189EF /* EquipmentProfile.swift in Sources */,
 				5BEBA2DA1E98481C8C7F38C9 /* PowerliftingConfiguration.swift in Sources */,
 				FFDD40D1BA4DFEA6FEB100AA /* README.swift in Sources */,

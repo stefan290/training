@@ -78,16 +78,26 @@ final class FunctionalFitnessExecutionViewModel {
         }
     }
 
+    /// Stage FF.E1: `adherence` has no default here, deliberately —
+    /// requiring every real call site to pass an explicit value is what
+    /// prevents recreating the exact bug this stage fixes (a silent
+    /// default masquerading as confirmed evidence). The view's own shared
+    /// finish flow is the single place that produces this value, after
+    /// the athlete's one explicit "As prescribed" / "Modified" choice —
+    /// never nine independent copies of that decision.
     @discardableResult
     func finish(
         scoreValue: ScoreValue,
         completionContext: BlockCompletionContext,
         benchmark: BenchmarkDefinition?,
+        adherence: PrescriptionAdherence,
         modelContext: ModelContext
     ) -> LoggedResultHighlight? {
         guard let prescription else { return nil }
         let scoreDirection = FunctionalFitnessScoring.scoreDirection(for: prescription.format)
-        let result = FunctionalFitnessResult(scoreType: prescription.stimulus.scoreType, scoreValue: scoreValue, scoreDirection: scoreDirection)
+        let result = FunctionalFitnessResult(
+            scoreType: prescription.stimulus.scoreType, scoreValue: scoreValue, scoreDirection: scoreDirection, adherence: adherence
+        )
         let users = (try? modelContext.fetch(FetchDescriptor<User>())) ?? []
         let performanceProfile = users.first?.performanceProfile
 

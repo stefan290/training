@@ -326,9 +326,12 @@ enum SeedScenarios {
         )
         modelContext.insert(benchmark)
 
+        // Stage FF.E1: this seeded demo attempt is meant to illustrate a
+        // real, confirmed Personal Record — `.asPrescribed` is the honest
+        // choice for what this fixture represents, not a workaround.
         let result = FunctionalFitnessResult(
             scoreType: .time, scoreValue: .time(seconds: 245), scoreDirection: .lowerIsBetter,
-            resultContext: .rx, completedAt: day.date
+            resultContext: .rx, adherence: .asPrescribed, completedAt: day.date
         )
         RecordFunctionalFitnessResultUseCase.recordResult(
             result, for: block, benchmark: benchmark, performanceProfile: performanceProfile, modelContext: modelContext

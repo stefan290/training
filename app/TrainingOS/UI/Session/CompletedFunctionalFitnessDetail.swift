@@ -4,7 +4,8 @@ import SwiftUI
 /// — prescribed workout, each movement's actual performed/scaled variant
 /// (`FunctionalFitnessPerformedMovement.prescribedMovement` is never
 /// mutated to represent scaling, so the original is always still here),
-/// final score, Rx/Scaled context, and benchmark/PR context.
+/// final score, prescription adherence (Stage FF.E1), and benchmark/PR
+/// context.
 struct CompletedFunctionalFitnessDetail: View {
     let block: WorkoutBlock
 
@@ -54,7 +55,7 @@ struct CompletedFunctionalFitnessDetail: View {
                     Text(formattedScore(result.scoreValue))
                         .font(Theme.heading)
                         .foregroundStyle(Theme.textPrimary)
-                    Text(resultContextLabel(result.resultContext))
+                    Text(adherenceLabel(result.adherence))
                         .font(Theme.label)
                         .foregroundStyle(Theme.textSecondary)
                 }
@@ -124,10 +125,16 @@ struct CompletedFunctionalFitnessDetail: View {
         return parts.joined(separator: " \u{b7} ")
     }
 
-    private func resultContextLabel(_ context: ResultContext) -> String {
-        switch context {
-        case .rx: "Rx"
-        case .scaled: "Scaled"
+    /// Stage FF.E1: displays `adherence`, not `resultContext` — the
+    /// latter defaults `.rx` unconditionally on every real Functional
+    /// Fitness result and was never actually confirmed by the athlete
+    /// (`FUNCTIONAL_FITNESS_EXECUTION_TRUTH_DESIGN.md`). A legacy record
+    /// therefore truthfully shows "Unknown," never a false "As prescribed."
+    private func adherenceLabel(_ adherence: PrescriptionAdherence) -> String {
+        switch adherence {
+        case .asPrescribed: "As prescribed"
+        case .modified: "Modified"
+        case .unknown: "Unknown"
         }
     }
 
