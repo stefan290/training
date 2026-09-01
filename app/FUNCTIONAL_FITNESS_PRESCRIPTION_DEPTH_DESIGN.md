@@ -312,6 +312,224 @@ Both new tests pass. All 26 CP.2 tests pass (24 existing + 2 new). All 8 FF.L1 t
 
 ---
 
+## FF.P1 Design Lock — Structural Movement Targets
+
+**Status: DESIGN LOCK ONLY. Nothing implemented, committed, or pushed.** Builds on CP.2 (`bca43e2ff47d21d8703275d06354af6a086f0d45`), FF.L1 (`ae5898c36cdb5617edf77f2ad68507149ea3e2ac`), FF.E1 (`a3c3d0b532a68878411a9383f1d154225bdc4fc4`), CP.2R (`2f02c603e7b5acc0a4e1ff86ab1239a848d54f7d`) — none modified. Every claim below is grounded in a direct re-read of the real code, not carried forward from the prior audit's own recommendation without re-proof — the ownership question in particular is answered from first principles, not assumed.
+
+### A. Exact FF.P1 product scope
+
+**OPTION 2 — reps for repetition-native movement categories + distance for the distance-native monostructural category.** The prior audit's own (A) reps-only is REJECTED as the final scope: real production `movementModalityMix` is unconditionally `[weightlifting:1, gymnastics:1, metabolicConditioning:1]` (`LongTermPlanner.swift:1213-1217`) — every single real generated FF workout, with zero exceptions, contains exactly one monostructural slot. Reps-only would leave 1-of-3 movements in **every real generated workout** completely unprescribed, which is not a rare edge case this audit can defer — it is the guaranteed universal case. Calories is explicitly NOT included: it is idiomatic for Assault Bike/Row Erg/SkiErg but not for Easy Run/Track Interval Run (both real catalog entries with `equipment: "none"`, `ExerciseCatalog.swift:157-164`), and distinguishing calorie-appropriate from distance-appropriate monostructural exercises would require a per-exercise/equipment branch this stage does not need — distance alone applies honestly and uniformly to every real monostructural catalog entry (Bike, Row, SkiErg, Run all have a real, sensible distance reading). Numeric load stays explicitly deferred (unchanged from the prior audit — blocked on a real calibration decision).
+
+### B. Production `WorkoutFormat` scope
+
+**OPTION A — support only `.roundsForTime`, the sole format real generated content produces.** Confirmed again directly: `LongTermPlanner.functionalFitnessParameterCandidates` hardcodes `format: .roundsForTime(rounds: 5, capSeconds: nil)` (`:1219`) and is the only real construction site for any FF `Stimulus`/format pair. Implementation must gate on format explicitly — see M for the required signature change — so that hand-authored/test/seed content using any other format (AMRAP, EMOM, chipper, ladder, max-load, max-reps, intervals) degrades truthfully to no new target rather than silently applying a rounds-for-time-shaped rule. No format's rules are designed here beyond `.roundsForTime`.
+
+### C. Target-type classification rule
+
+Keyed on the SLOT's own declared `FunctionalModality` (authoritative for target TYPE, see F) — not the specific `Exercise` later resolved by Stage D, and not derived per-Exercise metadata (none needed, confirmed by the prior audit §11):
+
+- `.weightlifting` slot → **reps**
+- `.gymnastics` slot → **reps**
+- `.metabolicConditioning` slot → **distance** (meters)
+- Any other real `FunctionalModality` value: there are only 3 real cases in the entire enum (`Stimulus.swift:40-44`) — no fourth case exists, so no residual "unknown modality" branch is needed for FF.P1's classification itself, only for format-gating (B) and for movement-function reachability (E).
+
+### D. Deterministic structural-dose rule
+
+Total dose = round count (read from the gating format, `.roundsForTime(rounds:, _)`) × per-round target — never a single constant applied everywhere. Real production round count is always 5. Proposed dose classes, keyed on the slot's `MovementFunction` (authoritative for dose CLASS, see F) — **exact numbers are a proposed product decision for explicit sign-off, per CLAUDE.md rule 10, not silently invented into shipped logic**:
+
+| MovementFunction (real slot value) | Dose class | Per-round target | Total @ 5 rounds |
+|---|---|---|---|
+| `.gymnasticsPull` | LOW REP (demanding bodyweight pulling) | 8 reps | 40 reps |
+| `.squatLoaded` | MODERATE REP (loaded, more rep-tolerant) | 12 reps | 60 reps |
+| `.monostructural` | DISTANCE | 200 m | 1000 m |
+
+This is a small, closed table — not exercise-science precision, a coherent programmed-workout heuristic per the instruction's own framing. Stress-tested in O.
+
+### E. Production-reachable `MovementFunction` mappings
+
+Confirmed by direct read of `LongTermPlanner.functionalFitnessParameterCandidates` (the sole real construction site): **only 3 of the enum's 15 real cases are ever assigned into a real generated slot today** — `.squatLoaded`, `.gymnasticsPull`, `.monostructural`. Each is classified in D. Every other real `MovementFunction` case (`hingeLoaded`, `pressLoaded`, `gymnasticsPush`, `carry`, `locomotion`, `trunk`, `jumping`, `other`, `horizontalPullLoaded`, `verticalPullLoaded`, `verticalPushLoaded`, `kneeFlexionLoaded`) is **NOT PRODUCTION REACHABLE** — real, valid domain values, exercised only by tests/seed/benchmark content, correctly left with **no FF.P1 target** (classification D: "receives no concrete target in FF.P1") rather than a guessed rule for a case that cannot occur.
+
+### F. `FunctionalModality` precedence
+
+**`FunctionalModality` is authoritative for target TYPE (reps vs. distance); `MovementFunction` is authoritative for dose CLASS (how much) once type is decided.** Reasoning: modality is the more direct signal for "how is this measured" — `.metabolicConditioning` structurally implies engine/distance-style work regardless of which specific movement function happens to be paired with it, while `.weightlifting`/`.gymnastics` both structurally imply a countable-repetition style of work. `MovementFunction` then differentiates demand character within the reps type (a gymnastics pull is a more demanding per-rep pattern than a general loaded squat pattern, independent of modality). **In real production this precedence is currently moot** — every real slot's modality and function already agree by construction (`weightlifting`+`squatLoaded`, `gymnastics`+`gymnasticsPull`, `metabolicConditioning`+`monostructural` are the only 3 real pairs, confirmed identical index correspondence in `movementSlots`'s round-robin assignment). The precedence is locked now so a future format/stimulus richer than today's single triplet cannot silently misclassify a slot if a mismatch is ever introduced.
+
+### G. Monostructural rule
+
+Confirmed real catalog entries for the one real `.metabolicConditioning`/`.monostructural` slot: Assault Bike (`equipment: "bike"`), Row Erg (`"rower"`), SkiErg (`"skiErg"`), Easy Run/Track Interval Run (`"none"`) — `ExerciseCatalog.swift:157-209`. **A single flat distance number (200m/round, per D) applies uniformly regardless of which of these Stage D actually resolves** — deliberately NOT differentiated per specific exercise or equipment, mirroring exactly why `loadingRole` itself was defined at the slot/modality level rather than per-`Exercise` in the first place (a target keyed on the *specific resolved Exercise* would need to be recomputed on every substitution, reintroducing exactly the kind of frozen-vs-live tension CP.2R just resolved for `loading`). This is a real, disclosed imprecision — 1000m total means something different in wall-clock terms for a Row vs. a Run vs. an Assault Bike — accepted deliberately as truthful partial depth rather than fabricated per-equipment precision the domain doesn't yet model (equipment-aware calorie/pace differentiation is explicitly deferred, not designed here).
+
+### H. Ownership: generator vs. materializer — stress-tested against the CP.2R failure class, not assumed
+
+**LOCKED: `FunctionalFitnessProgramGenerator` (generation time), not the materializer — and this is now proven, not carried forward.** The CP.2R failure class was specifically: *a value frozen at generation time from field X, later checked for continued equality against a live, per-week value of the SAME field X, where a real mechanism (CP.2) legitimately changes X between generation and materialization.* Traced precisely whether a rep/distance target keyed on `MovementFunction`/`FunctionalModality` repeats this class:
+
+- `CrossModalityStimulusRepair.minimalRepair` (CP.2's only stimulus-mutating repair) mutates **exactly one field: `Stimulus.loading`** — confirmed by direct read, its own repair table is explicitly restricted to `.lowerBodyLoad`/`.impactLoading` (both loading-driven), with an explicit doc comment forbidding extension to any other `StressDimension`.
+- `AdaptationObjectiveStimulusMapping.nudge` (CP.2's same-week complementarity mechanism) mutates exactly one of `intensity`/`targetDurationDomain`/`systemicDemand`/`skillDemand` per call, per objective — confirmed by direct read of its full `switch`. **Neither CP.2 mechanism, in either of its two real code paths, EVER touches `movementFunctions` or `movementModalityMix`.**
+- Therefore: a rep/distance target computed from `MovementFunction`/`FunctionalModality` at generation time depends on exactly the two `Stimulus` fields CP.2 is structurally incapable of changing. There is no live, per-week value for these fields to diverge from — unlike `loadingRole`, which was checked for equality against the one field CP.2 exists specifically to adapt. **This is not the same failure class, proven by exhaustive enumeration of every real CP.2 mutation path, not by assumption.**
+- Concretely: `INTENDED heavy → CP.2 FINAL moderate` changes nothing about which `MovementFunction`/`FunctionalModality` a slot carries — the rep/distance target remains exactly as valid after the adaptation as before it, because the target's own inputs were never touched. Structural targets are correctly, provably orthogonal to CP.2's stimulus adaptations.
+
+**Materializer ownership is explicitly rejected for FF.P1**: resolving reps/distance downstream of FINAL would gain nothing (FINAL's `loading`/`intensity`/`systemicDemand`/`skillDemand` are irrelevant inputs to this rule) while adding an unnecessary dependency on materialization-time state, contrary to the "smallest correct seam" discipline this whole document series has followed throughout (CP.1/CP.2/FF.L1 each resolved things at the narrowest seam that actually needed them).
+
+### I. Variance/substitution/readiness safety
+
+**Substitution — proven safe, answer is (A) preserves the target.** `SubstituteFunctionalFitnessMovementUseCase.substituteThisSessionOnly` mutates exactly `movement.exercise`/`.substitutionUsed`/`.substitutionReason` — confirmed by direct read, it never touches `reps`/`distanceMeters`/`calories`/`loadKilograms`. Critically, `SubstitutionValidator.isValid` (the gate every real substitution must pass) requires the candidate to satisfy the SAME `allowedMovementFunctions`/`allowedModalities` the original slot was built from — so any valid substitute is *guaranteed*, by construction, to share the exact movement-function/modality classification the target was computed from. A target keyed on slot-level modality/function (not the originally-resolved `Exercise`) therefore remains coherent across any valid substitution — Toes-to-Bar substituted for Pull-up both satisfy `.gymnasticsPull`, so the 8-rep target (D) stays honest for either.
+
+**Readiness — identical, confirmed by direct read.** `ReadinessAdaptationDecisionUseCase` calls the exact same `substituteThisSessionOnly` mechanism (`ReadinessAdaptationDecisionUseCase.swift:52,56`) — no separate reasoning needed.
+
+**Variance — a real, disclosed future risk, correctly out of scope now.** `VarianceConstraints`'s currently-inactive `adjustForMovementFunction`/`adjustForModality` checks, if ever activated, WOULD change `Stimulus.movementFunctions`/`.movementModalityMix` at the per-week decision-engine level — the exact two fields FF.P1's target is keyed on. But the per-slot `ExerciseSlot.allowedMovementFunctions`/`.allowedModalities` (and therefore any per-slot target derived from them) is fixed ONCE at generation time and never revisited per week — the SAME "frozen at generation, never revisited" lifecycle `loadingRole` had. **This means IF variance is ever activated for movement function/modality, that future stage would face the exact CP.2R-class question again**, and would need to decide explicitly whether reactivating the template graph per week or some other mechanism is required — not resolved here, correctly flagged as unresolved (P), not fixed, since `VarianceConstraints` stays inactive and untouched in FF.P1.
+
+### J. Validation additions
+
+**None to Stage-E.** The rep/distance value is the pure, deterministic output of a table-driven function (D) with no external/runtime input — it cannot be malformed by athlete data, substitution, or CP.2 adaptation (H/I), so there is no runtime condition for Stage-E to guard against that a table-driven unit test (N) doesn't already prove exhaustively at compile-adjacent time. Adding a new `StimulusValidation` dimension for this would be validating a fact that can only ever be correct by construction — the "malformed prescriptions should not silently ship" concern is fully addressed by the deterministic-rule unit test instead, avoiding the overbuild the instruction explicitly warns against. `FunctionalFitnessStimulusValidator.swift` is not touched.
+
+### K. Live UI changes — explicitly IN scope, per the correction in the user's own §25
+
+Confirmed by direct read: `FunctionalFitnessExecutionView.swift`'s `header(_:)` (`:95-106`) is the ONE shared function every one of the 8 real format bodies renders through (mirroring FF.E1's own "one shared flow" precedent) — it currently builds `prescription.orderedMovements.compactMap { $0.exercise?.canonicalName }.joined(separator: " · ")`, i.e. exercise names only. `CompletedFunctionalFitnessDetail.swift` already has the exact, already-correct, already-tested string-building logic FF.P1 needs (`prescribedMovementLine(_:)`, `:119-125`: `"\(exercise) · \(reps) reps · ..."`, gated correctly on optionality). **The smallest change: share that exact formatting logic (promote it to a small shared presentation helper, or duplicate the ~5-line pure function) and call it from `header(_:)` instead of the bare `canonicalName` mapping.** Display-only — no editing, no new screen, no new state. **FF.P1's scope explicitly INCLUDES this change** — per the user's own locked expectation, populating the model alone without this would not make the workout "truly executable," and this document does not call FF.P1 complete without it.
+
+### L. Adherence semantic impact
+
+No FF.E1 code change. `PrescriptionAdherence`'s own doc-comment scope ("the dimensions TrainingOS actually prescribes today") mechanically widens once FF.P1 ships real reps/distance targets — an `asPrescribed` confirmation logged after FF.P1 now honestly covers movement/format/completion/reps/distance; a historical pre-FF.P1 `asPrescribed` record remains scoped to its own shallower, real prescription at the time, automatically and correctly, because `FunctionalFitnessPrescription`/`FunctionalFitnessMovement` are already immutable per-materialization snapshots (FF.L1's own precedent). No new adherence UI, no per-target confirmation, no performed-movement tracking — confirmed unnecessary, matching the user's own explicit instruction.
+
+### M. Exact files/types to change
+
+- `FunctionalFitnessProgramGenerator.swift` — `movementSlots(for:context:)` gains a `format: WorkoutFormat` parameter (needed for both B's format gate and D's round count), called from `generate` which already has `configuration.format` in scope; passes `reps:`/`distanceMeters:` into `FunctionalFitnessMovementSlotTemplate(...)` per C/D's rule, only when `format` is `.roundsForTime` (else neither field is set, matching today's exact behavior for every other format).
+- New file, e.g. `Engines/FunctionalFitnessMovementTargetRule.swift` — a small, pure **DERIVED VALUE** function (`target(for movementFunction: MovementFunction, modality: FunctionalModality, rounds: Int) -> (reps: Int?, distanceMeters: Double?)` or equivalent), analogous in shape to `FunctionalFitnessStimulusValidator`'s own pure-function style. Not a persisted type, not a new engine, not a new entity.
+- `FunctionalFitnessExecutionView.swift` — `header(_:)` updated to render the shared movement-target line (K).
+- `CompletedFunctionalFitnessDetail.swift` — `prescribedMovementLine`'s formatting logic shared with the execution view (either promoted to `internal`/a shared helper, or duplicated as a tiny pure function) — no behavior change to the completed-detail view itself.
+- `TrainingOS.xcodeproj/project.pbxproj` — register the one new file.
+- New/updated tests (N).
+- This design-doc file (already done, this section).
+- **No change to**: `FunctionalFitnessMaterializer.swift`, `FunctionalFitnessDecisionEngine.swift`, `FunctionalFitnessStimulusValidator.swift`, `CrossModalityStimulusRepair.swift`, `CurrentWeekFunctionalFitnessProgrammingContext.swift`, `LongTermPlanner.swift`, `SubstituteFunctionalFitnessMovementUseCase.swift`, `ReadinessAdaptationDecisionUseCase.swift`, `FunctionalFitnessPerformedMovement.swift`, `FunctionalFitnessResult.swift`/`PrescriptionAdherence.swift`, `VarianceConstraints`, or any source-authority file.
+
+### N. Required tests
+
+**A.** Target-type classification: `.weightlifting`→reps, `.gymnastics`→reps, `.metabolicConditioning`→distance, table-driven across the real reachable set. **B.** Deterministic target values: `.squatLoaded`→12, `.gymnasticsPull`→8, `.monostructural`→200m, exact and repeatable. **C.** Total-dose sanity: 5 rounds × each per-round value equals the locked totals in D (40/60/1000). **D.** Real `muscleGainVariedMix` materialization produces non-nil reps/distance on all 3 real movements. **E.** Real `functionalFitnessFocusedMix` materialization — identical result (byte-identical Stage A/B/C output per the prior audit's own §5 finding). **F.** Non-empty CP.2 intended != final case (reuse CP.2R's own real fixture) — reps/distance targets identical before and after CP.2's repair fires, proving orthogonality empirically, not just by code-path argument. **G.** Bodyweight movement (Pull-up) gets the correct `.gymnasticsPull` reps value. **H.** Loaded movement (Wall Ball/Thruster) gets a reps value while `loadKilograms` stays `nil` — proving the two remain independently correct. **I.** Distance-native monostructural movement (Row Erg/Assault Bike/SkiErg — parameterize across all three real candidates) gets the 200m target uniformly. **J.** An unsupported/non-reachable `MovementFunction` (e.g. a test fixture using `.hingeLoaded`) degrades to no target, not a guessed value. **K.** An unsupported `WorkoutFormat` (e.g. `.amrap`) does not receive reps/distance — degrades truthfully. **L.** Live execution view renders "12 Wall Ball" / "200m Row Erg" style labels (ViewModel/view-level test, mirroring FF.E1's own testing approach for the shared finish flow). **M.** `CompletedFunctionalFitnessDetail` continues rendering correctly (regression, no behavior change). **N.** `PrescriptionAdherence`/FF.E1 semantics completely unchanged (regression). **O.** Substitution (`SubstituteFunctionalFitnessMovementUseCase`) and readiness behavior completely unchanged (regression). **P.** All CP.2R tests remain green (26/26). **Q.** All CP.2 tests remain green. **R.** All FF.L1 tests remain green. **S.** All FF.E1 tests remain green. **T.** Full suite, zero regressions.
+
+### O. Concrete before/after workouts with total dose, plus absurdity stress test
+
+1. **Real production triplet** (Wall Ball / Pull-up / Row Erg): Before *"5 Rounds For Time: Wall Ball, Pull-up, Row Erg."* After *"5 Rounds For Time: 12 Wall Ball, 8 Pull-ups, 200m Row Erg."* Total: **60 Wall Ball, 40 Pull-ups, 1000m Row.**
+2. **Same slots, different resolved exercises** (Thruster / Toes-to-Bar / Assault Bike) — same modality/function per slot, targets IDENTICAL to #1 (proving the target is keyed on function/modality, not the specific `Exercise`): 60 reps, 40 reps, 1000m.
+3. **Same slots, SkiErg resolved instead of Row/Bike**: target degrades identically — 200m/round, 1000m total, regardless of which real monostructural candidate Stage D happens to resolve.
+4. **Bodyweight-only hypothetical** (gymnastics-only: Pull-up + Push-up + Toes-to-Bar — domain-valid per the prior audit's own Example 2, not real production today): Push-up isn't production-reachable (its `MovementFunction` is `.gymnasticsPush`, not one of the 3 real cases) — correctly receives **no FF.P1 target** (E/J), while Pull-up/Toes-to-Bar (both `.gymnasticsPull`) get 8 reps each. Honest, partial result: *"5 Rounds For Time: 8 Pull-ups, Push-up, 8 Toes-to-Bar."*
+5. **Monostructural-only hypothetical** (all 3 slots `.metabolicConditioning`): every slot gets 200m/round — *"5 Rounds For Time: 200m Row, 200m Bike, 200m Ski"* — total 1000m each. Genuinely improved by choosing OPTION 2 over reps-only, which would have left this workout completely unimproved.
+6. **CP.2-adapted case** (real Strength peak-week sibling, CP.2 repairs `.heavy → .moderate`, reusing CP.2R's own fixture): reps/distance targets on all 3 movements are **byte-identical** before and after the repair — 12/8/200m unchanged — empirically proving H's orthogonality claim, not just arguing it.
+7. **Substitution case**: Pull-up (8-rep target) substituted this-session-only to Toes-to-Bar — target remains 8 reps, correctly, because both satisfy `.gymnasticsPull` (I).
+8. **Absurdity — rejected (excessive reps)**: a hypothetical rule assigning `reps = 20` to `.gymnasticsPull` → 5×20 = **100 total pull-ups** — rejected as incoherent for a single "5 rounds for time" triplet block; the locked rule (8/round, 40 total) is the accepted, coherent alternative.
+9. **Absurdity — rejected (trivial reps)**: a hypothetical `reps = 2` for `.squatLoaded` → 5×2 = **10 total** — rejected as too trivial to constitute real programmed work; the locked rule (12/round, 60 total) is accepted.
+10. **Absurdity — rejected (excessive distance)**: a hypothetical `distanceMeters = 1000` PER ROUND for `.monostructural` → 5×1000 = **5000m total row** — rejected as grossly incoherent with the real `.medium` `targetDurationDomain` this Stimulus always carries; the locked rule (200m/round, 1000m total) is accepted as a real, achievable, medium-duration dose.
+11. **Identical-targets-for-different-movements check**: since `.other`/`.trunk`-style functions (which a hypothetical Burpee/Sit-up pairing might carry) are not in the real reachable set (E), the rule naturally does NOT assign them identical (or any) targets — avoided structurally rather than solved by coincidence.
+
+### P. Remaining unresolved decisions
+
+- The exact numeric dose-class values in D (8/12/200m) are this document's proposal, not an authored, approved product decision — must be explicitly signed off before implementation, per CLAUDE.md rule 10.
+- Whether calories should ever be added for erg-type monostructural equipment specifically (deferred, would need an equipment-aware branch this stage avoids).
+- Whether/how a future `VarianceConstraints` activation for movement-function/modality rotation would need to regenerate or re-derive the per-slot target (flagged in I, not designed).
+- Whether the dose-class table should ever become `AdaptationObjective`-aware (explicitly deferred per the user's own strong default — no evidence found that the same movement/format is currently incoherent without it).
+- Whether `functionalFitnessFocusedMix` and supporting-FF-inside-`muscleGainVariedMix` should ever diverge in their structural targets — **locked NO for FF.P1**: both route through the byte-identical `functionalFitnessParameterCandidates` output (confirmed, prior audit §5), so sharing the same structural targets is a correct, deliberate simplification, not an oversight.
+- The pre-existing, unrelated `targetDurationDomain`-vs-fixed-`capSeconds:nil` looseness (noted in passing, not a blocker: `estimatedDurationSeconds` returns `nil` for the real production format, so `matchesDuration` already short-circuits to `true` regardless of what CP.2's same-week nudge does to `targetDurationDomain` — an existing, inert looseness FF.P1 neither creates nor worsens).
+
+### Q. Is FF.P1 safe to implement?
+
+**YES**, once P's numeric dose-class values receive explicit product sign-off. No architectural blocker was found: ownership is proven (not assumed) safe against the exact failure class CP.2R just closed; substitution/readiness are proven safe; the live-UI change is small and reuses already-correct, already-tested formatting logic; no new persisted state, no Stage-E validation change, no touch to any closed stage's files or semantics. The only genuinely open item blocking a first line of code is the numeric rule itself (P's first bullet) — a deliberate, disclosed product decision this design lock proposes but does not unilaterally finalize, per the same discipline CP.1/CP.2/FF.L1/FF.E1/CP.2R have all followed throughout this series.
+
+---
+
+## FF.P1 Numeric Dose Lock
+
+**Status: DESIGN/AUDIT ONLY. Nothing implemented, committed, or pushed.** Audits the ONE item the FF.P1 Design Lock left open — the exact numeric dose table — against the real `ExerciseCatalog`. Everything else in that section (scope, ownership, format gate, UI inclusion, no validation change, no `AdaptationObjective` awareness) is already approved and is not re-litigated here.
+
+### A. Complete real candidate pool for each of the 3 functions
+
+Eligibility is determined by the real, exhaustive rule in `SubstitutionValidator.isValid` (`ExerciseSubstitutionEngine.swift:29-42`): a candidate must have `functionalModality` set AND contained in the slot's single `allowedModalities` entry, AND `movementFunctions` intersecting the slot's single `allowedMovementFunctions` entry. Both dimensions are required — a candidate missing `functionalModality` entirely is excluded regardless of its `movementFunctions`. Applied to every real `ExerciseCatalog.swift` entry:
+
+**`.squatLoaded` + `.weightlifting` slot** — real eligible pool = **{Back Squat, Wall Ball, Thruster}**:
+- Back Squat: `movementFunctions: [.squatLoaded]`, `functionalModality: .weightlifting`, `equipment: "barbell"`
+- Wall Ball: `movementFunctions: [.squatLoaded, .pressLoaded]`, `functionalModality: .weightlifting`, `equipment: "medicineBall"`
+- Thruster: `movementFunctions: [.squatLoaded, .pressLoaded]`, `functionalModality: .weightlifting`, `equipment: "barbell"`
+- (Front Squat, Bulgarian Split Squat, Leg Press all carry `.squatLoaded` but `functionalModality: nil` — **not eligible**, confirmed by direct read; they are Hypertrophy-catalog entries, never resolvable into an FF slot.)
+
+**`.gymnasticsPull` + `.gymnastics` slot** — real eligible pool = **{Pull-up, Toes-to-Bar}**:
+- Pull-up: `movementFunctions: [.gymnasticsPull, .verticalPullLoaded]`, `functionalModality: .gymnastics`, `equipment: "bodyweight"`
+- Toes-to-Bar: `movementFunctions: [.gymnasticsPull, .trunk]`, `functionalModality: .gymnastics`, `equipment: "bodyweight"`
+- (Push-up/Handstand Push-up are real `.gymnastics` candidates but carry `.gymnasticsPush`, not `.gymnasticsPull` — correctly excluded from this specific function's pool.)
+
+**`.monostructural` + `.metabolicConditioning` slot** — real eligible pool = **{Easy Run (Zone 2), Track Interval Run, Assault Bike, Row Erg, SkiErg}**, all 5 real:
+- Easy Run: `equipment: "none"`; Track Interval Run: `equipment: "none"`; Assault Bike: `equipment: "bike"`; Row Erg: `equipment: "rower"`; SkiErg: `equipment: "skiErg"` — all carry `movementFunctions: [.monostructural, .locomotion]`, `functionalModality: .metabolicConditioning`.
+
+### B. Candidate-by-candidate stress test of 8/12/200
+
+**`.gymnasticsPull` = 8 reps/round → 40 total:**
+- Pull-up: 40 total pull-ups across a 5-round for-time triplet — a standard, common real CrossFit-style dose (comparable to well-known benchmark rep ranges for this movement in a metcon context). Coherent.
+- Toes-to-Bar: the more demanding candidate (grip + core, per real practice) — 40 total T2B is on the higher-but-not-absurd end of real metcon programming (real benchmark workouts routinely program 8-15 T2B per round in triplets/couplets). Not obviously incoherent.
+
+**`.squatLoaded` = 12 reps/round → 60 total:**
+- Back Squat: 60 total loaded back squats in one for-time block. At a HEAVY/near-max load this would be incoherent — but FF.P1's own locked scope leaves `loadKilograms == nil` (numeric load explicitly deferred, athlete self-selects), which is the exact real-world CrossFit convention this rule relies on: a rep-only prescription with no numeric load is understood to mean "choose a weight that lets you complete this rep scheme for time," not "use your heaviest weight." At a self-scaled, metcon-appropriate load, 60 total reps is coherent.
+- Wall Ball: lighter, more rep-tolerant per real practice (a well-known real benchmark workout uses considerably higher unbroken rep counts) — 60 total is comfortably coherent, arguably on the easy side, not incoherent in either direction.
+- Thruster: the worst case — a combined squat-to-press movement, more systemically demanding per rep than a plain squat pattern at equivalent relative load. Real metcon programming for Thrusters spans from low reps at heavy prescribed loads (e.g. a well-known 21-15-9 benchmark) up through higher-rep sets at lighter self-scaled loads. **Because FF.P1 never prescribes a numeric load, the athlete scales load down for a 12-rep/round Thruster exactly as real practice already expects — the same self-scaling reasoning that saves Back Squat resolves Thruster too.** Not obviously incoherent once load is understood as self-selected.
+
+**`.monostructural` = 200m/round → 1000m total:**
+- Easy Run / Track Interval Run: 200m/round is a completely standard real metcon running distance. Coherent for both.
+- Row Erg / SkiErg: both real Concept2-style ergometers display distance directly in meters as their primary, idiomatic unit — 200m/round, 1000m total is a standard, real, displayable prescription. Coherent for both.
+- **Assault Bike: a real semantic problem, confirmed** — see C.
+
+### C. Semantic issue with distance on a specific monostructural candidate, and resolution
+
+**Assault Bike is a real, disclosed exception.** Unlike Row Erg/SkiErg (whose Concept2-style monitors treat meters as their primary, idiomatic readout) and Easy Run/Track Interval Run (meters/distance is the natural unit for running), an air/assault bike's overwhelmingly standard real-world CrossFit programming convention is **calories**, not meters — "200m Assault Bike" is technically representable in this domain but is not an idiomatic, well-formed prescription an athlete would recognize as normal programming, exactly the concern the instruction raises.
+
+**Chosen resolution: (A)/(C) combined, using the existing `equipment` field only — no new metadata.** `Exercise.equipment` already carries a distinct, real string per candidate (`"bike"` vs. `"rower"`/`"skiErg"`/`"none"`) — this is not new metadata, it is the same field already read throughout this codebase. FF.P1's target rule should check `equipment == "bike"` specifically and assign **no target at all** for that one real candidate, while Row Erg/SkiErg/Easy Run/Track Interval Run all receive the 200m target normally. This is the smallest possible fix: one additional `else` branch keyed on already-existing data, not a new distance-vs-calorie decision, not new equipment classification work, and not silently switching to calories to "solve" the mismatch (explicitly forbidden). Truthful partial depth — Assault Bike shows only the exercise name with no target, exactly like every currently-non-reachable `MovementFunction` case already does under the approved Design Lock.
+
+### D. Complete-workout dose assessment
+
+The full generated triplet at the locked/corrected numbers: **60 total squatLoaded reps (self-scaled load) + 40 total gymnasticsPull reps (bodyweight) + 1000m monostructural (Row/Ski/Run; Assault Bike excluded)**, 5 rounds for time. Evaluated as one whole: this is a real, coherent, moderate-to-substantial CrossFit-style metcon triplet dose — comparable in shape and scale to real, well-known benchmark workout structures (a squat/press-pattern movement + a gymnastics pulling movement + a monostructural distance piece, at moderate-rep/moderate-distance volume). It is neither trivially short nor absurdly long for a single "5 rounds for time" block. No candidate combination produces an incoherent total once B/C's findings are applied.
+
+### E. One rule for both real FF mix roles — explicit PRODUCT DECISION
+
+**Confirmed, still holds with real numbers on the table: the same 8/12/200 baseline is locked as acceptable for BOTH supporting FF inside `muscleGainVariedMix` and `functionalFitnessFocusedMix`.** Neither mix's real `adaptationObjectives` (`[.workCapacity, .aerobicCapacity, .power]` vs. the 5-case GPP set) implies a *different* coherent baseline dose at this first, deliberately non-`AdaptationObjective`-aware stage — a moderate, generically "well-rounded metcon triplet" dose is a reasonable generic starting point for a supporting-variety role and a focused-GPP role alike. **PRODUCT DECISION, explicit**: FF.P1 ships one shared dose table for both real mixes; divergent, objective-aware dosing is deliberately deferred to a future stage, not attempted here.
+
+### F. FINAL NUMERIC TABLE
+
+| MovementFunction | Modality | Target | Per-round | Total @ 5 rounds |
+|---|---|---|---|---|
+| `.squatLoaded` | `.weightlifting` | reps | 12 | 60 |
+| `.gymnasticsPull` | `.gymnastics` | reps | 8 | 40 |
+| `.monostructural` | `.metabolicConditioning`, **`equipment != "bike"`** | distanceMeters | 200 | 1000 |
+| `.monostructural` | `.metabolicConditioning`, **`equipment == "bike"` (Assault Bike)** | — | **no target** | **no target** |
+
+The only change from the original proposal is the one narrow Assault Bike exclusion (C) — 8/12/200 themselves are otherwise unchanged and confirmed safe.
+
+### G. One-sentence product rationale per number
+
+- **12 reps/round (squatLoaded)**: a moderate, self-scaled-load metcon dose that stays coherent across the real candidate pool's full demand range (Wall Ball through Thruster) precisely because FF.P1 leaves load unprescribed, letting the athlete supply the missing variable real practice already expects them to supply.
+- **8 reps/round (gymnasticsPull)**: a standard, real metcon rep count for bodyweight pulling work that remains coherent even against the pool's more demanding member (Toes-to-Bar), without being trivially easy for the less demanding one (Pull-up).
+- **200m/round (monostructural, non-bike)**: the idiomatic, real, monitor-displayed distance unit shared honestly across every meter-native real candidate (Run ×2, Row, Ski) at a standard, recognizable metcon distance.
+- **No target (Assault Bike)**: truthful partial depth is preferred over an idiomatically wrong unit or an invented calorie-conversion this stage has no honest basis for.
+
+### H. Explicit safety statement
+
+**FF.P1 NUMERIC DOSE RULE IS SAFE TO LOCK**, with the one disclosed, minimal correction in C/F (Assault Bike receives no target, using only the already-existing `equipment` field — no new metadata, no calorie substitution). 8 (gymnasticsPull) and 12 (squatLoaded) are confirmed safe against the real, complete candidate pool including their respective worst-case members, specifically because FF.P1's own already-locked scope leaves numeric load unprescribed. 200 (monostructural) is confirmed safe for 4 of 5 real candidates, with the 5th (Assault Bike) correctly excluded rather than forced.
+
+---
+
+## FF.P1 Implementation Closure — Structural Movement Targets
+
+**Status: IMPLEMENTED (uncommitted).** Builds on CP.2 (`bca43e2ff47d21d8703275d06354af6a086f0d45`), FF.L1 (`ae5898c36cdb5617edf77f2ad68507149ea3e2ac`), FF.E1 (`a3c3d0b532a68878411a9383f1d154225bdc4fc4`), CP.2R (`2f02c603e7b5acc0a4e1ff86ab1239a848d54f7d`) — none modified.
+
+**Ownership superseded.** The FF.P1 Design Lock section above (§H) locked GENERATOR ownership. This was superseded before implementation: the Numeric Dose Lock's Assault Bike exclusion depends on the ACTUAL RESOLVED `Exercise.equipment`, which is only known at Stage D (materialization time), not at generation time. Targets are therefore resolved in `FunctionalFitnessMaterializer.materializeWeek`, after `decideWithIntent` has produced FINAL and Stage D has resolved the real `Exercise` — never in `FunctionalFitnessProgramGenerator`, which is unmodified by this stage.
+
+**One semantic source, reused by two callers.** `FunctionalFitnessMovementTargetRule.resolve(format:modality:movementFunctions:exercise:)` (`Engines/FunctionalFitnessMovementTargetRule.swift`, new) is the sole implementation of the locked numeric table. `FunctionalFitnessMaterializer` calls it once per slot, after Stage D; `SubstituteFunctionalFitnessMovementUseCase.substituteThisSessionOnly` calls the identical function again after a valid substitution, to keep the concrete target consistent with whichever `Exercise` is now actually attached — no second table exists anywhere.
+
+**A real, pre-existing gap this stage closed as necessary infrastructure.** Before this stage, `FunctionalFitnessMaterializer` never set `FunctionalFitnessMovement.sourceExerciseSlot` — the field `SubstituteFunctionalFitnessMovementUseCase.substituteThisSessionOnly` requires to validate or apply any substitution at all. This meant the real readiness-adaptation substitution flow could not execute against any real generated (non-benchmark) Functional Fitness movement — it would throw `SubstitutionError.invalidForSlot` immediately, before ever reaching `SubstitutionValidator.isValid`. The materializer now sets `movement.sourceExerciseSlot = exerciseSlot`, mirroring `StrengthMaterializer`'s already-established, identical `prescription.sourceExerciseSlot = slot` pattern exactly — no new mechanism, no change to `SubstitutionValidator`, `allowedMovementFunctions`/`allowedModalities`, recommendation logic, or readiness policy. This was disclosed rather than silently done: it is the reason the Row/SkiErg/Run → Assault Bike substitution-staleness scenario is now actually reachable (and now correctly handled) in production, rather than remaining unreachable behind a separate, unrelated bug.
+
+**Numeric load remains genuinely unspecified — never implicitly self-scaled.** Correcting language from the earlier design-lock rounds (whose own historical text is left unedited above, as the record of what was reviewed and locked at the time): `FunctionalFitnessMovementTargetRule` prescribes a repetition or distance COUNT only. It does not encode, and its own doc comment explicitly disclaims, any "choose a weight that lets you complete this" or other self-scaling semantic — TrainingOS has not defined one. A 12-rep Back Squat with no numeric load means exactly that: 12 repetitions prescribed, load genuinely unspecified.
+
+**Assault Bike intentionally receives no target in FF.P1** — the one real monostructural candidate whose idiomatic real-world unit (calories) this stage does not attempt to prescribe; it shows only its exercise name, exactly as truthfully as every other currently-unprescribed case.
+
+**Authored-vs-generated precedence.** `FunctionalFitnessMovementSlotTemplate.reps`/`.distanceMeters` are the reliable provenance signal: the generator never sets them for real generated content, so a nil template field means the movement's own current value (if any) is FF.P1-generated and safe to (re)compute; a non-nil template field means the value was explicitly authored (hand-authored/seed/benchmark content) and is never touched, at materialization time or at substitution time.
+
+**Prescription completeness, not progression.** Nothing in this stage compares exposure across sessions, adjusts a target based on performance, or reads `AdaptationObjective`. The same shared dose table applies to every real FF component regardless of role (`muscleGainVariedMix`-supporting vs. `functionalFitnessFocusedMix`-primary) — a deliberate, disclosed simplification, not an oversight.
+
+**Verification.** 21/21 new targeted tests pass; all 26 CP.2R tests, all CP.2 tests, all 8 FF.L1 tests, all 12 FF.E1 tests pass unchanged; **authoritative full-suite result (independently re-run at checkpoint): 1047 passed / 2 skipped / 0 failed**; clean `build-for-testing` and plain `build`; zero persistence warnings; zero diff in every source-authority file, `LongTermPlanner.swift`, `FunctionalFitnessDecisionEngine.swift`, `CrossModalityStimulusRepair.swift`, `AdaptationObjectiveStimulusMapping.swift`, `CurrentWeekFunctionalFitnessProgrammingContext.swift`, `SchedulingPipeline.swift`, and `FunctionalFitnessPerformedMovement.swift`; production `VarianceConstraints()` construction unchanged; exactly one `SchedulingPipeline.propose` call site. **Simulator status, recorded accurately:** build succeeded; install succeeded; interactive live launch was unavailable because this host reports iOS Simulator interaction as unsupported at its own rollout-flag level (`"iosSimulator":{"status":"unsupported","reason":"iOS Simulator is disabled by its rollout flag"}`), independent of this change — this is not a claim of a successful live interactive smoke test; the exact string-formatting logic the live header renders (`BlockPresentation.prescribedMovementLine`) is instead proven directly by automated test, matching the identical fallback FF.E1's own prior report already established for this same environment limitation.
+
+---
+
 ## STOP
 
-**Design / audit only for everything above the CP.2R Closure section; that section reflects real, uncommitted implementation work — a narrow correctness repair, not a new design stage.** Stage CP.2 remains closed at `bca43e2ff47d21d8703275d06354af6a086f0d45`; Stage FF.L1 remains closed at `ae5898c36cdb5617edf77f2ad68507149ea3e2ac`; Stage FF.E1 remains closed at `a3c3d0b532a68878411a9383f1d154225bdc4fc4`. None of their closed semantics is modified. FF.P1 has not been started.
+**Design / audit only for everything above the CP.2R Closure section (which reflects real, uncommitted implementation work), for the FF.P1 Design Lock and FF.P1 Numeric Dose Lock sections (design lock only, at the time they were written), and now IMPLEMENTED (uncommitted) for the FF.P1 Implementation Closure section above.** Stage CP.2 remains closed at `bca43e2ff47d21d8703275d06354af6a086f0d45`; Stage FF.L1 remains closed at `ae5898c36cdb5617edf77f2ad68507149ea3e2ac`; Stage FF.E1 remains closed at `a3c3d0b532a68878411a9383f1d154225bdc4fc4`; Stage CP.2R remains closed at `2f02c603e7b5acc0a4e1ff86ab1239a848d54f7d`. None of their closed semantics is modified. Nothing has been committed or pushed.

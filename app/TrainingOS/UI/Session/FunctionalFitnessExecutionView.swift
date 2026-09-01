@@ -98,9 +98,15 @@ struct FunctionalFitnessExecutionView: View {
             Text(BlockPresentation.formatLabel(prescription.format))
                 .font(Theme.heading)
                 .foregroundStyle(Theme.textPrimary)
-            let names = prescription.orderedMovements.compactMap { $0.exercise?.canonicalName }
-            if !names.isEmpty {
-                Text(names.joined(separator: " · "))
+            // Stage FF.P1: the athlete-visible concrete prescription
+            // (e.g. "12 Wall Ball · 8 Pull-ups · 200 m Row Erg") — the
+            // same, already-tested formatting `CompletedFunctionalFitnessDetail`
+            // already used, shared rather than duplicated. Display-only;
+            // a movement with no FF.P1 target (e.g. Assault Bike) shows
+            // only its exercise name, never a fabricated one.
+            let lines = prescription.orderedMovements.map(BlockPresentation.prescribedMovementLine)
+            if !lines.isEmpty {
+                Text(lines.joined(separator: " · "))
                     .font(Theme.body)
                     .foregroundStyle(Theme.textSecondary)
             }

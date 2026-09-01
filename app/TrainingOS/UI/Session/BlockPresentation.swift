@@ -110,6 +110,24 @@ enum BlockPresentation {
         return "—"
     }
 
+    /// Stage FF.P1: shared by `FunctionalFitnessExecutionView`'s live
+    /// header and `CompletedFunctionalFitnessDetail`'s prescribed-section
+    /// rendering, so both stay in sync automatically, mirroring this
+    /// type's own established purpose. A movement's `reps`/`distanceMeters`
+    /// are a real, non-nil concrete target once generated (or explicitly
+    /// authored) — never fabricated here; a movement with neither set
+    /// (e.g. Assault Bike, which FF.P1 deliberately leaves untargeted)
+    /// shows only its exercise name, exactly as truthfully as before
+    /// FF.P1 existed.
+    static func prescribedMovementLine(_ movement: FunctionalFitnessMovement) -> String {
+        var parts: [String] = [movement.exercise?.canonicalName ?? "Movement"]
+        if let reps = movement.reps { parts.append("\(reps) reps") }
+        if let calories = movement.calories { parts.append("\(calories) cal") }
+        if let distance = movement.distanceMeters { parts.append("\(Int(distance)) m") }
+        if let load = movement.loadKilograms { parts.append("\(load.formattedWeight) kg") }
+        return parts.joined(separator: " \u{b7} ")
+    }
+
     static func formatLabel(_ format: WorkoutFormat) -> String {
         switch format {
         case .amrap(let capSeconds): "AMRAP \(capSeconds / 60)min"

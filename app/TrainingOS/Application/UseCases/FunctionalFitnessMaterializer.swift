@@ -131,15 +131,41 @@ enum FunctionalFitnessMaterializer {
                     let resolvedExercise = SubstituteExerciseUseCase.resolvedExercise(for: exerciseSlot, in: instance)
                         ?? candidateExercises.first { SubstitutionValidator.isValid(candidate: $0, for: exerciseSlot) }
 
+                    // Stage FF.P1: a real, non-nil structural target,
+                    // resolved AFTER Stage D above has already picked the
+                    // real Exercise (the one real exception — Assault Bike
+                    // — depends on it). The generator itself never sets
+                    // `slotTemplate.reps`/`.distanceMeters` for real
+                    // generated content, so a nil template value here
+                    // reliably means "not authored" — an explicit
+                    // hand-authored/seed/benchmark value always wins and
+                    // is never overwritten by this generated default.
+                    let generatedTarget = FunctionalFitnessMovementTargetRule.resolve(
+                        format: ffTemplate.format, modality: exerciseSlot.allowedModalities.first,
+                        movementFunctions: exerciseSlot.allowedMovementFunctions, exercise: resolvedExercise
+                    )
+
                     let movement = FunctionalFitnessMovement(
                         exercise: resolvedExercise,
-                        reps: slotTemplate.reps,
+                        reps: slotTemplate.reps ?? generatedTarget.reps,
                         calories: slotTemplate.calories,
-                        distanceMeters: slotTemplate.distanceMeters,
+                        distanceMeters: slotTemplate.distanceMeters ?? generatedTarget.distanceMeters,
                         loadKilograms: slotTemplate.loadKilograms,
                         minuteSlot: slotTemplate.minuteSlot
                     )
                     context.insert(movement)
+                    // Stage FF.P1: a real, pre-existing gap this stage
+                    // closes as necessary infrastructure — without this,
+                    // `SubstituteFunctionalFitnessMovementUseCase` (and the
+                    // real readiness-adaptation flow that calls it) could
+                    // never validate or apply a same-session substitution
+                    // against any real generated Functional Fitness
+                    // movement at all, since it requires this field.
+                    // Mirrors `StrengthMaterializer`'s identical, already-
+                    // established `prescription.sourceExerciseSlot = slot`
+                    // pattern exactly — no new mechanism, no change to
+                    // `SubstitutionValidator`/eligibility/readiness policy.
+                    movement.sourceExerciseSlot = exerciseSlot
                     prescription.addMovement(movement)
 
                     if let modality = resolvedExercise?.functionalModality { resolvedModalities.insert(modality) }

@@ -33,7 +33,7 @@ struct CompletedFunctionalFitnessDetail: View {
                 .font(Theme.body)
                 .foregroundStyle(Theme.textPrimary)
             ForEach(Array(prescription.orderedMovements.enumerated()), id: \.offset) { _, movement in
-                Text(prescribedMovementLine(movement))
+                Text(BlockPresentation.prescribedMovementLine(movement))
                     .font(Theme.label)
                     .foregroundStyle(Theme.textSecondary)
             }
@@ -114,15 +114,6 @@ struct CompletedFunctionalFitnessDetail: View {
             .font(Theme.label)
             .foregroundStyle(Theme.textSecondary)
         }
-    }
-
-    private func prescribedMovementLine(_ movement: FunctionalFitnessMovement) -> String {
-        var parts: [String] = [movement.exercise?.canonicalName ?? "Movement"]
-        if let reps = movement.reps { parts.append("\(reps) reps") }
-        if let calories = movement.calories { parts.append("\(calories) cal") }
-        if let distance = movement.distanceMeters { parts.append("\(Int(distance)) m") }
-        if let load = movement.loadKilograms { parts.append("\(load.formattedWeight) kg") }
-        return parts.joined(separator: " \u{b7} ")
     }
 
     /// Stage FF.E1: displays `adherence`, not `resultContext` — the
