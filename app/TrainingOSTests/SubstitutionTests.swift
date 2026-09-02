@@ -73,7 +73,7 @@ final class SubstitutionTests: XCTestCase {
         let week0Prescription = try XCTUnwrap(week0Sessions.first?.orderedBlocks.first?.orderedPrescriptions.first)
         XCTAssertEqual(week0Prescription.exercise?.id, barbell.id)
 
-        try SubstituteExerciseUseCase.substituteThisSessionOnly(prescription: week0Prescription, slot: slot, with: dumbbell, reason: .userPreference)
+        try SubstituteExerciseUseCase.substituteThisSessionOnly(prescription: week0Prescription, slot: slot, with: dumbbell, reason: .userPreference, environment: TrainingEnvironmentTestSupport.full(context: context))
         XCTAssertEqual(week0Prescription.exercise?.id, dumbbell.id)
         XCTAssertTrue(week0Prescription.substitutionUsed)
         XCTAssertEqual(week0Prescription.substitutionReason, .userPreference)
@@ -97,7 +97,7 @@ final class SubstitutionTests: XCTestCase {
         week0Prescription.workoutBlock?.session?.status = .completed
         XCTAssertEqual(week0Prescription.exercise?.id, barbell.id)
 
-        try SubstituteExerciseUseCase.substituteGoingForward(instance: instance, slot: slot, with: dumbbell, reason: .equipmentUnavailable, context: context)
+        try SubstituteExerciseUseCase.substituteGoingForward(instance: instance, slot: slot, with: dumbbell, reason: .equipmentUnavailable,  environment: TrainingEnvironmentTestSupport.full(context: context), context: context)
 
         // §42: the already-materialized (and now completed) week 0 Session
         // must never be retroactively rewritten.
@@ -119,10 +119,10 @@ final class SubstitutionTests: XCTestCase {
         context.insert(instance)
         instance.programDefinition = definition
 
-        try SubstituteExerciseUseCase.substituteGoingForward(instance: instance, slot: slot, with: dumbbell, context: context)
+        try SubstituteExerciseUseCase.substituteGoingForward(instance: instance, slot: slot, with: dumbbell,  environment: TrainingEnvironmentTestSupport.full(context: context), context: context)
         XCTAssertEqual(SubstituteExerciseUseCase.resolvedExercise(for: slot, in: instance)?.id, dumbbell.id)
 
-        try SubstituteExerciseUseCase.substituteGoingForward(instance: instance, slot: slot, with: barbell, context: context)
+        try SubstituteExerciseUseCase.substituteGoingForward(instance: instance, slot: slot, with: barbell,  environment: TrainingEnvironmentTestSupport.full(context: context), context: context)
         XCTAssertEqual(SubstituteExerciseUseCase.resolvedExercise(for: slot, in: instance)?.id, barbell.id)
 
         // §41: exactly one override row exists for this (instance, slot)
@@ -137,7 +137,7 @@ final class SubstitutionTests: XCTestCase {
         let instanceA = ProgramInstance(ownerUserID: UUID())
         context.insert(instanceA)
         instanceA.programDefinition = definition
-        try SubstituteExerciseUseCase.substituteGoingForward(instance: instanceA, slot: slot, with: dumbbell, context: context)
+        try SubstituteExerciseUseCase.substituteGoingForward(instance: instanceA, slot: slot, with: dumbbell,  environment: TrainingEnvironmentTestSupport.full(context: context), context: context)
 
         let instanceB = ProgramInstance(ownerUserID: UUID())
         context.insert(instanceB)
@@ -154,11 +154,10 @@ final class SubstitutionTests: XCTestCase {
         let squat = Exercise(canonicalName: "Back Squat (Sub Test)", modality: .strength, equipment: "barbell", movementPattern: "squat", primaryTargets: [.quadriceps, .glutes])
         context.insert(squat)
 
-        XCTAssertFalse(SubstitutionValidator.isValid(candidate: squat, for: slot), "a squat must not satisfy a Horizontal Push slot")
+        XCTAssertFalse(SubstitutionValidator.isValid(candidate: squat, for: slot, environment: TrainingEnvironmentTestSupport.full(context: context)), "a squat must not satisfy a Horizontal Push slot")
 
         XCTAssertThrowsError(try SubstituteExerciseUseCase.substituteThisSessionOnly(
-            prescription: ExercisePrescription(), slot: slot, with: squat
-        )) { error in
+            prescription: ExercisePrescription(), slot: slot, with: squat, environment: TrainingEnvironmentTestSupport.full(context: context))) { error in
             XCTAssertEqual(error as? SubstitutionError, .invalidForSlot)
         }
     }
@@ -174,8 +173,8 @@ final class SubstitutionTests: XCTestCase {
         context.insert(cableFly)
         context.insert(tricepPushdown)
 
-        XCTAssertTrue(SubstitutionValidator.isValid(candidate: cableFly, for: slot))
-        XCTAssertTrue(SubstitutionValidator.isValid(candidate: tricepPushdown, for: slot))
+        XCTAssertTrue(SubstitutionValidator.isValid(candidate: cableFly, for: slot, environment: TrainingEnvironmentTestSupport.full(context: context)))
+        XCTAssertTrue(SubstitutionValidator.isValid(candidate: tricepPushdown, for: slot, environment: TrainingEnvironmentTestSupport.full(context: context)))
     }
 
     // MARK: - §23-25/§29/§44: performance-profile separation and recommendation confidence
@@ -272,7 +271,7 @@ final class SubstitutionTests: XCTestCase {
         context.insert(instance)
         instance.programDefinition = definition
 
-        let sessions = SteadyStateMaterializer.materializeAllWeeks(definition: definition, instance: instance, startDate: Date(timeIntervalSince1970: 0), ownerUserID: instance.ownerUserID, context: context)
+        let sessions = try SteadyStateMaterializer.materializeAllWeeks(definition: definition, instance: instance, startDate: Date(timeIntervalSince1970: 0), ownerUserID: instance.ownerUserID,  environment: TrainingEnvironmentTestSupport.full(context: context), context: context)
         let day0Prescription = try XCTUnwrap(sessions[0].orderedBlocks.first?.steadyStatePrescription)
         XCTAssertEqual(day0Prescription.activityType, .cycling)
 
@@ -306,7 +305,7 @@ final class SubstitutionTests: XCTestCase {
         context.insert(instance)
         instance.programDefinition = definition
 
-        let firstBatch = SteadyStateMaterializer.materializeAllWeeks(definition: definition, instance: instance, startDate: Date(timeIntervalSince1970: 0), ownerUserID: instance.ownerUserID, context: context)
+        let firstBatch = try SteadyStateMaterializer.materializeAllWeeks(definition: definition, instance: instance, startDate: Date(timeIntervalSince1970: 0), ownerUserID: instance.ownerUserID,  environment: TrainingEnvironmentTestSupport.full(context: context), context: context)
         let alreadyMaterializedPrescription = try XCTUnwrap(firstBatch.first?.orderedBlocks.first?.steadyStatePrescription)
 
         try SubstituteActivityUseCase.substituteGoingForward(instance: instance, templateBlock: templateBlock, eligibilityTemplate: template, with: .rowing, context: context)

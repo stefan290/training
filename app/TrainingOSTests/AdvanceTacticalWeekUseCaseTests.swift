@@ -38,6 +38,18 @@ final class AdvanceTacticalWeekUseCaseTests: XCTestCase {
     override func setUpWithError() throws {
         container = PersistenceController.makeInMemoryContainer()
         context = container.mainContext
+        // Stage TE.1: real fixture default — see identical note in
+        // StartNextHypertrophyMesocycleUseCaseTests.setUpWithError.
+        let user = User(displayName: "TE.1 Fixture User")
+        context.insert(user)
+        let profile = UserProfile()
+        context.insert(profile)
+        user.attachProfile(profile)
+        let fullGym = TrainingEnvironment(name: "Test Full Gym", availableEquipment: EquipmentRequirement.allCases)
+        context.insert(fullGym)
+        profile.trainingEnvironments = [fullGym]
+        profile.defaultTrainingEnvironment = fullGym
+        try? context.save()
     }
 
     private func freshContext() -> ModelContext { ModelContext(container) }
@@ -47,7 +59,7 @@ final class AdvanceTacticalWeekUseCaseTests: XCTestCase {
     }
 
     private func materializationContext(using ctx: ModelContext? = nil) throws -> TacticalMaterializationContext {
-        TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try (ctx ?? context).fetch(FetchDescriptor<Exercise>()))
+        TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try (ctx ?? context).fetch(FetchDescriptor<Exercise>()), trainingEnvironment: TrainingEnvironmentTestSupport.full(context: ctx ?? context))
     }
 
     private struct Fixture {
@@ -97,7 +109,7 @@ final class AdvanceTacticalWeekUseCaseTests: XCTestCase {
         mix.addComponent(component)
         component.programInstance = instance
 
-        ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: definition, candidateExercises: try context.fetch(FetchDescriptor<Exercise>()))
+        try ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: definition, candidateExercises: try context.fetch(FetchDescriptor<Exercise>()), environment: TrainingEnvironmentTestSupport.full(context: context))
 
         for requirement in RequiredSourceCalibrationsUseCase.stillRequired(for: definition, instance: instance) {
             RecordSourceRMCalibrationUseCase.record(exercise: requirement.exercise, rmType: requirement.rmType, kilograms: rmKilograms, for: instance, modelContext: context)
@@ -357,7 +369,7 @@ final class AdvanceTacticalWeekUseCaseTests: XCTestCase {
 
         let week2Push = try XCTUnwrap(fixture.instance.programDefinition?.orderedTemplateSessions.first { $0.name == "Push Emphasis" })
         let horizontalPushSlot = try XCTUnwrap(week2Push.orderedBlockTemplates.flatMap(\.orderedPrescriptionTemplates).first { $0.exerciseSlot?.name == "Horizontal Push" }?.exerciseSlot)
-        try SubstituteExerciseUseCase.substituteGoingForward(instance: fixture.instance, slot: horizontalPushSlot, with: inclineDumbbellPress, context: context)
+        try SubstituteExerciseUseCase.substituteGoingForward(instance: fixture.instance, slot: horizontalPushSlot, with: inclineDumbbellPress,  environment: TrainingEnvironmentTestSupport.full(context: context), context: context)
 
         try skipEveryRealSession(in: fixture.instance, weekIndex: 1)
         try advanceOnce(fixture)
@@ -505,7 +517,7 @@ final class AdvanceTacticalWeekUseCaseTests: XCTestCase {
         context.insert(secondComponent)
         fixture.mix.addComponent(secondComponent)
         secondComponent.programInstance = secondInstance
-        ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: secondDefinition, candidateExercises: try context.fetch(FetchDescriptor<Exercise>()))
+        try ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: secondDefinition, candidateExercises: try context.fetch(FetchDescriptor<Exercise>()), environment: TrainingEnvironmentTestSupport.full(context: context))
         // Materialize the second component's own Week 1 directly (mirrors
         // what a real second calibration-gated component would end up
         // with) — no calibration entities needed since `.rmBased` weight

@@ -163,7 +163,7 @@ final class FunctionalFitnessIntendedVsFinalStimulusTests: XCTestCase {
             definition: ffDefinition, instance: ffInstance, weekIndex: 0, startDate: Date(timeIntervalSince1970: 0), ownerUserID: ownerUserID,
             candidateExercises: [], exposureHistory: [],
             protectedSiblingStressProfilesThisWeek: [strengthProfile],
-            componentAdaptationObjectives: [.workCapacity, .aerobicCapacity, .power], context: context
+            componentAdaptationObjectives: [.workCapacity, .aerobicCapacity, .power],  environment: TrainingEnvironmentTestSupport.full(context: context), context: context
         )
         XCTAssertEqual(ffSessions.count, 2)
 

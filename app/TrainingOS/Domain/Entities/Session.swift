@@ -51,6 +51,17 @@ final class Session {
     /// crosses component boundaries (see `CONCURRENT_SCHEDULER.md`'s
     /// "key sessions" section).
     var isKeySession: Bool
+    /// Stage TE.1: which `TrainingEnvironment` was active when this
+    /// Session's blocks were resolved — REFERENCE ONLY, purely
+    /// diagnostic. Never historical truth: the already-immutable resolved
+    /// `Exercise`/`ActivityType` relationships are the truth about what
+    /// this Session actually is. The delete rule (`.nullify` — deleting
+    /// the environment must never delete or reinterpret an
+    /// already-materialized Session) and the required inverse both live
+    /// on `TrainingEnvironment.materializedSessions`, mirroring
+    /// `Exercise.resolvedSlots`/`ExerciseSlot.resolvedExercise`'s exact
+    /// established pattern — a plain, undecorated property here.
+    var materializedInEnvironment: TrainingEnvironment?
 
     @Relationship(deleteRule: .cascade, inverse: \WorkoutBlock.session)
     var blocks: [WorkoutBlock] = []

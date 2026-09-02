@@ -169,7 +169,7 @@ final class StageSixBEndToEndFlowTests: XCTestCase {
 
         // Substitute Today Only, log a second set against the substitute.
         try ApplySubstitutionUseCase.substituteExerciseThisSessionOnly(
-            prescription: movement, slot: slot, with: dumbbellPress, modelContext: context
+            prescription: movement, slot: slot, with: dumbbellPress,  environment: TrainingEnvironmentTestSupport.full(context: context), modelContext: context
         )
         XCTAssertEqual(movement.exercise?.canonicalName, "Dumbbell Bench Press")
         try LogSetUseCase.logSet(
@@ -182,7 +182,7 @@ final class StageSixBEndToEndFlowTests: XCTestCase {
         // Switch back — a real product action is just re-substituting to
         // the original exercise; its own history was never touched.
         try ApplySubstitutionUseCase.substituteExerciseThisSessionOnly(
-            prescription: movement, slot: slot, with: benchPress, modelContext: context
+            prescription: movement, slot: slot, with: benchPress,  environment: TrainingEnvironmentTestSupport.full(context: context), modelContext: context
         )
         try LogSetUseCase.logSet(
             setIndex: 2, weight: 82.5, reps: 6, targetRir: nil, actualRir: nil, prBand: "8-8",

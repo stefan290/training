@@ -83,9 +83,13 @@ struct ReadinessAdaptationProposalView: View {
     }
 
     private func respond(_ item: ReadinessAdaptationProposalItem, accept: Bool) {
-        try? accept
-            ? ReadinessAdaptationDecisionUseCase.accept(item, session: session, checkIn: checkIn, decidedAt: Date(), modelContext: modelContext)
-            : ReadinessAdaptationDecisionUseCase.reject(item, checkIn: checkIn, decidedAt: Date(), modelContext: modelContext)
+        if accept {
+            let users = (try? modelContext.fetch(FetchDescriptor<User>())) ?? []
+            let environment = users.first?.profile?.defaultTrainingEnvironment
+            try? ReadinessAdaptationDecisionUseCase.accept(item, session: session, checkIn: checkIn, decidedAt: Date(), environment: environment, modelContext: modelContext)
+        } else {
+            try? ReadinessAdaptationDecisionUseCase.reject(item, checkIn: checkIn, decidedAt: Date(), modelContext: modelContext)
+        }
 
         if index + 1 < proposal.items.count {
             index += 1

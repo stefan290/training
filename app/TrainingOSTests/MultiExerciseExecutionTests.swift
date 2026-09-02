@@ -370,8 +370,7 @@ final class MultiExerciseExecutionTests: XCTestCase {
         let candidates = SubstitutionCandidateRanking.rank(
             slot: slot, excluding: fixture.catalog.legPress,
             allExercises: [fixture.catalog.legPress, fixture.catalog.bulgarianSplitSquat],
-            curatedRelationships: [], profileLookup: { _ in nil }
-        )
+            curatedRelationships: [], profileLookup: { _ in nil }, environment: TrainingEnvironmentTestSupport.full(context: context))
         XCTAssertTrue(candidates.contains { $0.exercise.canonicalName == "Bulgarian Split Squat" })
     }
 
@@ -383,7 +382,7 @@ final class MultiExerciseExecutionTests: XCTestCase {
         let slot = try XCTUnwrap(legPressMovement.sourceExerciseSlot)
 
         try ApplySubstitutionUseCase.substituteExerciseThisSessionOnly(
-            prescription: legPressMovement, slot: slot, with: fixture.catalog.bulgarianSplitSquat, modelContext: context
+            prescription: legPressMovement, slot: slot, with: fixture.catalog.bulgarianSplitSquat,  environment: TrainingEnvironmentTestSupport.full(context: context), modelContext: context
         )
 
         XCTAssertEqual(legPressMovement.exercise?.canonicalName, "Bulgarian Split Squat")
@@ -398,7 +397,7 @@ final class MultiExerciseExecutionTests: XCTestCase {
         let slot = try XCTUnwrap(legPressMovement.sourceExerciseSlot)
 
         try ApplySubstitutionUseCase.substituteExerciseGoingForward(
-            instance: fixture.programInstance, slot: slot, with: fixture.catalog.bulgarianSplitSquat, modelContext: context
+            instance: fixture.programInstance, slot: slot, with: fixture.catalog.bulgarianSplitSquat,  environment: TrainingEnvironmentTestSupport.full(context: context), modelContext: context
         )
 
         XCTAssertNotNil(fixture.programInstance.slotSelectionOverride(for: slot))
@@ -426,14 +425,13 @@ final class MultiExerciseExecutionTests: XCTestCase {
         let candidates = SubstitutionCandidateRanking.rank(
             slot: slot, excluding: fixture.catalog.legPress,
             allExercises: [fixture.catalog.legPress, fixture.catalog.bulgarianSplitSquat],
-            curatedRelationships: [], profileLookup: { _ in nil }
-        )
+            curatedRelationships: [], profileLookup: { _ in nil }, environment: TrainingEnvironmentTestSupport.full(context: context))
         let noHistoryCandidate = try XCTUnwrap(candidates.first { $0.exercise.canonicalName == "Bulgarian Split Squat" })
         XCTAssertEqual(noHistoryCandidate.tier, .calibrationRequired, "no history for this candidate or any related exercise")
 
         // The substitution itself must succeed exactly like any other tier.
         try ApplySubstitutionUseCase.substituteExerciseThisSessionOnly(
-            prescription: legPressMovement, slot: slot, with: noHistoryCandidate.exercise, modelContext: context
+            prescription: legPressMovement, slot: slot, with: noHistoryCandidate.exercise,  environment: TrainingEnvironmentTestSupport.full(context: context), modelContext: context
         )
         XCTAssertEqual(legPressMovement.exercise?.canonicalName, "Bulgarian Split Squat")
 

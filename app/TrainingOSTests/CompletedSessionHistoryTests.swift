@@ -190,7 +190,7 @@ final class CompletedSessionHistoryTests: XCTestCase {
         let slot = try XCTUnwrap(legPressMovement.sourceExerciseSlot)
 
         try ApplySubstitutionUseCase.substituteExerciseThisSessionOnly(
-            prescription: legPressMovement, slot: slot, with: fixture.catalog.bulgarianSplitSquat, modelContext: context
+            prescription: legPressMovement, slot: slot, with: fixture.catalog.bulgarianSplitSquat,  environment: TrainingEnvironmentTestSupport.full(context: context), modelContext: context
         )
 
         XCTAssertTrue(legPressMovement.substitutionUsed)

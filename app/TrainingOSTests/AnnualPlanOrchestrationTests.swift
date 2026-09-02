@@ -24,6 +24,13 @@ final class AnnualPlanOrchestrationTests: XCTestCase {
         let profile = PerformanceProfile()
         context.insert(profile)
         user.attachPerformanceProfile(profile)
+        let userProfile = UserProfile()
+        context.insert(userProfile)
+        user.attachProfile(userProfile)
+        let fullGym = TrainingEnvironment(name: "Test Full Gym", availableEquipment: EquipmentRequirement.allCases)
+        context.insert(fullGym)
+        userProfile.trainingEnvironments = [fullGym]
+        userProfile.defaultTrainingEnvironment = fullGym
         let catalog = ExerciseCatalog.resolveOrInsert(context: context)
         return try SeedAnnualPlanJourney.seed(user: user, performanceProfile: profile, catalog: catalog, context: context)
     }

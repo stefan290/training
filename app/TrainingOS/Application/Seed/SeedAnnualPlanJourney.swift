@@ -73,6 +73,7 @@ enum SeedAnnualPlanJourney {
 
         let availability = UserAvailability(trainingDaysPerWeek: 7, allowsDoubleSessions: false, maxSessionsPerDay: 1)
         let equipment = EquipmentProfile(equipmentType: .barbell, smallestIncrementKg: 2.5)
+        let trainingEnvironment = user.profile?.defaultTrainingEnvironment
         let strengthCandidates = [
             catalog.backSquat, catalog.benchPress, catalog.inclineDumbbellPress, catalog.romanianDeadlift,
             catalog.legPress, catalog.frontSquat, catalog.legCurl, catalog.calfRaise,
@@ -101,7 +102,8 @@ enum SeedAnnualPlanJourney {
         ]
         let materializationContext = TacticalMaterializationContext(
             equipmentProfile: equipment, strengthCandidateExercises: strengthCandidates,
-            functionalFitnessCandidateExercises: functionalFitnessCandidates
+            functionalFitnessCandidateExercises: functionalFitnessCandidates,
+            trainingEnvironment: trainingEnvironment
         )
 
         // Phase 1: "Focused Hypertrophy" — real generated program, real week 0.

@@ -234,7 +234,7 @@ final class CrossModalityFunctionalFitnessProgrammingTests: XCTestCase {
             definition: ffDefinition, instance: ffInstance, weekIndex: 0, startDate: Date(timeIntervalSince1970: 0), ownerUserID: ownerUserID,
             candidateExercises: [], exposureHistory: [],
             protectedSiblingStressProfilesThisWeek: [strengthProfile],
-            componentAdaptationObjectives: realFFObjectives, context: context
+            componentAdaptationObjectives: realFFObjectives,  environment: TrainingEnvironmentTestSupport.full(context: context), context: context
         )
         let ffStimulus = try XCTUnwrap(ffSessions.first?.orderedBlocks.first { $0.type == .functionalFitness }?.functionalFitnessPrescription?.stimulus)
 
@@ -312,7 +312,7 @@ final class CrossModalityFunctionalFitnessProgrammingTests: XCTestCase {
             definition: ffDefinition, instance: ffInstance, weekIndex: 0, startDate: Date(timeIntervalSince1970: 0), ownerUserID: ownerUserID,
             candidateExercises: [candidate], exposureHistory: [],
             protectedSiblingStressProfilesThisWeek: [strengthProfile],
-            componentAdaptationObjectives: realFFObjectives, context: context
+            componentAdaptationObjectives: realFFObjectives,  environment: TrainingEnvironmentTestSupport.full(context: context), context: context
         )
 
         let ffBlock = try XCTUnwrap(ffSessions.first?.orderedBlocks.first { $0.type == .functionalFitness })
@@ -350,7 +350,7 @@ final class CrossModalityFunctionalFitnessProgrammingTests: XCTestCase {
         let ffSessions = try FunctionalFitnessMaterializer.materializeWeek(
             definition: ffDefinition, instance: ffInstance, weekIndex: 0, startDate: Date(timeIntervalSince1970: 0), ownerUserID: ownerUserID,
             candidateExercises: [candidate], exposureHistory: [],
-            componentAdaptationObjectives: [.workCapacity, .aerobicCapacity, .power], context: context
+            componentAdaptationObjectives: [.workCapacity, .aerobicCapacity, .power],  environment: TrainingEnvironmentTestSupport.full(context: context), context: context
         )
 
         let ffBlock = try XCTUnwrap(ffSessions.first?.orderedBlocks.first { $0.type == .functionalFitness })
@@ -536,7 +536,7 @@ final class CrossModalityFunctionalFitnessProgrammingTests: XCTestCase {
         let sessions = try FunctionalFitnessMaterializer.materializeWeek(
             definition: definition, instance: instance, weekIndex: 0, startDate: date(2026, 1, 5), ownerUserID: ownerUserID,
             candidateExercises: [], exposureHistory: [],
-            componentAdaptationObjectives: [.workCapacity, .aerobicCapacity, .power], context: context
+            componentAdaptationObjectives: [.workCapacity, .aerobicCapacity, .power],  environment: TrainingEnvironmentTestSupport.full(context: context), context: context
         )
         XCTAssertEqual(sessions.count, 2, "sanity check: 2 real sessions materialized in this one call")
         let stimuli = sessions.compactMap { $0.orderedBlocks.first { $0.type == .functionalFitness }?.functionalFitnessPrescription?.stimulus }
@@ -569,7 +569,7 @@ final class CrossModalityFunctionalFitnessProgrammingTests: XCTestCase {
         let realFirstObjectives: [AdaptationObjective] = [.workCapacity, .aerobicCapacity, .power]
         let firstSessions = try FunctionalFitnessMaterializer.materializeWeek(
             definition: definition, instance: instance, weekIndex: 0, startDate: date(2026, 1, 12), ownerUserID: ownerUserID,
-            candidateExercises: [], exposureHistory: [], componentAdaptationObjectives: realFirstObjectives, context: context
+            candidateExercises: [], exposureHistory: [], componentAdaptationObjectives: realFirstObjectives,  environment: TrainingEnvironmentTestSupport.full(context: context), context: context
         )
         let realFirstStimulus = try XCTUnwrap(firstSessions.first?.orderedBlocks.first { $0.type == .functionalFitness }?.functionalFitnessPrescription?.stimulus)
         XCTAssertEqual(instance.sessions.first?.status, .scheduled, "Session 1 is not completed")
@@ -656,7 +656,7 @@ final class CrossModalityFunctionalFitnessProgrammingTests: XCTestCase {
         mix.addComponent(strength)
         mix.addComponent(ff)
 
-        let materializationContext = TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: [], functionalFitnessCandidateExercises: [])
+        let materializationContext = TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: [], functionalFitnessCandidateExercises: [], trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context))
         let result = try XCTUnwrap(RollTacticalWindowUseCase.rollForward(
             mix: mix, asOf: asOf, ownerUserID: ownerUserID, performanceProfile: nil, availability: availability(),
             materializationContext: materializationContext, context: context
@@ -684,7 +684,7 @@ final class CrossModalityFunctionalFitnessProgrammingTests: XCTestCase {
         mix.addComponent(strength)
         mix.addComponent(ff)
 
-        let materializationContext = TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: [], functionalFitnessCandidateExercises: [])
+        let materializationContext = TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: [], functionalFitnessCandidateExercises: [], trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context))
         let result = try XCTUnwrap(RollTacticalWindowUseCase.rollForward(
             mix: mix, asOf: asOf, ownerUserID: ownerUserID, performanceProfile: nil, availability: availability(),
             materializationContext: materializationContext, context: context
@@ -714,7 +714,7 @@ final class CrossModalityFunctionalFitnessProgrammingTests: XCTestCase {
         mix.addComponent(strength)
         mix.addComponent(ff)
 
-        let materializationContext = TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: [], functionalFitnessCandidateExercises: [])
+        let materializationContext = TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: [], functionalFitnessCandidateExercises: [], trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context))
         let result = try XCTUnwrap(RollTacticalWindowUseCase.rollForward(
             mix: mix, asOf: asOf, ownerUserID: ownerUserID, performanceProfile: nil, availability: availability(),
             materializationContext: materializationContext, context: context
@@ -745,7 +745,7 @@ final class CrossModalityFunctionalFitnessProgrammingTests: XCTestCase {
         mix.addComponent(strength)
         mix.addComponent(ff)
 
-        let materializationContext = TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: [], functionalFitnessCandidateExercises: [])
+        let materializationContext = TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: [], functionalFitnessCandidateExercises: [], trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context))
         _ = try XCTUnwrap(RollTacticalWindowUseCase.rollForward(
             mix: mix, asOf: asOf, ownerUserID: ownerUserID, performanceProfile: nil, availability: availability(),
             materializationContext: materializationContext, context: context

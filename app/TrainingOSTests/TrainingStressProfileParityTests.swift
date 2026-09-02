@@ -198,7 +198,7 @@ final class TrainingStressProfileParityTests: XCTestCase {
         let sessions = try IntervalMaterializer.materializeWeek(
             definition: definition, instance: instance, weekIndex: 0,
             startDate: Date(timeIntervalSince1970: 0), ownerUserID: ownerUserID,
-            weekContext: { _ in .init() }, context: context
+            weekContext: { _ in .init() },  environment: TrainingEnvironmentTestSupport.full(context: context), context: context
         )
         let session = try XCTUnwrap(sessions.first)
         let blocks = session.orderedBlocks
@@ -228,7 +228,7 @@ final class TrainingStressProfileParityTests: XCTestCase {
             let sessions = try IntervalMaterializer.materializeWeek(
                 definition: definition, instance: instance, weekIndex: 0,
                 startDate: Date(timeIntervalSince1970: 0), ownerUserID: ownerUserID,
-                weekContext: { _ in .init() }, context: context
+                weekContext: { _ in .init() },  environment: TrainingEnvironmentTestSupport.full(context: context), context: context
             )
             let block = try XCTUnwrap(sessions.first?.orderedBlocks.first)
             let profile = try XCTUnwrap(block.trainingStressProfile)
@@ -264,7 +264,7 @@ final class TrainingStressProfileParityTests: XCTestCase {
         let sessions = try IntervalMaterializer.materializeWeek(
             definition: definition, instance: instance, weekIndex: 0,
             startDate: Date(timeIntervalSince1970: 0), ownerUserID: ownerUserID,
-            weekContext: { _ in .init() }, context: context
+            weekContext: { _ in .init() },  environment: TrainingEnvironmentTestSupport.full(context: context), context: context
         )
         let profile = try XCTUnwrap(sessions.first?.orderedBlocks.first?.trainingStressProfile)
         XCTAssertNotEqual(profile.overallIntensity, .none, "genuinely uncertain intensity must fall back to a conservative non-none default, never silently disable interference protection")
@@ -280,8 +280,8 @@ final class TrainingStressProfileParityTests: XCTestCase {
         context.insert(instance)
         instance.programDefinition = definition
 
-        let sessions = SteadyStateMaterializer.materializeAllWeeks(
-            definition: definition, instance: instance, startDate: Date(timeIntervalSince1970: 0), ownerUserID: ownerUserID, context: context
+        let sessions = try SteadyStateMaterializer.materializeAllWeeks(
+            definition: definition, instance: instance, startDate: Date(timeIntervalSince1970: 0), ownerUserID: ownerUserID,  environment: TrainingEnvironmentTestSupport.full(context: context), context: context
         )
         let block = try XCTUnwrap(sessions.first?.orderedBlocks.first)
         let profile = try XCTUnwrap(block.trainingStressProfile)
@@ -299,8 +299,8 @@ final class TrainingStressProfileParityTests: XCTestCase {
             context.insert(instance)
             instance.programDefinition = definition
 
-            let sessions = SteadyStateMaterializer.materializeAllWeeks(
-                definition: definition, instance: instance, startDate: Date(timeIntervalSince1970: 0), ownerUserID: ownerUserID, context: context
+            let sessions = try SteadyStateMaterializer.materializeAllWeeks(
+                definition: definition, instance: instance, startDate: Date(timeIntervalSince1970: 0), ownerUserID: ownerUserID,  environment: TrainingEnvironmentTestSupport.full(context: context), context: context
             )
             let profile = try XCTUnwrap(sessions.first?.orderedBlocks.first?.trainingStressProfile)
             if expectImpact {
@@ -322,8 +322,8 @@ final class TrainingStressProfileParityTests: XCTestCase {
         context.insert(instance)
         instance.programDefinition = definition
 
-        let sessions = SteadyStateMaterializer.materializeAllWeeks(
-            definition: definition, instance: instance, startDate: Date(timeIntervalSince1970: 0), ownerUserID: ownerUserID, context: context
+        let sessions = try SteadyStateMaterializer.materializeAllWeeks(
+            definition: definition, instance: instance, startDate: Date(timeIntervalSince1970: 0), ownerUserID: ownerUserID,  environment: TrainingEnvironmentTestSupport.full(context: context), context: context
         )
         let profile = try XCTUnwrap(sessions.first?.orderedBlocks.first?.trainingStressProfile)
         XCTAssertEqual(profile.durationClassification, .long)

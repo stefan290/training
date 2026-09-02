@@ -68,6 +68,20 @@ final class PhaseDetailViewModel {
     /// `PlannerDecision.explanation` for why that component's specific
     /// program was selected, if one exists.
     private(set) var componentExplanations: [UUID: String] = [:]
+    /// TE.1 closure, widened by the final UX pass: `true` when the most
+    /// recent `advanceTacticalWeek`/`startNextHypertrophyMesocycle`
+    /// attempt failed for a reason recoverable through Training
+    /// Environment configuration — either no environment is configured
+    /// yet, OR a real environment is configured but is missing equipment
+    /// a required slot needs (detected via
+    /// `TrainingEnvironmentRecoverableError.needsTrainingEnvironmentConfiguration`,
+    /// never a string match on the error — the two underlying failures
+    /// stay distinct typed cases; only this recovery-affordance check is
+    /// widened). The View uses this to offer a recovery path to Training
+    /// Environment configuration rather than a dead-end failure. Cleared
+    /// at the start of every attempt, never sticky across an unrelated
+    /// `load`.
+    private(set) var needsTrainingEnvironment = false
     /// Stage 10R.2B, corrected by Stage 10R.7A
     /// (`STAGE10R7_STRATEGIC_PHASE_LIFECYCLE_DESIGN.md`, D-10R7-3): `true`
     /// only when this phase's primary component is an already-materialized
@@ -257,8 +271,10 @@ final class PhaseDetailViewModel {
     /// `transitionTrigger: .userInitiated`.
     @discardableResult
     func startNextHypertrophyMesocycle(modelContext: ModelContext) -> Bool {
+        needsTrainingEnvironment = false
         guard let phase, let primaryInstance = phase.primaryInstance else { return false }
         let candidates = (try? modelContext.fetch(FetchDescriptor<Exercise>())) ?? []
+        let users = (try? modelContext.fetch(FetchDescriptor<User>())) ?? []
         do {
             try StartNextHypertrophyMesocycleUseCase.start(
                 previousPhase: phase, previousInstance: primaryInstance, asOf: Date(),
@@ -269,13 +285,15 @@ final class PhaseDetailViewModel {
                     // `advanceTacticalWeek` below.
                     equipmentProfile: EquipmentProfile(equipmentType: .barbell, smallestIncrementKg: 2.5),
                     strengthCandidateExercises: candidates,
-                    functionalFitnessCandidateExercises: candidates
+                    functionalFitnessCandidateExercises: candidates,
+                    trainingEnvironment: users.first?.profile?.defaultTrainingEnvironment
                 ),
                 context: modelContext
             )
             try? modelContext.save()
             return true
         } catch {
+            needsTrainingEnvironment = (error as? TrainingEnvironmentRecoverableError)?.needsTrainingEnvironmentConfiguration ?? false
             return false
         }
     }
@@ -290,8 +308,10 @@ final class PhaseDetailViewModel {
     /// still safe to actually roll.
     @discardableResult
     func advanceTacticalWeek(modelContext: ModelContext) -> Bool {
+        needsTrainingEnvironment = false
         guard let phase, let primaryInstance = phase.primaryInstance else { return false }
         let candidates = (try? modelContext.fetch(FetchDescriptor<Exercise>())) ?? []
+        let users = (try? modelContext.fetch(FetchDescriptor<User>())) ?? []
         do {
             let outcome = try AdvanceTacticalWeekUseCase.advance(
                 phase: phase, asOf: Date(), ownerUserID: primaryInstance.ownerUserID,
@@ -308,14 +328,20 @@ final class PhaseDetailViewModel {
                     // deliberately not replaced with a more convincing but
                     // still-fabricated substitute. See
                     // `STAGE10R6_MIXED_MODALITY_ROLLFORWARD_IMPLEMENTATION_REPORT.md`.
+                    // Stage TE.1 closed the SEPARATE, real
+                    // training-environment/equipment-AVAILABILITY gap this
+                    // note originally also described — `trainingEnvironment`
+                    // below is that real, persisted mechanism now.
                     equipmentProfile: EquipmentProfile(equipmentType: .barbell, smallestIncrementKg: 2.5),
                     strengthCandidateExercises: candidates,
-                    functionalFitnessCandidateExercises: candidates
+                    functionalFitnessCandidateExercises: candidates,
+                    trainingEnvironment: users.first?.profile?.defaultTrainingEnvironment
                 ),
                 context: modelContext
             )
             return outcome == .advanced
         } catch {
+            needsTrainingEnvironment = (error as? TrainingEnvironmentRecoverableError)?.needsTrainingEnvironmentConfiguration ?? false
             return false
         }
     }

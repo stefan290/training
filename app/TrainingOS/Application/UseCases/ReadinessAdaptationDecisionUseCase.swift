@@ -23,6 +23,7 @@ enum ReadinessAdaptationDecisionUseCase {
         session: Session,
         checkIn: ReadinessCheckIn,
         decidedAt: Date,
+        environment: TrainingEnvironment?,
         modelContext: ModelContext
     ) throws -> ReadinessAdaptationDecision {
         switch item.actionKind {
@@ -50,11 +51,11 @@ enum ReadinessAdaptationDecisionUseCase {
             }
             if let prescription = item.exercisePrescription, let slot = prescription.sourceExerciseSlot {
                 try SubstituteExerciseUseCase.substituteThisSessionOnly(
-                    prescription: prescription, slot: slot, with: candidate, reason: .readinessAdaptation
+                    prescription: prescription, slot: slot, with: candidate, reason: .readinessAdaptation, environment: environment
                 )
             } else if let movement = item.functionalFitnessMovement {
                 try SubstituteFunctionalFitnessMovementUseCase.substituteThisSessionOnly(
-                    movement: movement, with: candidate, reason: .readinessAdaptation
+                    movement: movement, with: candidate, reason: .readinessAdaptation, environment: environment
                 )
             } else {
                 throw ReadinessAdaptationDecisionError.missingRequiredField

@@ -42,7 +42,7 @@ final class TacticalPlanningOrchestrationTests: XCTestCase {
     }
 
     private func materializationContext() -> TacticalMaterializationContext {
-        TacticalMaterializationContext(equipmentProfile: equipment)
+        TacticalMaterializationContext(equipmentProfile: equipment, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context))
     }
 
     // MARK: Basic phase start
@@ -237,7 +237,7 @@ final class TacticalPlanningOrchestrationTests: XCTestCase {
         let performanceProfile = PerformanceProfile()
         context.insert(performanceProfile)
 
-        let materializationContext = TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.all)
+        let materializationContext = TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.all, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context))
 
         try StartPhaseUseCase.start(
             phase: fixture.phase, mix: recommended.mix, asOf: asOf, ownerUserID: ownerUserID,
@@ -356,7 +356,7 @@ final class TacticalPlanningOrchestrationTests: XCTestCase {
         let candidates = makeSlotCandidates()
         let mixCandidates = LongTermPlanner.proposeTrainingMix(phase: fixture.phase, goal: fixture.goal)
         let recommended = try XCTUnwrap(mixCandidates.first { $0.roles.contains(.recommended) })
-        let materializationContext = TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.all)
+        let materializationContext = TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.all, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context))
 
         try StartPhaseUseCase.start(
             phase: fixture.phase, mix: recommended.mix, asOf: asOf, ownerUserID: ownerUserID,
@@ -374,7 +374,7 @@ final class TacticalPlanningOrchestrationTests: XCTestCase {
         let pairedSlot = try XCTUnwrap(pairedWeek0.sourceExerciseSlot)
         XCTAssertEqual(pairedWeek0.exercise?.id, candidates.pairedAccessory.id, "sanity check on the resolved default before overriding it")
 
-        try SubstituteExerciseUseCase.substituteGoingForward(instance: instance, slot: pairedSlot, with: candidates.pairedAccessoryAlt, context: context)
+        try SubstituteExerciseUseCase.substituteGoingForward(instance: instance, slot: pairedSlot, with: candidates.pairedAccessoryAlt,  environment: TrainingEnvironmentTestSupport.full(context: context), context: context)
         try CompleteBlockUseCase.complete(try XCTUnwrap(pairedWeek0.workoutBlock), context: .full, modelContext: context)
         try CompleteSessionUseCase.complete(try XCTUnwrap(pairedWeek0.workoutBlock?.session), context: .full, asOf: asOf, modelContext: context)
 
@@ -440,8 +440,7 @@ final class TacticalPlanningOrchestrationTests: XCTestCase {
         ]
         let materializationContext = TacticalMaterializationContext(
             equipmentProfile: equipment, strengthCandidateExercises: strengthCandidates,
-            functionalFitnessCandidateExercises: functionalFitnessCandidates
-        )
+            functionalFitnessCandidateExercises: functionalFitnessCandidates, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context))
 
         try StartPhaseUseCase.start(
             phase: fixture.phase, mix: selected.mix, asOf: asOf, ownerUserID: ownerUserID,
@@ -494,7 +493,7 @@ final class TacticalPlanningOrchestrationTests: XCTestCase {
         let checkIn = ReadinessCheckIn(recordedAt: asOf, sleep: .good, energy: .good, overallRecovery: .good)
         context.insert(checkIn)
         try RecordReadinessCheckInUseCase.record(checkIn, for: dayA, modelContext: context)
-        let proposal = EvaluateReadinessAdaptationUseCase.evaluate(session: dayA, checkIn: checkIn, modelContext: context)
+        let proposal = EvaluateReadinessAdaptationUseCase.evaluate(session: dayA, checkIn: checkIn,  environment: TrainingEnvironmentTestSupport.full(context: context), modelContext: context)
         XCTAssertTrue(proposal.isEmpty, "an all-good check-in proposes no adaptation")
 
         let warmup = try XCTUnwrap(GenerateWarmupSequenceUseCase.generate(

@@ -172,7 +172,7 @@ final class SourceRMCalibrationTests: XCTestCase {
         let recommended = try XCTUnwrap(mixCandidates.first { $0.roles.contains(.recommended) })
         let materializationContext = TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: [
             catalog.backSquat, catalog.benchPress, catalog.inclineDumbbellPress, catalog.romanianDeadlift, catalog.legPress,
-        ])
+        ], trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context))
 
         // G — missing calibration defers, never fabricates.
         let startResult = try StartPhaseUseCase.start(
@@ -218,8 +218,7 @@ final class SourceRMCalibrationTests: XCTestCase {
         let recommended = try XCTUnwrap(mixCandidates.first { $0.roles.contains(.recommended) })
         let materializationContext = TacticalMaterializationContext(
             equipmentProfile: equipment, strengthCandidateExercises: [catalog.backSquat, catalog.benchPress],
-            functionalFitnessCandidateExercises: [catalog.wallBall, catalog.pullUp, catalog.bike]
-        )
+            functionalFitnessCandidateExercises: [catalog.wallBall, catalog.pullUp, catalog.bike], trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context))
         try StartPhaseUseCase.start(
             phase: fixture.phase, mix: recommended.mix, asOf: asOf, ownerUserID: ownerUserID,
             performanceProfile: nil, availability: availability(), materializationContext: materializationContext, context: context
@@ -243,7 +242,7 @@ final class SourceRMCalibrationTests: XCTestCase {
         // Changing the setup-time selection to a different, uncalibrated exercise.
         let replacement = Exercise(canonicalName: "Zzz Test Leg Press Replacement", modality: .hypertrophy, equipment: "machine", movementPattern: "squat", primaryTargets: [.quadriceps], movementFunctions: [.squatLoaded])
         context.insert(replacement)
-        try SubstituteExerciseUseCase.substituteGoingForward(instance: instance, slot: slot, with: replacement, context: context)
+        try SubstituteExerciseUseCase.substituteGoingForward(instance: instance, slot: slot, with: replacement,  environment: TrainingEnvironmentTestSupport.full(context: context), context: context)
 
         let stillRequired = RequiredSourceCalibrationsUseCase.stillRequired(for: definition, instance: instance)
         XCTAssertTrue(stillRequired.contains { $0.exercise.id == replacement.id && $0.rmType == .rm10 }, "the replacement exercise must now require its own calibration")
@@ -311,9 +310,9 @@ final class SourceRMCalibrationTests: XCTestCase {
         let entry = try XCTUnwrap(PowerliftingBuiltInLibrary.all.first { $0.name.contains("Strength") })
         let catalog = ExerciseCatalog.resolveOrInsert(context: context)
         let definition = PowerliftingProgramGenerator.generate(configuration: entry.configuration, provenance: .constructed(reason: "test"), context: context)
-        ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: definition, candidateExercises: [
+        try ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: definition, candidateExercises: [
             catalog.backSquat, catalog.benchPress, catalog.romanianDeadlift, catalog.deadlift, catalog.barbellRow, catalog.dumbbellLateralRaise,
-        ])
+        ], environment: TrainingEnvironmentTestSupport.full(context: context))
         let instance = makeInstance(definition: definition)
 
         let required = RequiredSourceCalibrationsUseCase.stillRequired(for: definition, instance: instance)
@@ -335,9 +334,9 @@ final class SourceRMCalibrationTests: XCTestCase {
         let entry = try XCTUnwrap(PowerliftingBuiltInLibrary.all.first { $0.name.contains("Hypertrophy") })
         let catalog = ExerciseCatalog.resolveOrInsert(context: context)
         let definition = PowerliftingProgramGenerator.generate(configuration: entry.configuration, provenance: .constructed(reason: "test"), context: context)
-        ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: definition, candidateExercises: [
+        try ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: definition, candidateExercises: [
             catalog.backSquat, catalog.benchPress, catalog.romanianDeadlift, catalog.deadlift, catalog.barbellRow, catalog.dumbbellLateralRaise,
-        ])
+        ], environment: TrainingEnvironmentTestSupport.full(context: context))
         let instance = makeInstance(definition: definition)
 
         let required = RequiredSourceCalibrationsUseCase.stillRequired(for: definition, instance: instance)

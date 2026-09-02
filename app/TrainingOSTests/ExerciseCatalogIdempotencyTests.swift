@@ -97,7 +97,7 @@ final class ExerciseCatalogIdempotencyTests: XCTestCase {
             let availability = UserAvailability(trainingDaysPerWeek: 7, allowsDoubleSessions: false, maxSessionsPerDay: 1)
             let equipment = EquipmentProfile(equipmentType: .barbell, smallestIncrementKg: 2.5)
             let strengthCandidates = [catalog.backSquat, catalog.benchPress, catalog.romanianDeadlift, catalog.legPress]
-            let materializationContext = TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: strengthCandidates, functionalFitnessCandidateExercises: [])
+            let materializationContext = TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: strengthCandidates, functionalFitnessCandidateExercises: [], trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context))
             let phase1Candidates = LongTermPlanner.proposeTrainingMix(phase: phase1, goal: goal)
             guard let mix1 = phase1Candidates.first else { throw SeedAnnualPlanJourneyError.noMixCandidates }
             try StartPhaseUseCase.start(

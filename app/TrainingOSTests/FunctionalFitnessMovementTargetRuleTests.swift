@@ -168,7 +168,7 @@ final class FunctionalFitnessMovementTargetRuleTests: XCTestCase {
 
         let sessions = try FunctionalFitnessMaterializer.materializeWeek(
             definition: definition, instance: instance, weekIndex: 0, startDate: Date(timeIntervalSince1970: 0), ownerUserID: ownerUserID,
-            candidateExercises: candidates, exposureHistory: [], componentAdaptationObjectives: [.workCapacity, .aerobicCapacity, .power], context: context
+            candidateExercises: candidates, exposureHistory: [], componentAdaptationObjectives: [.workCapacity, .aerobicCapacity, .power],  environment: TrainingEnvironmentTestSupport.full(context: context), context: context
         )
         let movements = try XCTUnwrap(sessions.first?.orderedBlocks.first { $0.type == .functionalFitness }?.functionalFitnessPrescription?.orderedMovements)
         XCTAssertEqual(movements.count, 3)
@@ -202,7 +202,7 @@ final class FunctionalFitnessMovementTargetRuleTests: XCTestCase {
         let sessions = try FunctionalFitnessMaterializer.materializeWeek(
             definition: definition, instance: instance, weekIndex: 0, startDate: Date(timeIntervalSince1970: 0), ownerUserID: ownerUserID,
             candidateExercises: candidates, exposureHistory: [],
-            componentAdaptationObjectives: [.workCapacity, .aerobicCapacity, .anaerobicCapacity, .power, .skillAcquisition], context: context
+            componentAdaptationObjectives: [.workCapacity, .aerobicCapacity, .anaerobicCapacity, .power, .skillAcquisition],  environment: TrainingEnvironmentTestSupport.full(context: context), context: context
         )
         let movements = try XCTUnwrap(sessions.first?.orderedBlocks.first { $0.type == .functionalFitness }?.functionalFitnessPrescription?.orderedMovements)
         XCTAssertEqual(movements.first { $0.exercise?.canonicalName == "Back Squat" }?.reps, 12)
@@ -273,7 +273,7 @@ final class FunctionalFitnessMovementTargetRuleTests: XCTestCase {
         for candidate in candidates { context.insert(candidate) }
         let sessions = try FunctionalFitnessMaterializer.materializeWeek(
             definition: definition, instance: instance, weekIndex: 0, startDate: Date(timeIntervalSince1970: 0), ownerUserID: ownerUserID,
-            candidateExercises: candidates, exposureHistory: [], componentAdaptationObjectives: [.workCapacity], context: context
+            candidateExercises: candidates, exposureHistory: [], componentAdaptationObjectives: [.workCapacity],  environment: TrainingEnvironmentTestSupport.full(context: context), context: context
         )
         let movements = try XCTUnwrap(sessions.first?.orderedBlocks.first { $0.type == .functionalFitness }?.functionalFitnessPrescription?.orderedMovements)
         XCTAssertEqual(movements.first { $0.exercise?.canonicalName == "Back Squat" }?.reps, 21, "the explicit authored template value must never be overwritten by FF.P1's generated default (12)")
@@ -331,7 +331,7 @@ final class FunctionalFitnessMovementTargetRuleTests: XCTestCase {
             definition: ffDefinition, instance: ffInstance, weekIndex: 0, startDate: Date(timeIntervalSince1970: 0), ownerUserID: ownerUserID,
             candidateExercises: candidates, exposureHistory: [],
             protectedSiblingStressProfilesThisWeek: [strengthProfile],
-            componentAdaptationObjectives: [.workCapacity, .aerobicCapacity, .power], context: context
+            componentAdaptationObjectives: [.workCapacity, .aerobicCapacity, .power],  environment: TrainingEnvironmentTestSupport.full(context: context), context: context
         )
         let prescription = try XCTUnwrap(ffSessions.first?.orderedBlocks.first { $0.type == .functionalFitness }?.functionalFitnessPrescription)
         XCTAssertEqual(prescription.intendedStimulus?.loading, .heavy)
@@ -369,7 +369,7 @@ final class FunctionalFitnessMovementTargetRuleTests: XCTestCase {
             modality: .metabolicConditioning, movementFunctions: [.monostructural], exercise: rowErg(), movementDistance: 200
         )
         context.insert(assaultBike())
-        try SubstituteFunctionalFitnessMovementUseCase.substituteThisSessionOnly(movement: movement, with: assaultBike())
+        try SubstituteFunctionalFitnessMovementUseCase.substituteThisSessionOnly(movement: movement, with: assaultBike(), environment: TrainingEnvironmentTestSupport.full(context: context))
         XCTAssertNil(movement.distanceMeters, "Assault Bike must never keep a stale distance target")
     }
 
@@ -378,7 +378,7 @@ final class FunctionalFitnessMovementTargetRuleTests: XCTestCase {
             modality: .metabolicConditioning, movementFunctions: [.monostructural], exercise: assaultBike(), movementDistance: nil
         )
         context.insert(rowErg())
-        try SubstituteFunctionalFitnessMovementUseCase.substituteThisSessionOnly(movement: movement, with: rowErg())
+        try SubstituteFunctionalFitnessMovementUseCase.substituteThisSessionOnly(movement: movement, with: rowErg(), environment: TrainingEnvironmentTestSupport.full(context: context))
         XCTAssertEqual(movement.distanceMeters, 200)
     }
 
@@ -387,7 +387,7 @@ final class FunctionalFitnessMovementTargetRuleTests: XCTestCase {
             modality: .gymnastics, movementFunctions: [.gymnasticsPull], exercise: pullUp(), movementReps: 8
         )
         context.insert(toesToBar())
-        try SubstituteFunctionalFitnessMovementUseCase.substituteThisSessionOnly(movement: movement, with: toesToBar())
+        try SubstituteFunctionalFitnessMovementUseCase.substituteThisSessionOnly(movement: movement, with: toesToBar(), environment: TrainingEnvironmentTestSupport.full(context: context))
         XCTAssertEqual(movement.reps, 8)
     }
 
@@ -396,10 +396,10 @@ final class FunctionalFitnessMovementTargetRuleTests: XCTestCase {
             modality: .weightlifting, movementFunctions: [.squatLoaded], exercise: backSquat(), movementReps: 12
         )
         context.insert(wallBall())
-        try SubstituteFunctionalFitnessMovementUseCase.substituteThisSessionOnly(movement: movement, with: wallBall())
+        try SubstituteFunctionalFitnessMovementUseCase.substituteThisSessionOnly(movement: movement, with: wallBall(), environment: TrainingEnvironmentTestSupport.full(context: context))
         XCTAssertEqual(movement.reps, 12)
         context.insert(thruster())
-        try SubstituteFunctionalFitnessMovementUseCase.substituteThisSessionOnly(movement: movement, with: thruster())
+        try SubstituteFunctionalFitnessMovementUseCase.substituteThisSessionOnly(movement: movement, with: thruster(), environment: TrainingEnvironmentTestSupport.full(context: context))
         XCTAssertEqual(movement.reps, 12)
     }
 
@@ -409,7 +409,7 @@ final class FunctionalFitnessMovementTargetRuleTests: XCTestCase {
         )
         XCTAssertNil(movement.calories)
         context.insert(assaultBike())
-        try SubstituteFunctionalFitnessMovementUseCase.substituteThisSessionOnly(movement: movement, with: assaultBike())
+        try SubstituteFunctionalFitnessMovementUseCase.substituteThisSessionOnly(movement: movement, with: assaultBike(), environment: TrainingEnvironmentTestSupport.full(context: context))
         XCTAssertNil(movement.calories, "FF.P1 never populates calories, including through substitution recomputation")
     }
 
@@ -419,7 +419,7 @@ final class FunctionalFitnessMovementTargetRuleTests: XCTestCase {
         )
         XCTAssertNil(movement.loadKilograms)
         context.insert(wallBall())
-        try SubstituteFunctionalFitnessMovementUseCase.substituteThisSessionOnly(movement: movement, with: wallBall())
+        try SubstituteFunctionalFitnessMovementUseCase.substituteThisSessionOnly(movement: movement, with: wallBall(), environment: TrainingEnvironmentTestSupport.full(context: context))
         XCTAssertNil(movement.loadKilograms, "numeric load remains genuinely unspecified, never invented as self-scaled")
     }
 
@@ -433,7 +433,7 @@ final class FunctionalFitnessMovementTargetRuleTests: XCTestCase {
             templateDistance: 500, movementDistance: 500
         )
         context.insert(assaultBike())
-        try SubstituteFunctionalFitnessMovementUseCase.substituteThisSessionOnly(movement: movement, with: assaultBike())
+        try SubstituteFunctionalFitnessMovementUseCase.substituteThisSessionOnly(movement: movement, with: assaultBike(), environment: TrainingEnvironmentTestSupport.full(context: context))
         XCTAssertEqual(movement.distanceMeters, 500, "an explicitly authored target must survive a substitution unchanged, never recomputed to nil")
     }
 
@@ -447,7 +447,7 @@ final class FunctionalFitnessMovementTargetRuleTests: XCTestCase {
             modality: .metabolicConditioning, movementFunctions: [.monostructural], exercise: rowErg(), movementDistance: 200
         )
         context.insert(assaultBike())
-        try SubstituteFunctionalFitnessMovementUseCase.substituteThisSessionOnly(movement: movement, with: assaultBike(), reason: .readinessAdaptation)
+        try SubstituteFunctionalFitnessMovementUseCase.substituteThisSessionOnly(movement: movement, with: assaultBike(), reason: .readinessAdaptation, environment: TrainingEnvironmentTestSupport.full(context: context))
         XCTAssertNil(movement.distanceMeters)
         XCTAssertTrue(movement.substitutionUsed)
     }

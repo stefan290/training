@@ -14,6 +14,18 @@ enum FunctionalFitnessMaterializationError: Error, Equatable {
     /// requested stimulus. Carries the failing `StimulusValidation` for
     /// the caller to inspect.
     case stimulusValidationFailed(StimulusValidation)
+    /// Stage TE.1: no `TrainingEnvironment` was supplied at all — thrown
+    /// BEFORE any candidate-resolution loop runs, never silently treated
+    /// as "everything is compatible." Distinct from
+    /// `.environmentIncompatible` below (a real environment exists, it
+    /// just can't satisfy this one slot).
+    case trainingEnvironmentRequired
+    /// Stage TE.1: a real, configured environment exists, but no
+    /// candidate in the pool for this movement slot satisfies it (every
+    /// candidate's `requiredEquipment` came back `.incompatible`) —
+    /// thrown rather than leaving the slot unresolved or silently
+    /// substituting an unrelated movement.
+    case environmentIncompatible(slot: String, missingEquipment: [EquipmentRequirement])
 }
 
 /// Turns a Functional Fitness `ProgramDefinition`'s template graph into
@@ -49,6 +61,12 @@ enum FunctionalFitnessMaterializer {
         /// `AdaptationObjective`s — see `TrainingMixComponent
         /// .adaptationObjectives`.
         componentAdaptationObjectives: [AdaptationObjective] = [],
+        /// Stage TE.1: read fresh from `TacticalMaterializationContext
+        /// .trainingEnvironment` at each real call — never cached/frozen.
+        /// `nil` is a valid, honest "not yet configured" state; it is
+        /// never treated as "anything goes" (see the fail-fast guard
+        /// below and `TrainingEnvironmentCompatibilityRule`).
+        environment: TrainingEnvironment?,
         context: ModelContext
     ) throws -> [Session] {
         var sessions: [Session] = []
@@ -70,6 +88,7 @@ enum FunctionalFitnessMaterializer {
             context.insert(day)
 
             let session = Session(name: templateSession.name, modality: .functionalFitness, status: .scheduled, role: templateSession.role)
+            session.materializedInEnvironment = environment
             context.insert(session)
             day.addSession(session)
             instance.addSession(session)
@@ -121,15 +140,47 @@ enum FunctionalFitnessMaterializer {
                 var resolvedModalities: Set<FunctionalModality> = []
                 var resolvedLoadingRoles: [LoadingClassification] = []
 
+                // Stage TE.1 fail-fast guard: checked once, immediately
+                // before this block's own candidate-resolution loop —
+                // never entered with an unknown environment silently
+                // treated as "anything goes."
+                if !ffTemplate.orderedMovementSlots.isEmpty, environment == nil {
+                    throw FunctionalFitnessMaterializationError.trainingEnvironmentRequired
+                }
+
                 for slotTemplate in ffTemplate.orderedMovementSlots {
                     guard let exerciseSlot = slotTemplate.exerciseSlot else { continue }
+
+                    // Stage TE.1 (§K/§L): a narrowed main-lift/competition
+                    // slot (`allowedExercises` non-empty) is precisely
+                    // attributable — the allow-list branch short-circuits
+                    // every other dimension, so if none of its explicitly
+                    // listed exercises are environment-compatible, that IS
+                    // the whole reason this slot is unsatisfiable. Checked
+                    // before the general search below so this precise,
+                    // typed cause is reported instead of the vaguer
+                    // general "no candidate resolved" outcome. A slot with
+                    // no `allowedExercises` restriction can fail for many
+                    // reasons (target/movementFunction mismatch too) —
+                    // misattributing every such failure to environment
+                    // would be inventing a cause this code cannot actually
+                    // prove, so that general case is left to the existing,
+                    // already-correct Stage E stimulus validation below.
+                    if !exerciseSlot.allowedExercises.isEmpty,
+                       !exerciseSlot.allowedExercises.contains(where: {
+                           TrainingEnvironmentCompatibilityRule.evaluate(required: $0.requiredEquipment, environment: environment) == .compatible
+                       }) {
+                        let missing = Set(exerciseSlot.allowedExercises.flatMap(\.requiredEquipment)).subtracting(Set(environment?.availableEquipment ?? []))
+                        throw FunctionalFitnessMaterializationError.environmentIncompatible(slot: exerciseSlot.name, missingEquipment: Array(missing))
+                    }
+
                     // Stage D: GOING FORWARD override wins, matching every
                     // other materializer's identical precedent; otherwise
                     // the first candidate satisfying the slot's typed
                     // constraints — deterministic, never a name-parsed or
                     // random pick (§9/§29).
                     let resolvedExercise = SubstituteExerciseUseCase.resolvedExercise(for: exerciseSlot, in: instance)
-                        ?? candidateExercises.first { SubstitutionValidator.isValid(candidate: $0, for: exerciseSlot) }
+                        ?? candidateExercises.first { SubstitutionValidator.isValid(candidate: $0, for: exerciseSlot, environment: environment) }
 
                     // Stage FF.P1: a real, non-nil structural target,
                     // resolved AFTER Stage D above has already picked the

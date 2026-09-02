@@ -32,7 +32,7 @@ final class HypertrophyV2EndToEndTests: XCTestCase {
     }
 
     private func materializationContext(candidates: [Exercise]) -> TacticalMaterializationContext {
-        TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates)
+        TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context))
     }
 
     private struct Fixture {

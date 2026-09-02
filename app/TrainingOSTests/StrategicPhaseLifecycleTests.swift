@@ -24,6 +24,18 @@ final class StrategicPhaseLifecycleTests: XCTestCase {
     override func setUpWithError() throws {
         container = PersistenceController.makeInMemoryContainer()
         context = container.mainContext
+        // Stage TE.1: real fixture default — see identical note in
+        // StartNextHypertrophyMesocycleUseCaseTests.setUpWithError.
+        let user = User(displayName: "TE.1 Fixture User")
+        context.insert(user)
+        let profile = UserProfile()
+        context.insert(profile)
+        user.attachProfile(profile)
+        let fullGym = TrainingEnvironment(name: "Test Full Gym", availableEquipment: EquipmentRequirement.allCases)
+        context.insert(fullGym)
+        profile.trainingEnvironments = [fullGym]
+        profile.defaultTrainingEnvironment = fullGym
+        try? context.save()
     }
 
     private func date(_ year: Int, _ month: Int, _ day: Int) -> Date {
@@ -92,7 +104,7 @@ final class StrategicPhaseLifecycleTests: XCTestCase {
             let outcome = try AdvanceTacticalWeekUseCase.advance(
                 phase: phase, asOf: rollDate(startDate, afterWeekIndex: weekIndex), ownerUserID: ownerUserID, performanceProfile: nil,
                 availability: availability(),
-                materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>())),
+                materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>()), trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
                 context: context
             )
             guard outcome == .advanced else { break }
@@ -117,12 +129,12 @@ final class StrategicPhaseLifecycleTests: XCTestCase {
         try StartPhaseUseCase.start(
             phase: phase1, mix: mix1.mix, asOf: asOf, ownerUserID: ownerUserID,
             performanceProfile: nil, availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.strength, functionalFitnessCandidateExercises: candidates.functionalFitness),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.strength, functionalFitnessCandidateExercises: candidates.functionalFitness, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             context: context
         )
         try CalibrationTestSupport.completeAnyPendingCalibrationAndMaterialize(
             phase: phase1, performanceProfile: nil, availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.strength),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.strength, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             asOf: asOf, context: context
         )
         XCTAssertEqual(phase1.primaryInstance?.programDefinition?.hypertrophyConfiguration?.phaseType, .basicHypertrophy, "Phase 1 runs a real Mesocycle 1 (Basic Hypertrophy) lifecycle")
@@ -143,12 +155,12 @@ final class StrategicPhaseLifecycleTests: XCTestCase {
         try StartPhaseUseCase.start(
             phase: phase1, mix: mix1.mix, asOf: asOf, ownerUserID: ownerUserID,
             performanceProfile: nil, availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.strength, functionalFitnessCandidateExercises: candidates.functionalFitness),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.strength, functionalFitnessCandidateExercises: candidates.functionalFitness, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             context: context
         )
         try CalibrationTestSupport.completeAnyPendingCalibrationAndMaterialize(
             phase: phase1, performanceProfile: nil, availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.strength),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.strength, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             asOf: asOf, context: context
         )
         let hypertrophyInstance = try XCTUnwrap(phase1.primaryInstance)
@@ -186,12 +198,12 @@ final class StrategicPhaseLifecycleTests: XCTestCase {
         let mix1 = try XCTUnwrap(LongTermPlanner.proposeTrainingMix(phase: phase1, goal: fixture.goal).first { $0.mix.name == "Focused Hypertrophy" })
         try StartPhaseUseCase.start(
             phase: phase1, mix: mix1.mix, asOf: asOf, ownerUserID: ownerUserID, performanceProfile: nil, availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.strength, functionalFitnessCandidateExercises: candidates.functionalFitness),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.strength, functionalFitnessCandidateExercises: candidates.functionalFitness, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             context: context
         )
         try CalibrationTestSupport.completeAnyPendingCalibrationAndMaterialize(
             phase: phase1, performanceProfile: nil, availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.strength),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.strength, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             asOf: asOf, context: context
         )
 
@@ -203,7 +215,7 @@ final class StrategicPhaseLifecycleTests: XCTestCase {
             let component = try XCTUnwrap((phase1.selectedTrainingMix ?? phase1.recommendedTrainingMix)?.orderedComponents.first { $0.priority == .primary })
             _ = try StartNextHypertrophyMesocycleUseCase.start(
                 previousPhase: phase1, previousInstance: instance, asOf: asOf, ownerUserID: ownerUserID, availability: availability(),
-                materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>())),
+                materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>()), trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
                 context: context
             )
             for requirement in RequiredSourceCalibrationsUseCase.stillRequired(for: try XCTUnwrap(component.programInstance?.programDefinition), instance: try XCTUnwrap(component.programInstance)) {
@@ -213,7 +225,7 @@ final class StrategicPhaseLifecycleTests: XCTestCase {
             _ = try StartPhaseUseCase.materializeOnceCalibrationComplete(
                 component: component, instance: try XCTUnwrap(component.programInstance), phase: phase1, mix: try XCTUnwrap(component.trainingMix),
                 asOf: asOf, ownerUserID: ownerUserID, performanceProfile: nil, availability: availability(),
-                materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>())),
+                materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>()), trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
                 context: context
             )
         }
@@ -260,12 +272,12 @@ final class StrategicPhaseLifecycleTests: XCTestCase {
         let mix2 = try XCTUnwrap(LongTermPlanner.proposeTrainingMix(phase: phase2, goal: fixture.goal).first { $0.mix.name == "Strength Plus Variety" })
         try StartPhaseUseCase.start(
             phase: phase2, mix: mix2.mix, asOf: asOf, ownerUserID: ownerUserID, performanceProfile: nil, availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.strength, functionalFitnessCandidateExercises: candidates.functionalFitness),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.strength, functionalFitnessCandidateExercises: candidates.functionalFitness, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             context: context
         )
         try CalibrationTestSupport.completeAnyPendingCalibrationAndMaterialize(
             phase: phase2, performanceProfile: nil, availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.strength),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.strength, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             asOf: asOf, context: context
         )
         XCTAssertEqual(mix2.mix.orderedComponents.count, 3, "Hypertrophy + Functional Fitness + Running — sanity check on the real candidate")
@@ -295,12 +307,12 @@ final class StrategicPhaseLifecycleTests: XCTestCase {
         let mix1 = try XCTUnwrap(LongTermPlanner.proposeTrainingMix(phase: phase1, goal: fixture.goal).first { $0.mix.name == "Focused Hypertrophy" })
         try StartPhaseUseCase.start(
             phase: phase1, mix: mix1.mix, asOf: asOf, ownerUserID: ownerUserID, performanceProfile: nil, availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.strength, functionalFitnessCandidateExercises: candidates.functionalFitness),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.strength, functionalFitnessCandidateExercises: candidates.functionalFitness, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             context: context
         )
         try CalibrationTestSupport.completeAnyPendingCalibrationAndMaterialize(
             phase: phase1, performanceProfile: nil, availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.strength),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.strength, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             asOf: asOf, context: context
         )
         // Nothing has been exhausted — Phase 1 has a real `endDate`
@@ -342,12 +354,12 @@ final class StrategicPhaseLifecycleTests: XCTestCase {
         let mix1 = try XCTUnwrap(LongTermPlanner.proposeTrainingMix(phase: phase1, goal: fixture.goal).first { $0.mix.name == "Focused Hypertrophy" })
         try StartPhaseUseCase.start(
             phase: phase1, mix: mix1.mix, asOf: asOf, ownerUserID: ownerUserID, performanceProfile: nil, availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.strength, functionalFitnessCandidateExercises: candidates.functionalFitness),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.strength, functionalFitnessCandidateExercises: candidates.functionalFitness, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             context: context
         )
         try CalibrationTestSupport.completeAnyPendingCalibrationAndMaterialize(
             phase: phase1, performanceProfile: nil, availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.strength),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.strength, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             asOf: asOf, context: context
         )
 
@@ -364,7 +376,7 @@ final class StrategicPhaseLifecycleTests: XCTestCase {
         XCTAssertThrowsError(try TransitionPhaseUseCase.transition(
             from: phase1, toNextPhaseWithMix: emptyMix, asOf: asOf, ownerUserID: ownerUserID,
             performanceProfile: nil, availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment), context: context
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)), context: context
         )) { error in
             XCTAssertEqual(error as? StartPhaseError, .mixHasNoComponents)
         }
@@ -385,7 +397,7 @@ final class StrategicPhaseLifecycleTests: XCTestCase {
         let transitionResult = try TransitionPhaseUseCase.transition(
             from: phase1, toNextPhaseWithMix: mix2.mix, asOf: asOf, ownerUserID: ownerUserID,
             performanceProfile: nil, availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.strength, functionalFitnessCandidateExercises: candidates.functionalFitness),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.strength, functionalFitnessCandidateExercises: candidates.functionalFitness, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             context: context
         )
         XCTAssertEqual(transitionResult.completedPhase.id, phase1.id)
@@ -397,7 +409,7 @@ final class StrategicPhaseLifecycleTests: XCTestCase {
         XCTAssertThrowsError(try TransitionPhaseUseCase.transition(
             from: phase1, toNextPhaseWithMix: mix2.mix, asOf: asOf, ownerUserID: ownerUserID,
             performanceProfile: nil, availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.strength, functionalFitnessCandidateExercises: candidates.functionalFitness),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.strength, functionalFitnessCandidateExercises: candidates.functionalFitness, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             context: context
         )) { error in
             XCTAssertEqual(error as? PhaseTransitionError, .outgoingPhaseNotActive)
@@ -417,12 +429,12 @@ final class StrategicPhaseLifecycleTests: XCTestCase {
         let mix1 = try XCTUnwrap(LongTermPlanner.proposeTrainingMix(phase: phase1, goal: fixture.goal).first { $0.mix.name == "Focused Hypertrophy" })
         try StartPhaseUseCase.start(
             phase: phase1, mix: mix1.mix, asOf: asOf, ownerUserID: ownerUserID, performanceProfile: nil, availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.strength, functionalFitnessCandidateExercises: candidates.functionalFitness),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.strength, functionalFitnessCandidateExercises: candidates.functionalFitness, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             context: context
         )
         try CalibrationTestSupport.completeAnyPendingCalibrationAndMaterialize(
             phase: phase1, performanceProfile: nil, availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.strength),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.strength, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             asOf: asOf, context: context
         )
 
@@ -430,7 +442,7 @@ final class StrategicPhaseLifecycleTests: XCTestCase {
         let transitionResult = try TransitionPhaseUseCase.transition(
             from: phase1, toNextPhaseWithMix: mix2.mix, asOf: asOf, ownerUserID: ownerUserID,
             performanceProfile: nil, availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.strength, functionalFitnessCandidateExercises: candidates.functionalFitness),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.strength, functionalFitnessCandidateExercises: candidates.functionalFitness, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             context: context
         )
 
@@ -444,5 +456,84 @@ final class StrategicPhaseLifecycleTests: XCTestCase {
         })
         XCTAssertTrue(hypertrophyInstance.sessions.isEmpty, "no fabricated tactical content for the awaiting-calibration component")
         XCTAssertFalse(RequiredSourceCalibrationsUseCase.stillRequired(for: try XCTUnwrap(hypertrophyInstance.programDefinition), instance: hypertrophyInstance).isEmpty)
+    }
+
+    // MARK: TE.1 closure — the scratch-context TrainingEnvironment re-fetch fix, regression-proven
+
+    /// `TransitionPhaseUseCase.transition` runs its whole orchestration
+    /// against an isolated SCRATCH `ModelContext`, separate from this test's
+    /// own `context` — the same established atomic-transaction pattern
+    /// `AdvanceTacticalWeekUseCase` already uses. A `TrainingEnvironment`
+    /// fetched in THIS context is bound to it; passing it directly into the
+    /// scratch context (rather than re-fetching it there by
+    /// `persistentModelID`, as `TransitionPhaseUseCase.swift` lines ~194-196
+    /// do) reproduced a real `NSCocoaErrorDomain Code=1560` validation
+    /// failure during TE.1 implementation. This proves the fix holds: the
+    /// transition succeeds with a real environment carried across that
+    /// boundary, the SAME environment row survives with its own fields
+    /// unchanged when re-fetched from an entirely fresh `ModelContext`
+    /// afterward, the new phase's materialized Functional Fitness session
+    /// correctly references that same row, and an unrelated candidate
+    /// `Exercise` used in the same transition is untouched — mirroring the
+    /// exact "corrupts an unrelated row" symptom class this bug belongs to
+    /// (`STAGE10R7A_TX_ROOT_CAUSE_REPORT.md`).
+    func testTransitionPhaseRefetchesTrainingEnvironmentByIDAcrossTheScratchContextBoundaryWithoutCorruption() throws {
+        let asOf = date(2026, 1, 5)
+        let fixture = try makeAcceptedPlan(asOf: asOf)
+        let phase1 = fixture.plan.orderedPhases[0]
+        let phase2 = fixture.plan.orderedPhases[1]
+        let candidates = makeCandidates()
+        let unrelatedExerciseID = try XCTUnwrap(candidates.strength.first).id
+        let unrelatedExerciseOriginalName = try XCTUnwrap(candidates.strength.first).canonicalName
+
+        // A distinctive, narrowly-equipped environment (not the generic
+        // "full gym" fixture) so its exact post-transition equipment set is
+        // unambiguous evidence of "unchanged," not merely "still non-empty."
+        let environment = TrainingEnvironment(name: "TE.1 Scratch Boundary Test Environment", availableEquipment: [.barbell, .rack, .bench])
+        context.insert(environment)
+        try context.save()
+        let environmentID = environment.persistentModelID
+
+        let mix1 = try XCTUnwrap(LongTermPlanner.proposeTrainingMix(phase: phase1, goal: fixture.goal).first { $0.mix.name == "Focused Hypertrophy" })
+        try StartPhaseUseCase.start(
+            phase: phase1, mix: mix1.mix, asOf: asOf, ownerUserID: ownerUserID, performanceProfile: nil, availability: availability(),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.strength, functionalFitnessCandidateExercises: candidates.functionalFitness, trainingEnvironment: environment),
+            context: context
+        )
+        try CalibrationTestSupport.completeAnyPendingCalibrationAndMaterialize(
+            phase: phase1, performanceProfile: nil, availability: availability(),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.strength, trainingEnvironment: environment),
+            asOf: asOf, context: context
+        )
+
+        let mix2 = try XCTUnwrap(LongTermPlanner.proposeTrainingMix(phase: phase2, goal: fixture.goal).first { $0.mix.name == "Strength Plus Variety" })
+        let transitionResult = try TransitionPhaseUseCase.transition(
+            from: phase1, toNextPhaseWithMix: mix2.mix, asOf: asOf, ownerUserID: ownerUserID,
+            performanceProfile: nil, availability: availability(),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.strength, functionalFitnessCandidateExercises: candidates.functionalFitness, trainingEnvironment: environment),
+            context: context
+        )
+        XCTAssertEqual(transitionResult.nextPhase.status, .active, "the transition itself must succeed with a real environment threaded across the scratch-context boundary")
+
+        // The Functional Fitness component materializes immediately (no
+        // calibration gate) — its Session must reference the SAME
+        // environment row, proving the scratch-context re-fetch resolved
+        // to the real, correct object, not a corrupted or orphaned one.
+        let ffInstance = try XCTUnwrap(transitionResult.startResult.instancesByComponent.values.first {
+            $0.programDefinition?.programmingSystem == .functionalFitness
+        })
+        let ffSession = try XCTUnwrap(ffInstance.sessions.first)
+        XCTAssertEqual(ffSession.materializedInEnvironment?.id, environment.id, "the materialized session must reference the exact same TrainingEnvironment row, not a duplicate produced by a corrupted re-fetch")
+
+        // Re-fetch everything from a BRAND NEW ModelContext — proves
+        // persisted, on-disk state, not merely this test's own in-memory
+        // object graph.
+        let freshContext = ModelContext(container)
+        let refetchedEnvironment = try XCTUnwrap(freshContext.fetch(FetchDescriptor<TrainingEnvironment>(predicate: #Predicate { $0.persistentModelID == environmentID })).first)
+        XCTAssertEqual(refetchedEnvironment.name, "TE.1 Scratch Boundary Test Environment", "the environment's own fields must survive the scratch-context boundary unchanged")
+        XCTAssertEqual(Set(refetchedEnvironment.availableEquipment), Set([.barbell, .rack, .bench]), "equipment must be exactly what was configured — no corruption, no silent widening/narrowing")
+
+        let refetchedUnrelatedExercise = try XCTUnwrap(freshContext.fetch(FetchDescriptor<Exercise>(predicate: #Predicate { $0.id == unrelatedExerciseID })).first)
+        XCTAssertEqual(refetchedUnrelatedExercise.canonicalName, unrelatedExerciseOriginalName, "an unrelated candidate Exercise used in the same transition must be untouched — the exact symptom class (\"corrupts an unrelated row\") this scratch-context bug belongs to")
     }
 }

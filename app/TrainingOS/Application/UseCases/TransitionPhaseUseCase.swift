@@ -187,6 +187,13 @@ enum TransitionPhaseUseCase {
             functionalFitnessCandidateExercises: try materializationContext.functionalFitnessCandidateExercises.compactMap { exercise in
                 let exerciseID = exercise.persistentModelID
                 return try scratchContext.fetch(FetchDescriptor<Exercise>(predicate: #Predicate { $0.persistentModelID == exerciseID })).first
+            },
+            // Stage TE.1: same cross-context re-fetch discipline as the
+            // candidate Exercise arrays above — `TrainingEnvironment` is
+            // also a `@Model`, bound to the CALLER's context.
+            trainingEnvironment: try materializationContext.trainingEnvironment.flatMap { environment in
+                let environmentID = environment.persistentModelID
+                return try scratchContext.fetch(FetchDescriptor<TrainingEnvironment>(predicate: #Predicate { $0.persistentModelID == environmentID })).first
             }
         )
 

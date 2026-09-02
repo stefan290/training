@@ -35,7 +35,7 @@ enum EvaluateReadinessAdaptationUseCase {
     /// escalation rule).
     static let postponeThresholdPoorSignalCount = 2
 
-    static func evaluate(session: Session, checkIn: ReadinessCheckIn, modelContext: ModelContext) -> ReadinessAdaptationProposal {
+    static func evaluate(session: Session, checkIn: ReadinessCheckIn, environment: TrainingEnvironment?, modelContext: ModelContext) -> ReadinessAdaptationProposal {
         var items: [ReadinessAdaptationProposalItem] = []
 
         let poorTier0: [(ReadinessSignalSource, ReadinessLevel?)] = [
@@ -83,7 +83,7 @@ enum EvaluateReadinessAdaptationUseCase {
                 }
                 guard let item = localItem(
                     for: exercise, checkIn: checkIn, allExercises: allExercises,
-                    slot: prescription.sourceExerciseSlot,
+                    slot: prescription.sourceExerciseSlot, environment: environment,
                     onSubstitute: { candidate in
                         ReadinessAdaptationProposalItem(
                             triggeringSignals: [.pain], actionKind: .exerciseSubstituted,
@@ -127,7 +127,7 @@ enum EvaluateReadinessAdaptationUseCase {
                 guard let exercise = movement.exercise else { continue }
                 guard let item = localItem(
                     for: exercise, checkIn: checkIn, allExercises: allExercises,
-                    slot: movement.sourceExerciseSlot,
+                    slot: movement.sourceExerciseSlot, environment: environment,
                     onSubstitute: { candidate in
                         ReadinessAdaptationProposalItem(
                             triggeringSignals: [.pain], actionKind: .exerciseSubstituted,
@@ -180,6 +180,7 @@ enum EvaluateReadinessAdaptationUseCase {
         checkIn: ReadinessCheckIn,
         allExercises: [Exercise],
         slot: ExerciseSlot?,
+        environment: TrainingEnvironment?,
         onSubstitute: (Exercise) -> ReadinessAdaptationProposalItem,
         onRemoveBlock: () -> ReadinessAdaptationProposalItem,
         onReduceVolume: (ReadinessSignalSource) -> ReadinessAdaptationProposalItem?
@@ -188,7 +189,7 @@ enum EvaluateReadinessAdaptationUseCase {
         guard !targets.isEmpty else { return nil }
 
         if !targets.isDisjoint(with: Set(checkIn.reportedPain)) {
-            if let slot, let candidate = validSubstitute(excluding: exercise, targeting: checkIn.reportedPain, from: allExercises, slot: slot) {
+            if let slot, let candidate = validSubstitute(excluding: exercise, targeting: checkIn.reportedPain, from: allExercises, slot: slot, environment: environment) {
                 return onSubstitute(candidate)
             }
             return onRemoveBlock()
@@ -206,11 +207,11 @@ enum EvaluateReadinessAdaptationUseCase {
     /// themselves overlap the reported pain area — never propose swapping
     /// one painful movement for another that hits the same area.
     private static func validSubstitute(
-        excluding current: Exercise, targeting painAreas: [MuscleGroup], from allExercises: [Exercise], slot: ExerciseSlot
+        excluding current: Exercise, targeting painAreas: [MuscleGroup], from allExercises: [Exercise], slot: ExerciseSlot, environment: TrainingEnvironment?
     ) -> Exercise? {
         allExercises.first { candidate in
             candidate.id != current.id
-                && SubstitutionValidator.isValid(candidate: candidate, for: slot)
+                && SubstitutionValidator.isValid(candidate: candidate, for: slot, environment: environment)
                 && Set(candidate.primaryTargets).isDisjoint(with: Set(painAreas))
         }
     }

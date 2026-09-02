@@ -71,6 +71,18 @@ final class StrategicTransitionViewModel {
     private(set) var isTransitioning = false
     private(set) var didSucceed = false
     private(set) var errorMessage: String?
+    /// TE.1 closure, widened by the final UX pass: `true` when
+    /// `startTransition` failed for a reason recoverable through Training
+    /// Environment configuration — either no environment is configured
+    /// yet, or a real environment is configured but is missing equipment
+    /// a required slot/activity needs — lets the View offer a recovery
+    /// path to configuration instead of a dead-end generic failure
+    /// message. Detected structurally via
+    /// `TrainingEnvironmentRecoverableError`, never by matching
+    /// `errorMessage`; the two underlying failures remain distinct typed
+    /// cases (`trainingEnvironmentRecoveryMessage(for:)` still
+    /// distinguishes them in `errorMessage`'s own text below).
+    private(set) var needsTrainingEnvironment = false
     /// How many components the transition actually left awaiting
     /// calibration — `nil` until a transition has actually run.
     private(set) var componentsAwaitingCalibrationCount: Int?
@@ -106,6 +118,7 @@ final class StrategicTransitionViewModel {
         isTransitioning = true
         defer { isTransitioning = false }
         errorMessage = nil
+        needsTrainingEnvironment = false
 
         let ownerUserID = currentPhase.primaryInstance?.ownerUserID ?? currentPhase.plan?.goal?.ownerUserID
         guard let ownerUserID else {
@@ -118,10 +131,12 @@ final class StrategicTransitionViewModel {
         // startNextHypertrophyMesocycle) already uses — including the same
         // KNOWN DOMAIN GAP (no persisted equipment-inventory model yet).
         let exercises = (try? modelContext.fetch(FetchDescriptor<Exercise>())) ?? []
+        let users = (try? modelContext.fetch(FetchDescriptor<User>())) ?? []
         let materializationContext = TacticalMaterializationContext(
             equipmentProfile: EquipmentProfile(equipmentType: .barbell, smallestIncrementKg: 2.5),
             strengthCandidateExercises: exercises,
-            functionalFitnessCandidateExercises: exercises
+            functionalFitnessCandidateExercises: exercises,
+            trainingEnvironment: users.first?.profile?.defaultTrainingEnvironment
         )
 
         do {
@@ -136,7 +151,12 @@ final class StrategicTransitionViewModel {
             NotificationCenter.default.post(name: .strategicPhaseTransitionCompleted, object: nil)
             return true
         } catch {
-            errorMessage = "The phase transition could not be completed. The previous phase remains active and unchanged."
+            if let recoveryMessage = trainingEnvironmentRecoveryMessage(for: error) {
+                needsTrainingEnvironment = true
+                errorMessage = "\(recoveryMessage) The previous phase remains active and unchanged."
+            } else {
+                errorMessage = "The phase transition could not be completed. The previous phase remains active and unchanged."
+            }
             return false
         }
     }

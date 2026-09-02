@@ -284,7 +284,7 @@ final class HypertrophyDayFocusGenerationTests: XCTestCase {
         // needs to confirm nothing about a second `resolve()` call changes
         // that (idempotent, per `ResolveProgramInstanceExerciseSlotsUseCase`'s
         // own contract).
-        ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: definition, candidateExercises: [catalog.backSquat])
+        try ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: definition, candidateExercises: [catalog.backSquat], environment: TrainingEnvironmentTestSupport.full(context: context))
 
         let instance = ProgramInstance(ownerUserID: ownerUserID)
         context.insert(instance)
@@ -360,8 +360,8 @@ final class HypertrophyDayFocusGenerationTests: XCTestCase {
         context.insert(validCandidate)
         context.insert(invalidCandidate)
 
-        XCTAssertTrue(SubstitutionValidator.isValid(candidate: validCandidate, for: biceps))
-        XCTAssertFalse(SubstitutionValidator.isValid(candidate: invalidCandidate, for: biceps))
+        XCTAssertTrue(SubstitutionValidator.isValid(candidate: validCandidate, for: biceps, environment: TrainingEnvironmentTestSupport.full(context: context)))
+        XCTAssertFalse(SubstitutionValidator.isValid(candidate: invalidCandidate, for: biceps, environment: TrainingEnvironmentTestSupport.full(context: context)))
     }
 
     /// Covers every `SourceHypertrophyCategory` target/movement-function
@@ -394,7 +394,7 @@ final class HypertrophyDayFocusGenerationTests: XCTestCase {
 
     func testReadinessAdaptationStillEvaluatesCorrectlyAgainstTheRealSourceSession() throws {
         let definition = try generateReferenceConfig()
-        ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: definition, candidateExercises: makeStrengthCandidatePool())
+        try ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: definition, candidateExercises: makeStrengthCandidatePool(), environment: TrainingEnvironmentTestSupport.full(context: context))
         let instance = ProgramInstance(ownerUserID: ownerUserID)
         context.insert(instance)
         instance.programDefinition = definition
@@ -412,7 +412,7 @@ final class HypertrophyDayFocusGenerationTests: XCTestCase {
         let checkIn = ReadinessCheckIn(recordedAt: Date(), reportedPain: [.biceps])
         context.insert(checkIn)
 
-        let proposal = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: checkIn, modelContext: context)
+        let proposal = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: checkIn,  environment: TrainingEnvironmentTestSupport.full(context: context), modelContext: context)
         XCTAssertFalse(proposal.isEmpty, "reported pain in a muscle group this real source session actually trains (biceps, via the dedicated Biceps category slot) must still surface a real adaptation proposal")
     }
 

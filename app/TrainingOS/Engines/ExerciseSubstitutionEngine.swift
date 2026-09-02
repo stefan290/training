@@ -27,9 +27,31 @@ enum SubstitutionValidator {
     ///    candidate is valid (mirrors the existing "empty means no
     ///    explicit constraint" convention throughout this codebase, e.g.
     ///    `HypertrophyConfiguration`'s split fields).
-    static func isValid(candidate: Exercise, for slot: ExerciseSlot) -> Bool {
+    /// 4. Stage TE.1 addition: regardless of which branch above matched
+    ///    (including the `allowedExercises` allow-list branch — a
+    ///    narrowed main-lift slot is not exempt), the candidate's own
+    ///    `requiredEquipment` must also be `.compatible` with
+    ///    `environment` (`TrainingEnvironmentCompatibilityRule`). `nil`
+    ///    environment is never treated as compatible — every caller must
+    ///    pass a real, resolved `TrainingEnvironment?` (see this
+    ///    function's real call sites for how each resolves one).
+    static func isValid(candidate: Exercise, for slot: ExerciseSlot, environment: TrainingEnvironment?) -> Bool {
+        guard matchesSemanticConstraints(candidate: candidate, for: slot) else { return false }
+        return TrainingEnvironmentCompatibilityRule.evaluate(required: candidate.requiredEquipment, environment: environment) == .compatible
+    }
+
+    /// Stage TE.1 checkpoint-gate fix: `isValid` minus its final equipment
+    /// check — every dimension above (`allowedExercises`/`allowedTargets`/
+    /// `allowedMovementFunctions`/`allowedModalities`) with none of them
+    /// evaluated. Lets a caller distinguish "no candidate fits this slot at
+    /// all" (a pre-existing, out-of-TE.1's-scope unresolved-slot state)
+    /// from "a candidate fits every real constraint but not this specific
+    /// environment" (a genuine, attributable environment conflict) —
+    /// without duplicating these rules a second time or loosening
+    /// `isValid` itself.
+    static func matchesSemanticConstraints(candidate: Exercise, for slot: ExerciseSlot) -> Bool {
         if !slot.allowedExercises.isEmpty {
-            return slot.allowedExercises.contains { $0.id == candidate.id }
+            return slot.allowedExercises.contains(where: { $0.id == candidate.id })
         }
         if !slot.allowedTargets.isEmpty, Set(candidate.primaryTargets).isDisjoint(with: Set(slot.allowedTargets)) {
             return false

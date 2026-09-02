@@ -15,10 +15,11 @@ enum ApplySubstitutionUseCase {
         slot: ExerciseSlot,
         with exercise: Exercise,
         reason: SubstitutionReason? = nil,
+        environment: TrainingEnvironment?,
         modelContext: ModelContext
     ) throws -> ExercisePrescription {
         let updated = try SubstituteExerciseUseCase.substituteThisSessionOnly(
-            prescription: prescription, slot: slot, with: exercise, reason: reason
+            prescription: prescription, slot: slot, with: exercise, reason: reason, environment: environment
         )
         try modelContext.save()
         return updated
@@ -30,10 +31,11 @@ enum ApplySubstitutionUseCase {
         slot: ExerciseSlot,
         with exercise: Exercise,
         reason: SubstitutionReason? = nil,
+        environment: TrainingEnvironment?,
         modelContext: ModelContext
     ) throws -> SlotSelectionOverride {
         let override = try SubstituteExerciseUseCase.substituteGoingForward(
-            instance: instance, slot: slot, with: exercise, reason: reason, context: modelContext
+            instance: instance, slot: slot, with: exercise, reason: reason, environment: environment, context: modelContext
         )
         try modelContext.save()
         return override

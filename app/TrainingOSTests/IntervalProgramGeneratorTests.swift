@@ -113,7 +113,7 @@ final class IntervalProgramGeneratorTests: XCTestCase {
 
         let week0 = try IntervalMaterializer.materializeWeek(
             definition: definition, instance: instance, weekIndex: 0, startDate: Date(timeIntervalSince1970: 0),
-            ownerUserID: instance.ownerUserID, weekContext: { _ in .init() }, context: context
+            ownerUserID: instance.ownerUserID, weekContext: { _ in .init() },  environment: TrainingEnvironmentTestSupport.full(context: context), context: context
         )
         let week0Prescription = try XCTUnwrap(week0.first?.orderedBlocks.first?.intervalPrescription)
         XCTAssertEqual(week0Prescription.intervalCount, 4)
@@ -122,7 +122,7 @@ final class IntervalProgramGeneratorTests: XCTestCase {
         let week1 = try IntervalMaterializer.materializeWeek(
             definition: definition, instance: instance, weekIndex: 1, startDate: Date(timeIntervalSince1970: 0),
             ownerUserID: instance.ownerUserID,
-            weekContext: { _ in IntervalMaterializer.WeekContext(previousActualIntervalCount: 4, previousOutcome: .progress) },
+            weekContext: { _ in IntervalMaterializer.WeekContext(previousActualIntervalCount: 4, previousOutcome: .progress) },  environment: TrainingEnvironmentTestSupport.full(context: context),
             context: context
         )
         let week1Prescription = try XCTUnwrap(week1.first?.orderedBlocks.first?.intervalPrescription)
@@ -157,7 +157,7 @@ final class IntervalProgramGeneratorTests: XCTestCase {
 
         XCTAssertThrowsError(try IntervalMaterializer.materializeWeek(
             definition: definition, instance: instance, weekIndex: 1, startDate: Date(timeIntervalSince1970: 0),
-            ownerUserID: instance.ownerUserID, weekContext: { _ in .init() }, context: context
+            ownerUserID: instance.ownerUserID, weekContext: { _ in .init() },  environment: TrainingEnvironmentTestSupport.full(context: context), context: context
         )) { error in
             XCTAssertEqual(error as? IntervalMaterializationError, .previousOutcomeRequired)
         }

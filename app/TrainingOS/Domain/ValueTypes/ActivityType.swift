@@ -17,3 +17,22 @@ enum ActivityType: String, Codable, CaseIterable {
     case skiErg
     case other
 }
+
+/// Stage TE.1: what physical equipment each `ActivityType` requires —
+/// the endurance sibling of `Exercise.requiredEquipment`, reusing the
+/// exact same `EquipmentRequirement` vocabulary (no new taxonomy).
+extension ActivityType {
+    var requiredEquipment: [EquipmentRequirement] {
+        switch self {
+        case .running: return []
+        case .cycling: return [.bike]
+        case .rowing: return [.rower]
+        case .skiErg: return [.skiErg]
+        // `.other` is a deliberately permissive placeholder: "no modeled
+        // requirement can be derived from generic `.other`," never
+        // "proven equipment-free" — a specific `ActivityType` should be
+        // used whenever equipment compatibility actually matters.
+        case .other: return []
+        }
+    }
+}

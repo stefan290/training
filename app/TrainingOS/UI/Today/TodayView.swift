@@ -23,6 +23,15 @@ struct TodayView: View {
     /// Independent of the existing per-card `NavigationLink`s below —
     /// tapping a card manually is completely unaffected.
     @State private var justStartedSession: Session?
+    /// Stage TE.1 closure: the handoff's own locked navigation
+    /// ("Profile from the avatar in the Today header" —
+    /// `Training OS Handoff.dc.html` line 27/141/144) is the real,
+    /// already-designated production entry point for Training
+    /// Environment configuration — not a new tab, not new Settings
+    /// architecture. `Profile → Integrations · Settings · Advanced` is a
+    /// full hub out of this stage's scope; this presents Training
+    /// Environment configuration directly, the only piece TE.1 needs.
+    @State private var showingTrainingEnvironmentSettings = false
 
     var body: some View {
         NavigationStack {
@@ -81,6 +90,16 @@ struct TodayView: View {
             }
             .background(Theme.ground)
             .navigationTitle("Today")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showingTrainingEnvironmentSettings = true
+                    } label: {
+                        Image(systemName: "person.crop.circle")
+                    }
+                    .accessibilityLabel("Profile")
+                }
+            }
             .navigationDestination(item: $justStartedSession) { session in
                 SessionDetailView(session: session, onChange: {
                     viewModel.load(modelContext: modelContext)
@@ -94,6 +113,9 @@ struct TodayView: View {
                 viewModel.start(session, modelContext: modelContext)
                 justStartedSession = session
             }
+        }
+        .sheet(isPresented: $showingTrainingEnvironmentSettings) {
+            TrainingEnvironmentSettingsView()
         }
     }
 }

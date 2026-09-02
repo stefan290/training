@@ -45,7 +45,9 @@ struct ReadinessGateFlow: View {
             return
         }
         try? RecordReadinessCheckInUseCase.record(checkIn, for: session, modelContext: modelContext)
-        let result = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: checkIn, modelContext: modelContext)
+        let users = (try? modelContext.fetch(FetchDescriptor<User>())) ?? []
+        let environment = users.first?.profile?.defaultTrainingEnvironment
+        let result = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: checkIn, environment: environment, modelContext: modelContext)
         if result.isEmpty {
             proceedToWarmup(checkIn: checkIn)
         } else {

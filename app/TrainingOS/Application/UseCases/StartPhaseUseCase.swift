@@ -26,15 +26,23 @@ struct TacticalMaterializationContext {
     /// caller, same discipline as the Functional Fitness pool.
     var strengthCandidateExercises: [Exercise] = []
     var functionalFitnessCandidateExercises: [Exercise] = []
+    /// Stage TE.1: the real, currently-configured `TrainingEnvironment`
+    /// (`UserProfile.defaultTrainingEnvironment`, read fresh by each real
+    /// caller — never cached/frozen). `nil` is a valid, honest "not yet
+    /// configured" state — every real materializer/resolver this reaches
+    /// treats `nil` as `.environmentUnknown`, never as "anything goes."
+    var trainingEnvironment: TrainingEnvironment?
 
     init(
         equipmentProfile: EquipmentProfile,
         strengthCandidateExercises: [Exercise] = [],
-        functionalFitnessCandidateExercises: [Exercise] = []
+        functionalFitnessCandidateExercises: [Exercise] = [],
+        trainingEnvironment: TrainingEnvironment? = nil
     ) {
         self.equipmentProfile = equipmentProfile
         self.strengthCandidateExercises = strengthCandidateExercises
         self.functionalFitnessCandidateExercises = functionalFitnessCandidateExercises
+        self.trainingEnvironment = trainingEnvironment
     }
 }
 
@@ -153,8 +161,9 @@ enum StartPhaseUseCase {
             // the generator (which stays user-independent) and never
             // repeated on every materialization call.
             if system == .hypertrophy || system == .powerlifting {
-                ResolveProgramInstanceExerciseSlotsUseCase.resolve(
-                    definition: chosen.programDefinition, candidateExercises: materializationContext.strengthCandidateExercises
+                try ResolveProgramInstanceExerciseSlotsUseCase.resolve(
+                    definition: chosen.programDefinition, candidateExercises: materializationContext.strengthCandidateExercises,
+                    environment: materializationContext.trainingEnvironment
                 )
             }
             instancesByComponent[component.id] = instance

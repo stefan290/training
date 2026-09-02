@@ -39,7 +39,7 @@ final class SessionAutoAdvanceTests: XCTestCase {
             configuration: HypertrophyProgramConfiguration(dayCount: 3, split: .fullBody, phaseType: .basicHypertrophy),
             provenance: .constructed(reason: "test fixture"), context: context
         )
-        ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: definition, candidateExercises: candidates)
+        try ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: definition, candidateExercises: candidates, environment: TrainingEnvironmentTestSupport.full(context: context))
         let instance = ProgramInstance(ownerUserID: ownerUserID)
         context.insert(instance)
         instance.programDefinition = definition
@@ -83,7 +83,7 @@ final class SessionAutoAdvanceTests: XCTestCase {
 
         let checkIn = goodCheckIn()
         try RecordReadinessCheckInUseCase.record(checkIn, for: session, modelContext: context)
-        let proposal = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: checkIn, modelContext: context)
+        let proposal = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: checkIn,  environment: TrainingEnvironmentTestSupport.full(context: context), modelContext: context)
         XCTAssertTrue(proposal.isEmpty, "an all-good check-in must never propose an adaptation")
 
         let sequence = try XCTUnwrap(GenerateWarmupSequenceUseCase.generate(
@@ -109,7 +109,7 @@ final class SessionAutoAdvanceTests: XCTestCase {
 
         let checkIn = goodCheckIn()
         try RecordReadinessCheckInUseCase.record(checkIn, for: session, modelContext: context)
-        _ = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: checkIn, modelContext: context)
+        _ = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: checkIn,  environment: TrainingEnvironmentTestSupport.full(context: context), modelContext: context)
 
         let sequence = try XCTUnwrap(GenerateWarmupSequenceUseCase.generate(
             context: WarmupGenerationContext(executableWorkout: session, readiness: checkIn), modelContext: context
@@ -131,7 +131,7 @@ final class SessionAutoAdvanceTests: XCTestCase {
 
         let checkIn = goodCheckIn()
         try RecordReadinessCheckInUseCase.record(checkIn, for: session, modelContext: context)
-        _ = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: checkIn, modelContext: context)
+        _ = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: checkIn,  environment: TrainingEnvironmentTestSupport.full(context: context), modelContext: context)
 
         let sequence = try XCTUnwrap(GenerateWarmupSequenceUseCase.generate(
             context: WarmupGenerationContext(executableWorkout: session, readiness: checkIn), modelContext: context
@@ -157,13 +157,13 @@ final class SessionAutoAdvanceTests: XCTestCase {
 
         let checkIn = painfulCheckIn([.biceps])
         try RecordReadinessCheckInUseCase.record(checkIn, for: session, modelContext: context)
-        let proposal = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: checkIn, modelContext: context)
+        let proposal = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: checkIn,  environment: TrainingEnvironmentTestSupport.full(context: context), modelContext: context)
         XCTAssertFalse(proposal.isEmpty, "reported pain in a muscle group this session trains (biceps) must propose an adaptation")
         // Barbell Row also targets .biceps (secondary), so it proposes its
         // own item too — target the Barbell Curl one specifically rather
         // than assuming it's first.
         let item = try XCTUnwrap(proposal.items.first { $0.exercisePrescription?.exercise?.canonicalName == "Barbell Curl" })
-        try ReadinessAdaptationDecisionUseCase.accept(item, session: session, checkIn: checkIn, decidedAt: Date(), modelContext: context)
+        try ReadinessAdaptationDecisionUseCase.accept(item, session: session, checkIn: checkIn, decidedAt: Date(),  environment: TrainingEnvironmentTestSupport.full(context: context), modelContext: context)
 
         // Warm-up must be generated from the session AS IT NOW STANDS —
         // the already-adapted, final executable workout — never a
@@ -197,7 +197,7 @@ final class SessionAutoAdvanceTests: XCTestCase {
 
         let checkIn = painfulCheckIn([.biceps])
         try RecordReadinessCheckInUseCase.record(checkIn, for: session, modelContext: context)
-        let proposal = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: checkIn, modelContext: context)
+        let proposal = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: checkIn,  environment: TrainingEnvironmentTestSupport.full(context: context), modelContext: context)
         let item = try XCTUnwrap(proposal.items.first { $0.exercisePrescription?.exercise?.canonicalName == "Barbell Curl" })
         try ReadinessAdaptationDecisionUseCase.reject(item, checkIn: checkIn, decidedAt: Date(), modelContext: context)
 
@@ -239,7 +239,7 @@ final class SessionAutoAdvanceTests: XCTestCase {
             configuration: HypertrophyProgramConfiguration(dayCount: 5, split: .fullBody, phaseType: .basicHypertrophy),
             provenance: .constructed(reason: "test fixture"), context: context
         )
-        ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: definition, candidateExercises: [catalog.benchPress, catalog.backSquat])
+        try ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: definition, candidateExercises: [catalog.benchPress, catalog.backSquat], environment: TrainingEnvironmentTestSupport.full(context: context))
         let instance = ProgramInstance(ownerUserID: ownerUserID)
         context.insert(instance)
         instance.programDefinition = definition
@@ -262,7 +262,7 @@ final class SessionAutoAdvanceTests: XCTestCase {
         let definition = PowerliftingProgramGenerator.generate(
             configuration: entry.configuration, provenance: .constructed(reason: "test fixture"), context: context
         )
-        ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: definition, candidateExercises: [catalog.benchPress, catalog.backSquat, catalog.romanianDeadlift])
+        try ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: definition, candidateExercises: [catalog.benchPress, catalog.backSquat, catalog.romanianDeadlift], environment: TrainingEnvironmentTestSupport.full(context: context))
         let instance = ProgramInstance(ownerUserID: ownerUserID)
         context.insert(instance)
         instance.programDefinition = definition

@@ -167,7 +167,7 @@ final class EndToEndProgressionLoopTests: XCTestCase {
         XCTAssertNil(profile.profile(for: catalog.bulgarianSplitSquat), "no history yet — this is the precondition this test exercises")
 
         try ApplySubstitutionUseCase.substituteExerciseThisSessionOnly(
-            prescription: legPressMovement, slot: slot, with: catalog.bulgarianSplitSquat, modelContext: context
+            prescription: legPressMovement, slot: slot, with: catalog.bulgarianSplitSquat,  environment: TrainingEnvironmentTestSupport.full(context: context), modelContext: context
         )
         XCTAssertEqual(legPressMovement.exercise?.canonicalName, "Bulgarian Split Squat", "substitution succeeded despite no history — never blocked")
 

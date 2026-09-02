@@ -15,6 +15,13 @@ struct StrategicPhaseTransitionSheet: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @State private var viewModel = StrategicTransitionViewModel()
+    /// TE.1 closure: the recovery path for `needsTrainingEnvironment` —
+    /// presents the same Training Environment configuration screen
+    /// reachable from Today's header, so the user is never left at a
+    /// dead end here. After dismissing, they retap "Start Next Phase"
+    /// themselves (no auto-retry — mirrors this sheet's own existing
+    /// "one deliberate write per explicit tap" discipline).
+    @State private var showingTrainingEnvironmentSettings = false
 
     var body: some View {
         NavigationStack {
@@ -39,6 +46,9 @@ struct StrategicPhaseTransitionSheet: View {
         .task { viewModel.load(currentPhase: currentPhase, modelContext: modelContext) }
         .onDisappear {
             if viewModel.didSucceed { onTransitionSucceeded() }
+        }
+        .sheet(isPresented: $showingTrainingEnvironmentSettings) {
+            TrainingEnvironmentSettingsView()
         }
     }
 
@@ -92,6 +102,14 @@ struct StrategicPhaseTransitionSheet: View {
                 Text(errorMessage)
                     .font(Theme.label)
                     .foregroundStyle(.red)
+            }
+
+            if viewModel.needsTrainingEnvironment {
+                Button("Configure Training Environment") {
+                    showingTrainingEnvironmentSettings = true
+                }
+                .buttonStyle(.bordered)
+                .frame(maxWidth: .infinity)
             }
 
             Button {

@@ -22,9 +22,10 @@ enum SubstituteExerciseUseCase {
         prescription: ExercisePrescription,
         slot: ExerciseSlot,
         with exercise: Exercise,
-        reason: SubstitutionReason? = nil
+        reason: SubstitutionReason? = nil,
+        environment: TrainingEnvironment?
     ) throws -> ExercisePrescription {
-        guard SubstitutionValidator.isValid(candidate: exercise, for: slot) else {
+        guard SubstitutionValidator.isValid(candidate: exercise, for: slot, environment: environment) else {
             throw SubstitutionError.invalidForSlot
         }
         prescription.exercise = exercise
@@ -46,9 +47,10 @@ enum SubstituteExerciseUseCase {
         slot: ExerciseSlot,
         with exercise: Exercise,
         reason: SubstitutionReason? = nil,
+        environment: TrainingEnvironment?,
         context: ModelContext
     ) throws -> SlotSelectionOverride {
-        guard SubstitutionValidator.isValid(candidate: exercise, for: slot) else {
+        guard SubstitutionValidator.isValid(candidate: exercise, for: slot, environment: environment) else {
             throw SubstitutionError.invalidForSlot
         }
         if let existing = instance.slotSelectionOverride(for: slot) {

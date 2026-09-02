@@ -177,13 +177,13 @@ final class FunctionalFitnessSubstitutionAndBenchmarkTests: XCTestCase {
 
         let week0 = try FunctionalFitnessMaterializer.materializeWeek(
             definition: definition, instance: instance, weekIndex: 0, startDate: Date(timeIntervalSince1970: 0),
-            ownerUserID: instance.ownerUserID, candidateExercises: [barbellThruster, dumbbellThruster], exposureHistory: [], context: context
+            ownerUserID: instance.ownerUserID, candidateExercises: [barbellThruster, dumbbellThruster], exposureHistory: [],  environment: TrainingEnvironmentTestSupport.full(context: context), context: context
         )
         let historicalPrescription = try XCTUnwrap(week0.first?.orderedBlocks.first { $0.type == .functionalFitness }?.functionalFitnessPrescription)
         let historicalMovement = try XCTUnwrap(historicalPrescription.orderedMovements.first { $0.exercise?.id == barbellThruster.id })
         historicalPrescription.workoutBlock?.session?.status = .completed
 
-        try SubstituteExerciseUseCase.substituteGoingForward(instance: instance, slot: exerciseSlot, with: dumbbellThruster, context: context)
+        try SubstituteExerciseUseCase.substituteGoingForward(instance: instance, slot: exerciseSlot, with: dumbbellThruster,  environment: TrainingEnvironmentTestSupport.full(context: context), context: context)
 
         // §49.29: ProgramDefinition/template graph remains unchanged —
         // the slot's own template-level default (nil; concrete-exercise
@@ -198,7 +198,7 @@ final class FunctionalFitnessSubstitutionAndBenchmarkTests: XCTestCase {
         // The next materialized week picks up the substitution.
         let week1 = try FunctionalFitnessMaterializer.materializeWeek(
             definition: definition, instance: instance, weekIndex: 1, startDate: Date(timeIntervalSince1970: 0),
-            ownerUserID: instance.ownerUserID, candidateExercises: [barbellThruster, dumbbellThruster], exposureHistory: [], context: context
+            ownerUserID: instance.ownerUserID, candidateExercises: [barbellThruster, dumbbellThruster], exposureHistory: [],  environment: TrainingEnvironmentTestSupport.full(context: context), context: context
         )
         let nextPrescription = try XCTUnwrap(week1.first?.orderedBlocks.first { $0.type == .functionalFitness }?.functionalFitnessPrescription)
         XCTAssertTrue(nextPrescription.orderedMovements.contains { $0.exercise?.id == dumbbellThruster.id }, "future materialization must use the GOING FORWARD substitution")

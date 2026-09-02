@@ -45,3 +45,26 @@ enum EquipmentRequirement: String, Codable, CaseIterable {
     case rower
     case skiErg
 }
+
+/// Stage TE.1: the first real consumer of this vocabulary — user-facing
+/// text for the Training Environment settings screen and typed
+/// materialization-failure messaging. No second display-name taxonomy.
+extension EquipmentRequirement {
+    var displayName: String {
+        switch self {
+        case .barbell: return "Barbell"
+        case .rack: return "Squat Rack"
+        case .bench: return "Bench"
+        case .dumbbells: return "Dumbbells"
+        case .cableStation: return "Cable Station"
+        case .machine: return "Machine"
+        case .pullUpBar: return "Pull-up Bar"
+        case .kettlebell: return "Kettlebell"
+        case .medicineBall: return "Medicine Ball"
+        case .bodyweight: return "Bodyweight Only"
+        case .bike: return "Assault Bike"
+        case .rower: return "Rower"
+        case .skiErg: return "SkiErg"
+        }
+    }
+}

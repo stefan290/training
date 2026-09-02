@@ -14,6 +14,11 @@ struct PhaseDetailView: View {
     /// surface — presents the exact same sheet, since this view already
     /// lives inside Plan's own `NavigationStack`, not a different tab.
     @State private var showingStrategicTransition = false
+    /// TE.1 closure: recovery path for `viewModel.needsTrainingEnvironment`
+    /// — see `StrategicPhaseTransitionSheet`'s identical addition for the
+    /// same rationale (no auto-retry; the user retaps the action button
+    /// themselves after configuring).
+    @State private var showingTrainingEnvironmentSettings = false
 
     var body: some View {
         ScrollView {
@@ -38,6 +43,9 @@ struct PhaseDetailView: View {
             StrategicPhaseTransitionSheet(currentPhase: phase) {
                 viewModel.load(phase: phase, modelContext: modelContext)
             }
+        }
+        .sheet(isPresented: $showingTrainingEnvironmentSettings) {
+            TrainingEnvironmentSettingsView()
         }
     }
 
@@ -154,6 +162,14 @@ struct PhaseDetailView: View {
                 Text("Week \(nextWeekNumber - 1) complete.")
                     .font(Theme.label)
                     .foregroundStyle(Theme.textSecondary)
+                if viewModel.needsTrainingEnvironment {
+                    Button("Configure Training Environment") {
+                        showingTrainingEnvironmentSettings = true
+                    }
+                    .buttonStyle(.bordered)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 4)
+                }
                 Button("Start Week \(nextWeekNumber)") {
                     if viewModel.advanceTacticalWeek(modelContext: modelContext) {
                         viewModel.load(phase: phase, modelContext: modelContext)
@@ -180,6 +196,14 @@ struct PhaseDetailView: View {
                 Text("Start \(label) when you're ready to move on from this mesocycle. You'll enter fresh starting weights — nothing carries over automatically.")
                     .font(Theme.label)
                     .foregroundStyle(Theme.textSecondary)
+                if viewModel.needsTrainingEnvironment {
+                    Button("Configure Training Environment") {
+                        showingTrainingEnvironmentSettings = true
+                    }
+                    .buttonStyle(.bordered)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 4)
+                }
                 Button("Start \(label)") {
                     if viewModel.startNextHypertrophyMesocycle(modelContext: modelContext) {
                         viewModel.load(phase: phase, modelContext: modelContext)

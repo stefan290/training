@@ -156,11 +156,13 @@ struct ExerciseCatalog {
         )
         let easyRun = make(
             "Easy Run (Zone 2)", .conditioning, "none", "locomotion",
-            movementFunctions: [.monostructural, .locomotion], functionalModality: .metabolicConditioning
+            movementFunctions: [.monostructural, .locomotion], functionalModality: .metabolicConditioning,
+            requiredEquipment: []
         )
         let trackIntervalRun = make(
             "Track Interval Run", .conditioning, "none", "locomotion",
-            movementFunctions: [.monostructural, .locomotion], functionalModality: .metabolicConditioning
+            movementFunctions: [.monostructural, .locomotion], functionalModality: .metabolicConditioning,
+            requiredEquipment: []
         )
         let wallBall = make(
             "Wall Ball", .functionalFitness, "medicineBall", "squatToPress",

@@ -77,7 +77,7 @@ final class ReadinessAdaptationTests: XCTestCase {
         let (session, _, _, _) = makeLowerA()
         let originalSetCounts = session.orderedBlocks.flatMap(\.orderedPrescriptions).map { $0.orderedSetPrescriptions.count }
 
-        let proposal = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: goodCheckIn(), modelContext: context)
+        let proposal = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: goodCheckIn(),  environment: TrainingEnvironmentTestSupport.full(context: context), modelContext: context)
 
         XCTAssertTrue(proposal.isEmpty, "an all-good check-in must produce Level 0 — no recommendation screen at all")
         let newSetCounts = session.orderedBlocks.flatMap(\.orderedPrescriptions).map { $0.orderedSetPrescriptions.count }
@@ -114,7 +114,7 @@ final class ReadinessAdaptationTests: XCTestCase {
         // default — pain reported ONLY in an area unique to the squat
         // pattern (quadriceps) must never touch the hip hinge exercise.
         let checkIn = ReadinessCheckIn(recordedAt: Date(), reportedPain: [.quadriceps])
-        let proposal = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: checkIn, modelContext: context)
+        let proposal = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: checkIn,  environment: TrainingEnvironmentTestSupport.full(context: context), modelContext: context)
 
         let squat = try XCTUnwrap(session.orderedBlocks.flatMap(\.orderedPrescriptions).first { $0.exercise?.canonicalName == catalog.backSquat.canonicalName })
         let hipHinge = try XCTUnwrap(session.orderedBlocks.flatMap(\.orderedPrescriptions).first { $0.exercise?.canonicalName == catalog.romanianDeadlift.canonicalName })
@@ -147,12 +147,12 @@ final class ReadinessAdaptationTests: XCTestCase {
         let checkIn = ReadinessCheckIn(recordedAt: Date(), reportedPain: [.shoulders])
         context.insert(checkIn)
 
-        let proposal = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: checkIn, modelContext: context)
+        let proposal = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: checkIn,  environment: TrainingEnvironmentTestSupport.full(context: context), modelContext: context)
         let item = try XCTUnwrap(proposal.items.first)
         XCTAssertEqual(item.actionKind, .exerciseSubstituted)
         XCTAssertEqual(item.proposedExercise?.canonicalName, "Test Leg Press", "must never propose a candidate that also hits the painful area")
 
-        let decision = try ReadinessAdaptationDecisionUseCase.accept(item, session: session, checkIn: checkIn, decidedAt: Date(), modelContext: context)
+        let decision = try ReadinessAdaptationDecisionUseCase.accept(item, session: session, checkIn: checkIn, decidedAt: Date(),  environment: TrainingEnvironmentTestSupport.full(context: context), modelContext: context)
 
         XCTAssertEqual(prescription.exercise?.canonicalName, "Test Leg Press")
         XCTAssertTrue(prescription.substitutionUsed)
@@ -173,7 +173,7 @@ final class ReadinessAdaptationTests: XCTestCase {
         _ = multiAlternativeSlot
 
         let checkIn = ReadinessCheckIn(recordedAt: Date(), reportedPain: [.quadriceps])
-        let proposal = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: checkIn, modelContext: context)
+        let proposal = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: checkIn,  environment: TrainingEnvironmentTestSupport.full(context: context), modelContext: context)
 
         let squatPrescription = try XCTUnwrap(session.orderedBlocks.flatMap(\.orderedPrescriptions).first { $0.exercise?.canonicalName == catalog.backSquat.canonicalName })
         let item = try XCTUnwrap(proposal.items.first { $0.exercisePrescription?.id == squatPrescription.id })
@@ -200,7 +200,7 @@ final class ReadinessAdaptationTests: XCTestCase {
         block.addPrescription(prescription)
 
         let checkIn = ReadinessCheckIn(recordedAt: Date(), reportedPain: [.shoulders])
-        let proposal = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: checkIn, modelContext: context)
+        let proposal = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: checkIn,  environment: TrainingEnvironmentTestSupport.full(context: context), modelContext: context)
 
         let item = try XCTUnwrap(proposal.items.first)
         XCTAssertEqual(item.actionKind, .blockRemoved, "a single-exercise block has no sibling to protect — removal is the correct, most conservative option")
@@ -215,7 +215,7 @@ final class ReadinessAdaptationTests: XCTestCase {
         let originalCount = squat.orderedSetPrescriptions.count
         let checkIn = ReadinessCheckIn(recordedAt: Date(), energy: .poor)
 
-        let proposal = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: checkIn, modelContext: context)
+        let proposal = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: checkIn,  environment: TrainingEnvironmentTestSupport.full(context: context), modelContext: context)
         let item = try XCTUnwrap(proposal.items.first { $0.exercisePrescription?.id == squat.id && $0.actionKind == .setCountReduced })
 
         // G: reject.
@@ -225,9 +225,9 @@ final class ReadinessAdaptationTests: XCTestCase {
         XCTAssertTrue(squat.orderedSetPrescriptions.allSatisfy { !$0.isAdaptedAway })
 
         // H: a fresh evaluation + accept.
-        let secondProposal = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: checkIn, modelContext: context)
+        let secondProposal = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: checkIn,  environment: TrainingEnvironmentTestSupport.full(context: context), modelContext: context)
         let secondItem = try XCTUnwrap(secondProposal.items.first { $0.exercisePrescription?.id == squat.id })
-        let acceptance = try ReadinessAdaptationDecisionUseCase.accept(secondItem, session: session, checkIn: checkIn, decidedAt: Date(), modelContext: context)
+        let acceptance = try ReadinessAdaptationDecisionUseCase.accept(secondItem, session: session, checkIn: checkIn, decidedAt: Date(),  environment: TrainingEnvironmentTestSupport.full(context: context), modelContext: context)
 
         XCTAssertEqual(acceptance.userResponse, .accepted)
         XCTAssertEqual(squat.executableSetPrescriptions.count, originalCount - 1, "accepting must reduce today's executable count by exactly 1")
@@ -245,9 +245,9 @@ final class ReadinessAdaptationTests: XCTestCase {
         let checkIn = ReadinessCheckIn(recordedAt: Date(), energy: .poor)
         try RecordReadinessCheckInUseCase.record(checkIn, for: session, modelContext: context)
 
-        let proposal = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: checkIn, modelContext: context)
+        let proposal = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: checkIn,  environment: TrainingEnvironmentTestSupport.full(context: context), modelContext: context)
         let item = try XCTUnwrap(proposal.items.first { $0.exercisePrescription?.id == squat.id })
-        try ReadinessAdaptationDecisionUseCase.accept(item, session: session, checkIn: checkIn, decidedAt: Date(), modelContext: context)
+        try ReadinessAdaptationDecisionUseCase.accept(item, session: session, checkIn: checkIn, decidedAt: Date(),  environment: TrainingEnvironmentTestSupport.full(context: context), modelContext: context)
 
         let fetchContext = freshContext()
         let reloadedSession = try XCTUnwrap(fetchContext.fetch(FetchDescriptor<Session>(predicate: #Predicate { $0.id == sessionID })).first)
@@ -276,9 +276,9 @@ final class ReadinessAdaptationTests: XCTestCase {
         let checkIn = ReadinessCheckIn(recordedAt: Date(), energy: .poor)
         try RecordReadinessCheckInUseCase.record(checkIn, for: session, modelContext: context)
 
-        let proposal = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: checkIn, modelContext: context)
+        let proposal = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: checkIn,  environment: TrainingEnvironmentTestSupport.full(context: context), modelContext: context)
         let item = try XCTUnwrap(proposal.items.first { $0.exercisePrescription?.id == squat.id })
-        try ReadinessAdaptationDecisionUseCase.accept(item, session: session, checkIn: checkIn, decidedAt: Date(), modelContext: context)
+        try ReadinessAdaptationDecisionUseCase.accept(item, session: session, checkIn: checkIn, decidedAt: Date(),  environment: TrainingEnvironmentTestSupport.full(context: context), modelContext: context)
 
         for setPrescription in squat.executableSetPrescriptions {
             try logSet(for: squat, setPrescription: setPrescription, reps: setPrescription.repRangeHigh ?? 0, actualRir: setPrescription.targetRir)
@@ -416,9 +416,9 @@ final class ReadinessAdaptationTests: XCTestCase {
         session.completedAt = Date()
 
         let checkIn = ReadinessCheckIn(recordedAt: Date(), energy: .poor)
-        let proposal = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: checkIn, modelContext: context)
+        let proposal = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: checkIn,  environment: TrainingEnvironmentTestSupport.full(context: context), modelContext: context)
         let item = try XCTUnwrap(proposal.items.first { $0.exercisePrescription?.id == squat.id })
-        try ReadinessAdaptationDecisionUseCase.accept(item, session: session, checkIn: checkIn, decidedAt: Date(), modelContext: context)
+        try ReadinessAdaptationDecisionUseCase.accept(item, session: session, checkIn: checkIn, decidedAt: Date(),  environment: TrainingEnvironmentTestSupport.full(context: context), modelContext: context)
 
         XCTAssertEqual(squat.orderedSetPrescriptions.filter(\.isAdaptedAway).count, 1)
         let resolvedCount = AutoregulationRatingResolver.previousWeekSetCount(for: template, in: programInstance)
@@ -433,7 +433,7 @@ final class ReadinessAdaptationTests: XCTestCase {
         let squat = try XCTUnwrap(session.orderedBlocks.flatMap(\.orderedPrescriptions).first { $0.exercise?.canonicalName == catalog.backSquat.canonicalName })
         guard let slot = squat.sourceExerciseSlot else { return }
 
-        try SubstituteExerciseUseCase.substituteThisSessionOnly(prescription: squat, slot: slot, with: catalog.frontSquat, reason: .readinessAdaptation)
+        try SubstituteExerciseUseCase.substituteThisSessionOnly(prescription: squat, slot: slot, with: catalog.frontSquat, reason: .readinessAdaptation, environment: TrainingEnvironmentTestSupport.full(context: context))
 
         XCTAssertEqual(multiAlternativeSlot.resolvedExercise?.canonicalName, originalResolvedExercise, "the template's own default is never rewritten by a this-session-only change")
     }
@@ -456,9 +456,9 @@ final class ReadinessAdaptationTests: XCTestCase {
         block.addPrescription(prescription)
 
         let checkIn = ReadinessCheckIn(recordedAt: Date(), reportedPain: [.hamstrings])
-        let proposal = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: checkIn, modelContext: context)
+        let proposal = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: checkIn,  environment: TrainingEnvironmentTestSupport.full(context: context), modelContext: context)
         let item = try XCTUnwrap(proposal.items.first { $0.actionKind == .blockRemoved })
-        try ReadinessAdaptationDecisionUseCase.accept(item, session: session, checkIn: checkIn, decidedAt: Date(), modelContext: context)
+        try ReadinessAdaptationDecisionUseCase.accept(item, session: session, checkIn: checkIn, decidedAt: Date(),  environment: TrainingEnvironmentTestSupport.full(context: context), modelContext: context)
 
         XCTAssertEqual(block.status, .skipped)
         XCTAssertEqual(session.status, .scheduled, "removing one block is never itself a session-level status change")
@@ -471,11 +471,11 @@ final class ReadinessAdaptationTests: XCTestCase {
         let phaseBefore = programInstance.phase
         let checkIn = ReadinessCheckIn(recordedAt: Date(), sleep: .poor, energy: .poor, overallRecovery: .poor)
 
-        let proposal = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: checkIn, modelContext: context)
+        let proposal = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: checkIn,  environment: TrainingEnvironmentTestSupport.full(context: context), modelContext: context)
         let item = try XCTUnwrap(proposal.items.first { $0.actionKind == .postponeRecommended })
         XCTAssertEqual(item.triggeringSignals.count, 3)
 
-        try ReadinessAdaptationDecisionUseCase.accept(item, session: session, checkIn: checkIn, decidedAt: Date(), modelContext: context)
+        try ReadinessAdaptationDecisionUseCase.accept(item, session: session, checkIn: checkIn, decidedAt: Date(),  environment: TrainingEnvironmentTestSupport.full(context: context), modelContext: context)
 
         XCTAssertEqual(session.status, .skipped)
         XCTAssertTrue(programInstance.phase === phaseBefore, "accepting a postpone recommendation must never itself touch the strategic phase/plan")
@@ -484,7 +484,7 @@ final class ReadinessAdaptationTests: XCTestCase {
     func testS2_ExactlyOnePoorSignalProposesLevel2NotLevel6() throws {
         let (session, _, _, catalog) = makeLowerA()
         let checkIn = ReadinessCheckIn(recordedAt: Date(), energy: .poor)
-        let proposal = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: checkIn, modelContext: context)
+        let proposal = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: checkIn,  environment: TrainingEnvironmentTestSupport.full(context: context), modelContext: context)
 
         XCTAssertFalse(proposal.items.contains { $0.actionKind == .postponeRecommended }, "a single poor signal must not escalate to a postpone recommendation")
         XCTAssertTrue(proposal.items.contains { $0.actionKind == .setCountReduced && $0.exercisePrescription?.exercise?.canonicalName == catalog.backSquat.canonicalName })
@@ -518,7 +518,7 @@ final class ReadinessAdaptationTests: XCTestCase {
         let squat = try XCTUnwrap(session.orderedBlocks.flatMap(\.orderedPrescriptions).first { $0.exercise?.canonicalName == catalog.backSquat.canonicalName })
         let slot = try XCTUnwrap(squat.sourceExerciseSlot)
 
-        try SubstituteExerciseUseCase.substituteThisSessionOnly(prescription: squat, slot: slot, with: catalog.frontSquat, reason: .userPreference)
+        try SubstituteExerciseUseCase.substituteThisSessionOnly(prescription: squat, slot: slot, with: catalog.frontSquat, reason: .userPreference, environment: TrainingEnvironmentTestSupport.full(context: context))
 
         XCTAssertEqual(squat.substitutionReason, .userPreference, "the mechanism itself is never hardwired to readiness — a future environment-provenance caller can use it exactly the same way")
     }
@@ -551,10 +551,10 @@ final class ReadinessAdaptationTests: XCTestCase {
 
         // Pain -> substitution, same mechanism.
         let painCheckIn = ReadinessCheckIn(recordedAt: Date(), reportedPain: [.biceps])
-        let painProposal = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: painCheckIn, modelContext: context)
+        let painProposal = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: painCheckIn,  environment: TrainingEnvironmentTestSupport.full(context: context), modelContext: context)
         let item = try XCTUnwrap(painProposal.items.first)
         XCTAssertEqual(item.actionKind, .exerciseSubstituted)
-        try ReadinessAdaptationDecisionUseCase.accept(item, session: session, checkIn: painCheckIn, decidedAt: Date(), modelContext: context)
+        try ReadinessAdaptationDecisionUseCase.accept(item, session: session, checkIn: painCheckIn, decidedAt: Date(),  environment: TrainingEnvironmentTestSupport.full(context: context), modelContext: context)
         XCTAssertEqual(movement.exercise?.canonicalName, "Test Ring Row")
         XCTAssertEqual(movement.substitutionReason, .readinessAdaptation)
 
@@ -562,7 +562,59 @@ final class ReadinessAdaptationTests: XCTestCase {
         // Stage 8B (audit finding) — must produce no proposal, never an
         // invented one.
         let stiffnessCheckIn = ReadinessCheckIn(recordedAt: Date(), reportedStiffness: [.back])
-        let stiffnessProposal = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: stiffnessCheckIn, modelContext: context)
+        let stiffnessProposal = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: stiffnessCheckIn,  environment: TrainingEnvironmentTestSupport.full(context: context), modelContext: context)
         XCTAssertTrue(stiffnessProposal.isEmpty, "Functional Fitness has no implemented Level 2 mechanism in Stage 8B — must not silently invent one")
+    }
+
+    // MARK: TE.1 closure — an anatomically valid substitute is rejected when the environment can't support it, proven end-to-end through the real readiness path
+
+    /// Mirrors `testF_SubstitutionUsesExistingValidatorAndPreservesOriginalExercise`
+    /// exactly, except the one candidate that would otherwise be proposed
+    /// (`compatibleAlternative`) requires equipment (`.machine`) absent from
+    /// a deliberately restrictive environment. Proves the environment reaches
+    /// `EvaluateReadinessAdaptationUseCase` end-to-end — not merely that
+    /// `TrainingEnvironmentCompatibilityRule`/`SubstitutionValidator` reject it
+    /// in isolation, but that the real readiness proposal falls back to
+    /// `.blockRemoved` rather than proposing an unusable substitute.
+    func testTE1_PainWithAnAnatomicallyValidButEnvironmentIncompatibleAlternativeFallsBackToBlockRemoval() throws {
+        let painfulExercise = Exercise(canonicalName: "Test Overhead Press", modality: .strength, equipment: "barbell", movementPattern: "verticalPush", primaryTargets: [.shoulders])
+        let compatibleAlternative = Exercise(canonicalName: "Test Leg Press", modality: .strength, equipment: "machine", movementPattern: "squat", primaryTargets: [.quadriceps], requiredEquipment: [.machine])
+        context.insert(painfulExercise)
+        context.insert(compatibleAlternative)
+
+        let slot = ExerciseSlot(name: "Test Slot", allowedExercises: [painfulExercise, compatibleAlternative], resolvedExercise: painfulExercise)
+        context.insert(slot)
+
+        let session = Session(name: "Test Session", modality: .strength)
+        context.insert(session)
+        let block = WorkoutBlock(type: .strength)
+        context.insert(block)
+        session.addBlock(block)
+        let prescription = ExercisePrescription(exercise: painfulExercise)
+        prescription.sourceExerciseSlot = slot
+        context.insert(prescription)
+        block.addPrescription(prescription)
+
+        let checkIn = ReadinessCheckIn(recordedAt: Date(), reportedPain: [.shoulders])
+        context.insert(checkIn)
+
+        let noMachineEnvironment = TrainingEnvironment(name: "No Machines", availableEquipment: [.barbell, .rack, .bench, .dumbbells])
+        context.insert(noMachineEnvironment)
+
+        let restrictedProposal = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: checkIn, environment: noMachineEnvironment, modelContext: context)
+        let restrictedItem = try XCTUnwrap(restrictedProposal.items.first)
+        XCTAssertEqual(restrictedItem.actionKind, .blockRemoved, "the only anatomically valid alternative requires equipment this environment doesn't have -> must fall back to removal, never propose an unusable substitute")
+        XCTAssertNil(restrictedItem.proposedExercise)
+
+        // Control: the exact same painful exercise/slot/check-in, but a
+        // compatible environment — proves the fixture itself is capable of
+        // proposing the substitution, so `.blockRemoved` above is caused by
+        // the environment, not by some other property of this fixture.
+        let fullyEquippedEnvironment = TrainingEnvironment(name: "Full Gym Control", availableEquipment: EquipmentRequirement.allCases)
+        context.insert(fullyEquippedEnvironment)
+        let compatibleProposal = EvaluateReadinessAdaptationUseCase.evaluate(session: session, checkIn: checkIn, environment: fullyEquippedEnvironment, modelContext: context)
+        let compatibleItem = try XCTUnwrap(compatibleProposal.items.first)
+        XCTAssertEqual(compatibleItem.actionKind, .exerciseSubstituted)
+        XCTAssertEqual(compatibleItem.proposedExercise?.canonicalName, "Test Leg Press")
     }
 }

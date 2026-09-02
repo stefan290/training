@@ -44,6 +44,22 @@ final class StartNextHypertrophyMesocycleUseCaseTests: XCTestCase {
     override func setUpWithError() throws {
         container = PersistenceController.makeInMemoryContainer()
         context = container.mainContext
+        // Stage TE.1: `PhaseDetailViewModel`/`AdvanceTacticalWeekUseCase`
+        // resolve `TrainingEnvironment` from the store's own `User`
+        // (single-profile app, same "first User" convention already used
+        // throughout this codebase) — a real, fully-equipped default so
+        // every pre-existing test in this file keeps its exact prior
+        // behavior.
+        let user = User(displayName: "TE.1 Fixture User")
+        context.insert(user)
+        let profile = UserProfile()
+        context.insert(profile)
+        user.attachProfile(profile)
+        let fullGym = TrainingEnvironment(name: "Test Full Gym", availableEquipment: EquipmentRequirement.allCases)
+        context.insert(fullGym)
+        profile.trainingEnvironments = [fullGym]
+        profile.defaultTrainingEnvironment = fullGym
+        try? context.save()
     }
 
     private func freshContext() -> ModelContext { ModelContext(container) }
@@ -94,7 +110,7 @@ final class StartNextHypertrophyMesocycleUseCaseTests: XCTestCase {
         mix.addComponent(component)
         component.programInstance = instance
 
-        ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: definition, candidateExercises: try context.fetch(FetchDescriptor<Exercise>()))
+        try ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: definition, candidateExercises: try context.fetch(FetchDescriptor<Exercise>()), environment: TrainingEnvironmentTestSupport.full(context: context))
 
         let required = RequiredSourceCalibrationsUseCase.stillRequired(for: definition, instance: instance)
         XCTAssertFalse(required.isEmpty, "precondition: a fresh instance genuinely requires calibration")
@@ -107,7 +123,7 @@ final class StartNextHypertrophyMesocycleUseCaseTests: XCTestCase {
         _ = try StartPhaseUseCase.materializeOnceCalibrationComplete(
             component: component, instance: instance, phase: phase, mix: mix, asOf: startDate,
             ownerUserID: ownerUserID, performanceProfile: nil, availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment), context: context
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)), context: context
         )
         XCTAssertFalse(instance.sessions.isEmpty, "precondition: Mesocycle 1 Week 1 really materialized")
 
@@ -124,7 +140,7 @@ final class StartNextHypertrophyMesocycleUseCaseTests: XCTestCase {
         let transition = try StartNextHypertrophyMesocycleUseCase.start(
             previousPhase: mesocycle1.phase, previousInstance: mesocycle1.instance, asOf: startDate,
             ownerUserID: ownerUserID, availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>())),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>()), trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             context: context
         )
         XCTAssertTrue(transition.awaitingCalibration, "precondition: Mesocycle 2 requires fresh calibration")
@@ -138,7 +154,7 @@ final class StartNextHypertrophyMesocycleUseCaseTests: XCTestCase {
             component: try XCTUnwrap(transition.instance.trainingMixComponents.first),
             instance: transition.instance, phase: transition.phase, mix: try XCTUnwrap(transition.instance.trainingMixComponents.first?.trainingMix),
             asOf: startDate, ownerUserID: ownerUserID, performanceProfile: nil, availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>())),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>()), trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             context: context
         )
         XCTAssertFalse(transition.instance.sessions.isEmpty, "precondition: Mesocycle 2 Week 1 really materialized")
@@ -171,7 +187,7 @@ final class StartNextHypertrophyMesocycleUseCaseTests: XCTestCase {
             let outcome = try AdvanceTacticalWeekUseCase.advance(
                 phase: phase, asOf: rollDate(afterWeekIndex: weekIndex), ownerUserID: ownerUserID, performanceProfile: nil,
                 availability: availability(),
-                materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>())),
+                materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>()), trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
                 context: context
             )
             guard outcome == .advanced else { break }
@@ -188,7 +204,7 @@ final class StartNextHypertrophyMesocycleUseCaseTests: XCTestCase {
         let result = try StartNextHypertrophyMesocycleUseCase.start(
             previousPhase: fixture.phase, previousInstance: fixture.instance, asOf: startDate,
             ownerUserID: ownerUserID, availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>())),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>()), trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             context: context
         )
 
@@ -211,7 +227,7 @@ final class StartNextHypertrophyMesocycleUseCaseTests: XCTestCase {
         let result = try StartNextHypertrophyMesocycleUseCase.start(
             previousPhase: fixture.phase, previousInstance: fixture.instance, asOf: startDate,
             ownerUserID: ownerUserID, availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>())),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>()), trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             context: context
         )
 
@@ -235,7 +251,7 @@ final class StartNextHypertrophyMesocycleUseCaseTests: XCTestCase {
         let result = try StartNextHypertrophyMesocycleUseCase.start(
             previousPhase: fixture.phase, previousInstance: fixture.instance, asOf: startDate,
             ownerUserID: ownerUserID, availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>())),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>()), trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             context: context
         )
         let nextDefinition = try XCTUnwrap(result.instance.programDefinition)
@@ -247,7 +263,7 @@ final class StartNextHypertrophyMesocycleUseCaseTests: XCTestCase {
         // ordinary, already-existing GOING FORWARD substitution mechanism
         // (Stage 4C), unmodified by carry-forward, still wins.
         try SubstituteExerciseUseCase.substituteGoingForward(
-            instance: result.instance, slot: horizontalPushSlot, with: fixture.catalog.inclineDumbbellPress, context: context
+            instance: result.instance, slot: horizontalPushSlot, with: fixture.catalog.inclineDumbbellPress,  environment: TrainingEnvironmentTestSupport.full(context: context), context: context
         )
         XCTAssertEqual(
             SubstituteExerciseUseCase.resolvedExercise(for: horizontalPushSlot, in: result.instance)?.canonicalName,
@@ -283,7 +299,7 @@ final class StartNextHypertrophyMesocycleUseCaseTests: XCTestCase {
         let result = try StartNextHypertrophyMesocycleUseCase.start(
             previousPhase: fixture.phase, previousInstance: fixture.instance, asOf: startDate,
             ownerUserID: ownerUserID, availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>())),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>()), trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             context: context
         )
 
@@ -361,7 +377,7 @@ final class StartNextHypertrophyMesocycleUseCaseTests: XCTestCase {
 
     func testTransitionIsIdempotentOnlyOneMesocycleTwoInstanceEverCreated() throws {
         let fixture = try makeCalibratedMesocycle1()
-        let materializationContext = TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>()))
+        let materializationContext = TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>()), trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context))
 
         let first = try StartNextHypertrophyMesocycleUseCase.start(
             previousPhase: fixture.phase, previousInstance: fixture.instance, asOf: startDate,
@@ -388,7 +404,7 @@ final class StartNextHypertrophyMesocycleUseCaseTests: XCTestCase {
         let result = try StartNextHypertrophyMesocycleUseCase.start(
             previousPhase: fixture.phase, previousInstance: fixture.instance, asOf: startDate,
             ownerUserID: ownerUserID, availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>())),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>()), trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             context: context
         )
         for requirement in RequiredSourceCalibrationsUseCase.stillRequired(for: try XCTUnwrap(result.instance.programDefinition), instance: result.instance) {
@@ -415,7 +431,7 @@ final class StartNextHypertrophyMesocycleUseCaseTests: XCTestCase {
         let transition = try StartNextHypertrophyMesocycleUseCase.start(
             previousPhase: fixture.phase, previousInstance: fixture.instance, asOf: startDate,
             ownerUserID: ownerUserID, availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>())),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>()), trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             context: context
         )
         XCTAssertTrue(transition.awaitingCalibration)
@@ -433,7 +449,7 @@ final class StartNextHypertrophyMesocycleUseCaseTests: XCTestCase {
             component: try XCTUnwrap(transition.instance.trainingMixComponents.first),
             instance: transition.instance, phase: transition.phase, mix: try XCTUnwrap(transition.instance.trainingMixComponents.first?.trainingMix),
             asOf: startDate, ownerUserID: ownerUserID, performanceProfile: nil, availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>())),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>()), trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             context: context
         )
 
@@ -451,7 +467,7 @@ final class StartNextHypertrophyMesocycleUseCaseTests: XCTestCase {
         let result = try StartNextHypertrophyMesocycleUseCase.start(
             previousPhase: fixture.phase, previousInstance: fixture.instance, asOf: startDate,
             ownerUserID: ownerUserID, availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>())),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>()), trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             context: context
         )
 
@@ -471,7 +487,7 @@ final class StartNextHypertrophyMesocycleUseCaseTests: XCTestCase {
         let result = try StartNextHypertrophyMesocycleUseCase.start(
             previousPhase: fixture.phase, previousInstance: fixture.instance, asOf: startDate,
             ownerUserID: ownerUserID, availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>())),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>()), trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             context: context
         )
         let nextDefinition = try XCTUnwrap(result.instance.programDefinition)
@@ -492,7 +508,7 @@ final class StartNextHypertrophyMesocycleUseCaseTests: XCTestCase {
         let result = try StartNextHypertrophyMesocycleUseCase.start(
             previousPhase: fixture.phase, previousInstance: fixture.instance, asOf: startDate,
             ownerUserID: ownerUserID, availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>())),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>()), trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             context: context
         )
 
@@ -514,7 +530,7 @@ final class StartNextHypertrophyMesocycleUseCaseTests: XCTestCase {
         let result = try StartNextHypertrophyMesocycleUseCase.start(
             previousPhase: fixture.phase, previousInstance: fixture.instance, asOf: startDate,
             ownerUserID: ownerUserID, availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>())),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>()), trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             context: context
         )
         let nextDefinition = try XCTUnwrap(result.instance.programDefinition)
@@ -532,7 +548,7 @@ final class StartNextHypertrophyMesocycleUseCaseTests: XCTestCase {
 
     func testMesocycle2ToMesocycle3TransitionIsIdempotent() throws {
         let fixture = try makeCalibratedMesocycle2()
-        let materializationContext = TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>()))
+        let materializationContext = TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>()), trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context))
 
         let first = try StartNextHypertrophyMesocycleUseCase.start(
             previousPhase: fixture.phase, previousInstance: fixture.instance, asOf: startDate,
@@ -556,7 +572,7 @@ final class StartNextHypertrophyMesocycleUseCaseTests: XCTestCase {
         let result = try StartNextHypertrophyMesocycleUseCase.start(
             previousPhase: fixture.phase, previousInstance: fixture.instance, asOf: startDate,
             ownerUserID: ownerUserID, availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>())),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>()), trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             context: context
         )
         for requirement in RequiredSourceCalibrationsUseCase.stillRequired(for: try XCTUnwrap(result.instance.programDefinition), instance: result.instance) {
@@ -585,7 +601,7 @@ final class StartNextHypertrophyMesocycleUseCaseTests: XCTestCase {
         let transition = try StartNextHypertrophyMesocycleUseCase.start(
             previousPhase: fixture.phase, previousInstance: fixture.instance, asOf: startDate,
             ownerUserID: ownerUserID, availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>())),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>()), trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             context: context
         )
         XCTAssertTrue(transition.awaitingCalibration)
@@ -604,7 +620,7 @@ final class StartNextHypertrophyMesocycleUseCaseTests: XCTestCase {
             component: try XCTUnwrap(transition.instance.trainingMixComponents.first),
             instance: transition.instance, phase: transition.phase, mix: try XCTUnwrap(transition.instance.trainingMixComponents.first?.trainingMix),
             asOf: startDate, ownerUserID: ownerUserID, performanceProfile: nil, availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>())),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>()), trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             context: context
         )
 

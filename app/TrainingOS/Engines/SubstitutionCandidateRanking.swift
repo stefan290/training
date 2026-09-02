@@ -25,10 +25,11 @@ enum SubstitutionCandidateRanking {
         excluding currentExercise: Exercise,
         allExercises: [Exercise],
         curatedRelationships: [ExerciseRelationship],
-        profileLookup: @escaping (Exercise) -> ExercisePerformanceProfile?
+        profileLookup: @escaping (Exercise) -> ExercisePerformanceProfile?,
+        environment: TrainingEnvironment?
     ) -> [Candidate] {
         let eligible = allExercises.filter {
-            $0.id != currentExercise.id && SubstitutionValidator.isValid(candidate: $0, for: slot)
+            $0.id != currentExercise.id && SubstitutionValidator.isValid(candidate: $0, for: slot, environment: environment)
         }
 
         let tierRank: (ProgressionReasonCode) -> Int = { code in

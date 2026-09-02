@@ -34,7 +34,7 @@ final class ActivityPerformanceProfileIntegrationTests: XCTestCase {
         let instanceA = ProgramInstance(ownerUserID: user.id)
         context.insert(instanceA)
         instanceA.programDefinition = programA
-        _ = SteadyStateMaterializer.materializeAllWeeks(definition: programA, instance: instanceA, startDate: Date(timeIntervalSince1970: 0), ownerUserID: user.id, context: context)
+        _ = try SteadyStateMaterializer.materializeAllWeeks(definition: programA, instance: instanceA, startDate: Date(timeIntervalSince1970: 0), ownerUserID: user.id,  environment: TrainingEnvironmentTestSupport.full(context: context), context: context)
 
         let cyclingProfile = PerformanceProfileStore.activityProfile(for: .cycling, in: performanceProfile, context: context)
         let firstResult = SteadyStateResult(actualDurationSeconds: 2700, actualDistanceMeters: 20000)
@@ -52,7 +52,7 @@ final class ActivityPerformanceProfileIntegrationTests: XCTestCase {
         let instanceB = ProgramInstance(ownerUserID: user.id)
         context.insert(instanceB)
         instanceB.programDefinition = programB
-        _ = SteadyStateMaterializer.materializeAllWeeks(definition: programB, instance: instanceB, startDate: Date(timeIntervalSince1970: 0), ownerUserID: user.id, context: context)
+        _ = try SteadyStateMaterializer.materializeAllWeeks(definition: programB, instance: instanceB, startDate: Date(timeIntervalSince1970: 0), ownerUserID: user.id,  environment: TrainingEnvironmentTestSupport.full(context: context), context: context)
 
         let cyclingProfileAfter = PerformanceProfileStore.activityProfile(for: .cycling, in: performanceProfile, context: context)
         XCTAssertEqual(cyclingProfileAfter.id, cyclingProfile.id, "the same permanent profile is reused, never recreated per program")

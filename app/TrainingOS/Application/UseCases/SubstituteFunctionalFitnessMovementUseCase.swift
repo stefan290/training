@@ -19,12 +19,13 @@ enum SubstituteFunctionalFitnessMovementUseCase {
     static func substituteThisSessionOnly(
         movement: FunctionalFitnessMovement,
         with exercise: Exercise,
-        reason: SubstitutionReason? = nil
+        reason: SubstitutionReason? = nil,
+        environment: TrainingEnvironment?
     ) throws -> FunctionalFitnessMovement {
         guard let slot = movement.sourceExerciseSlot else {
             throw SubstitutionError.invalidForSlot
         }
-        guard SubstitutionValidator.isValid(candidate: exercise, for: slot) else {
+        guard SubstitutionValidator.isValid(candidate: exercise, for: slot, environment: environment) else {
             throw SubstitutionError.invalidForSlot
         }
         movement.exercise = exercise

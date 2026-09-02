@@ -155,7 +155,10 @@ final class SourceRMCalibrationViewModel {
         // convention already used by `SeedAnnualPlanJourney`/this
         // project's own test fixtures.
         let availability = UserAvailability(trainingDaysPerWeek: 7, allowsDoubleSessions: false, maxSessionsPerDay: 1)
-        let materializationContext = TacticalMaterializationContext(equipmentProfile: EquipmentProfile(equipmentType: .barbell, smallestIncrementKg: 2.5))
+        let materializationContext = TacticalMaterializationContext(
+            equipmentProfile: EquipmentProfile(equipmentType: .barbell, smallestIncrementKg: 2.5),
+            trainingEnvironment: users.first?.profile?.defaultTrainingEnvironment
+        )
 
         do {
             try StartPhaseUseCase.materializeOnceCalibrationComplete(

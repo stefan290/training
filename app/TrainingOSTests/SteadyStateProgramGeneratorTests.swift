@@ -76,7 +76,7 @@ final class SteadyStateProgramGeneratorTests: XCTestCase {
     /// level — deliberately not fabricated into the generator's own
     /// built-in numbers (see `SteadyStateProgramGenerator`'s own doc
     /// comment on why).
-    func testTemplateSessionActiveFromWeekControlsWhichWeeksAMaterializedSessionAppearsIn() {
+    func testTemplateSessionActiveFromWeekControlsWhichWeeksAMaterializedSessionAppearsIn() throws {
         let definition = ProgramDefinition(name: "Frequency Progression Test", lengthWeeks: 4, programmingSystem: .steadyState, generatorVersion: 1, provenance: .constructed(reason: "test"))
         context.insert(definition)
         for _ in 0..<4 {
@@ -98,9 +98,9 @@ final class SteadyStateProgramGeneratorTests: XCTestCase {
         let instance = ProgramInstance(ownerUserID: UUID())
         context.insert(instance)
 
-        let sessions = SteadyStateMaterializer.materializeAllWeeks(
+        let sessions = try SteadyStateMaterializer.materializeAllWeeks(
             definition: definition, instance: instance, startDate: Date(timeIntervalSince1970: 0),
-            ownerUserID: instance.ownerUserID, context: context
+            ownerUserID: instance.ownerUserID,  environment: TrainingEnvironmentTestSupport.full(context: context), context: context
         )
 
         let sessionsByWeek: [Int: [Session]] = Dictionary(grouping: sessions) { session in
@@ -128,15 +128,15 @@ final class SteadyStateProgramGeneratorTests: XCTestCase {
 
     // MARK: - Materializer: all weeks resolvable immediately (no partial-materialization limitation)
 
-    func testMaterializerResolvesEveryWeekIncludingRecoveryInOneCall() {
+    func testMaterializerResolvesEveryWeekIncludingRecoveryInOneCall() throws {
         let configuration = SteadyStateProgramConfiguration(activityType: .cycling, allowedActivityTypes: [.cycling], daysPerWeek: 2, lengthWeeks: 4, progressionDimension: .duration)
         let definition = SteadyStateProgramGenerator.generate(configuration: configuration, provenance: .constructed(reason: "test"), context: context)
         let instance = ProgramInstance(ownerUserID: UUID())
         context.insert(instance)
 
-        let sessions = SteadyStateMaterializer.materializeAllWeeks(
+        let sessions = try SteadyStateMaterializer.materializeAllWeeks(
             definition: definition, instance: instance, startDate: Date(timeIntervalSince1970: 0),
-            ownerUserID: instance.ownerUserID, context: context
+            ownerUserID: instance.ownerUserID,  environment: TrainingEnvironmentTestSupport.full(context: context), context: context
         )
 
         XCTAssertEqual(sessions.count, 5 * 2, "4 regular weeks + 1 recovery week, 2 sessions each")

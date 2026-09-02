@@ -72,8 +72,7 @@ final class TacticalPlacementBoundaryTests: XCTestCase {
         let variedMix = try XCTUnwrap(mixCandidates.first { $0.mix.name == "Strength Plus Variety" })
         let candidates = makeCandidates()
         let materializationContext = TacticalMaterializationContext(
-            equipmentProfile: equipment, strengthCandidateExercises: candidates.strength, functionalFitnessCandidateExercises: candidates.functionalFitness
-        )
+            equipmentProfile: equipment, strengthCandidateExercises: candidates.strength, functionalFitnessCandidateExercises: candidates.functionalFitness, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context))
         let result = try StartPhaseUseCase.start(
             phase: phase, mix: variedMix.mix, asOf: asOf, ownerUserID: ownerUserID,
             performanceProfile: nil, availability: availability(),
@@ -119,8 +118,7 @@ final class TacticalPlacementBoundaryTests: XCTestCase {
         let performanceMix = try XCTUnwrap(mixCandidates.first { $0.mix.name.hasSuffix("Performance") && $0.mix.orderedComponents.count == 2 })
         let candidates = makeCandidates()
         let materializationContext = TacticalMaterializationContext(
-            equipmentProfile: equipment, strengthCandidateExercises: candidates.strength, functionalFitnessCandidateExercises: candidates.functionalFitness
-        )
+            equipmentProfile: equipment, strengthCandidateExercises: candidates.strength, functionalFitnessCandidateExercises: candidates.functionalFitness, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context))
         try StartPhaseUseCase.start(
             phase: phase, mix: performanceMix.mix, asOf: asOf, ownerUserID: ownerUserID,
             performanceProfile: nil, availability: availability(),

@@ -235,10 +235,10 @@ final class HypertrophyMesocycle1SourceProgressionTests: XCTestCase {
     func testRealCrossDayPairingDrivesTheNextWeeksSetCountEndToEnd() throws {
         let catalog = ExerciseCatalog.resolveOrInsert(context: context)
         let definition = try generateDefinition()
-        ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: definition, candidateExercises: [
+        try ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: definition, candidateExercises: [
             catalog.backSquat, catalog.frontSquat, catalog.legPress, catalog.benchPress, catalog.inclineDumbbellPress,
             catalog.romanianDeadlift, catalog.legCurl, catalog.barbellCurl, catalog.barbellRow,
-        ])
+        ], environment: TrainingEnvironmentTestSupport.full(context: context))
         let startDate = Date(timeIntervalSince1970: 1_700_000_000)
         let instance = ProgramInstance(ownerUserID: ownerUserID, startDate: startDate)
         context.insert(instance)
@@ -251,7 +251,7 @@ final class HypertrophyMesocycle1SourceProgressionTests: XCTestCase {
         component.programInstance = instance
         let performanceProfile = PerformanceProfile()
         context.insert(performanceProfile)
-        let materializationContext = TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: [])
+        let materializationContext = TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: [], trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context))
 
         let week0Sessions = try RollTacticalWindowUseCase.materializeFirstWindow(
             system: .hypertrophy, definition: definition, instance: instance, startDate: startDate, ownerUserID: ownerUserID,

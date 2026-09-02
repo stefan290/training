@@ -25,6 +25,19 @@ final class UserProfile {
     /// mode remains permanently selectable regardless of this default.
     var preferredProgressionStyle: ProgressionStyle
 
+    /// Stage TE.1: every `TrainingEnvironment` this user has authored —
+    /// owned by the profile (`.cascade`: deleting the profile deletes its
+    /// environments, never the reverse).
+    @Relationship(deleteRule: .cascade, inverse: \TrainingEnvironment.userProfile)
+    var trainingEnvironments: [TrainingEnvironment] = []
+    /// Stage TE.1: the single authority for "which environment is active
+    /// right now" — deliberately not a per-row `isDefault: Bool` (that
+    /// would make "multiple defaults" a representable, invalid state).
+    /// `.nullify`: deleting the default environment clears this pointer
+    /// rather than silently falling back to another environment.
+    @Relationship(deleteRule: .nullify)
+    var defaultTrainingEnvironment: TrainingEnvironment?
+
     init(
         id: UUID = UUID(),
         weightUnit: WeightUnit = .kilograms,

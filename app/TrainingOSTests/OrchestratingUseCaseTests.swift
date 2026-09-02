@@ -121,7 +121,7 @@ final class OrchestratingUseCaseTests: XCTestCase {
         try context.save()
 
         try ApplySubstitutionUseCase.substituteExerciseThisSessionOnly(
-            prescription: prescription, slot: slot, with: legPress, modelContext: context
+            prescription: prescription, slot: slot, with: legPress,  environment: TrainingEnvironmentTestSupport.full(context: context), modelContext: context
         )
 
         let fetchContext = freshContext()
@@ -142,7 +142,7 @@ final class OrchestratingUseCaseTests: XCTestCase {
 
         XCTAssertThrowsError(
             try ApplySubstitutionUseCase.substituteExerciseThisSessionOnly(
-                prescription: prescription, slot: slot, with: unrelated, modelContext: context
+                prescription: prescription, slot: slot, with: unrelated,  environment: TrainingEnvironmentTestSupport.full(context: context), modelContext: context
             )
         ) { error in
             XCTAssertEqual(error as? SubstitutionError, .invalidForSlot)

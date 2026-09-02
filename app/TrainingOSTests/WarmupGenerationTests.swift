@@ -190,7 +190,7 @@ final class WarmupGenerationTests: XCTestCase {
         // Simulate an ACCEPTED Stage 8B Level 4 removal of the RDL block.
         try ReadinessAdaptationDecisionUseCase.accept(
             ReadinessAdaptationProposalItem(triggeringSignals: [.pain], actionKind: .blockRemoved, explanation: "test", workoutBlock: rdlBlock),
-            session: session, checkIn: checkIn, decidedAt: Date(), modelContext: context
+            session: session, checkIn: checkIn, decidedAt: Date(),  environment: TrainingEnvironmentTestSupport.full(context: context), modelContext: context
         )
 
         let sequence = GenerateWarmupSequenceUseCase.generate(

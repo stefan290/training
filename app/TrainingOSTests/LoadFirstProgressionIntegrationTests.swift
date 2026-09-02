@@ -27,7 +27,7 @@ final class LoadFirstProgressionIntegrationTests: XCTestCase {
     }
 
     private func materializationContext() throws -> TacticalMaterializationContext {
-        TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>()))
+        TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: try context.fetch(FetchDescriptor<Exercise>()), trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context))
     }
 
     private struct Fixture {
@@ -82,7 +82,7 @@ final class LoadFirstProgressionIntegrationTests: XCTestCase {
         mix.addComponent(component)
         component.programInstance = instance
 
-        ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: definition, candidateExercises: try context.fetch(FetchDescriptor<Exercise>()))
+        try ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: definition, candidateExercises: try context.fetch(FetchDescriptor<Exercise>()), environment: TrainingEnvironmentTestSupport.full(context: context))
 
         for requirement in RequiredSourceCalibrationsUseCase.stillRequired(for: definition, instance: instance) {
             RecordSourceRMCalibrationUseCase.record(exercise: requirement.exercise, rmType: requirement.rmType, kilograms: rmKilograms, for: instance, modelContext: context)

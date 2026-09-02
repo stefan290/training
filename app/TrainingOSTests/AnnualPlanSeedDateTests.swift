@@ -27,6 +27,13 @@ final class AnnualPlanSeedDateTests: XCTestCase {
         let profile = PerformanceProfile()
         context.insert(profile)
         user.attachPerformanceProfile(profile)
+        let userProfile = UserProfile()
+        context.insert(userProfile)
+        user.attachProfile(userProfile)
+        let fullGym = TrainingEnvironment(name: "Test Full Gym", availableEquipment: EquipmentRequirement.allCases)
+        context.insert(fullGym)
+        userProfile.trainingEnvironments = [fullGym]
+        userProfile.defaultTrainingEnvironment = fullGym
         let catalog = ExerciseCatalog.resolveOrInsert(context: context)
         return try SeedAnnualPlanJourney.seed(user: user, performanceProfile: profile, catalog: catalog, context: context)
     }
@@ -86,7 +93,7 @@ final class AnnualPlanSeedDateTests: XCTestCase {
         try CalibrationTestSupport.completeAnyPendingCalibrationAndMaterialize(
             phase: journey.activePhase, performanceProfile: nil,
             availability: UserAvailability(trainingDaysPerWeek: 7, allowsDoubleSessions: false, maxSessionsPerDay: 1),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: EquipmentProfile(equipmentType: .barbell, smallestIncrementKg: 2.5)),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: EquipmentProfile(equipmentType: .barbell, smallestIncrementKg: 2.5), trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             context: context
         )
         let viewModel = PhaseDetailViewModel()
@@ -106,7 +113,7 @@ final class AnnualPlanSeedDateTests: XCTestCase {
         try CalibrationTestSupport.completeAnyPendingCalibrationAndMaterialize(
             phase: journey.activePhase, performanceProfile: nil,
             availability: UserAvailability(trainingDaysPerWeek: 7, allowsDoubleSessions: false, maxSessionsPerDay: 1),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: EquipmentProfile(equipmentType: .barbell, smallestIncrementKg: 2.5)),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: EquipmentProfile(equipmentType: .barbell, smallestIncrementKg: 2.5), trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             context: context
         )
         let instance = try XCTUnwrap(journey.activePhase.primaryInstance)
@@ -160,6 +167,13 @@ final class AnnualPlanSeedDateTests: XCTestCase {
         let secondProfile = PerformanceProfile()
         context.insert(secondProfile)
         secondUser.attachPerformanceProfile(secondProfile)
+        let secondUserProfile = UserProfile()
+        context.insert(secondUserProfile)
+        secondUser.attachProfile(secondUserProfile)
+        let secondFullGym = TrainingEnvironment(name: "Test Full Gym", availableEquipment: EquipmentRequirement.allCases)
+        context.insert(secondFullGym)
+        secondUserProfile.trainingEnvironments = [secondFullGym]
+        secondUserProfile.defaultTrainingEnvironment = secondFullGym
         let secondCatalog = ExerciseCatalog.resolveOrInsert(context: context)
         _ = try SeedAnnualPlanJourney.seed(user: secondUser, performanceProfile: secondProfile, catalog: secondCatalog, context: context)
 

@@ -103,8 +103,7 @@ final class MixedModalityOrchestrationTests: XCTestCase {
 
         let candidates = makeCandidates()
         let materializationContext = TacticalMaterializationContext(
-            equipmentProfile: equipment, strengthCandidateExercises: candidates.strength, functionalFitnessCandidateExercises: candidates.functionalFitness
-        )
+            equipmentProfile: equipment, strengthCandidateExercises: candidates.strength, functionalFitnessCandidateExercises: candidates.functionalFitness, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context))
         var result = try StartPhaseUseCase.start(
             phase: fixture.phase, mix: variedMix.mix, asOf: asOf, ownerUserID: ownerUserID,
             performanceProfile: nil, availability: availability(),
@@ -189,8 +188,7 @@ final class MixedModalityOrchestrationTests: XCTestCase {
         let variedMix = try XCTUnwrap(mixCandidates.first { $0.mix.name == "Strength Plus Variety" })
         let candidates = makeCandidates()
         let materializationContext = TacticalMaterializationContext(
-            equipmentProfile: equipment, strengthCandidateExercises: candidates.strength, functionalFitnessCandidateExercises: candidates.functionalFitness
-        )
+            equipmentProfile: equipment, strengthCandidateExercises: candidates.strength, functionalFitnessCandidateExercises: candidates.functionalFitness, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context))
         try StartPhaseUseCase.start(
             phase: fixture0.phase, mix: variedMix.mix, asOf: asOf, ownerUserID: ownerUserID,
             performanceProfile: performanceProfile, availability: availability(),
@@ -257,8 +255,7 @@ final class MixedModalityOrchestrationTests: XCTestCase {
 
         let rollForwardDate = try XCTUnwrap(Calendar.current.date(byAdding: .day, value: 7, to: asOf))
         let materializationContext = TacticalMaterializationContext(
-            equipmentProfile: equipment, strengthCandidateExercises: fixture.candidates.strength, functionalFitnessCandidateExercises: fixture.candidates.functionalFitness
-        )
+            equipmentProfile: equipment, strengthCandidateExercises: fixture.candidates.strength, functionalFitnessCandidateExercises: fixture.candidates.functionalFitness, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context))
         let rollResult = try XCTUnwrap(RollTacticalWindowUseCase.rollForward(
             mix: fixture.mix, asOf: rollForwardDate, ownerUserID: ownerUserID,
             performanceProfile: nil, availability: availability(),
@@ -304,7 +301,7 @@ final class MixedModalityOrchestrationTests: XCTestCase {
 
         let alternativeBike = Exercise(canonicalName: "Zzz Alt Metcon Machine", modality: .functionalFitness, equipment: "rower", movementPattern: "test", movementFunctions: [.monostructural], functionalModality: .metabolicConditioning)
         context.insert(alternativeBike)
-        try SubstituteExerciseUseCase.substituteGoingForward(instance: ffInstance, slot: realSlot, with: alternativeBike, context: context)
+        try SubstituteExerciseUseCase.substituteGoingForward(instance: ffInstance, slot: realSlot, with: alternativeBike,  environment: TrainingEnvironmentTestSupport.full(context: context), context: context)
 
         for session in ffInstance.sessions {
             for block in session.orderedBlocks { try CompleteBlockUseCase.complete(block, context: .full, modelContext: context) }
@@ -320,8 +317,7 @@ final class MixedModalityOrchestrationTests: XCTestCase {
 
         let rollForwardDate = try XCTUnwrap(Calendar.current.date(byAdding: .day, value: 7, to: asOf))
         let materializationContext = TacticalMaterializationContext(
-            equipmentProfile: equipment, strengthCandidateExercises: fixture.candidates.strength, functionalFitnessCandidateExercises: fixture.candidates.functionalFitness
-        )
+            equipmentProfile: equipment, strengthCandidateExercises: fixture.candidates.strength, functionalFitnessCandidateExercises: fixture.candidates.functionalFitness, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context))
         let rollResult = try XCTUnwrap(RollTacticalWindowUseCase.rollForward(
             mix: fixture.mix, asOf: rollForwardDate, ownerUserID: ownerUserID,
             performanceProfile: nil, availability: availability(),

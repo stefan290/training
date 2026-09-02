@@ -19,6 +19,18 @@ final class MixedModalityTacticalAtomicityTests: XCTestCase {
     override func setUpWithError() throws {
         container = PersistenceController.makeInMemoryContainer()
         context = container.mainContext
+        // Stage TE.1: real fixture default — see identical note in
+        // StartNextHypertrophyMesocycleUseCaseTests.setUpWithError.
+        let user = User(displayName: "TE.1 Fixture User")
+        context.insert(user)
+        let profile = UserProfile()
+        context.insert(profile)
+        user.attachProfile(profile)
+        let fullGym = TrainingEnvironment(name: "Test Full Gym", availableEquipment: EquipmentRequirement.allCases)
+        context.insert(fullGym)
+        profile.trainingEnvironments = [fullGym]
+        profile.defaultTrainingEnvironment = fullGym
+        try? context.save()
     }
 
     private func availability() -> UserAvailability {
@@ -55,7 +67,7 @@ final class MixedModalityTacticalAtomicityTests: XCTestCase {
         context.insert(component)
         mix.addComponent(component)
         component.programInstance = instance
-        ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: definition, candidateExercises: strengthCandidates)
+        try ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: definition, candidateExercises: strengthCandidates, environment: TrainingEnvironmentTestSupport.full(context: context))
         _ = StrengthMaterializer.materializeWeek(
             definition: definition, instance: instance, weekIndex: 0, isDeload: false,
             startDate: startDate, ownerUserID: ownerUserID, equipmentProfile: EquipmentProfile(equipmentType: .barbell, smallestIncrementKg: 2.5),
@@ -107,8 +119,7 @@ final class MixedModalityTacticalAtomicityTests: XCTestCase {
             ownerUserID: ownerUserID, performanceProfile: nil,
             materializationContext: TacticalMaterializationContext(
                 equipmentProfile: EquipmentProfile(equipmentType: .barbell, smallestIncrementKg: 2.5),
-                functionalFitnessCandidateExercises: candidates
-            ),
+                functionalFitnessCandidateExercises: candidates, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             context: context
         )
         return FunctionalFitnessFixture(instance: instance, component: component, definition: definition)
@@ -178,7 +189,7 @@ final class MixedModalityTacticalAtomicityTests: XCTestCase {
         let outcome = try AdvanceTacticalWeekUseCase.advance(
             phase: phase, asOf: rollDate(afterWeekIndex: 0), ownerUserID: ownerUserID, performanceProfile: nil,
             availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: EquipmentProfile(equipmentType: .barbell, smallestIncrementKg: 2.5), strengthCandidateExercises: strengthCandidates, functionalFitnessCandidateExercises: ffCandidates),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: EquipmentProfile(equipmentType: .barbell, smallestIncrementKg: 2.5), strengthCandidateExercises: strengthCandidates, functionalFitnessCandidateExercises: ffCandidates, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             context: context
         )
         XCTAssertEqual(outcome, .advanced)
@@ -213,7 +224,7 @@ final class MixedModalityTacticalAtomicityTests: XCTestCase {
         XCTAssertThrowsError(try AdvanceTacticalWeekUseCase.advance(
             phase: phase, asOf: rollDate(afterWeekIndex: 0), ownerUserID: ownerUserID, performanceProfile: nil,
             availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: EquipmentProfile(equipmentType: .barbell, smallestIncrementKg: 2.5), strengthCandidateExercises: strengthCandidates, functionalFitnessCandidateExercises: ffCandidates),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: EquipmentProfile(equipmentType: .barbell, smallestIncrementKg: 2.5), strengthCandidateExercises: strengthCandidates, functionalFitnessCandidateExercises: ffCandidates, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             context: context
         )) { error in
             XCTAssertEqual(error as? TacticalAdvancementPreflightError, .functionalFitnessExposureHistoryUnresolvable(componentID: ff.component.id))
@@ -239,7 +250,7 @@ final class MixedModalityTacticalAtomicityTests: XCTestCase {
         XCTAssertThrowsError(try AdvanceTacticalWeekUseCase.advance(
             phase: phase, asOf: rollDate(afterWeekIndex: 0), ownerUserID: ownerUserID, performanceProfile: nil,
             availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: EquipmentProfile(equipmentType: .barbell, smallestIncrementKg: 2.5), strengthCandidateExercises: strengthCandidates),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: EquipmentProfile(equipmentType: .barbell, smallestIncrementKg: 2.5), strengthCandidateExercises: strengthCandidates, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             context: context
         )) { error in
             XCTAssertEqual(error as? TacticalAdvancementPreflightError, .intervalWeekContextUnresolvable(componentID: interval.component.id))
@@ -295,7 +306,7 @@ final class MixedModalityTacticalAtomicityTests: XCTestCase {
 
         _ = try IntervalMaterializer.materializeWeek(
             definition: definition, instance: instance, weekIndex: 0, startDate: startDate, ownerUserID: ownerUserID,
-            weekContext: { _ in .init() }, context: context
+            weekContext: { _ in .init() },  environment: TrainingEnvironmentTestSupport.full(context: context), context: context
         )
         return IntervalFixture(instance: instance, component: component, definition: definition)
     }
@@ -360,7 +371,7 @@ final class MixedModalityTacticalAtomicityTests: XCTestCase {
         XCTAssertThrowsError(try AdvanceTacticalWeekUseCase.advance(
             phase: phase, asOf: rollDate(afterWeekIndex: 0), ownerUserID: ownerUserID, performanceProfile: nil,
             availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: EquipmentProfile(equipmentType: .barbell, smallestIncrementKg: 2.5), strengthCandidateExercises: strengthCandidates, functionalFitnessCandidateExercises: []),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: EquipmentProfile(equipmentType: .barbell, smallestIncrementKg: 2.5), strengthCandidateExercises: strengthCandidates, functionalFitnessCandidateExercises: [], trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             context: context
         )) { error in
             XCTAssertTrue(error is FunctionalFitnessMaterializationError, "a genuine, unexpected materializer failure — not a preflight result")
@@ -381,7 +392,7 @@ final class MixedModalityTacticalAtomicityTests: XCTestCase {
         let outcome = try AdvanceTacticalWeekUseCase.advance(
             phase: phase, asOf: rollDate(afterWeekIndex: 0), ownerUserID: ownerUserID, performanceProfile: nil,
             availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: EquipmentProfile(equipmentType: .barbell, smallestIncrementKg: 2.5), strengthCandidateExercises: strengthCandidates, functionalFitnessCandidateExercises: realFFCandidates),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: EquipmentProfile(equipmentType: .barbell, smallestIncrementKg: 2.5), strengthCandidateExercises: strengthCandidates, functionalFitnessCandidateExercises: realFFCandidates, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             context: context
         )
         XCTAssertEqual(outcome, .advanced)
@@ -422,7 +433,7 @@ final class MixedModalityTacticalAtomicityTests: XCTestCase {
         let outcome = try AdvanceTacticalWeekUseCase.advance(
             phase: phase, asOf: rollDate(afterWeekIndex: 0), ownerUserID: ownerUserID, performanceProfile: nil,
             availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: EquipmentProfile(equipmentType: .barbell, smallestIncrementKg: 2.5), functionalFitnessCandidateExercises: candidates),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: EquipmentProfile(equipmentType: .barbell, smallestIncrementKg: 2.5), functionalFitnessCandidateExercises: candidates, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             context: context
         )
         XCTAssertEqual(outcome, .advanced)
@@ -447,7 +458,7 @@ final class MixedModalityTacticalAtomicityTests: XCTestCase {
 
         let outcome = try AdvanceTacticalWeekUseCase.advance(
             phase: phase, asOf: rollDate(afterWeekIndex: 0), ownerUserID: ownerUserID, performanceProfile: nil,
-            availability: availability(), materializationContext: TacticalMaterializationContext(equipmentProfile: EquipmentProfile(equipmentType: .barbell, smallestIncrementKg: 2.5)),
+            availability: availability(), materializationContext: TacticalMaterializationContext(equipmentProfile: EquipmentProfile(equipmentType: .barbell, smallestIncrementKg: 2.5), trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             context: context
         )
         XCTAssertEqual(outcome, .advanced)
@@ -502,7 +513,7 @@ final class MixedModalityTacticalAtomicityTests: XCTestCase {
         _ = try AdvanceTacticalWeekUseCase.advance(
             phase: phase, asOf: rollDate(afterWeekIndex: 0), ownerUserID: ownerUserID, performanceProfile: nil,
             availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: distinctiveEquipment, strengthCandidateExercises: strengthCandidates),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: distinctiveEquipment, strengthCandidateExercises: strengthCandidates, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             context: context
         )
         let week2 = ProgramWeekGrouping.realSessions(in: hyp.instance, forWeek: 1)

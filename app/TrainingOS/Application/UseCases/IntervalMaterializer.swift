@@ -12,6 +12,12 @@ import SwiftData
 /// error, not a quiet behavioral surprise.
 enum IntervalMaterializationError: Error, Equatable {
     case previousOutcomeRequired
+    /// Stage TE.1: no `TrainingEnvironment` was supplied at all — thrown
+    /// before any activity-resolution happens.
+    case trainingEnvironmentRequired
+    /// Stage TE.1: a real, configured environment exists, but the
+    /// resolved `ActivityType`'s own requirement isn't satisfied by it.
+    case environmentIncompatible(activityType: ActivityType, missingEquipment: [EquipmentRequirement])
 }
 
 /// Turns an interval `ProgramDefinition`'s template graph into real,
@@ -66,11 +72,22 @@ enum IntervalMaterializer {
         startDate: Date,
         ownerUserID: UUID,
         weekContext: (WorkoutBlockTemplate) -> WeekContext,
+        /// Stage TE.1: read fresh from `TacticalMaterializationContext
+        /// .trainingEnvironment` at each real call. `nil` is a valid,
+        /// honest "not yet configured" state — never treated as
+        /// "anything goes" (see the fail-fast guard below).
+        environment: TrainingEnvironment?,
         context: ModelContext
     ) throws -> [Session] {
         var sessions: [Session] = []
         let weekStartDate = Calendar.current.date(byAdding: .day, value: weekIndex * 7, to: startDate) ?? startDate
         let orderedTemplateSessions = definition.orderedTemplateSessions.filter { $0.activeFromWeek <= weekIndex }
+
+        // Stage TE.1 fail-fast guard: checked once, before any activity
+        // resolution — never silently treated as "anything goes."
+        if !orderedTemplateSessions.isEmpty, environment == nil {
+            throw IntervalMaterializationError.trainingEnvironmentRequired
+        }
 
         for (dayIndex, templateSession) in orderedTemplateSessions.enumerated() {
             let date = Calendar.current.date(byAdding: .day, value: dayIndex, to: weekStartDate) ?? weekStartDate
@@ -78,6 +95,7 @@ enum IntervalMaterializer {
             context.insert(day)
 
             let session = Session(name: templateSession.name, modality: .conditioning, status: .scheduled, role: templateSession.role)
+            session.materializedInEnvironment = environment
             context.insert(session)
             day.addSession(session)
             instance.addSession(session)
@@ -95,6 +113,7 @@ enum IntervalMaterializer {
                     let activityType = SubstituteActivityUseCase.resolvedActivityType(
                         for: blockTemplate, defaultActivityType: steadyStateTemplate.preferredActivityType, in: instance
                     )
+                    try checkEnvironmentCompatibility(activityType: activityType, environment: environment)
                     let durationResult = SteadyStateProgressionEngine.resolveDuration(rules: ssRules, weekIndex: weekIndex, isRecoveryWeek: false)
                     let prescription = SteadyStatePrescription(
                         activityType: activityType, durationSeconds: durationResult.durationSeconds,
@@ -140,6 +159,7 @@ enum IntervalMaterializer {
                 let activityType = SubstituteActivityUseCase.resolvedActivityType(
                     for: blockTemplate, defaultActivityType: intervalTemplate.preferredActivityType, in: instance
                 )
+                try checkEnvironmentCompatibility(activityType: activityType, environment: environment)
 
                 let prescription = IntervalPrescription(
                     activityType: activityType,
@@ -165,5 +185,21 @@ enum IntervalMaterializer {
         }
 
         return sessions
+    }
+
+    /// Stage TE.1: the narrowest correct seam — checked immediately
+    /// after `resolvedActivityType`, before constructing the real
+    /// prescription, at both of this materializer's real call sites
+    /// (composed, not merged into `SubstituteActivityUseCase.isValid`, a
+    /// different question).
+    private static func checkEnvironmentCompatibility(activityType: ActivityType, environment: TrainingEnvironment?) throws {
+        switch TrainingEnvironmentCompatibilityRule.evaluate(required: activityType.requiredEquipment, environment: environment) {
+        case .compatible:
+            return
+        case .incompatible(let missing):
+            throw IntervalMaterializationError.environmentIncompatible(activityType: activityType, missingEquipment: Array(missing))
+        case .environmentUnknown:
+            throw IntervalMaterializationError.trainingEnvironmentRequired
+        }
     }
 }

@@ -51,6 +51,19 @@ enum SeedDataProvider {
         context.insert(profile)
         user.attachProfile(profile)
 
+        // Stage TE.1: a real, comprehensive environment so this seeded
+        // demo/test user's own materialization (in particular
+        // `SeedAnnualPlanJourney`, which runs through the real
+        // `StartPhaseUseCase`/`RollTacticalWindowUseCase` pipeline
+        // `TacticalMaterializationContext.trainingEnvironment` now feeds)
+        // never hits an artificial, seed-time-only equipment gap. Every
+        // `EquipmentRequirement` case — a "fully equipped gym" persona,
+        // not a claim about what a real new user has.
+        let homeGymEnvironment = TrainingEnvironment(name: "Full Gym", availableEquipment: EquipmentRequirement.allCases)
+        context.insert(homeGymEnvironment)
+        profile.trainingEnvironments = [homeGymEnvironment]
+        profile.defaultTrainingEnvironment = homeGymEnvironment
+
         let performanceProfile = PerformanceProfile()
         context.insert(performanceProfile)
         user.attachPerformanceProfile(performanceProfile)

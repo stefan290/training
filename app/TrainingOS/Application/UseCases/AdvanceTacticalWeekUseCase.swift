@@ -145,6 +145,30 @@ enum AdvanceTacticalWeekUseCase {
         // anything computed earlier" discipline one level deeper.
         guard TacticalWeekCompletion.canAdvanceTacticalWeek(for: scratchMix) else { return .notEligible }
 
+        // Stage TE.1: `TrainingEnvironment` is a `@Model`, bound to the
+        // CALLER's context — assigning it (via `Session
+        // .materializedInEnvironment`) onto a Session inserted into
+        // `scratchContext` and then saving would otherwise corrupt that
+        // Session (an unfaulted cross-context reference), exactly the
+        // failure mode `TransitionPhaseUseCase`'s own candidate-Exercise
+        // re-fetch already guards against. Same bounded, mechanical fix,
+        // scoped to only the field TE.1 itself introduces.
+        let scratchMaterializationContext: TacticalMaterializationContext
+        if let environment = materializationContext.trainingEnvironment {
+            let environmentID = environment.persistentModelID
+            let scratchEnvironment = try scratchContext.fetch(
+                FetchDescriptor<TrainingEnvironment>(predicate: #Predicate { $0.persistentModelID == environmentID })
+            ).first
+            scratchMaterializationContext = TacticalMaterializationContext(
+                equipmentProfile: materializationContext.equipmentProfile,
+                strengthCandidateExercises: materializationContext.strengthCandidateExercises,
+                functionalFitnessCandidateExercises: materializationContext.functionalFitnessCandidateExercises,
+                trainingEnvironment: scratchEnvironment
+            )
+        } else {
+            scratchMaterializationContext = materializationContext
+        }
+
         // Step 6: invoke rollForward exactly once, entirely against the
         // scratch context. Any throw here leaves `scratchContext`
         // un-saved — it is simply discarded, and the caller's own
@@ -152,7 +176,7 @@ enum AdvanceTacticalWeekUseCase {
         guard let result = try RollTacticalWindowUseCase.rollForward(
             mix: scratchMix, asOf: asOf, ownerUserID: ownerUserID, performanceProfile: performanceProfile,
             availability: availability, userProfile: userProfile,
-            materializationContext: materializationContext, context: scratchContext
+            materializationContext: scratchMaterializationContext, context: scratchContext
         ) else {
             return .nothingRolled
         }

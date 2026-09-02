@@ -142,9 +142,13 @@ enum StartNextHypertrophyMesocycleUseCase {
         // exact same deterministic resolution a brand-new instance
         // already uses — never a TrainingOS-invented substitute
         // presented as source content.
-        carryForwardExerciseSelections(from: previousInstance, to: nextDefinition, previousPhaseType: previousConfiguration.phaseType)
-        ResolveProgramInstanceExerciseSlotsUseCase.resolve(
-            definition: nextDefinition, candidateExercises: materializationContext.strengthCandidateExercises
+        carryForwardExerciseSelections(
+            from: previousInstance, to: nextDefinition, previousPhaseType: previousConfiguration.phaseType,
+            environment: materializationContext.trainingEnvironment
+        )
+        try ResolveProgramInstanceExerciseSlotsUseCase.resolve(
+            definition: nextDefinition, candidateExercises: materializationContext.strengthCandidateExercises,
+            environment: materializationContext.trainingEnvironment
         )
 
         // Reassign the SAME component's current pointer — never a new
@@ -309,7 +313,10 @@ enum StartNextHypertrophyMesocycleUseCase {
         }
     }
 
-    private static func carryForwardExerciseSelections(from previousInstance: ProgramInstance, to nextDefinition: ProgramDefinition, previousPhaseType: HypertrophyPhaseType) {
+    private static func carryForwardExerciseSelections(
+        from previousInstance: ProgramInstance, to nextDefinition: ProgramDefinition, previousPhaseType: HypertrophyPhaseType,
+        environment: TrainingEnvironment?
+    ) {
         guard let previousDefinition = previousInstance.programDefinition else { return }
         let previousSlotsByDay = previousDefinition.orderedTemplateSessions.map { session in
             session.orderedBlockTemplates.flatMap(\.orderedPrescriptionTemplates).compactMap(\.exerciseSlot)
@@ -330,7 +337,7 @@ enum StartNextHypertrophyMesocycleUseCase {
             let nextSlot = nextSlotsByDay[mapping.toDayIndex][mapping.toSlotIndex]
 
             guard let carriedExercise = SubstituteExerciseUseCase.resolvedExercise(for: previousSlot, in: previousInstance) else { continue }
-            guard SubstitutionValidator.isValid(candidate: carriedExercise, for: nextSlot) else { continue }
+            guard SubstitutionValidator.isValid(candidate: carriedExercise, for: nextSlot, environment: environment) else { continue }
             nextSlot.resolvedExercise = carriedExercise
         }
     }

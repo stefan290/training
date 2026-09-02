@@ -60,13 +60,15 @@ enum RollTacticalWindowUseCase {
             )
             return result.sessions
         case .steadyState:
-            return SteadyStateMaterializer.materializeAllWeeks(
-                definition: definition, instance: instance, startDate: startDate, ownerUserID: ownerUserID, context: context
+            return try SteadyStateMaterializer.materializeAllWeeks(
+                definition: definition, instance: instance, startDate: startDate, ownerUserID: ownerUserID,
+                environment: materializationContext.trainingEnvironment, context: context
             )
         case .interval:
             return try IntervalMaterializer.materializeWeek(
                 definition: definition, instance: instance, weekIndex: 0, startDate: startDate, ownerUserID: ownerUserID,
-                weekContext: IntervalWeekContextBuilder.build(instance: instance, weekIndex: 0), context: context
+                weekContext: IntervalWeekContextBuilder.build(instance: instance, weekIndex: 0),
+                environment: materializationContext.trainingEnvironment, context: context
             )
         case .functionalFitness:
             return try FunctionalFitnessMaterializer.materializeWeek(
@@ -74,6 +76,7 @@ enum RollTacticalWindowUseCase {
                 candidateExercises: materializationContext.functionalFitnessCandidateExercises,
                 exposureHistory: FunctionalFitnessExposureHistoryBuilder.build(fromCompletedSessionsIn: instance),
                 componentAdaptationObjectives: componentAdaptationObjectives,
+                environment: materializationContext.trainingEnvironment,
                 context: context
             )
         }
@@ -168,7 +171,8 @@ enum RollTacticalWindowUseCase {
             case .interval:
                 sessions = try IntervalMaterializer.materializeWeek(
                     definition: definition, instance: instance, weekIndex: weekIndex, startDate: instance.startDate, ownerUserID: ownerUserID,
-                    weekContext: IntervalWeekContextBuilder.build(instance: instance, weekIndex: weekIndex), context: context
+                    weekContext: IntervalWeekContextBuilder.build(instance: instance, weekIndex: weekIndex),
+                    environment: materializationContext.trainingEnvironment, context: context
                 )
             case .steadyState, .functionalFitness:
                 continue
@@ -207,6 +211,7 @@ enum RollTacticalWindowUseCase {
                 exposureHistory: FunctionalFitnessExposureHistoryBuilder.build(fromCompletedSessionsIn: instance),
                 protectedSiblingStressProfilesThisWeek: protectedSiblingStressProfilesThisWeek,
                 componentAdaptationObjectives: component.adaptationObjectives,
+                environment: materializationContext.trainingEnvironment,
                 context: context
             )
 

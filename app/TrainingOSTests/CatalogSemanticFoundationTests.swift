@@ -19,7 +19,7 @@ final class CatalogSemanticFoundationTests: XCTestCase {
     }
 
     private func isValid(_ candidate: Exercise, for slot: ExerciseSlot) -> Bool {
-        SubstitutionValidator.isValid(candidate: candidate, for: slot)
+        SubstitutionValidator.isValid(candidate: candidate, for: slot, environment: TrainingEnvironmentTestSupport.full(context: context))
     }
 
     // MARK: D — promoted exercises participate in candidate resolution

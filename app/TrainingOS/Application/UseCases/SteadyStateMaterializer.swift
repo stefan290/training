@@ -1,6 +1,20 @@
 import Foundation
 import SwiftData
 
+/// Stage TE.1: the SteadyState sibling of `IntervalMaterializationError` —
+/// this materializer had no error type of its own before TE.1 because it
+/// was never `throws` (every dimension it resolves is a deterministic
+/// function of `weekIndex` alone). Environment compatibility is the
+/// first real reason it can now fail.
+enum SteadyStateMaterializationError: Error, Equatable {
+    /// No `TrainingEnvironment` was supplied at all — thrown before any
+    /// activity-resolution happens.
+    case trainingEnvironmentRequired
+    /// A real, configured environment exists, but the resolved
+    /// `ActivityType`'s own requirement isn't satisfied by it.
+    case environmentIncompatible(activityType: ActivityType, missingEquipment: [EquipmentRequirement])
+}
+
 /// Turns a steady-state `ProgramDefinition`'s template graph into real,
 /// dated execution rows — the steady-state sibling of
 /// `StrengthMaterializer`.
@@ -22,11 +36,22 @@ enum SteadyStateMaterializer {
         instance: ProgramInstance,
         startDate: Date,
         ownerUserID: UUID,
+        /// Stage TE.1: read fresh from `TacticalMaterializationContext
+        /// .trainingEnvironment` at each real call. `nil` is a valid,
+        /// honest "not yet configured" state — never treated as
+        /// "anything goes" (see the fail-fast guard below).
+        environment: TrainingEnvironment?,
         context: ModelContext
-    ) -> [Session] {
+    ) throws -> [Session] {
         var sessions: [Session] = []
         let orderedWeeks = definition.orderedWeeks
         let orderedTemplateSessions = definition.orderedTemplateSessions
+
+        // Stage TE.1 fail-fast guard: checked once, before any activity
+        // resolution — never silently treated as "anything goes."
+        if !orderedTemplateSessions.isEmpty, environment == nil {
+            throw SteadyStateMaterializationError.trainingEnvironmentRequired
+        }
 
         for (weekIndex, week) in orderedWeeks.enumerated() {
             let weekStartDate = Calendar.current.date(byAdding: .day, value: weekIndex * 7, to: startDate) ?? startDate
@@ -43,6 +68,7 @@ enum SteadyStateMaterializer {
                 context.insert(day)
 
                 let session = Session(name: templateSession.name, modality: .conditioning, status: .scheduled, role: templateSession.role)
+                session.materializedInEnvironment = environment
                 context.insert(session)
                 day.addSession(session)
                 instance.addSession(session)
@@ -69,6 +95,19 @@ enum SteadyStateMaterializer {
                     let activityType = SubstituteActivityUseCase.resolvedActivityType(
                         for: blockTemplate, defaultActivityType: steadyStateTemplate.preferredActivityType, in: instance
                     )
+                    // Stage TE.1: the narrowest correct seam — checked
+                    // immediately after resolution, before constructing
+                    // the real prescription (composed, not merged into
+                    // `SubstituteActivityUseCase.isValid`, a different
+                    // question).
+                    switch TrainingEnvironmentCompatibilityRule.evaluate(required: activityType.requiredEquipment, environment: environment) {
+                    case .compatible:
+                        break
+                    case .incompatible(let missing):
+                        throw SteadyStateMaterializationError.environmentIncompatible(activityType: activityType, missingEquipment: Array(missing))
+                    case .environmentUnknown:
+                        throw SteadyStateMaterializationError.trainingEnvironmentRequired
+                    }
 
                     let prescription = SteadyStatePrescription(
                         activityType: activityType,

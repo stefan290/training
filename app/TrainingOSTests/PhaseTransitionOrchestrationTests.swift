@@ -99,8 +99,7 @@ final class PhaseTransitionOrchestrationTests: XCTestCase {
         let performanceProfile = PerformanceProfile()
         context.insert(performanceProfile)
         let materializationContext = TacticalMaterializationContext(
-            equipmentProfile: equipment, strengthCandidateExercises: candidates.strength, functionalFitnessCandidateExercises: candidates.functionalFitness
-        )
+            equipmentProfile: equipment, strengthCandidateExercises: candidates.strength, functionalFitnessCandidateExercises: candidates.functionalFitness, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context))
 
         // Phase 1: the simple "Focused Hypertrophy" candidate (Hypertrophy + SteadyState only — no Functional Fitness yet).
         let phase1Candidates = LongTermPlanner.proposeTrainingMix(phase: phase1, goal: fixture.goal)
@@ -215,7 +214,7 @@ final class PhaseTransitionOrchestrationTests: XCTestCase {
         try StartPhaseUseCase.start(
             phase: phase1, mix: mix1.mix, asOf: asOf, ownerUserID: ownerUserID,
             performanceProfile: nil, availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.strength),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.strength, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             context: context
         )
 
@@ -239,7 +238,7 @@ final class PhaseTransitionOrchestrationTests: XCTestCase {
         XCTAssertThrowsError(try TransitionPhaseUseCase.transition(
             from: phase1, toNextPhaseWithMix: mix2.mix, asOf: asOf, ownerUserID: ownerUserID,
             performanceProfile: nil, availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment), context: context
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)), context: context
         )) { error in
             XCTAssertEqual(error as? PhaseTransitionError, .outgoingPhaseNotActive, "phase 1 is still .planned — was never started")
         }
@@ -254,14 +253,14 @@ final class PhaseTransitionOrchestrationTests: XCTestCase {
         try StartPhaseUseCase.start(
             phase: lastPhase, mix: mix.mix, asOf: asOf, ownerUserID: ownerUserID,
             performanceProfile: nil, availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: makeCandidates().strength, functionalFitnessCandidateExercises: makeCandidates().functionalFitness),
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: makeCandidates().strength, functionalFitnessCandidateExercises: makeCandidates().functionalFitness, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
             context: context
         )
 
         XCTAssertThrowsError(try TransitionPhaseUseCase.transition(
             from: lastPhase, toNextPhaseWithMix: mix.mix, asOf: asOf, ownerUserID: ownerUserID,
             performanceProfile: nil, availability: availability(),
-            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment), context: context
+            materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)), context: context
         )) { error in
             XCTAssertEqual(error as? PhaseTransitionError, .noNextPhaseInPlan, "the last phase in the plan has nothing after it")
         }

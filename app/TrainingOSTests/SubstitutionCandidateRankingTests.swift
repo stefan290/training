@@ -24,8 +24,7 @@ final class SubstitutionCandidateRankingTests: XCTestCase {
 
         let candidates = SubstitutionCandidateRanking.rank(
             slot: slot, excluding: benchPress, allExercises: [benchPress, legPress],
-            curatedRelationships: [], profileLookup: { _ in nil }
-        )
+            curatedRelationships: [], profileLookup: { _ in nil }, environment: TrainingEnvironment(name: "Full", availableEquipment: EquipmentRequirement.allCases))
 
         XCTAssertTrue(candidates.allSatisfy { $0.exercise.canonicalName != "Leg Press" })
     }
@@ -37,8 +36,7 @@ final class SubstitutionCandidateRankingTests: XCTestCase {
 
         let candidates = SubstitutionCandidateRanking.rank(
             slot: slot, excluding: benchPress, allExercises: [benchPress, inclinePress],
-            curatedRelationships: [], profileLookup: { _ in nil }
-        )
+            curatedRelationships: [], profileLookup: { _ in nil }, environment: TrainingEnvironment(name: "Full", availableEquipment: EquipmentRequirement.allCases))
 
         XCTAssertFalse(candidates.contains { $0.exercise.canonicalName == "Barbell Bench Press" })
     }
@@ -57,8 +55,7 @@ final class SubstitutionCandidateRankingTests: XCTestCase {
         let candidates = SubstitutionCandidateRanking.rank(
             slot: slot, excluding: benchPress, allExercises: [benchPress, dumbbellPress, cableFly],
             curatedRelationships: [],
-            profileLookup: { $0.canonicalName == "Dumbbell Bench Press" ? dumbbellProfile : nil }
-        )
+            profileLookup: { $0.canonicalName == "Dumbbell Bench Press" ? dumbbellProfile : nil }, environment: TrainingEnvironment(name: "Full", availableEquipment: EquipmentRequirement.allCases))
 
         XCTAssertEqual(candidates.first?.exercise.canonicalName, "Dumbbell Bench Press")
         XCTAssertEqual(candidates.first?.tier, .percentageOfEstimate)
@@ -74,8 +71,7 @@ final class SubstitutionCandidateRankingTests: XCTestCase {
 
         let candidates = SubstitutionCandidateRanking.rank(
             slot: slot, excluding: benchPress, allExercises: [benchPress, zCandidate, aCandidate],
-            curatedRelationships: [], profileLookup: { _ in nil }
-        )
+            curatedRelationships: [], profileLookup: { _ in nil }, environment: TrainingEnvironment(name: "Full", availableEquipment: EquipmentRequirement.allCases))
 
         XCTAssertEqual(candidates.map(\.exercise.canonicalName), ["A Machine Press", "Z Machine Press"])
     }
@@ -91,12 +87,10 @@ final class SubstitutionCandidateRankingTests: XCTestCase {
 
         let first = SubstitutionCandidateRanking.rank(
             slot: slot, excluding: benchPress, allExercises: [benchPress, dumbbellPress, cableFly],
-            curatedRelationships: [], profileLookup: { _ in nil }
-        )
+            curatedRelationships: [], profileLookup: { _ in nil }, environment: TrainingEnvironment(name: "Full", availableEquipment: EquipmentRequirement.allCases))
         let second = SubstitutionCandidateRanking.rank(
             slot: slot, excluding: benchPress, allExercises: [benchPress, dumbbellPress, cableFly],
-            curatedRelationships: [], profileLookup: { _ in nil }
-        )
+            curatedRelationships: [], profileLookup: { _ in nil }, environment: TrainingEnvironment(name: "Full", availableEquipment: EquipmentRequirement.allCases))
 
         XCTAssertEqual(first.map(\.exercise.canonicalName), second.map(\.exercise.canonicalName))
     }

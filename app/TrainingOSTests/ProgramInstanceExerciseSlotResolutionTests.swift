@@ -100,7 +100,7 @@ final class ProgramInstanceExerciseSlotResolutionTests: XCTestCase {
             configuration: HypertrophyProgramConfiguration(dayCount: 1, split: .fullBody, phaseType: .basicHypertrophy),
             provenance: .constructed(reason: "test"), context: context
         )
-        ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: definition, candidateExercises: [benchPress, inclineDumbbellPress])
+        try ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: definition, candidateExercises: [benchPress, inclineDumbbellPress], environment: TrainingEnvironmentTestSupport.full(context: context))
 
         let templates = try XCTUnwrap(definition.orderedTemplateSessions.first).orderedBlockTemplates.flatMap(\.orderedPrescriptionTemplates)
         let primary = try XCTUnwrap(templates.first { $0.exerciseSlot?.name != "Chest Isolation or Triceps" })
@@ -126,7 +126,7 @@ final class ProgramInstanceExerciseSlotResolutionTests: XCTestCase {
             configuration: HypertrophyProgramConfiguration(dayCount: 1, split: .fullBody, phaseType: .basicHypertrophy),
             provenance: .constructed(reason: "test"), context: context
         )
-        ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: definition, candidateExercises: [onlyCandidate])
+        try ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: definition, candidateExercises: [onlyCandidate], environment: TrainingEnvironmentTestSupport.full(context: context))
 
         let templates = try XCTUnwrap(definition.orderedTemplateSessions.first).orderedBlockTemplates.flatMap(\.orderedPrescriptionTemplates)
         for template in templates {
@@ -143,7 +143,7 @@ final class ProgramInstanceExerciseSlotResolutionTests: XCTestCase {
         let mixCandidates = LongTermPlanner.proposeTrainingMix(phase: fixture.phase, goal: fixture.goal)
         let recommended = try XCTUnwrap(mixCandidates.first { $0.roles.contains(.recommended) })
 
-        let materializationContext = TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.all)
+        let materializationContext = TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.all, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context))
         try StartPhaseUseCase.start(
             phase: fixture.phase, mix: recommended.mix, asOf: asOf, ownerUserID: ownerUserID,
             performanceProfile: nil, availability: availability(),
@@ -166,7 +166,7 @@ final class ProgramInstanceExerciseSlotResolutionTests: XCTestCase {
         for prescription in prescriptions {
             let exercise = try XCTUnwrap(prescription.exercise, "every real prescription must have resolved a concrete Exercise")
             let slot = try XCTUnwrap(prescription.sourceExerciseSlot)
-            XCTAssertTrue(SubstitutionValidator.isValid(candidate: exercise, for: slot), "\(exercise.canonicalName) must actually be eligible for slot \(slot.name)")
+            XCTAssertTrue(SubstitutionValidator.isValid(candidate: exercise, for: slot, environment: TrainingEnvironmentTestSupport.full(context: context)), "\(exercise.canonicalName) must actually be eligible for slot \(slot.name)")
         }
     }
 
@@ -183,8 +183,8 @@ final class ProgramInstanceExerciseSlotResolutionTests: XCTestCase {
         let definitionA = try HypertrophyProgramGenerator.generate(configuration: configuration, provenance: .constructed(reason: "test A"), context: context)
         let definitionB = try HypertrophyProgramGenerator.generate(configuration: configuration, provenance: .constructed(reason: "test B"), context: context)
 
-        ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: definitionA, candidateExercises: candidates.all)
-        ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: definitionB, candidateExercises: candidates.all)
+        try ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: definitionA, candidateExercises: candidates.all, environment: TrainingEnvironmentTestSupport.full(context: context))
+        try ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: definitionB, candidateExercises: candidates.all, environment: TrainingEnvironmentTestSupport.full(context: context))
 
         func resolvedNamesBySlotName(_ definition: ProgramDefinition) -> [String: String] {
             let slots = definition.orderedTemplateSessions.flatMap(\.orderedBlockTemplates).flatMap(\.orderedPrescriptionTemplates).compactMap(\.exerciseSlot)
@@ -205,7 +205,7 @@ final class ProgramInstanceExerciseSlotResolutionTests: XCTestCase {
         let firstSlot = try XCTUnwrap(definition.orderedTemplateSessions.first?.orderedBlockTemplates.first?.orderedPrescriptionTemplates.first?.exerciseSlot)
         firstSlot.resolvedExercise = candidates.primaryBack // deliberately NOT a valid quads candidate — proves it's left alone, not "corrected"
 
-        ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: definition, candidateExercises: candidates.all)
+        try ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: definition, candidateExercises: candidates.all, environment: TrainingEnvironmentTestSupport.full(context: context))
 
         XCTAssertEqual(firstSlot.resolvedExercise?.id, candidates.primaryBack.id, "an already-resolved slot must never be overwritten, even if a caller's pre-existing choice looks stale")
     }
@@ -221,7 +221,7 @@ final class ProgramInstanceExerciseSlotResolutionTests: XCTestCase {
         let performanceProfile = PerformanceProfile()
         context.insert(performanceProfile)
 
-        let materializationContext = TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.all)
+        let materializationContext = TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.all, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context))
         try StartPhaseUseCase.start(
             phase: fixture.phase, mix: recommended.mix, asOf: asOf, ownerUserID: ownerUserID,
             performanceProfile: performanceProfile, availability: availability(),
@@ -275,7 +275,7 @@ final class ProgramInstanceExerciseSlotResolutionTests: XCTestCase {
         let candidates = makeCandidates()
         let mixCandidates = LongTermPlanner.proposeTrainingMix(phase: fixture.phase, goal: fixture.goal)
         let recommended = try XCTUnwrap(mixCandidates.first { $0.roles.contains(.recommended) })
-        let materializationContext = TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.all)
+        let materializationContext = TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.all, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context))
 
         let result = try StartPhaseUseCase.start(
             phase: fixture.phase, mix: recommended.mix, asOf: asOf, ownerUserID: ownerUserID,
@@ -306,5 +306,210 @@ final class ProgramInstanceExerciseSlotResolutionTests: XCTestCase {
         XCTAssertFalse(prescriptions.isEmpty, "materialization must succeed once calibration is complete")
         let primary = try XCTUnwrap(prescriptions.first { $0.appliedSetCountReasonCode == .fixedSetSchedule && $0.orderedSetPrescriptions.count == 3 })
         XCTAssertEqual(primary.appliedLoadReasonCode, .rmBasedLoad, "a real SourceRMCalibration was just entered -> a real resolved load, never calibrationRequired")
+    }
+
+    // MARK: TE.1 closure — higher-level production-path proof through StartPhaseUseCase
+    //
+    // `testRealGeneratedProgramInstanceResolvesEverySlotToAValidConcreteExercise`
+    // above already proves the shared pipeline end-to-end for a `.generalStrength`
+    // goal — whose first phase type is `.strength`, whose ONLY candidate mix
+    // template is `LongTermPlanner`'s private `strengthFocusedMix()` (a single
+    // Powerlifting-only component; `LongTermPlanner.candidateMixTemplates`
+    // `case .strength: return [(strengthFocusedMix(), ...)]`) — so every test
+    // in this section using a `.generalStrength` goal is already exercising the
+    // real POWERLIFTING production path through `StartPhaseUseCase.start`, not
+    // a fabricated one. A parallel `.muscleGain` goal exercises the real
+    // HYPERTROPHY path through the exact same `StartPhaseUseCase.start` ->
+    // `ResolveProgramInstanceExerciseSlotsUseCase.resolve` call
+    // (`StartPhaseUseCase.swift`: `if system == .hypertrophy || system == .powerlifting`)
+    // — proving both share one pipeline rather than duplicating a second full
+    // set of fixtures per system.
+
+    func testStartPhaseUseCaseThrowsTrainingEnvironmentRequiredForPowerliftingWhenNoEnvironmentIsConfigured() throws {
+        let asOf = date(2026, 1, 5)
+        let fixture = try makeAcceptedPlan(asOf: asOf) // .generalStrength -> real Powerlifting path
+        let candidates = makeCandidates()
+        let mixCandidates = LongTermPlanner.proposeTrainingMix(phase: fixture.phase, goal: fixture.goal)
+        let recommended = try XCTUnwrap(mixCandidates.first { $0.roles.contains(.recommended) })
+        XCTAssertEqual(recommended.mix.orderedComponents.first?.programmingSystem, .powerlifting, "sanity check on this fixture's own real production dispatch, not an assumption")
+
+        let materializationContext = TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.all, trainingEnvironment: nil)
+        XCTAssertThrowsError(try StartPhaseUseCase.start(
+            phase: fixture.phase, mix: recommended.mix, asOf: asOf, ownerUserID: ownerUserID,
+            performanceProfile: nil, availability: availability(),
+            materializationContext: materializationContext,
+            context: context
+        )) { error in
+            XCTAssertEqual(error as? ExerciseSlotResolutionError, .trainingEnvironmentRequired)
+        }
+    }
+
+    func testStartPhaseUseCaseThrowsEnvironmentIncompatibleForPowerliftingWhenCandidatesAreSemanticallyEligibleButEquipmentIncompatible() throws {
+        let asOf = date(2026, 1, 5)
+        let fixture = try makeAcceptedPlan(asOf: asOf)
+        let mixCandidates = LongTermPlanner.proposeTrainingMix(phase: fixture.phase, goal: fixture.goal)
+        let recommended = try XCTUnwrap(mixCandidates.first { $0.roles.contains(.recommended) })
+
+        // Checkpoint-gate fix (post-closure-pass): real candidates that DO
+        // match a real slot's `allowedTargets` (verified against
+        // `PowerliftingProgramGenerator.swift`'s real slots — Squat:
+        // quadriceps/glutes, Bench-adjacent: chest/triceps, Upper-Pull:
+        // back/biceps, Overhead Press: shoulders/triceps), but every one
+        // requires barbell — deliberately incompatible with a bodyweight-
+        // only environment. Before this fix, this silently left the slot
+        // `nil` (proven by this same test previously) — a real correctness
+        // hole: `StrengthMaterializer` builds an `ExercisePrescription`
+        // from a `nil` exercise unconditionally, and
+        // `RequiredSourceCalibrationsUseCase.stillRequired` skips any slot
+        // with no resolved exercise, so no gate would ever have caught it.
+        // Now this must throw a typed, attributable `.environmentIncompatible`
+        // BEFORE any Session for this component is materialized.
+        let barbellOnlyCandidates = [
+            Exercise(canonicalName: "Zzz Test Barbell Primary Shoulders", modality: .hypertrophy, equipment: "barbell", movementPattern: "test", primaryTargets: [.shoulders], requiredEquipment: [.barbell, .rack]),
+            Exercise(canonicalName: "Zzz Test Barbell Primary Quads", modality: .hypertrophy, equipment: "barbell", movementPattern: "test", primaryTargets: [.quadriceps], requiredEquipment: [.barbell, .rack]),
+            Exercise(canonicalName: "Zzz Test Barbell Primary Back", modality: .hypertrophy, equipment: "barbell", movementPattern: "test", primaryTargets: [.back], requiredEquipment: [.barbell, .rack]),
+            Exercise(canonicalName: "Zzz Test Barbell Paired Accessory", modality: .hypertrophy, equipment: "barbell", movementPattern: "test", primaryTargets: [.chest, .triceps], requiredEquipment: [.barbell]),
+        ]
+        barbellOnlyCandidates.forEach { context.insert($0) }
+        let bodyweightOnlyEnvironment = TrainingEnvironment(name: "Bodyweight Only", availableEquipment: [])
+        context.insert(bodyweightOnlyEnvironment)
+        try context.save()
+
+        let materializationContext = TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: barbellOnlyCandidates, trainingEnvironment: bodyweightOnlyEnvironment)
+        XCTAssertThrowsError(try StartPhaseUseCase.start(
+            phase: fixture.phase, mix: recommended.mix, asOf: asOf, ownerUserID: ownerUserID,
+            performanceProfile: nil, availability: availability(),
+            materializationContext: materializationContext,
+            context: context
+        )) { error in
+            guard case .environmentIncompatible(_, let missingEquipment)? = error as? ExerciseSlotResolutionError else {
+                return XCTFail("expected .environmentIncompatible, got \(error)")
+            }
+            XCTAssertTrue(missingEquipment.contains(.barbell), "the reported missing equipment must name the real gap, not an empty/generic set")
+        }
+
+        // No Session may have been created for this component — the throw
+        // must occur strictly before any athlete-facing materialization.
+        XCTAssertNil(fixture.phase.primaryInstance?.sessions.first, "an environment conflict must block Session creation entirely, never produce a partially-materialized one")
+    }
+
+    func testStartPhaseUseCaseLeavesPowerliftingSlotUnresolvedWhenNoCandidateIsSemanticallyEligibleRegardlessOfEnvironment() throws {
+        let asOf = date(2026, 1, 5)
+        let fixture = try makeAcceptedPlan(asOf: asOf)
+        let mixCandidates = LongTermPlanner.proposeTrainingMix(phase: fixture.phase, goal: fixture.goal)
+        let recommended = try XCTUnwrap(mixCandidates.first { $0.roles.contains(.recommended) })
+
+        // Distinct from the test above: these candidates have NO
+        // `primaryTargets` at all, so they fail every real slot's
+        // `allowedTargets` check regardless of equipment — `.isDisjoint`
+        // against an empty set is always true, so
+        // `SubstitutionValidator.matchesSemanticConstraints` is false for
+        // every one of them, for every slot. This is the pre-existing,
+        // out-of-TE.1's-scope "no candidate at all" state the checkpoint-
+        // gate investigation deliberately left untouched — it must still
+        // resolve to `nil` silently, never throw, proving the fix does not
+        // conflate "no candidate exists" with "candidate exists but is
+        // environment-incompatible."
+        let untargetedCandidates = [
+            Exercise(canonicalName: "Zzz Test No Targets A", modality: .hypertrophy, equipment: "barbell", movementPattern: "test", primaryTargets: [], requiredEquipment: []),
+            Exercise(canonicalName: "Zzz Test No Targets B", modality: .hypertrophy, equipment: "barbell", movementPattern: "test", primaryTargets: [], requiredEquipment: []),
+        ]
+        untargetedCandidates.forEach { context.insert($0) }
+        let fullyEquippedEnvironment = TrainingEnvironmentTestSupport.full(context: context)
+
+        let materializationContext = TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: untargetedCandidates, trainingEnvironment: fullyEquippedEnvironment)
+        try StartPhaseUseCase.start(
+            phase: fixture.phase, mix: recommended.mix, asOf: asOf, ownerUserID: ownerUserID,
+            performanceProfile: nil, availability: availability(),
+            materializationContext: materializationContext,
+            context: context
+        )
+
+        let instance = try XCTUnwrap(fixture.phase.primaryInstance)
+        let definition = try XCTUnwrap(instance.programDefinition)
+        let slots = definition.orderedTemplateSessions.flatMap(\.orderedBlockTemplates).flatMap(\.orderedPrescriptionTemplates).compactMap(\.exerciseSlot)
+        XCTAssertFalse(slots.isEmpty)
+        for slot in slots {
+            XCTAssertNil(slot.resolvedExercise, "no candidate matches this slot's own target semantics at all, regardless of environment -> stays unresolved, never treated as an environment conflict")
+        }
+    }
+
+    func testStartPhaseUseCaseResolvesPowerliftingSlotsAndPreservesSlotSemanticsWithCompatibleEquipment() throws {
+        let asOf = date(2026, 1, 5)
+        let fixture = try makeAcceptedPlan(asOf: asOf)
+        let candidates = makeCandidates()
+        let mixCandidates = LongTermPlanner.proposeTrainingMix(phase: fixture.phase, goal: fixture.goal)
+        let recommended = try XCTUnwrap(mixCandidates.first { $0.roles.contains(.recommended) })
+
+        let materializationContext = TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.all, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context))
+        try StartPhaseUseCase.start(
+            phase: fixture.phase, mix: recommended.mix, asOf: asOf, ownerUserID: ownerUserID,
+            performanceProfile: nil, availability: availability(),
+            materializationContext: materializationContext,
+            context: context
+        )
+
+        let instance = try XCTUnwrap(fixture.phase.primaryInstance)
+        let definition = try XCTUnwrap(instance.programDefinition)
+        let slots = definition.orderedTemplateSessions.flatMap(\.orderedBlockTemplates).flatMap(\.orderedPrescriptionTemplates).compactMap(\.exerciseSlot)
+        XCTAssertFalse(slots.isEmpty)
+        for slot in slots {
+            let resolved = try XCTUnwrap(slot.resolvedExercise, "a fully-equipped environment must resolve every slot, matching this system's own already-verified non-environment behavior")
+            XCTAssertTrue(SubstitutionValidator.isValid(candidate: resolved, for: slot, environment: TrainingEnvironmentTestSupport.full(context: context)), "resolved exercise must still satisfy the slot's own source semantics (allowedTargets), not merely 'anything equipment-compatible'")
+        }
+    }
+
+    // MARK: TE.1 closure — the same three behaviors via the real HYPERTROPHY path (`.muscleGain`)
+
+    func testStartPhaseUseCaseThrowsTrainingEnvironmentRequiredForHypertrophyWhenNoEnvironmentIsConfigured() throws {
+        let asOf = date(2026, 1, 5)
+        let goal = Goal(ownerUserID: ownerUserID, primaryType: .muscleGain, targetDate: Calendar.current.date(byAdding: .year, value: 1, to: asOf), createdAt: asOf)
+        context.insert(goal)
+        let proposal = LongTermPlanner.proposeStrategicPlan(goal: goal, asOf: asOf)
+        let plan = try AcceptStrategicPlanUseCase.accept(proposal, context: context, decidedAt: asOf)
+        let phase = try XCTUnwrap(plan.orderedPhases.first)
+        let candidates = makeCandidates()
+        let mixCandidates = LongTermPlanner.proposeTrainingMix(phase: phase, goal: goal)
+        let recommended = try XCTUnwrap(mixCandidates.first { $0.roles.contains(.recommended) })
+        XCTAssertEqual(recommended.mix.orderedComponents.first { $0.priority == .primary }?.programmingSystem, .hypertrophy, "sanity check on this fixture's own real production dispatch, not an assumption")
+
+        let materializationContext = TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.all, trainingEnvironment: nil)
+        XCTAssertThrowsError(try StartPhaseUseCase.start(
+            phase: phase, mix: recommended.mix, asOf: asOf, ownerUserID: ownerUserID,
+            performanceProfile: nil, availability: availability(),
+            materializationContext: materializationContext,
+            context: context
+        )) { error in
+            XCTAssertEqual(error as? ExerciseSlotResolutionError, .trainingEnvironmentRequired)
+        }
+    }
+
+    func testStartPhaseUseCaseResolvesHypertrophySlotsAndPreservesSlotSemanticsWithCompatibleEquipment() throws {
+        let asOf = date(2026, 1, 5)
+        let goal = Goal(ownerUserID: ownerUserID, primaryType: .muscleGain, targetDate: Calendar.current.date(byAdding: .year, value: 1, to: asOf), createdAt: asOf)
+        context.insert(goal)
+        let proposal = LongTermPlanner.proposeStrategicPlan(goal: goal, asOf: asOf)
+        let plan = try AcceptStrategicPlanUseCase.accept(proposal, context: context, decidedAt: asOf)
+        let phase = try XCTUnwrap(plan.orderedPhases.first)
+        let candidates = makeCandidates()
+        let mixCandidates = LongTermPlanner.proposeTrainingMix(phase: phase, goal: goal)
+        let recommended = try XCTUnwrap(mixCandidates.first { $0.roles.contains(.recommended) })
+
+        let materializationContext = TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.all, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context))
+        try StartPhaseUseCase.start(
+            phase: phase, mix: recommended.mix, asOf: asOf, ownerUserID: ownerUserID,
+            performanceProfile: nil, availability: availability(),
+            materializationContext: materializationContext,
+            context: context
+        )
+
+        let instance = try XCTUnwrap(phase.primaryInstance)
+        let definition = try XCTUnwrap(instance.programDefinition)
+        let slots = definition.orderedTemplateSessions.flatMap(\.orderedBlockTemplates).flatMap(\.orderedPrescriptionTemplates).compactMap(\.exerciseSlot)
+        XCTAssertFalse(slots.isEmpty)
+        for slot in slots {
+            let resolved = try XCTUnwrap(slot.resolvedExercise, "a fully-equipped environment must resolve every slot")
+            XCTAssertTrue(SubstitutionValidator.isValid(candidate: resolved, for: slot, environment: TrainingEnvironmentTestSupport.full(context: context)), "resolved exercise must still satisfy the slot's own source semantics (allowedTargets)")
+        }
     }
 }

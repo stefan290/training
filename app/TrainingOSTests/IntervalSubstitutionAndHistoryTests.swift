@@ -43,7 +43,7 @@ final class IntervalSubstitutionAndHistoryTests: XCTestCase {
 
         let week0 = try IntervalMaterializer.materializeWeek(
             definition: definition, instance: instance, weekIndex: 0, startDate: Date(timeIntervalSince1970: 0),
-            ownerUserID: instance.ownerUserID, weekContext: { _ in .init() }, context: context
+            ownerUserID: instance.ownerUserID, weekContext: { _ in .init() },  environment: TrainingEnvironmentTestSupport.full(context: context), context: context
         )
         let week0Prescription = try XCTUnwrap(week0.first?.orderedBlocks.first?.intervalPrescription)
         XCTAssertEqual(week0Prescription.activityType, .cycling)
@@ -56,7 +56,7 @@ final class IntervalSubstitutionAndHistoryTests: XCTestCase {
         let week1 = try IntervalMaterializer.materializeWeek(
             definition: definition, instance: instance, weekIndex: 1, startDate: Date(timeIntervalSince1970: 0),
             ownerUserID: instance.ownerUserID,
-            weekContext: { _ in IntervalMaterializer.WeekContext(previousActualIntervalCount: 4, previousOutcome: .progress) },
+            weekContext: { _ in IntervalMaterializer.WeekContext(previousActualIntervalCount: 4, previousOutcome: .progress) },  environment: TrainingEnvironmentTestSupport.full(context: context),
             context: context
         )
         let week1Prescription = try XCTUnwrap(week1.first?.orderedBlocks.first?.intervalPrescription)
@@ -71,7 +71,7 @@ final class IntervalSubstitutionAndHistoryTests: XCTestCase {
         instance.programDefinition = definition
         let week0 = try IntervalMaterializer.materializeWeek(
             definition: definition, instance: instance, weekIndex: 0, startDate: Date(timeIntervalSince1970: 0),
-            ownerUserID: instance.ownerUserID, weekContext: { _ in .init() }, context: context
+            ownerUserID: instance.ownerUserID, weekContext: { _ in .init() },  environment: TrainingEnvironmentTestSupport.full(context: context), context: context
         )
         let prescription = try XCTUnwrap(week0.first?.orderedBlocks.first?.intervalPrescription)
         try SubstituteActivityUseCase.substituteThisSessionOnly(prescription: prescription, template: template, with: .rowing)
@@ -99,7 +99,7 @@ final class IntervalSubstitutionAndHistoryTests: XCTestCase {
 
         let week0 = try IntervalMaterializer.materializeWeek(
             definition: definition, instance: instance, weekIndex: 0, startDate: Date(timeIntervalSince1970: 0),
-            ownerUserID: instance.ownerUserID, weekContext: { _ in .init() }, context: context
+            ownerUserID: instance.ownerUserID, weekContext: { _ in .init() },  environment: TrainingEnvironmentTestSupport.full(context: context), context: context
         )
         let alreadyMaterialized = try XCTUnwrap(week0.first?.orderedBlocks.first?.intervalPrescription)
         alreadyMaterialized.workoutBlock?.session?.status = .completed
@@ -112,7 +112,7 @@ final class IntervalSubstitutionAndHistoryTests: XCTestCase {
         let week1 = try IntervalMaterializer.materializeWeek(
             definition: definition, instance: instance, weekIndex: 1, startDate: Date(timeIntervalSince1970: 0),
             ownerUserID: instance.ownerUserID,
-            weekContext: { _ in IntervalMaterializer.WeekContext(previousActualIntervalCount: 4, previousOutcome: .progress) },
+            weekContext: { _ in IntervalMaterializer.WeekContext(previousActualIntervalCount: 4, previousOutcome: .progress) },  environment: TrainingEnvironmentTestSupport.full(context: context),
             context: context
         )
         let week1Prescription = try XCTUnwrap(week1.first?.orderedBlocks.first?.intervalPrescription)
