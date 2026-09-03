@@ -31,6 +31,13 @@ final class Goal {
     /// `nil` means no stated preference context yet — every planner call
     /// degrades to coarser recommendations, it never fails.
     var preferences: GoalPreferences?
+    /// Dated Objectives + 10K Strategic Reconciliation V1: authoritative
+    /// whenever non-empty — `LongTermPlanner` then plans from this array
+    /// alone and ignores `milestoneDate`/`bodyCompositionDirection`
+    /// entirely; it only ever projects that legacy pair in-memory when
+    /// this array is empty (`LongTermPlanner.PlanningParameters`). Never
+    /// changes `primaryType`.
+    var datedObjectives: [DatedObjective]
     var createdAt: Date
     var status: GoalStatus
 
@@ -46,6 +53,7 @@ final class Goal {
         milestoneDate: Date? = nil,
         bodyCompositionDirection: BodyCompositionDirection? = nil,
         preferences: GoalPreferences? = nil,
+        datedObjectives: [DatedObjective] = [],
         createdAt: Date = Date(),
         status: GoalStatus = .active
     ) {
@@ -57,6 +65,7 @@ final class Goal {
         self.milestoneDate = milestoneDate
         self.bodyCompositionDirection = bodyCompositionDirection
         self.preferences = preferences
+        self.datedObjectives = datedObjectives
         self.createdAt = createdAt
         self.status = status
     }

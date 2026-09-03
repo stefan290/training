@@ -5,6 +5,12 @@ enum StrategicPlanAcceptanceError: Error, Equatable {
     /// An `.infeasible` `StrategicPlanProposal` must never be silently
     /// accepted — mirrors `ScheduleAcceptanceError.infeasible` exactly.
     case infeasible
+    /// Dated Objectives + 10K Strategic Reconciliation V1: a genuine
+    /// `.objectivesConflict` proposal must never be silently accepted
+    /// either — the athlete must see the explicit trade-off and resolve it
+    /// (e.g. by moving one of the conflicting dates) before anything is
+    /// persisted.
+    case objectivesConflict
 }
 
 /// The Engine-recommendation -> Explanation -> User-approval pattern's
@@ -26,8 +32,10 @@ enum AcceptStrategicPlanUseCase {
         decisionReasonCode: PlannerReasonCode = .phaseSelectedForGoal,
         decisionSource: DecisionSource = .systemRecommended
     ) throws -> TrainingPlan {
-        guard proposal.feasibility != .infeasible else {
-            throw StrategicPlanAcceptanceError.infeasible
+        switch proposal.feasibility {
+        case .feasible: break
+        case .infeasible: throw StrategicPlanAcceptanceError.infeasible
+        case .objectivesConflict: throw StrategicPlanAcceptanceError.objectivesConflict
         }
 
         // §4a: superseding a plan never mutates it — the prior revision's

@@ -62,11 +62,26 @@ final class StrategicPlanSelectionViewModel {
     /// .previewMixSummary`).
     var recommendedMixSummary: String? { reviewedMix.map(PlanPresentation.mixSummary) }
     var phaseTypeLabels: [String] { proposal?.phases.map { PlanPresentation.phaseTypeLabel($0.type) } ?? [] }
+    /// Dated Objectives + 10K Strategic Reconciliation V1: true when any
+    /// proposed phase's own prep window was compressed below its ideal
+    /// lead time because an earlier dated objective's own phase ran late
+    /// into it — the real, structural signal for the locked "truthfully
+    /// disclose when available time is shorter than normal" requirement,
+    /// never a guessed heuristic.
+    var hasCompressedObjectivePrep: Bool {
+        proposal?.phases.contains { $0.reasonCodes.contains(.objectivePrepCompressed) } ?? false
+    }
     var isInfeasible: Bool { proposal?.feasibility == .infeasible }
+    /// Dated Objectives + 10K Strategic Reconciliation V1: distinct from
+    /// `isInfeasible` — a genuine, athlete-facing trade-off ("two dated
+    /// goals can't both be true"), never a "not enough calendar time"
+    /// message (CLAUDE.md rule 18/19's discipline extended to this new
+    /// vocabulary).
+    var hasObjectivesConflict: Bool { proposal?.feasibility == .objectivesConflict }
     /// A feasible plan (calendar-wise) with zero executable `TrainingMix`
     /// candidate — a real, distinct failure mode from infeasibility
     /// (CLAUDE.md rule 18: never conflate the two vocabularies).
-    var hasNoCompatibleMix: Bool { proposal != nil && !isInfeasible && reviewedMix == nil }
+    var hasNoCompatibleMix: Bool { proposal != nil && proposal?.feasibility == .feasible && reviewedMix == nil }
     /// Stage V1 dogfooding fix: every OTHER real, genuinely feasible
     /// candidate this load produced — `alignment.rating` at or above
     /// `LongTermPlanner`'s own real compatibility gate, exactly the same
@@ -97,7 +112,7 @@ final class StrategicPlanSelectionViewModel {
         let proposal = LongTermPlanner.proposeStrategicPlan(goal: activeGoal, asOf: Date())
         self.proposal = proposal
 
-        guard proposal.feasibility != .infeasible, let firstProposedPhase = proposal.phases.first else {
+        guard proposal.feasibility == .feasible, let firstProposedPhase = proposal.phases.first else {
             reviewedMix = nil
             candidates = []
             return

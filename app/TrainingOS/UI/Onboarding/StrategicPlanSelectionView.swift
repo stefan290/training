@@ -26,7 +26,13 @@ struct StrategicPlanSelectionView: View {
                         }
                     }
 
-                    if viewModel.isInfeasible {
+                    if viewModel.hasObjectivesConflict {
+                        InfoSection(title: "RECOMMENDATION") {
+                            Text("Two of your dated goals fall on the same date and call for different training focus — they can't both be true on that single day. Please move one of the dates.")
+                                .font(Theme.body)
+                                .foregroundStyle(Theme.attention)
+                        }
+                    } else if viewModel.isInfeasible {
                         InfoSection(title: "RECOMMENDATION") {
                             Text("TrainingOS couldn't build a strategic plan from your current goal and target date. Try a later target date or a different goal.")
                                 .font(Theme.body)
@@ -54,6 +60,12 @@ struct StrategicPlanSelectionView: View {
                                     Text("\(index + 1). \(label)")
                                         .font(Theme.body)
                                         .foregroundStyle(Theme.textPrimary)
+                                }
+                                if viewModel.hasCompressedObjectivePrep {
+                                    Text("One of your dated goals has less lead time than TrainingOS would normally want — this plan is a best effort within the time you actually have.")
+                                        .font(Theme.label)
+                                        .foregroundStyle(Theme.textSecondary)
+                                        .padding(.top, 4)
                                 }
                             }
                         }

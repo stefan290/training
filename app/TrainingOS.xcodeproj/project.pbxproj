@@ -336,6 +336,7 @@
 		D204E7B89295401A8B5D3172 /* RestTimerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4DB4B7F4C824AEAA75C3AB8 /* RestTimerView.swift */; };
 		D67044B6B56E08A489CE0BCB /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19E46C6A95AC6EE65B67E22 /* User.swift */; };
 		D8BCA9DCCCC94048850547B3 /* LongTermPlannerStrategicPlanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D610205E7D344C0199028EB3 /* LongTermPlannerStrategicPlanTests.swift */; };
+		3AB52E63B3669CC9DCC8B2B3 /* DatedObjectivesReconciliationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2F006955E7709C55A212353 /* DatedObjectivesReconciliationTests.swift */; };
 		D9D293EF687D4C9E8EFC61C7 /* SubstitutionAwareRecommendation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E87ABA502914319A82C1265 /* SubstitutionAwareRecommendation.swift */; };
 		DA0815C3588E4254B7572296 /* CandidateTrainingMix.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D3D37D834944F9FACAF4B03 /* CandidateTrainingMix.swift */; };
 		DA7352647EBF45659D79B8CD /* TemporaryPreferenceEvaluator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7149EEB71E3433D986C35F9 /* TemporaryPreferenceEvaluator.swift */; };
@@ -706,6 +707,7 @@
 		D4B08F99A1E54BA59B002A11 /* PlannerDecisionTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PlannerDecisionTypes.swift; path = PlannerDecisionTypes.swift; sourceTree = "<group>"; };
 		D60B555E4695443AAD252362 /* AcceptScheduleProposalUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AcceptScheduleProposalUseCase.swift; path = AcceptScheduleProposalUseCase.swift; sourceTree = "<group>"; };
 		D610205E7D344C0199028EB3 /* LongTermPlannerStrategicPlanTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LongTermPlannerStrategicPlanTests.swift; path = LongTermPlannerStrategicPlanTests.swift; sourceTree = "<group>"; };
+		A2F006955E7709C55A212353 /* DatedObjectivesReconciliationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DatedObjectivesReconciliationTests.swift; path = DatedObjectivesReconciliationTests.swift; sourceTree = "<group>"; };
 		D642401D83068E564FDA98F1 /* PersistenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PersistenceController.swift; path = PersistenceController.swift; sourceTree = "<group>"; };
 		D6BA8738E2EE4513B27BAF41 /* CompletedFunctionalFitnessDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CompletedFunctionalFitnessDetail.swift; path = CompletedFunctionalFitnessDetail.swift; sourceTree = "<group>"; };
 		D75D795660744E94A6818B4C /* LogIntervalRepUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LogIntervalRepUseCase.swift; path = LogIntervalRepUseCase.swift; sourceTree = "<group>"; };
@@ -1195,6 +1197,7 @@
 				0003E1DA9A6F4438B65048D7 /* LongTermPlannerProgramRecommendationTests.swift */,
 				8E08F11449D2435FB502E093 /* LongTermPlannerTrainingMixRankingTests.swift */,
 				D610205E7D344C0199028EB3 /* LongTermPlannerStrategicPlanTests.swift */,
+				A2F006955E7709C55A212353 /* DatedObjectivesReconciliationTests.swift */,
 				3F68524FCF48458397F19E9B /* LongTermPlannerRevisionTests.swift */,
 				96957ECF3701403F946023B8 /* TemporaryPreferenceAndModalitySwitchTests.swift */,
 				B5FBF35C540B41F4A3F8FE1E /* TacticalWindowPolicyTests.swift */,
@@ -1543,6 +1546,7 @@
 				EB802A4777614C49B43C4ACF /* LongTermPlannerProgramRecommendationTests.swift in Sources */,
 				A95A9AA483344D048BB7FCD4 /* LongTermPlannerTrainingMixRankingTests.swift in Sources */,
 				D8BCA9DCCCC94048850547B3 /* LongTermPlannerStrategicPlanTests.swift in Sources */,
+				3AB52E63B3669CC9DCC8B2B3 /* DatedObjectivesReconciliationTests.swift in Sources */,
 				9DC345C6A3A5410F840C85AC /* LongTermPlannerRevisionTests.swift in Sources */,
 				CB4485429B55490D841976B4 /* TemporaryPreferenceAndModalitySwitchTests.swift in Sources */,
 				5F43F7B5A63F484882833466 /* TacticalWindowPolicyTests.swift in Sources */,

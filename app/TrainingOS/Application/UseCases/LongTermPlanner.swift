@@ -29,12 +29,24 @@ enum LongTermPlanner {
         var targetDate: Date?
         var milestoneDate: Date?
         var bodyCompositionDirection: BodyCompositionDirection?
+        /// Dated Objectives + 10K Strategic Reconciliation V1: authoritative
+        /// whenever non-empty (mirrors `Goal.datedObjectives`'s own doc
+        /// comment exactly) — `proposePhases` only ever falls back to
+        /// `milestoneDate`/`bodyCompositionDirection` above when this is
+        /// empty. Always empty via the second init below, so
+        /// `reviseByChangingMilestoneDate`'s existing call site keeps
+        /// planning through the legacy single-milestone path exactly as it
+        /// does today — real dated-objective revision goes through
+        /// `.changeLongTermGoal`, which reads a real `Goal` via the first
+        /// init instead.
+        var datedObjectives: [DatedObjective]
 
         init(goal: Goal) {
             self.primaryType = phaseType(for: goal.primaryType)
             self.targetDate = goal.targetDate
             self.milestoneDate = goal.milestoneDate
             self.bodyCompositionDirection = goal.bodyCompositionDirection
+            self.datedObjectives = goal.datedObjectives
         }
 
         init(primaryType: PhaseType, targetDate: Date?, milestoneDate: Date?, bodyCompositionDirection: BodyCompositionDirection?) {
@@ -42,6 +54,7 @@ enum LongTermPlanner {
             self.targetDate = targetDate
             self.milestoneDate = milestoneDate
             self.bodyCompositionDirection = bodyCompositionDirection
+            self.datedObjectives = []
         }
     }
 
@@ -59,6 +72,15 @@ enum LongTermPlanner {
     private static func proposePhases(
         _ params: PlanningParameters, asOf: Date
     ) -> (phases: [ProposedPhase], feasibility: StrategicPlanFeasibility, explanation: String) {
+        let plannedObjectives = params.datedObjectives.filter { $0.status == .planned }
+        if !params.datedObjectives.isEmpty {
+            // `Goal.datedObjectives` is authoritative once non-empty, even
+            // if every objective in it has since been completed/cancelled
+            // — the legacy `milestoneDate` pair is never resurrected once
+            // this array is real.
+            guard !plannedObjectives.isEmpty else { return proposeForwardOnlyPhases(params, asOf: asOf) }
+            return proposeReconciledPhases(params, objectives: plannedObjectives, asOf: asOf)
+        }
         guard let milestoneDate = params.milestoneDate else {
             return proposeForwardOnlyPhases(params, asOf: asOf)
         }
@@ -160,6 +182,115 @@ enum LongTermPlanner {
             allPhases, .feasible,
             "Plan backward-anchors a \(milestoneType.rawValue) phase to the milestone date, "
                 + "forward-filling \(primaryType.rawValue) before it."
+        )
+    }
+
+    /// Dated Objectives + 10K Strategic Reconciliation V1's core
+    /// reconciliation algorithm. `objectives` is every `.planned` dated
+    /// objective (already non-empty — callers guarantee this), processed
+    /// in ascending date order (locked spec step 1). **OVERLAP != CONFLICT**:
+    /// each objective's phase always backward-anchors from its own ideal
+    /// lead time, but its actual start is clamped to never begin before
+    /// the previous objective's own phase ends — this is the "reconcile
+    /// via sequencing, gracefully compress instead of blocking" mechanism.
+    /// A compressed objective still gets its own real phase (reused
+    /// existing "too-soon" acceptance, `objectivePrepCompressed`); the ONE
+    /// structurally-forced genuine conflict this can prove is two
+    /// objectives sharing an identical calendar date but requiring two
+    /// different `PhaseType`s — checked up front, before any sequencing,
+    /// since no single `ProposedPhase` can honor both without fabricating
+    /// a blended type.
+    private static func proposeReconciledPhases(
+        _ params: PlanningParameters, objectives rawObjectives: [DatedObjective], asOf: Date
+    ) -> (phases: [ProposedPhase], feasibility: StrategicPlanFeasibility, explanation: String) {
+        let primaryType = params.primaryType
+        let objectives = rawObjectives.sorted { $0.date < $1.date }
+
+        for i in 0..<objectives.count {
+            for j in (i + 1)..<objectives.count {
+                let a = objectives[i], b = objectives[j]
+                guard Calendar.current.isDate(a.date, inSameDayAs: b.date) else { continue }
+                let typeA = phaseType(forObjective: a, primaryType: primaryType)
+                let typeB = phaseType(forObjective: b, primaryType: primaryType)
+                guard typeA != typeB else { continue }
+                return (
+                    [], .objectivesConflict,
+                    "Two of your dated goals fall on the same date but call for different kinds of training "
+                        + "focus that can't both be true on that single day. Please move one of the dates."
+                )
+            }
+        }
+
+        var allPhases: [ProposedPhase] = []
+        var cursor = asOf
+        for objective in objectives {
+            let type = phaseType(forObjective: objective, primaryType: primaryType)
+            let idealWeeks = idealLeadWeeks(for: objective, phaseType: type)
+            let idealStart = addingWeeks(-idealWeeks, to: objective.date)
+            let actualStart = max(idealStart, cursor)
+            let compressed = actualStart > idealStart
+
+            // A dedicated transition phase, exactly like the legacy
+            // single-milestone path, but only when there is genuine
+            // uncompressed lead time for one — a compressed/too-soon
+            // objective forgoes the extra transition rather than compress
+            // it further still (the objective's own phase, and the fat
+            // loss/endurance mixes' own already-real supporting
+            // components, still provide continuity).
+            var transitionPhase: ProposedPhase?
+            if type != primaryType, !compressed {
+                let transitionDurationKind = PhaseDurationDefaults.range(for: .transition)
+                let transitionWeeks = transitionDurationKind.planningWeeks ?? 2
+                if wholeWeeksBetween(cursor, idealStart) >= transitionWeeks {
+                    let transitionStart = addingWeeks(-transitionWeeks, to: idealStart)
+                    transitionPhase = ProposedPhase(
+                        type: .transition, priorityRule: .mixedModal,
+                        startDate: transitionStart, endDate: idealStart,
+                        durationKind: transitionDurationKind, reasonCodes: [.transitionPhaseInserted]
+                    )
+                }
+            }
+
+            let fillEnd = transitionPhase?.startDate ?? actualStart
+            if fillEnd > cursor {
+                let (fillPhases, fillFeasible) = fillForwardPhases(
+                    from: cursor, to: fillEnd, primaryType: primaryType, baseReasonCodes: [.phaseSelectedForGoal]
+                )
+                // A too-short forward gap simply produces zero primary-goal
+                // phases there — it never blocks the objective itself
+                // (mirrors the legacy milestone-anchored path's own
+                // `fillFeasible` tolerance).
+                if fillFeasible { allPhases.append(contentsOf: fillPhases) }
+            }
+            if let transitionPhase { allPhases.append(transitionPhase) }
+
+            var reasonCodes: [PlannerReasonCode] = [.phaseSelectedForGoal]
+            if type == .fatLoss { reasonCodes.append(.fatLossTimedToMilestone) }
+            if compressed { reasonCodes.append(.objectivePrepCompressed) }
+            allPhases.append(ProposedPhase(
+                type: type, priorityRule: priorityRule(for: type),
+                startDate: actualStart, endDate: objective.date,
+                durationKind: .range(typical: wholeWeeksBetween(actualStart, objective.date), minimum: nil, maximum: nil),
+                reasonCodes: reasonCodes
+            ))
+            cursor = objective.date
+        }
+
+        // Post-event/post-milestone return to the primary goal — the same
+        // locked, planner-owned 12-week default horizon as the legacy
+        // single-milestone path, generalized to "after the LAST dated
+        // objective." Never mutates `Goal.targetDate`.
+        let effectiveTargetDate = params.targetDate ?? addingWeeks(12, to: cursor)
+        if effectiveTargetDate > cursor {
+            let (afterPhases, afterFeasible) = fillForwardPhases(
+                from: cursor, to: effectiveTargetDate, primaryType: primaryType, baseReasonCodes: [.phaseSelectedForGoal]
+            )
+            if afterFeasible { allPhases.append(contentsOf: afterPhases) }
+        }
+
+        return (
+            allPhases, .feasible,
+            "Plan coordinates \(objectives.count) dated goal(s) alongside \(primaryType.rawValue)."
         )
     }
 
@@ -325,7 +456,29 @@ enum LongTermPlanner {
         for _ in 0..<52 {
             guard current < end else { break }
             let remainingWeeks = wholeWeeksBetween(current, end)
-            guard remainingWeeks > 0 else { break }
+
+            guard remainingWeeks > 0 else {
+                // Dated Objectives + 10K Strategic Reconciliation V1 fix: a
+                // sub-week remainder (`wholeWeeksBetween` floors) must never
+                // silently vanish as an unscheduled gap between this fill's
+                // last phase and whatever the caller appends next (a
+                // transition/milestone/dated-objective phase, or the
+                // caller's own horizon end) — absorb it into the last
+                // already-built phase instead. Pre-existing latent
+                // behavior in this shared primitive, surfaced by this
+                // checkpoint's own stricter phase-contiguity proof; fixing
+                // it here benefits every caller (forward-only, legacy
+                // milestone-anchored, and the new reconciled path alike),
+                // never just papering over this checkpoint's own symptom.
+                if let last = phases.popLast() {
+                    phases.append(ProposedPhase(
+                        type: last.type, priorityRule: last.priorityRule,
+                        startDate: last.startDate, endDate: end,
+                        durationKind: last.durationKind, reasonCodes: last.reasonCodes
+                    ))
+                }
+                break
+            }
 
             let useMaintenance = consecutivePrimary >= 2
             let phaseType: PhaseType = useMaintenance ? .maintenance : primaryType
@@ -370,6 +523,38 @@ enum LongTermPlanner {
         case .loseFat, .recomposition: return .fatLoss
         case .gainMuscle: return .muscleGain
         case .maintain, .none: return primaryType
+        }
+    }
+
+    /// Dated Objectives + 10K Strategic Reconciliation V1: which
+    /// `PhaseType` this dated objective drives. `.bodyCompositionMilestone`
+    /// reuses `milestonePhaseType` exactly (same fatLoss/muscleGain/
+    /// primaryType mapping the legacy single-milestone path already uses).
+    /// `.runningEvent` always resolves to `.enduranceEvent` — no new
+    /// `PhaseType` is introduced for it.
+    private static func phaseType(forObjective objective: DatedObjective, primaryType: PhaseType) -> PhaseType {
+        switch objective.kind {
+        case .bodyCompositionMilestone:
+            return milestonePhaseType(direction: objective.bodyCompositionDirection, primaryType: primaryType)
+        case .runningEvent:
+            return .enduranceEvent
+        }
+    }
+
+    /// The ideal (uncompressed) lead time this dated objective's own phase
+    /// wants, before any cross-objective clamping. A body-composition
+    /// milestone reuses the exact same `PhaseDurationDefaults` lookup the
+    /// legacy single-milestone path already uses; a running event uses the
+    /// locked, athlete-self-reported 16/12/8-week tier
+    /// (`RunningStartingState.leadTimeWeeks`) — falling back to the most
+    /// conservative (16-week) tier only in the unreachable case where
+    /// onboarding somehow left this unset, never a guessed default.
+    private static func idealLeadWeeks(for objective: DatedObjective, phaseType: PhaseType) -> Int {
+        switch objective.kind {
+        case .bodyCompositionMilestone:
+            return PhaseDurationDefaults.range(for: phaseType).planningWeeks ?? 8
+        case .runningEvent:
+            return (objective.runningStartingState ?? .notCurrentlyRunning).leadTimeWeeks
         }
     }
 
@@ -848,7 +1033,16 @@ enum LongTermPlanner {
         case .strength:
             return [(strengthFocusedMix(), [.phaseSelectedForGoal])]
         case .enduranceEvent:
-            let activity = preferredEnduranceActivityLabel(goal: goal)
+            // Dated Objectives + 10K Strategic Reconciliation V1: when
+            // `.enduranceEvent` is NOT the primary goal's own phase type,
+            // the only thing that can have produced this phase is a
+            // `.runningEvent` dated objective (10K) — force "Running"
+            // rather than the unrelated stated-activity-preference
+            // mechanism, exactly as locked. When it IS the primary goal's
+            // own type, preserve today's existing preference-driven
+            // behavior unchanged.
+            let activity = goal.primaryType == .enduranceEvent
+                ? preferredEnduranceActivityLabel(goal: goal) : "Running"
             return [
                 (enduranceFocusedMix(activityLabel: activity), [.phaseSelectedForGoal]),
                 (enduranceVariedMix(activityLabel: activity), [.phaseSelectedForGoal]),

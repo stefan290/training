@@ -8,6 +8,19 @@ import Foundation
 enum StrategicPlanFeasibility: String, Codable, CaseIterable {
     case feasible
     case infeasible
+    /// Dated Objectives + 10K Strategic Reconciliation V1's own locked
+    /// "OVERLAP != CONFLICT" principle: an overlap between two dated
+    /// objectives is reconciled (sequenced, gracefully compressed) using
+    /// only real, already-supported `CandidateTrainingMix` output whenever
+    /// possible — this case is reserved for the one narrower, genuinely
+    /// unrepresentable situation the reconciliation algorithm can
+    /// structurally prove: two dated objectives that share the exact same
+    /// calendar date but require two different `PhaseType`s (a single
+    /// `ProposedPhase` has exactly one type, and no blended type is ever
+    /// fabricated). Distinct from `.infeasible` — this is a real,
+    /// executable-calendar situation with a genuine goal/goal conflict,
+    /// never a "not enough time at all" situation.
+    case objectivesConflict
 }
 
 /// One phase in a proposed roadmap — not yet a persisted `TrainingPhase`.

@@ -561,4 +561,120 @@ final class OnboardingTests: XCTestCase {
         XCTAssertTrue(relaunched.hasDefaultTrainingEnvironment)
         XCTAssertEqual((try context.fetch(FetchDescriptor<TrainingEnvironment>())).count, 1, "no duplicate environment across relaunch")
     }
+
+    // MARK: - Dated Objectives + 10K Strategic Reconciliation V1
+
+    /// Adding a 10K Race maps to `Goal.datedObjectives`, never touching
+    /// `Goal.milestoneDate`/`.bodyCompositionDirection` (which stay nil when
+    /// no Summer Shape milestone was also added) — the primary goal itself
+    /// is never replaced.
+    func testAddingATenKRaceMapsToDatedObjectivesWithoutTouchingLegacyMilestoneFields() throws {
+        let viewModel = OnboardingViewModel()
+        viewModel.start(modelContext: context)
+        viewModel.selectedGoalType = .muscleGain
+        let raceDay = Date().addingTimeInterval(300 * 86400)
+        viewModel.hasRunningEvent = true
+        viewModel.runningEventDate = raceDay
+        viewModel.runningStartingState = .occasionalShorterDistances
+
+        viewModel.advance(from: .goal, modelContext: context)
+        viewModel.advance(from: .preferences, modelContext: context)
+        viewModel.advance(from: .modalityPreferences, modelContext: context)
+
+        let goal = try XCTUnwrap((try context.fetch(FetchDescriptor<Goal>())).first)
+        XCTAssertEqual(goal.primaryType, .muscleGain, "the main goal is never replaced by adding a 10K race")
+        XCTAssertNil(goal.milestoneDate)
+        XCTAssertNil(goal.bodyCompositionDirection)
+        XCTAssertEqual(goal.datedObjectives.count, 1)
+        XCTAssertEqual(goal.datedObjectives.first?.kind, .runningEvent)
+        XCTAssertEqual(goal.datedObjectives.first?.date, raceDay)
+        XCTAssertEqual(goal.datedObjectives.first?.runningStartingState, .occasionalShorterDistances)
+    }
+
+    /// Adding BOTH Summer Shape and a 10K Race must never silently drop
+    /// Summer Shape from planning — once `datedObjectives` is authoritative,
+    /// the legacy milestone is projected into it too (the onboarding-layer
+    /// fix for the "authority flip" footgun this checkpoint's locked domain
+    /// rule would otherwise create).
+    func testAddingBothSummerShapeAndATenKRaceProjectsBothIntoDatedObjectives() throws {
+        let viewModel = OnboardingViewModel()
+        viewModel.start(modelContext: context)
+        viewModel.selectedGoalType = .muscleGain
+        let summerShapeDate = Date().addingTimeInterval(200 * 86400)
+        let raceDay = Date().addingTimeInterval(280 * 86400)
+        viewModel.hasMilestone = true
+        viewModel.milestoneDate = summerShapeDate
+        viewModel.hasRunningEvent = true
+        viewModel.runningEventDate = raceDay
+        viewModel.runningStartingState = .notCurrentlyRunning
+
+        viewModel.advance(from: .goal, modelContext: context)
+        viewModel.advance(from: .preferences, modelContext: context)
+        viewModel.advance(from: .modalityPreferences, modelContext: context)
+
+        let goal = try XCTUnwrap((try context.fetch(FetchDescriptor<Goal>())).first)
+        XCTAssertEqual(goal.datedObjectives.count, 2)
+        XCTAssertTrue(goal.datedObjectives.contains { $0.kind == .bodyCompositionMilestone && $0.date == summerShapeDate })
+        XCTAssertTrue(goal.datedObjectives.contains { $0.kind == .runningEvent && $0.date == raceDay })
+
+        // The real planner must still coordinate both, never silently drop one.
+        let proposal = LongTermPlanner.proposeStrategicPlan(goal: goal, asOf: Date())
+        XCTAssertEqual(proposal.feasibility, .feasible)
+        XCTAssertTrue(proposal.phases.contains { $0.type == .fatLoss })
+        XCTAssertTrue(proposal.phases.contains { $0.type == .enduranceEvent })
+    }
+
+    /// Removing an already-added 10K Race clears it from `datedObjectives`
+    /// without touching the primary goal — mirrors
+    /// `testRemovingSummerShapeClearsMilestoneFieldsWithoutChangingPrimaryGoal`.
+    func testRemovingATenKRaceClearsItFromDatedObjectives() throws {
+        let viewModel = OnboardingViewModel()
+        viewModel.start(modelContext: context)
+        viewModel.selectedGoalType = .muscleGain
+        viewModel.hasRunningEvent = true
+        viewModel.runningEventDate = Date().addingTimeInterval(200 * 86400)
+        viewModel.advance(from: .goal, modelContext: context)
+        viewModel.advance(from: .preferences, modelContext: context)
+        viewModel.advance(from: .modalityPreferences, modelContext: context)
+        XCTAssertEqual((try context.fetch(FetchDescriptor<Goal>())).first?.datedObjectives.count, 1)
+
+        viewModel.goBack(from: .environment)
+        viewModel.goBack(from: .modalityPreferences)
+        viewModel.goBack(from: .preferences)
+        viewModel.hasRunningEvent = false
+        viewModel.advance(from: .goal, modelContext: context)
+        viewModel.advance(from: .preferences, modelContext: context)
+        viewModel.advance(from: .modalityPreferences, modelContext: context)
+
+        let goal = try XCTUnwrap((try context.fetch(FetchDescriptor<Goal>())).first)
+        XCTAssertTrue(goal.datedObjectives.isEmpty, "removal must clear the real persisted dated objective")
+        XCTAssertEqual(goal.primaryType, .muscleGain)
+    }
+
+    /// The locked "6-week recency" suggestion rule: recent real running
+    /// activity may only ever preselect the conservative
+    /// `.occasionalShorterDistances` tier, never `.comfortably10K` (never
+    /// invents a signal result data can't reliably prove), and never when
+    /// there is no recent activity at all.
+    func testRunningStartingStateSuggestionFromRecentActivityNeverOverridesNeverGuessesCapability() throws {
+        let user = AppRootStateResolver.ensureBaselineIdentity(context: context)
+        let activityProfile = ActivityPerformanceProfile(activityType: .running, lastPerformedAt: Date().addingTimeInterval(-14 * 86400))
+        context.insert(activityProfile)
+        user.performanceProfile?.addActivityProfile(activityProfile)
+        try context.save()
+
+        let viewModel = OnboardingViewModel()
+        viewModel.start(modelContext: context)
+
+        XCTAssertEqual(viewModel.runningStartingState, .occasionalShorterDistances, "recent activity may only ever suggest the conservative tier")
+    }
+
+    func testNoRecentRunningActivityLeavesDefaultStartingStateUnchanged() throws {
+        _ = AppRootStateResolver.ensureBaselineIdentity(context: context)
+
+        let viewModel = OnboardingViewModel()
+        viewModel.start(modelContext: context)
+
+        XCTAssertEqual(viewModel.runningStartingState, .notCurrentlyRunning)
+    }
 }

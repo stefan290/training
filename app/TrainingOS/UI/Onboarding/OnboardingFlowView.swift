@@ -15,6 +15,12 @@ struct OnboardingFlowView: View {
     /// `OnboardingViewModel`: this is purely "is the add/edit sub-panel
     /// open," not athlete data.
     @State private var isAddingWorkingToward = false
+    /// Dated Objectives + 10K Strategic Reconciliation V1: the second
+    /// real "working toward" item's own add/edit panel state — kept
+    /// separate from `isAddingWorkingToward` (Summer Shape's) so the two
+    /// items can be added/edited independently, exactly like two entries
+    /// in the same list.
+    @State private var isAddingRunningEvent = false
     let onComplete: () -> Void
 
     var body: some View {
@@ -143,7 +149,86 @@ struct OnboardingFlowView: View {
                         .font(Theme.body)
                 }
             }
+
+            if viewModel.hasRunningEvent, !isAddingRunningEvent {
+                runningEventRow
+            }
+
+            if isAddingRunningEvent {
+                addRunningEventPanel
+            } else if !viewModel.hasRunningEvent {
+                Button {
+                    viewModel.runningEventDate = Date().addingTimeInterval(120 * 86400)
+                    isAddingRunningEvent = true
+                } label: {
+                    Label("Add another goal or event", systemImage: "plus.circle")
+                        .font(Theme.body)
+                }
+            }
         }
+    }
+
+    /// Dated Objectives + 10K Strategic Reconciliation V1's second real
+    /// "working toward" item — mirrors `workingTowardRow` exactly.
+    private var runningEventRow: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("10K Race")
+                    .font(Theme.body)
+                    .foregroundStyle(Theme.textPrimary)
+                Text(viewModel.runningEventDate.formatted(date: .abbreviated, time: .omitted))
+                    .font(Theme.label)
+                    .foregroundStyle(Theme.textSecondary)
+            }
+            Spacer()
+            Button("Edit") { isAddingRunningEvent = true }
+                .font(Theme.label)
+            Button("Remove", role: .destructive) { viewModel.hasRunningEvent = false }
+                .font(Theme.label)
+        }
+        .padding(14)
+        .background(Theme.surfacePrimary, in: RoundedRectangle(cornerRadius: 12))
+    }
+
+    /// Mirrors `addWorkingTowardPanel` exactly, plus the locked 3-option
+    /// running-state question — never exposes "lead-time weeks,"
+    /// `DatedObjective`, or any other internal vocabulary.
+    private var addRunningEventPanel: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("10K Race")
+                .font(Theme.body)
+                .foregroundStyle(Theme.textPrimary)
+            Text("Train toward a 10K on a specific date, alongside your main goal.")
+                .font(Theme.label)
+                .foregroundStyle(Theme.textSecondary)
+            DatePicker("Race day", selection: $viewModel.runningEventDate, in: Date()..., displayedComponents: .date)
+                .font(Theme.body)
+            Text("Where are you starting from?")
+                .font(Theme.body)
+                .foregroundStyle(Theme.textPrimary)
+                .padding(.top, 4)
+            Picker("Where are you starting from?", selection: $viewModel.runningStartingState) {
+                Text("Not currently running").tag(RunningStartingState.notCurrentlyRunning)
+                Text("I run occasionally / shorter distances").tag(RunningStartingState.occasionalShorterDistances)
+                Text("I can comfortably run 10K").tag(RunningStartingState.comfortably10K)
+            }
+            .pickerStyle(.inline)
+            .labelsHidden()
+            HStack {
+                Button("Cancel") { isAddingRunningEvent = false }
+                    .font(Theme.label)
+                Spacer()
+                Button(viewModel.hasRunningEvent ? "Save" : "Add to my plan") {
+                    viewModel.hasRunningEvent = true
+                    isAddingRunningEvent = false
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Theme.primary)
+                .disabled(!viewModel.isRunningEventDateValid)
+            }
+        }
+        .padding(14)
+        .background(Theme.surfacePrimary, in: RoundedRectangle(cornerRadius: 12))
     }
 
     /// Shows the athlete's own already-chosen intent directly — never an
@@ -320,6 +405,9 @@ struct OnboardingFlowView: View {
                 reviewRow("Main Goal", PlanPresentation.goalTypeLabel(viewModel.selectedGoalType))
                 if viewModel.hasMilestone {
                     reviewRow("Working Toward", "Summer Shape — \(viewModel.milestoneDate.formatted(date: .abbreviated, time: .omitted))")
+                }
+                if viewModel.hasRunningEvent {
+                    reviewRow("Working Toward", "10K Race — \(viewModel.runningEventDate.formatted(date: .abbreviated, time: .omitted))")
                 }
                 reviewRow("Training days/week", "\(viewModel.availableTrainingDaysPerWeek)")
                 reviewRow("Variety", viewModel.varietyPreference.rawValue.capitalized)

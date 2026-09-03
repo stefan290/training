@@ -461,4 +461,43 @@ final class StrategicPlanSelectionTests: XCTestCase {
             XCTAssertEqual(viewModel.reviewedMix?.id, firstAlternative.mix.id)
         }
     }
+
+    // MARK: - Dated Objectives + 10K Strategic Reconciliation V1
+
+    /// A genuine `.objectivesConflict` proposal must surface as its own
+    /// distinct, athlete-facing trade-off — never silently blocked like
+    /// `.infeasible`, and never allowed to proceed to a mix recommendation.
+    func testLoadSurfacesAnObjectivesConflictDistinctlyAndNeverBuildsAMix() throws {
+        let (_, goal) = try makeOnboardedAthlete(goalType: .muscleGain)
+        let sameDay = Date().addingTimeInterval(300 * 86400)
+        goal.datedObjectives = [
+            DatedObjective(kind: .bodyCompositionMilestone, date: sameDay, bodyCompositionDirection: .loseFat),
+            DatedObjective(kind: .runningEvent, date: sameDay, runningStartingState: .notCurrentlyRunning),
+        ]
+        try context.save()
+
+        let viewModel = StrategicPlanSelectionViewModel()
+        viewModel.load(modelContext: context)
+
+        XCTAssertTrue(viewModel.hasObjectivesConflict)
+        XCTAssertFalse(viewModel.isInfeasible, "a genuine conflict must never be reported as the unrelated 'infeasible' vocabulary")
+        XCTAssertNil(viewModel.reviewedMix)
+        XCTAssertTrue(viewModel.candidates.isEmpty)
+    }
+
+    /// A compressed (too-soon) dated objective must surface the truthful
+    /// "shorter than normal lead time" signal.
+    func testLoadSurfacesCompressedObjectivePrepWhenAnEarlierObjectiveRunsLateIntoTheNext() throws {
+        let (_, goal) = try makeOnboardedAthlete(goalType: .muscleGain)
+        let asOf = Date()
+        let soon = asOf.addingTimeInterval(20 * 86400) // ~3 weeks — far short of any real tier
+        goal.datedObjectives = [DatedObjective(kind: .runningEvent, date: soon, runningStartingState: .notCurrentlyRunning)]
+        try context.save()
+
+        let viewModel = StrategicPlanSelectionViewModel()
+        viewModel.load(modelContext: context)
+
+        XCTAssertTrue(viewModel.hasCompressedObjectivePrep)
+        XCTAssertFalse(viewModel.isInfeasible, "an event being soon must never block plan creation")
+    }
 }

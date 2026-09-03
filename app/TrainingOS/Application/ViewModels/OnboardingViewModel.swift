@@ -50,6 +50,19 @@ final class OnboardingViewModel {
     /// yet — a disclosed, deliberate FOLLOW-UP, not a planner limitation.
     var hasMilestone = false
     var milestoneDate = Date()
+    /// Dated Objectives + 10K Strategic Reconciliation V1: the second real
+    /// "working toward" item the same add-panel affordance now offers —
+    /// a `DatedObjective(kind: .runningEvent)`, never a new persisted
+    /// scalar pair (`Goal.datedObjectives` is the domain model this maps
+    /// to; unlike Summer Shape, this never touches `Goal.milestoneDate`/
+    /// `.bodyCompositionDirection`, so the two can coexist without either
+    /// silently becoming non-authoritative — see `createOrUpdateGoal`).
+    var hasRunningEvent = false
+    var runningEventDate = Date()
+    var runningStartingState: RunningStartingState = .notCurrentlyRunning
+    /// A past/present event date must never be accepted — same discipline
+    /// as `isMilestoneDateValid`.
+    var isRunningEventDateValid: Bool { runningEventDate > Date() }
     /// Stage V1 "Milestone Onboarding UX correction": the athlete-facing
     /// confirm action reads this directly — a past/present milestone date
     /// must never be accepted. Deliberately a ViewModel-owned property (not
@@ -87,6 +100,13 @@ final class OnboardingViewModel {
             targetDate = activeGoal.targetDate ?? Date()
             hasMilestone = activeGoal.milestoneDate != nil
             milestoneDate = activeGoal.milestoneDate ?? Date()
+            if let runningEvent = activeGoal.datedObjectives.first(where: { $0.kind == .runningEvent && $0.status == .planned }) {
+                hasRunningEvent = true
+                runningEventDate = runningEvent.date
+                runningStartingState = runningEvent.runningStartingState ?? .notCurrentlyRunning
+            } else {
+                runningStartingState = suggestedRunningStartingState(user: resolvedUser)
+            }
             if let preferences = activeGoal.preferences {
                 varietyPreference = preferences.varietyPreference
                 availableTrainingDaysPerWeek = preferences.availableTrainingDaysPerWeek ?? 4
@@ -100,8 +120,27 @@ final class OnboardingViewModel {
             hasDefaultTrainingEnvironment = resolvedUser.profile?.defaultTrainingEnvironment != nil
             step = hasDefaultTrainingEnvironment ? .review : .environment
         } else {
+            runningStartingState = suggestedRunningStartingState(user: resolvedUser)
             step = .goal
         }
+    }
+
+    /// Dated Objectives + 10K Strategic Reconciliation V1's locked
+    /// "6-week recency" rule: existing `ActivityPerformanceProfile` data
+    /// may SUGGEST a preselected answer, never silently override the
+    /// athlete's own explicit choice — this only ever seeds the initial
+    /// value before the athlete has interacted with the running-state
+    /// question at all. Deliberately never suggests `.comfortably10K` —
+    /// real result data can't reliably prove genuine 10K capability, and
+    /// the locked spec is explicit that inventing that signal is out of
+    /// scope; recent running activity at all only ever justifies the more
+    /// conservative `.occasionalShorterDistances` tier.
+    private func suggestedRunningStartingState(user: User) -> RunningStartingState {
+        guard let lastRun = user.performanceProfile?.activityProfile(for: .running)?.lastPerformedAt else {
+            return .notCurrentlyRunning
+        }
+        let sixWeeksAgo = Calendar.current.date(byAdding: .weekOfYear, value: -6, to: Date()) ?? Date()
+        return lastRun >= sixWeeksAgo ? .occasionalShorterDistances : .notCurrentlyRunning
     }
 
     /// Re-fetches `user` fresh from `modelContext` and recomputes
@@ -172,19 +211,38 @@ final class OnboardingViewModel {
             availableTrainingDaysPerWeek: availableTrainingDaysPerWeek,
             allowsDoubleSessions: allowsDoubleSessions
         )
+        // Dated Objectives + 10K Strategic Reconciliation V1: Summer Shape
+        // keeps writing `milestoneDate`/`bodyCompositionDirection` exactly
+        // as before (zero regression to the already-locked Milestone
+        // Onboarding behavior/tests) — `datedObjectives` only becomes
+        // non-empty at all when a running event is actually present. When
+        // it IS present alongside an active Summer Shape milestone, the
+        // milestone is also projected into this same array — `Goal
+        // .datedObjectives` is authoritative once non-empty, so leaving
+        // Summer Shape out of it here would silently drop it from planning
+        // the moment a 10K is added.
+        var datedObjectives: [DatedObjective] = []
+        if hasRunningEvent {
+            if hasMilestone {
+                datedObjectives.append(DatedObjective(kind: .bodyCompositionMilestone, date: milestoneDate, bodyCompositionDirection: .loseFat))
+            }
+            datedObjectives.append(DatedObjective(kind: .runningEvent, date: runningEventDate, runningStartingState: runningStartingState))
+        }
         if let existingGoal = user.goals.first(where: { $0.status == .active }) {
             existingGoal.primaryType = selectedGoalType
             existingGoal.targetDate = hasTargetDate ? targetDate : nil
             existingGoal.milestoneDate = hasMilestone ? milestoneDate : nil
             existingGoal.bodyCompositionDirection = hasMilestone ? .loseFat : nil
             existingGoal.preferences = preferences
+            existingGoal.datedObjectives = datedObjectives
         } else {
             let goal = Goal(
                 ownerUserID: user.id, primaryType: selectedGoalType,
                 targetDate: hasTargetDate ? targetDate : nil,
                 milestoneDate: hasMilestone ? milestoneDate : nil,
                 bodyCompositionDirection: hasMilestone ? .loseFat : nil,
-                preferences: preferences
+                preferences: preferences,
+                datedObjectives: datedObjectives
             )
             modelContext.insert(goal)
             user.addGoal(goal)
