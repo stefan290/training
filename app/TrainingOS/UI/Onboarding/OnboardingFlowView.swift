@@ -31,6 +31,14 @@ struct OnboardingFlowView: View {
             }
         }
         .task { viewModel.start(modelContext: modelContext) }
+        // Stage V1 dogfooding fix: `TrainingEnvironmentSettingsView` is a
+        // sibling view with its own independently-fetched `profile`
+        // reference — mutating `defaultTrainingEnvironment` there does not
+        // reliably re-render this view on its own. Explicitly refresh the
+        // directly-observed `hasDefaultTrainingEnvironment` flag instead.
+        .onReceive(NotificationCenter.default.publisher(for: .trainingEnvironmentDefaultChanged)) { _ in
+            viewModel.refreshEnvironmentState(modelContext: modelContext)
+        }
     }
 
     private var goalStep: some View {
@@ -134,7 +142,7 @@ struct OnboardingFlowView: View {
             Button("Continue") { viewModel.advance(from: .environment, modelContext: modelContext) }
                 .buttonStyle(.borderedProminent)
                 .tint(Theme.primary)
-                .disabled(viewModel.user?.profile?.defaultTrainingEnvironment == nil)
+                .disabled(!viewModel.hasDefaultTrainingEnvironment)
                 .padding()
         }
         .navigationTitle("Training Environment")

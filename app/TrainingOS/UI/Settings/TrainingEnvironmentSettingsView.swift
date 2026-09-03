@@ -1,6 +1,21 @@
 import SwiftUI
 import SwiftData
 
+/// Stage V1 dogfooding fix: `TrainingEnvironmentSettingsView` loads/mutates
+/// its own independently-fetched `profile` reference — a SwiftData to-one
+/// relationship write (`defaultTrainingEnvironment`) made here does not
+/// reliably re-trigger a SwiftUI Observation re-render in a SIBLING view
+/// (`OnboardingFlowView`) that reads the same fact via a different object
+/// graph traversal. Posting this notification and having the sibling
+/// explicitly refresh its own directly-`@Observable`-owned state is the
+/// same established pattern `RootTabView`/`StrategicTransitionViewModel`'s
+/// `.strategicPhaseTransitionCompleted` already uses for exactly this
+/// "a write happened elsewhere, this view must notice" problem — not a new
+/// mechanism.
+extension Notification.Name {
+    static let trainingEnvironmentDefaultChanged = Notification.Name("trainingEnvironmentDefaultChanged")
+}
+
 /// Stage TE.1: minimum settings UX for `TrainingEnvironment` — create a
 /// named environment, toggle which `EquipmentRequirement`s it has, and
 /// choose the single default (`UserProfile.defaultTrainingEnvironment`).
@@ -62,6 +77,7 @@ struct TrainingEnvironmentSettingsView: View {
         }
         newEnvironmentName = ""
         try? modelContext.save()
+        NotificationCenter.default.post(name: .trainingEnvironmentDefaultChanged, object: nil)
     }
 
     @ViewBuilder
@@ -75,6 +91,7 @@ struct TrainingEnvironmentSettingsView: View {
                 Button {
                     profile.defaultTrainingEnvironment = environment
                     try? modelContext.save()
+                    NotificationCenter.default.post(name: .trainingEnvironmentDefaultChanged, object: nil)
                 } label: {
                     Image(systemName: profile.defaultTrainingEnvironment?.id == environment.id ? "checkmark.circle.fill" : "circle")
                 }

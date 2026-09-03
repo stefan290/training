@@ -23,6 +23,16 @@ final class OnboardingViewModel {
 
     private(set) var step: Step = .goal
     private(set) var user: User?
+    /// Stage V1 dogfooding fix: a directly-`@Observable`-owned scalar,
+    /// deliberately NOT read via `viewModel.user?.profile?.defaultTrainingEnvironment`
+    /// at the call site — that transitive SwiftData relationship read,
+    /// mutated by the SIBLING `TrainingEnvironmentSettingsView`'s own
+    /// independently-fetched `profile` reference, does not reliably
+    /// re-trigger this view's re-render. This property is explicitly
+    /// recomputed (`refreshEnvironmentState`) in response to
+    /// `.trainingEnvironmentDefaultChanged`, so the Continue button's
+    /// enablement is driven by a property SwiftUI is guaranteed to observe.
+    private(set) var hasDefaultTrainingEnvironment = false
 
     var selectedGoalType: GoalType = .generalStrength
     var hasTargetDate = false
@@ -47,10 +57,28 @@ final class OnboardingViewModel {
                 availableTrainingDaysPerWeek = preferences.availableTrainingDaysPerWeek ?? 4
                 allowsDoubleSessions = preferences.allowsDoubleSessions ?? false
             }
-            step = resolvedUser.profile?.defaultTrainingEnvironment == nil ? .environment : .review
+            hasDefaultTrainingEnvironment = resolvedUser.profile?.defaultTrainingEnvironment != nil
+            step = hasDefaultTrainingEnvironment ? .review : .environment
         } else {
             step = .goal
         }
+    }
+
+    /// Re-fetches `user` fresh from `modelContext` and recomputes
+    /// `hasDefaultTrainingEnvironment` from that live state — called in
+    /// response to `.trainingEnvironmentDefaultChanged`, posted by
+    /// `TrainingEnvironmentSettingsView` whenever it sets a default. A
+    /// fresh `FetchDescriptor` re-read (not merely re-reading the existing
+    /// `user` reference) is used deliberately, since the whole reason this
+    /// method exists is that relationship-level mutation on that same
+    /// object did not reliably propagate to this view on its own —
+    /// re-fetching and reassigning `user` guarantees a directly-observed
+    /// property change on this `@Observable` type.
+    func refreshEnvironmentState(modelContext: ModelContext) {
+        let users = (try? modelContext.fetch(FetchDescriptor<User>())) ?? []
+        guard let refreshedUser = users.first else { return }
+        user = refreshedUser
+        hasDefaultTrainingEnvironment = refreshedUser.profile?.defaultTrainingEnvironment != nil
     }
 
     func advance(from currentStep: Step, modelContext: ModelContext) {

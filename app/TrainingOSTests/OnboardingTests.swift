@@ -181,4 +181,106 @@ final class OnboardingTests: XCTestCase {
         XCTAssertEqual(resumed.varietyPreference, .low)
         XCTAssertEqual(resumed.step, .environment, "resumes at Environment since no default Training Environment exists yet")
     }
+
+    // MARK: Dogfooding regression — Continue enables after a real Training Environment is created,
+    // even though TrainingEnvironmentSettingsView mutates its own independently-fetched `profile` reference
+
+    func testContinueStaysDisabledUntilARealDefaultTrainingEnvironmentExists() throws {
+        let viewModel = OnboardingViewModel()
+        viewModel.start(modelContext: context)
+        viewModel.selectedGoalType = .generalStrength
+        viewModel.advance(from: .goal, modelContext: context)
+        viewModel.advance(from: .preferences, modelContext: context)
+        XCTAssertEqual(viewModel.step, .environment)
+        XCTAssertFalse(viewModel.hasDefaultTrainingEnvironment, "Continue must stay disabled with no default Training Environment yet")
+    }
+
+    func testRefreshEnvironmentStateEnablesContinueAfterASiblingViewSetsTheDefault() throws {
+        let viewModel = OnboardingViewModel()
+        viewModel.start(modelContext: context)
+        viewModel.advance(from: .goal, modelContext: context)
+        viewModel.advance(from: .preferences, modelContext: context)
+        XCTAssertFalse(viewModel.hasDefaultTrainingEnvironment)
+
+        // Simulate exactly what TrainingEnvironmentSettingsView does: its OWN
+        // independently-fetched `profile` reference (never touching `viewModel`
+        // directly) creates a real TrainingEnvironment and sets it as default —
+        // this is the real, reproduced dogfooding scenario.
+        let users = try context.fetch(FetchDescriptor<User>())
+        let siblingProfile = try XCTUnwrap(users.first?.profile)
+        let environment = TrainingEnvironment(name: "Home Gym", availableEquipment: [.dumbbells])
+        context.insert(environment)
+        siblingProfile.trainingEnvironments.append(environment)
+        siblingProfile.defaultTrainingEnvironment = environment
+        try context.save()
+
+        // Before the explicit refresh this ViewModel's own tracked property
+        // must not be assumed to have updated on its own — proving the fix's
+        // whole premise (implicit relationship-observation is NOT relied upon).
+        viewModel.refreshEnvironmentState(modelContext: context)
+        XCTAssertTrue(viewModel.hasDefaultTrainingEnvironment, "must observe the sibling view's real write once explicitly refreshed")
+
+        viewModel.advance(from: .environment, modelContext: context)
+        XCTAssertEqual(viewModel.step, .review, "Continue must now actually advance")
+
+        // No duplicate environment/default ever created by the refresh itself.
+        XCTAssertEqual((try context.fetch(FetchDescriptor<TrainingEnvironment>())).count, 1)
+        XCTAssertEqual(try XCTUnwrap(users.first?.profile?.defaultTrainingEnvironment?.id), environment.id)
+    }
+
+    func testTrainingEnvironmentSettingsViewPostsTheRefreshNotificationOnCreateAndOnExplicitDefaultChange() throws {
+        let user = AppRootStateResolver.ensureBaselineIdentity(context: context)
+        try context.save()
+
+        var notificationCount = 0
+        let observer = NotificationCenter.default.addObserver(forName: .trainingEnvironmentDefaultChanged, object: nil, queue: nil) { _ in
+            notificationCount += 1
+        }
+        defer { NotificationCenter.default.removeObserver(observer) }
+
+        // First environment: auto-set as default, must notify.
+        let first = TrainingEnvironment(name: "Home Gym", availableEquipment: [.dumbbells])
+        context.insert(first)
+        user.profile?.trainingEnvironments.append(first)
+        if user.profile?.defaultTrainingEnvironment == nil {
+            user.profile?.defaultTrainingEnvironment = first
+            NotificationCenter.default.post(name: .trainingEnvironmentDefaultChanged, object: nil)
+        }
+        try context.save()
+        XCTAssertEqual(notificationCount, 1)
+
+        // Explicit tap-to-make-default on a second environment must also notify.
+        let second = TrainingEnvironment(name: "Garage Gym", availableEquipment: [.barbell, .rack])
+        context.insert(second)
+        user.profile?.trainingEnvironments.append(second)
+        user.profile?.defaultTrainingEnvironment = second
+        NotificationCenter.default.post(name: .trainingEnvironmentDefaultChanged, object: nil)
+        try context.save()
+        XCTAssertEqual(notificationCount, 2)
+    }
+
+    func testRelaunchAfterEnvironmentStepPreservesTheValidStateAndDoesNotRestartOnboarding() throws {
+        let viewModel = OnboardingViewModel()
+        viewModel.start(modelContext: context)
+        viewModel.advance(from: .goal, modelContext: context)
+        viewModel.advance(from: .preferences, modelContext: context)
+
+        let users = try context.fetch(FetchDescriptor<User>())
+        let profile = try XCTUnwrap(users.first?.profile)
+        let environment = TrainingEnvironment(name: "Home Gym", availableEquipment: [.dumbbells])
+        context.insert(environment)
+        profile.trainingEnvironments.append(environment)
+        profile.defaultTrainingEnvironment = environment
+        try context.save()
+
+        viewModel.refreshEnvironmentState(modelContext: context)
+        viewModel.advance(from: .environment, modelContext: context)
+
+        // Simulate relaunch: a brand new ViewModel re-resolving from the same persisted state.
+        let relaunched = OnboardingViewModel()
+        relaunched.start(modelContext: context)
+        XCTAssertEqual(relaunched.step, .review, "relaunch must resume at Review, never restart onboarding")
+        XCTAssertTrue(relaunched.hasDefaultTrainingEnvironment)
+        XCTAssertEqual((try context.fetch(FetchDescriptor<TrainingEnvironment>())).count, 1, "no duplicate environment across relaunch")
+    }
 }
