@@ -208,6 +208,12 @@
 		0F3403AB1A73AB00B581D821 /* TrainingEnvironmentCompatibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA4C76FFEFC3DC7CFA438394 /* TrainingEnvironmentCompatibility.swift */; };
 		7D8FD118230525A8A315346B /* TrainingEnvironmentTestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BDD0B11FE8579AE5AA1FF8A /* TrainingEnvironmentTestSupport.swift */; };
 		EF0854F27A2191B5E908BF64 /* FunctionalFitnessMovementDiversityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9329AE269AC508F99C1B5EC /* FunctionalFitnessMovementDiversityTests.swift */; };
+		AF3F2691344CB803DC6F838B /* AppRootStateResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9398773EC8A113A8DE0065D4 /* AppRootStateResolver.swift */; };
+		EE4DF377E7E32FA75C60E9A0 /* OnboardingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B33287CD0FFEA309B500332 /* OnboardingViewModel.swift */; };
+		7ADF2E3E171B7AF5C0100300 /* OnboardingFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1013A34D54414B96DC670E09 /* OnboardingFlowView.swift */; };
+		37B0BB7E3F719664F7D1C8BC /* ReadyForPlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAAE1BADBED5D422FFDCB12B /* ReadyForPlanView.swift */; };
+		0FB5D96FE251A7E8693E10F0 /* AppRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F35F293EAD5C9362A7C79CAB /* AppRootView.swift */; };
+		0234F49A7681E44A63B7ED95 /* OnboardingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19C376BC9781BC736AE5D6A0 /* OnboardingTests.swift */; };
 		3F3A34ABC7F43F341205B4D5 /* FunctionalFitnessGoingForwardPreferenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AE06CB8E5335670D153D4A9 /* FunctionalFitnessGoingForwardPreferenceTests.swift */; };
 		43010489503FFF46C42A7408 /* TrainingEnvironmentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C224340EC7153A570E062932 /* TrainingEnvironmentTests.swift */; };
 		E8B0AC2B02B90645634E6F4B /* TrainingEnvironmentRecoveryClassificationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D29D19F954B3F1827263E609 /* TrainingEnvironmentRecoveryClassificationTests.swift */; };
@@ -513,6 +519,12 @@
 		75C5B058B8E6411A897684E7 /* EquipmentProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = EquipmentProfile.swift; path = EquipmentProfile.swift; sourceTree = "<group>"; };
 		DBFF16C93E4A3D69E3B68155 /* TrainingEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TrainingEnvironment.swift; path = TrainingEnvironment.swift; sourceTree = "<group>"; };
 		903BBAC5803D54DDB1E514F9 /* TrainingEnvironmentSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TrainingEnvironmentSettingsView.swift; path = TrainingEnvironmentSettingsView.swift; sourceTree = "<group>"; };
+		9398773EC8A113A8DE0065D4 /* AppRootStateResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppRootStateResolver.swift; path = AppRootStateResolver.swift; sourceTree = "<group>"; };
+		7B33287CD0FFEA309B500332 /* OnboardingViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OnboardingViewModel.swift; path = OnboardingViewModel.swift; sourceTree = "<group>"; };
+		1013A34D54414B96DC670E09 /* OnboardingFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OnboardingFlowView.swift; path = OnboardingFlowView.swift; sourceTree = "<group>"; };
+		FAAE1BADBED5D422FFDCB12B /* ReadyForPlanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ReadyForPlanView.swift; path = ReadyForPlanView.swift; sourceTree = "<group>"; };
+		F35F293EAD5C9362A7C79CAB /* AppRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppRootView.swift; path = AppRootView.swift; sourceTree = "<group>"; };
+		19C376BC9781BC736AE5D6A0 /* OnboardingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OnboardingTests.swift; path = OnboardingTests.swift; sourceTree = "<group>"; };
 		EA4C76FFEFC3DC7CFA438394 /* TrainingEnvironmentCompatibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TrainingEnvironmentCompatibility.swift; path = TrainingEnvironmentCompatibility.swift; sourceTree = "<group>"; };
 		7BDD0B11FE8579AE5AA1FF8A /* TrainingEnvironmentTestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TrainingEnvironmentTestSupport.swift; path = TrainingEnvironmentTestSupport.swift; sourceTree = "<group>"; };
 		E9329AE269AC508F99C1B5EC /* FunctionalFitnessMovementDiversityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FunctionalFitnessMovementDiversityTests.swift; path = FunctionalFitnessMovementDiversityTests.swift; sourceTree = "<group>"; };
@@ -966,6 +978,7 @@
 			isa = PBXGroup;
 			children = (
 				338F413189BA70F30B6518DE /* PlanViewModel.swift */,
+				7B33287CD0FFEA309B500332 /* OnboardingViewModel.swift */,
 				D3D1ADE8538361C49C4E75BA /* PhaseDetailViewModel.swift */,
 				22A33D18F9EA2486715D47FE /* StrategicTransitionViewModel.swift */,
 				BCFA48EE8EA729613F37D526 /* TodayViewModel.swift */,
@@ -991,11 +1004,23 @@
 				CD8A4E95A00B2E72F8060F42 /* Plan */,
 				EDDA4A4DB5BBB8DA48D8DB39 /* Theme */,
 				1E0E4261BBC7588AA3AB4DF4 /* RootTabView.swift */,
+				F35F293EAD5C9362A7C79CAB /* AppRootView.swift */,
 				94F0479F98879F84EF94495D /* Progress */,
 				3F5065348C5344CCCA305169 /* Settings */,
+				0EA35F244A4BA0A713D903AD /* Onboarding */,
 			);
 			name = UI;
 			path = UI;
+			sourceTree = "<group>";
+		};
+		0EA35F244A4BA0A713D903AD /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				1013A34D54414B96DC670E09 /* OnboardingFlowView.swift */,
+				FAAE1BADBED5D422FFDCB12B /* ReadyForPlanView.swift */,
+			);
+			name = Onboarding;
+			path = Onboarding;
 			sourceTree = "<group>";
 		};
 		3F5065348C5344CCCA305169 /* Settings */ = {
@@ -1178,6 +1203,7 @@
 				7BDD0B11FE8579AE5AA1FF8A /* TrainingEnvironmentTestSupport.swift */,
 				E9329AE269AC508F99C1B5EC /* FunctionalFitnessMovementDiversityTests.swift */,
 				3AE06CB8E5335670D153D4A9 /* FunctionalFitnessGoingForwardPreferenceTests.swift */,
+				19C376BC9781BC736AE5D6A0 /* OnboardingTests.swift */,
 				C224340EC7153A570E062932 /* TrainingEnvironmentTests.swift */,
 				D29D19F954B3F1827263E609 /* TrainingEnvironmentRecoveryClassificationTests.swift */,
 				3009493D32C0ED2CBD23EFB5 /* SourceRMCalibrationTests.swift */,
@@ -1193,6 +1219,7 @@
 			isa = PBXGroup;
 			children = (
 				B48F4B12981F158C3F1B7430 /* RecordSetResultUseCase.swift */,
+				9398773EC8A113A8DE0065D4 /* AppRootStateResolver.swift */,
 				C2A8878522D1432AB404AC6A /* HypertrophyProgramGenerator.swift */,
 				DABB6C13366A4F518D0C887B /* PowerliftingProgramGenerator.swift */,
 				587C213741DA4FC3BC0B97CD /* FunctionalFitnessProgramGenerator.swift */,
@@ -1527,6 +1554,7 @@
 				626A301D9215F2BDC080FA85 /* CalibrationTestSupport.swift in Sources */,
 				7D8FD118230525A8A315346B /* TrainingEnvironmentTestSupport.swift in Sources */,
 				EF0854F27A2191B5E908BF64 /* FunctionalFitnessMovementDiversityTests.swift in Sources */,
+				0234F49A7681E44A63B7ED95 /* OnboardingTests.swift in Sources */,
 				3F3A34ABC7F43F341205B4D5 /* FunctionalFitnessGoingForwardPreferenceTests.swift in Sources */,
 				43010489503FFF46C42A7408 /* TrainingEnvironmentTests.swift in Sources */,
 				E8B0AC2B02B90645634E6F4B /* TrainingEnvironmentRecoveryClassificationTests.swift in Sources */,
@@ -1623,6 +1651,11 @@
 				B0A26E9DB7864C44939A58BF /* FunctionalFitnessMaterializer.swift in Sources */,
 				C6B50A4FD8B1DB48344B5622 /* TrainingEnvironment.swift in Sources */,
 				5061ADFF8AF0712DEC7BA589 /* TrainingEnvironmentSettingsView.swift in Sources */,
+				AF3F2691344CB803DC6F838B /* AppRootStateResolver.swift in Sources */,
+				EE4DF377E7E32FA75C60E9A0 /* OnboardingViewModel.swift in Sources */,
+				7ADF2E3E171B7AF5C0100300 /* OnboardingFlowView.swift in Sources */,
+				37B0BB7E3F719664F7D1C8BC /* ReadyForPlanView.swift in Sources */,
+				0FB5D96FE251A7E8693E10F0 /* AppRootView.swift in Sources */,
 				7514FD00AEB04CB7AD1F8B9D /* FunctionalFitnessReasonCode.swift in Sources */,
 				20803FB2B57D4D0D888779F5 /* FunctionalFitnessDecisionEngine.swift in Sources */,
 				79A5340F324C40E0938EFDDB /* FunctionalFitnessExposureHistoryBuilder.swift in Sources */,

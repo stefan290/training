@@ -6,35 +6,24 @@ struct TrainingOSApp: App {
     let container: ModelContainer
 
     init() {
-        let container = PersistenceController.makeAppContainer()
-        self.container = container
-
-        // Foundation-pass convenience: seed once on first launch so the
-        // three root screens have something to show. This is a debug/dev
-        // affordance, not a feature — remove once onboarding exists.
-        //
-        // Seeds only the shared prerequisites (`seedPrerequisites`, not
-        // the full `seedAll`) plus ONE real, use-case-driven accepted
-        // journey (`SeedAnnualPlanJourney`) — a single coherent training
-        // universe for this user. `seedAll`'s own 8 hand-built demo
-        // scenarios remain available to tests/previews that call it
-        // directly, but are deliberately never mixed into the real app's
-        // Today/Week alongside the accepted plan's own real Sessions
-        // (Stage 7 Slice 4 acceptance finding).
-        let descriptor = FetchDescriptor<User>()
-        let existingUserCount = (try? container.mainContext.fetchCount(descriptor)) ?? 0
-        if existingUserCount == 0 {
-            let prerequisites = SeedDataProvider.seedPrerequisites(in: container.mainContext)
-            try? SeedAnnualPlanJourney.seed(
-                user: prerequisites.user, performanceProfile: prerequisites.performanceProfile,
-                catalog: prerequisites.catalog, context: container.mainContext
-            )
-        }
+        self.container = PersistenceController.makeAppContainer()
+        // Stage V1.Checkpoint 1: production first launch no longer seeds a
+        // demo Goal/Plan/Sessions — `AppRootView` routes a real athlete
+        // through onboarding instead (`AppRootStateResolver`). The former
+        // automatic `SeedAnnualPlanJourney` call (and the plain
+        // `existingUserCount == 0` check it used) is exactly the fragile,
+        // "any User row exists" predicate this checkpoint's own audit
+        // flagged — `AppRootStateResolver.resolve` replaces it with the
+        // real prerequisite check (`.active` Goal + default
+        // `TrainingEnvironment`). `SeedDataProvider.seedAll`/
+        // `SeedAnnualPlanJourney.seed` remain fully available to
+        // tests/previews that call them directly — only this automatic
+        // production invocation is removed.
     }
 
     var body: some Scene {
         WindowGroup {
-            RootTabView()
+            AppRootView()
         }
         .modelContainer(container)
     }
