@@ -127,9 +127,27 @@ enum LongTermPlanner {
         if let transitionPhase { allPhases.append(transitionPhase) }
         allPhases.append(milestonePhase)
 
-        if let targetDate = params.targetDate, targetDate > milestoneDate {
+        // Stage V1 "Milestone Onboarding" product-contract fix: a
+        // milestone-only Goal (no athlete-entered `targetDate` — normal
+        // onboarding no longer offers that control at all) must not
+        // strategically dead-end at the milestone phase — the athlete
+        // states WHAT/WHEN, TrainingOS decides HOW, including "what
+        // happens after." `effectiveTargetDate` defaults to
+        // `milestoneDate + 12 weeks` ONLY when the real, persisted
+        // `Goal.targetDate` is nil — a deliberate, planner-owned V1
+        // policy constant, never written back onto `Goal.targetDate`
+        // itself (the model stays exactly as the athlete left it; this
+        // is in-memory planning input, not persisted athlete intent).
+        // An explicit `targetDate` always wins outright when present,
+        // preserving today's exact behavior for both the "later than the
+        // milestone" case (resume phases as before) and the pre-existing
+        // "at or before the milestone" edge case (no resume phase, same
+        // as before this fix) — the default only ever fills the true
+        // absence of an explicit choice.
+        let effectiveTargetDate = params.targetDate ?? addingWeeks(12, to: milestoneDate)
+        if effectiveTargetDate > milestoneDate {
             let (afterPhases, afterFeasible) = fillForwardPhases(
-                from: milestoneDate, to: targetDate, primaryType: primaryType, baseReasonCodes: [.phaseSelectedForGoal]
+                from: milestoneDate, to: effectiveTargetDate, primaryType: primaryType, baseReasonCodes: [.phaseSelectedForGoal]
             )
             // A too-short post-milestone remainder does not invalidate the
             // whole plan (the milestone itself is still fully honored) —

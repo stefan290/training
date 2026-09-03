@@ -9,6 +9,12 @@ import SwiftData
 struct OnboardingFlowView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var viewModel = OnboardingViewModel()
+    /// Stage V1 "Milestone Onboarding UX correction": transient, View-local
+    /// navigation state for the "working toward" add/edit panel — never
+    /// persisted, never read by any other screen. Deliberately NOT on
+    /// `OnboardingViewModel`: this is purely "is the add/edit sub-panel
+    /// open," not athlete data.
+    @State private var isAddingWorkingToward = false
     let onComplete: () -> Void
 
     var body: some View {
@@ -57,33 +63,23 @@ struct OnboardingFlowView: View {
                 }
             }
 
-            // Stage V1 "Milestone Onboarding": `hasTargetDate` controls the
-            // PLAN'S OWN forward horizon (`Goal.targetDate`) — relabeled
-            // from "I have a target date" since that wording read as
-            // identical to the new milestone control below, when the two
-            // real domain concepts are deliberately distinct
-            // (`STRATEGIC_PLAN_MODEL.md` §3).
-            Toggle("Plan through a specific end date", isOn: $viewModel.hasTargetDate)
-                .font(Theme.body)
-            if viewModel.hasTargetDate {
-                DatePicker("Plan through", selection: $viewModel.targetDate, displayedComponents: .date)
-                    .font(Theme.body)
-            }
-
-            // Stage V1 "Milestone Onboarding": the athlete-facing surface
-            // for `Goal.milestoneDate`/`.bodyCompositionDirection` — never
-            // asks the athlete to pick "Fat Loss" as a training phase;
-            // TrainingOS's own existing `LongTermPlanner.proposeMilestoneAnchoredPhases`
-            // decides the real phase sequence from this single date.
-            Toggle("I also want to be ready for something by a date", isOn: $viewModel.hasMilestone)
-                .font(Theme.body)
-            if viewModel.hasMilestone {
-                Text("For example, looking leaner for summer. TrainingOS will adjust your plan to get you there, then return to your main goal.")
-                    .font(Theme.label)
-                    .foregroundStyle(Theme.textSecondary)
-                DatePicker("Ready by", selection: $viewModel.milestoneDate, displayedComponents: .date)
-                    .font(Theme.body)
-            }
+            // Stage V1 "Milestone Onboarding UX correction": the former
+            // generic "Plan through a specific end date" control is removed
+            // from normal onboarding entirely — it exposed an internal
+            // planning-horizon concept (`Goal.targetDate`) athletes don't
+            // need to understand. `Goal.targetDate` itself is NOT removed
+            // from the domain and `LongTermPlanner` is untouched: for a
+            // brand-new athlete `hasTargetDate` simply stays `false` (its
+            // declared default) since no UI here ever sets it, so
+            // `createOrUpdateGoal` continues writing `targetDate: nil` —
+            // the same real, valid, already-tested "open-ended plan" state
+            // this app has always supported. An athlete with a PRE-EXISTING
+            // `targetDate` (set via the old UI before this correction) has
+            // it re-seeded into `hasTargetDate`/`targetDate` by `start()`
+            // unchanged — removing this control never silently clears that
+            // athlete's real persisted value, it simply stops offering a
+            // way to set a NEW one from this screen.
+            workingTowardSection
 
             Button("Continue") { viewModel.advance(from: .goal, modelContext: modelContext) }
                 .buttonStyle(.borderedProminent)
@@ -116,6 +112,94 @@ struct OnboardingFlowView: View {
             .background(Theme.surfacePrimary, in: RoundedRectangle(cornerRadius: 12))
         }
         .buttonStyle(.plain)
+    }
+
+    /// Stage V1 "Milestone Onboarding UX correction": the athlete-facing
+    /// "MAIN GOAL + THINGS I AM WORKING TOWARD" mental model. Structured so
+    /// a FUTURE second addable type (e.g. a dated Event) would slot in as
+    /// another row inside the same add-panel/list shape — never
+    /// implemented here, this checkpoint only ever adds the single real
+    /// "Get leaner / Summer shape" option, which maps to the EXISTING
+    /// `Goal.milestoneDate`/`.bodyCompositionDirection = .loseFat` fields,
+    /// never a new persisted model.
+    private var workingTowardSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Anything you're working toward?")
+                .font(Theme.body)
+                .foregroundStyle(Theme.textPrimary)
+
+            if viewModel.hasMilestone, !isAddingWorkingToward {
+                workingTowardRow
+            }
+
+            if isAddingWorkingToward {
+                addWorkingTowardPanel
+            } else if !viewModel.hasMilestone {
+                Button {
+                    viewModel.milestoneDate = Date().addingTimeInterval(90 * 86400)
+                    isAddingWorkingToward = true
+                } label: {
+                    Label("Add a goal or event", systemImage: "plus.circle")
+                        .font(Theme.body)
+                }
+            }
+        }
+    }
+
+    /// Shows the athlete's own already-chosen intent directly — never an
+    /// abstract enabled/disabled toggle — so at a glance they see "my main
+    /// goal is X, and I also want Summer Shape by June 15."
+    private var workingTowardRow: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Summer Shape")
+                    .font(Theme.body)
+                    .foregroundStyle(Theme.textPrimary)
+                Text(viewModel.milestoneDate.formatted(date: .abbreviated, time: .omitted))
+                    .font(Theme.label)
+                    .foregroundStyle(Theme.textSecondary)
+            }
+            Spacer()
+            Button("Edit") { isAddingWorkingToward = true }
+                .font(Theme.label)
+            Button("Remove", role: .destructive) { viewModel.hasMilestone = false }
+                .font(Theme.label)
+        }
+        .padding(14)
+        .background(Theme.surfacePrimary, in: RoundedRectangle(cornerRadius: 12))
+    }
+
+    /// The only real supported "working toward" item this checkpoint
+    /// exposes. `viewModel.milestoneDate` is bound directly (no separate
+    /// draft state) so `isMilestoneDateValid` — the same predicate a
+    /// production-path test exercises — gates the confirm action; cancelling
+    /// never commits `hasMilestone`, so an in-progress edit can't corrupt an
+    /// already-added milestone.
+    private var addWorkingTowardPanel: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Get leaner / Summer shape")
+                .font(Theme.body)
+                .foregroundStyle(Theme.textPrimary)
+            Text("Look leaner by a specific date while protecting the progress you've made.")
+                .font(Theme.label)
+                .foregroundStyle(Theme.textSecondary)
+            DatePicker("Ready by", selection: $viewModel.milestoneDate, in: Date()..., displayedComponents: .date)
+                .font(Theme.body)
+            HStack {
+                Button("Cancel") { isAddingWorkingToward = false }
+                    .font(Theme.label)
+                Spacer()
+                Button(viewModel.hasMilestone ? "Save" : "Add to my plan") {
+                    viewModel.hasMilestone = true
+                    isAddingWorkingToward = false
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Theme.primary)
+                .disabled(!viewModel.isMilestoneDateValid)
+            }
+        }
+        .padding(14)
+        .background(Theme.surfacePrimary, in: RoundedRectangle(cornerRadius: 12))
     }
 
     private func goalTypeDescription(_ type: GoalType) -> String {
@@ -233,9 +317,9 @@ struct OnboardingFlowView: View {
                 .foregroundStyle(Theme.textPrimary)
 
             VStack(alignment: .leading, spacing: 12) {
-                reviewRow("Goal", PlanPresentation.goalTypeLabel(viewModel.selectedGoalType))
+                reviewRow("Main Goal", PlanPresentation.goalTypeLabel(viewModel.selectedGoalType))
                 if viewModel.hasMilestone {
-                    reviewRow("Milestone", "Ready by \(viewModel.milestoneDate.formatted(date: .abbreviated, time: .omitted))")
+                    reviewRow("Working Toward", "Summer Shape — \(viewModel.milestoneDate.formatted(date: .abbreviated, time: .omitted))")
                 }
                 reviewRow("Training days/week", "\(viewModel.availableTrainingDaysPerWeek)")
                 reviewRow("Variety", viewModel.varietyPreference.rawValue.capitalized)

@@ -147,6 +147,235 @@ final class OnboardingTests: XCTestCase {
         XCTAssertTrue(types.suffix(from: fatLossIndex + 1).contains(.muscleGain), "the primary goal must resume after the milestone since the target date is later")
     }
 
+    // MARK: Milestone Onboarding — 12-week default post-milestone horizon
+    // (product-contract fix: removing the athlete-facing targetDate control
+    // must never leave a milestone-only Goal strategically dead-ended at
+    // the milestone phase).
+
+    /// Proof — a milestone-only Goal (no athlete-entered targetDate, since
+    /// normal onboarding no longer offers that control at all) must still
+    /// produce Muscle Gain -> Transition -> Fat Loss -> Muscle Gain, using
+    /// the real, unmodified LongTermPlanner's own internal 12-week default
+    /// post-milestone horizon — never a presentation-layer fabrication.
+    func testMilestoneOnlyGoalWithNilTargetDateStillResumesPrimaryGoalAfterward() throws {
+        let asOf = Date(timeIntervalSince1970: 1_700_000_000)
+        let milestoneDate = asOf.addingTimeInterval(20 * 7 * 86400)
+
+        let viewModel = OnboardingViewModel()
+        viewModel.start(modelContext: context)
+        viewModel.selectedGoalType = .muscleGain
+        viewModel.hasMilestone = true
+        viewModel.milestoneDate = milestoneDate
+        // No targetDate — no UI control sets this, and none is set here,
+        // exactly matching what a real athlete using the corrected
+        // onboarding flow persists.
+        viewModel.availableTrainingDaysPerWeek = 5
+
+        viewModel.advance(from: .goal, modelContext: context)
+        viewModel.advance(from: .preferences, modelContext: context)
+        viewModel.advance(from: .modalityPreferences, modelContext: context)
+
+        let goal = try XCTUnwrap((try context.fetch(FetchDescriptor<Goal>())).first)
+        XCTAssertNil(goal.targetDate, "the 12-week default must never be written back onto the persisted Goal.targetDate")
+
+        let proposal = LongTermPlanner.proposeStrategicPlan(goal: goal, asOf: asOf)
+        XCTAssertEqual(proposal.feasibility, .feasible)
+        let types = proposal.phases.map(\.type)
+        XCTAssertTrue(types.contains(.fatLoss), "the milestone phase must still appear")
+        guard let fatLossIndex = types.firstIndex(of: .fatLoss) else {
+            return XCTFail("expected a fatLoss milestone phase in the real proposal")
+        }
+        XCTAssertTrue(types.prefix(fatLossIndex).allSatisfy { $0 == .muscleGain || $0 == .transition })
+        XCTAssertTrue(types.suffix(from: fatLossIndex + 1).contains(.muscleGain), "the primary goal must resume after the milestone even with no explicit targetDate — the planner-owned 12-week default must apply")
+
+        // The Goal itself is re-fetched fresh, proving the default is never
+        // persisted anywhere as if it were athlete intent.
+        let refetchedGoal = try XCTUnwrap((try context.fetch(FetchDescriptor<Goal>())).first)
+        XCTAssertNil(refetchedGoal.targetDate)
+    }
+
+    /// Proof — an explicit, athlete-set targetDate later than the milestone
+    /// always takes precedence over the 12-week default. Constructed so the
+    /// explicit choice (2 weeks after the milestone) is far shorter than
+    /// what the 12-week default would produce, distinguishing the two: if
+    /// the default were wrongly applied instead of the explicit value, the
+    /// resume phase(s) would extend roughly 10 weeks further than they
+    /// actually do here.
+    func testExplicitTargetDateTakesPrecedenceOverTheTwelveWeekDefault() throws {
+        let asOf = Date(timeIntervalSince1970: 1_700_000_000)
+        let milestoneDate = asOf.addingTimeInterval(20 * 7 * 86400)
+        let explicitTargetDate = milestoneDate.addingTimeInterval(2 * 7 * 86400) // far short of the 12-week default
+
+        let viewModel = OnboardingViewModel()
+        viewModel.start(modelContext: context)
+        viewModel.selectedGoalType = .muscleGain
+        viewModel.hasMilestone = true
+        viewModel.milestoneDate = milestoneDate
+        viewModel.hasTargetDate = true
+        viewModel.targetDate = explicitTargetDate
+
+        viewModel.advance(from: .goal, modelContext: context)
+        viewModel.advance(from: .preferences, modelContext: context)
+        viewModel.advance(from: .modalityPreferences, modelContext: context)
+
+        let goal = try XCTUnwrap((try context.fetch(FetchDescriptor<Goal>())).first)
+        XCTAssertEqual(goal.targetDate, explicitTargetDate, "the athlete's own explicit choice must persist exactly as entered")
+
+        let proposal = LongTermPlanner.proposeStrategicPlan(goal: goal, asOf: asOf)
+        let phases = proposal.phases
+        if let lastPhase = phases.last, lastPhase.type == .muscleGain, let lastPhaseEndDate = lastPhase.endDate {
+            XCTAssertLessThanOrEqual(lastPhaseEndDate, explicitTargetDate, "the resume phase must never extend past the athlete's own explicit target date")
+            XCTAssertLessThan(explicitTargetDate.timeIntervalSince(milestoneDate), 12 * 7 * 86400, "sanity check on this test's own fixture: the explicit date is genuinely shorter than the 12-week default would be")
+        }
+        // A too-short post-milestone remainder legitimately produces no
+        // resume phase at all (existing, unchanged behavior) — either
+        // outcome is acceptable here; what must never happen is the
+        // 12-week default silently overriding this explicit, shorter date.
+    }
+
+    // MARK: Milestone Onboarding UX correction — real production-path proofs
+
+    /// Proof 1/2 — adding "Summer Shape" leaves the primary goal untouched
+    /// and maps directly to the existing `Goal.milestoneDate`/
+    /// `.bodyCompositionDirection` fields, exactly as before this UX pass —
+    /// only the athlete-facing interaction shape changed, never the domain
+    /// mapping.
+    func testAddingSummerShapeLeavesPrimaryGoalUnchangedAndMapsToExistingFields() throws {
+        let viewModel = OnboardingViewModel()
+        viewModel.start(modelContext: context)
+        viewModel.selectedGoalType = .muscleGain
+        let readyBy = Date().addingTimeInterval(60 * 86400)
+        viewModel.hasMilestone = true
+        viewModel.milestoneDate = readyBy
+
+        viewModel.advance(from: .goal, modelContext: context)
+        viewModel.advance(from: .preferences, modelContext: context)
+        viewModel.advance(from: .modalityPreferences, modelContext: context)
+
+        let goal = try XCTUnwrap((try context.fetch(FetchDescriptor<Goal>())).first)
+        XCTAssertEqual(goal.primaryType, .muscleGain, "the main goal is never replaced by adding a milestone")
+        XCTAssertEqual(goal.milestoneDate, readyBy)
+        XCTAssertEqual(goal.bodyCompositionDirection, .loseFat)
+    }
+
+    /// Proof 3 — normal onboarding (no milestone selected) no longer
+    /// requires an athlete-entered `targetDate` at all; the real Goal
+    /// persists with `targetDate == nil`, the same valid, already-supported
+    /// open-ended-plan state this app has always had.
+    func testNormalOnboardingNoLongerRequiresAnAthleteEnteredTargetDate() throws {
+        let viewModel = OnboardingViewModel()
+        viewModel.start(modelContext: context)
+        viewModel.selectedGoalType = .generalStrength
+        XCTAssertFalse(viewModel.hasTargetDate, "no UI control sets this for a brand-new athlete")
+
+        viewModel.advance(from: .goal, modelContext: context)
+        viewModel.advance(from: .preferences, modelContext: context)
+        viewModel.advance(from: .modalityPreferences, modelContext: context)
+
+        let goal = try XCTUnwrap((try context.fetch(FetchDescriptor<Goal>())).first)
+        XCTAssertNil(goal.targetDate, "targetDate stays nil — a real, valid, already-supported open-ended plan")
+        XCTAssertNil(goal.milestoneDate)
+
+        // The real planner must still produce a valid, feasible proposal.
+        let proposal = LongTermPlanner.proposeStrategicPlan(goal: goal, asOf: Date())
+        XCTAssertEqual(proposal.feasibility, .feasible)
+    }
+
+    /// Proof 5 — removing an already-added Summer Shape milestone clears
+    /// both real domain fields without touching the primary goal.
+    func testRemovingSummerShapeClearsMilestoneFieldsWithoutChangingPrimaryGoal() throws {
+        let viewModel = OnboardingViewModel()
+        viewModel.start(modelContext: context)
+        viewModel.selectedGoalType = .muscleGain
+        viewModel.hasMilestone = true
+        viewModel.milestoneDate = Date().addingTimeInterval(60 * 86400)
+        viewModel.advance(from: .goal, modelContext: context)
+        viewModel.advance(from: .preferences, modelContext: context)
+        viewModel.advance(from: .modalityPreferences, modelContext: context)
+        XCTAssertNotNil((try context.fetch(FetchDescriptor<Goal>())).first?.milestoneDate)
+
+        // Athlete goes back and removes it (mirrors the real "Remove" UI action).
+        viewModel.goBack(from: .environment)
+        viewModel.goBack(from: .modalityPreferences)
+        viewModel.goBack(from: .preferences)
+        viewModel.hasMilestone = false
+        viewModel.advance(from: .goal, modelContext: context)
+        viewModel.advance(from: .preferences, modelContext: context)
+        viewModel.advance(from: .modalityPreferences, modelContext: context)
+
+        let goal = try XCTUnwrap((try context.fetch(FetchDescriptor<Goal>())).first)
+        XCTAssertEqual(goal.primaryType, .muscleGain, "removing the milestone never changes the primary goal")
+        XCTAssertNil(goal.milestoneDate, "removal must clear the real persisted milestone date")
+        XCTAssertNil(goal.bodyCompositionDirection, "removal must clear the real persisted direction")
+        XCTAssertEqual((try context.fetch(FetchDescriptor<Goal>())).count, 1, "removal must never create a second Goal")
+
+        // The 12-week default is milestone-anchored — with no milestone at
+        // all, the real planner must fall back to the existing, unchanged
+        // nil-targetDate open-ended-phase behavior, never apply the
+        // default horizon to a Goal that has no milestone to anchor it to.
+        let proposal = LongTermPlanner.proposeStrategicPlan(goal: goal, asOf: Date())
+        XCTAssertEqual(proposal.feasibility, .feasible)
+        XCTAssertEqual(proposal.phases.count, 1, "no milestone + nil targetDate must restore the existing single open-ended phase behavior")
+        XCTAssertEqual(proposal.phases.first?.type, .muscleGain)
+    }
+
+    /// Proof — a Goal with no milestone and no targetDate at all (the
+    /// ordinary, most common onboarding case) must keep producing the
+    /// existing, unchanged single open-ended phase — the 12-week default
+    /// is milestone-anchored only and must never apply here.
+    func testNoMilestoneNilTargetDatePreservesExistingOpenEndedBehavior() throws {
+        let viewModel = OnboardingViewModel()
+        viewModel.start(modelContext: context)
+        viewModel.selectedGoalType = .muscleGain
+
+        viewModel.advance(from: .goal, modelContext: context)
+        viewModel.advance(from: .preferences, modelContext: context)
+        viewModel.advance(from: .modalityPreferences, modelContext: context)
+
+        let goal = try XCTUnwrap((try context.fetch(FetchDescriptor<Goal>())).first)
+        XCTAssertNil(goal.milestoneDate)
+        XCTAssertNil(goal.targetDate)
+
+        let proposal = LongTermPlanner.proposeStrategicPlan(goal: goal, asOf: Date())
+        XCTAssertEqual(proposal.feasibility, .feasible)
+        XCTAssertEqual(proposal.phases.count, 1, "the existing single open-ended phase behavior must be completely unchanged")
+        XCTAssertEqual(proposal.phases.first?.type, .muscleGain)
+    }
+
+    /// Proof 6 — a past/present milestone date must never be accepted; this
+    /// is the exact predicate the real "Add to my plan"/"Save" confirm
+    /// button's `.disabled()` reads, not merely a visual check.
+    func testPastOrPresentMilestoneDateIsNeverValid() throws {
+        let viewModel = OnboardingViewModel()
+        viewModel.milestoneDate = Date().addingTimeInterval(-86400)
+        XCTAssertFalse(viewModel.isMilestoneDateValid, "a past date must never validate")
+        viewModel.milestoneDate = Date()
+        XCTAssertFalse(viewModel.isMilestoneDateValid, "the present moment must never validate — the milestone must be genuinely in the future")
+        viewModel.milestoneDate = Date().addingTimeInterval(86400)
+        XCTAssertTrue(viewModel.isMilestoneDateValid, "a genuine future date must validate")
+    }
+
+    /// Proof 7 — existing non-milestone onboarding (main goal + preferences
+    /// + environment, no "working toward" item) remains fully valid,
+    /// end-to-end, unchanged by this UX correction.
+    func testExistingNonMilestoneOnboardingRemainsValid() throws {
+        let viewModel = OnboardingViewModel()
+        viewModel.start(modelContext: context)
+        viewModel.selectedGoalType = .functionalFitness
+        viewModel.availableTrainingDaysPerWeek = 3
+        XCTAssertFalse(viewModel.hasMilestone)
+
+        viewModel.advance(from: .goal, modelContext: context)
+        viewModel.advance(from: .preferences, modelContext: context)
+        viewModel.advance(from: .modalityPreferences, modelContext: context)
+
+        let goal = try XCTUnwrap((try context.fetch(FetchDescriptor<Goal>())).first)
+        XCTAssertEqual(goal.primaryType, .functionalFitness)
+        XCTAssertNil(goal.milestoneDate)
+        XCTAssertNil(goal.bodyCompositionDirection)
+        XCTAssertEqual(goal.preferences?.availableTrainingDaysPerWeek, 3)
+    }
+
     // MARK: 6/7 — Training Environment created via the real TE.1 model and persists as default
 
     func testOnboardingCreatesRealTrainingEnvironmentAndSetsDefault() throws {

@@ -50,6 +50,12 @@ final class OnboardingViewModel {
     /// yet — a disclosed, deliberate FOLLOW-UP, not a planner limitation.
     var hasMilestone = false
     var milestoneDate = Date()
+    /// Stage V1 "Milestone Onboarding UX correction": the athlete-facing
+    /// confirm action reads this directly — a past/present milestone date
+    /// must never be accepted. Deliberately a ViewModel-owned property (not
+    /// a View-local computation) so a test can exercise the exact predicate
+    /// the real confirm button's `.disabled()` reads.
+    var isMilestoneDateValid: Bool { milestoneDate > Date() }
     var varietyPreference: VarietyPreference = .moderate
     var availableTrainingDaysPerWeek: Int = 4
     var allowsDoubleSessions = false
