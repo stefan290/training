@@ -67,23 +67,18 @@ struct TodayView: View {
                                 .foregroundStyle(Theme.primary)
                         }
                         .padding(.top, 4)
-
-                        #if DEBUG
-                        // Stage 8B manual-acceptance aid, debug-only —
-                        // compiled out of Release builds. Adds several
-                        // independent, ad-hoc Sessions scheduled for today
-                        // so each acceptance scenario has its own testable
-                        // Session, without starting any future-dated
-                        // Session early and without touching the annual/
-                        // tactical plan. See DebugAcceptanceFixturesUseCase.
-                        Button("Add Stage 8B Acceptance Test Sessions") {
-                            try? DebugAcceptanceFixturesUseCase.seedIfNeeded(context: modelContext)
-                            viewModel.load(modelContext: modelContext)
-                        }
-                        .font(Theme.label)
-                        .foregroundStyle(Theme.textSecondary)
-                        .padding(.top, 12)
-                        #endif
+                        // Stage V1 dogfooding fix (Part 5): the Stage 8B
+                        // manual-acceptance debug button removed. Even
+                        // `#if DEBUG`-gated, it inserted real, ad-hoc
+                        // Session rows directly into the same real store an
+                        // athlete's own real Sessions live in — reachable
+                        // during exactly the kind of Debug-configuration
+                        // build real-device dogfooding uses. The underlying
+                        // `DebugAcceptanceFixturesUseCase` and its own
+                        // dedicated test coverage
+                        // (`DebugAcceptanceFixturesUseCaseTests`) are
+                        // untouched — only this athlete-facing trigger is
+                        // removed.
                     }
                     .padding(16)
                 }

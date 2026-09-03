@@ -93,6 +93,7 @@ final class OnboardingTests: XCTestCase {
 
         viewModel.advance(from: .goal, modelContext: context)
         viewModel.advance(from: .preferences, modelContext: context)
+        viewModel.advance(from: .modalityPreferences, modelContext: context)
 
         let goals = try context.fetch(FetchDescriptor<Goal>())
         let goal = try XCTUnwrap(goals.first)
@@ -128,13 +129,16 @@ final class OnboardingTests: XCTestCase {
         viewModel.selectedGoalType = .generalStrength
         viewModel.advance(from: .goal, modelContext: context)
         viewModel.advance(from: .preferences, modelContext: context)
+        viewModel.advance(from: .modalityPreferences, modelContext: context)
 
         // Athlete goes back to Goal and changes their mind, then re-confirms.
         viewModel.goBack(from: .environment)
+        viewModel.goBack(from: .modalityPreferences)
         viewModel.goBack(from: .preferences)
         viewModel.selectedGoalType = .muscleGain
         viewModel.advance(from: .goal, modelContext: context)
         viewModel.advance(from: .preferences, modelContext: context)
+        viewModel.advance(from: .modalityPreferences, modelContext: context)
 
         let goals = try context.fetch(FetchDescriptor<Goal>())
         XCTAssertEqual(goals.count, 1, "must never create a second Goal")
@@ -171,6 +175,7 @@ final class OnboardingTests: XCTestCase {
         viewModel.varietyPreference = .low
         viewModel.advance(from: .goal, modelContext: context)
         viewModel.advance(from: .preferences, modelContext: context)
+        viewModel.advance(from: .modalityPreferences, modelContext: context)
 
         // A fresh ViewModel re-reading persisted state (simulating relaunch mid-flow
         // before the Environment step) must reflect the real, saved choices.
@@ -191,6 +196,7 @@ final class OnboardingTests: XCTestCase {
         viewModel.selectedGoalType = .generalStrength
         viewModel.advance(from: .goal, modelContext: context)
         viewModel.advance(from: .preferences, modelContext: context)
+        viewModel.advance(from: .modalityPreferences, modelContext: context)
         XCTAssertEqual(viewModel.step, .environment)
         XCTAssertFalse(viewModel.hasDefaultTrainingEnvironment, "Continue must stay disabled with no default Training Environment yet")
     }
@@ -200,6 +206,7 @@ final class OnboardingTests: XCTestCase {
         viewModel.start(modelContext: context)
         viewModel.advance(from: .goal, modelContext: context)
         viewModel.advance(from: .preferences, modelContext: context)
+        viewModel.advance(from: .modalityPreferences, modelContext: context)
         XCTAssertFalse(viewModel.hasDefaultTrainingEnvironment)
 
         // Simulate exactly what TrainingEnvironmentSettingsView does: its OWN
@@ -264,6 +271,7 @@ final class OnboardingTests: XCTestCase {
         viewModel.start(modelContext: context)
         viewModel.advance(from: .goal, modelContext: context)
         viewModel.advance(from: .preferences, modelContext: context)
+        viewModel.advance(from: .modalityPreferences, modelContext: context)
 
         let users = try context.fetch(FetchDescriptor<User>())
         let profile = try XCTUnwrap(users.first?.profile)

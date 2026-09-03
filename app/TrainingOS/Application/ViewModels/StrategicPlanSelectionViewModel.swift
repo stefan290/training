@@ -46,6 +46,12 @@ final class StrategicPlanSelectionViewModel {
     /// `errorMessage` (same discipline as `StrategicTransitionViewModel`).
     private(set) var needsTrainingEnvironment = false
     private(set) var componentsAwaitingCalibrationCount: Int?
+    /// Stage V1 dogfooding fix (Plan Recommendation Integrity): every real
+    /// candidate `LongTermPlanner.proposeTrainingMix` returned this load —
+    /// never discarded. `alternatives` (below) is derived from this array,
+    /// never a second, independent planner call (same "propose once" rule
+    /// `reviewedMix` itself already follows).
+    private(set) var candidates: [CandidateTrainingMix] = []
 
     var goalTypeLabel: String? { goal.map { PlanPresentation.goalTypeLabel($0.primaryType) } }
     /// This is a planner RECOMMENDATION, not yet a selected/accepted
@@ -61,6 +67,16 @@ final class StrategicPlanSelectionViewModel {
     /// candidate — a real, distinct failure mode from infeasibility
     /// (CLAUDE.md rule 18: never conflate the two vocabularies).
     var hasNoCompatibleMix: Bool { proposal != nil && !isInfeasible && reviewedMix == nil }
+    /// Stage V1 dogfooding fix: every OTHER real, genuinely feasible
+    /// candidate this load produced — `alignment.rating` at or above
+    /// `LongTermPlanner`'s own real compatibility gate, exactly the same
+    /// bar the engine itself already uses to decide `.recommended`
+    /// eligibility. An infeasible/poor candidate is never offered as a
+    /// selectable alternative, never merely hidden by omission after the
+    /// fact.
+    var alternatives: [CandidateTrainingMix] {
+        candidates.filter { $0.mix.id != reviewedMix?.id && $0.alignment.rating >= LongTermPlanner.compatibilityThreshold }
+    }
 
     func load(modelContext: ModelContext) {
         errorMessage = nil
@@ -73,6 +89,7 @@ final class StrategicPlanSelectionViewModel {
             goal = nil
             proposal = nil
             reviewedMix = nil
+            candidates = []
             return
         }
         goal = activeGoal
@@ -82,14 +99,35 @@ final class StrategicPlanSelectionViewModel {
 
         guard proposal.feasibility != .infeasible, let firstProposedPhase = proposal.phases.first else {
             reviewedMix = nil
+            candidates = []
             return
         }
         let previewPhase = TrainingPhase(
             type: firstProposedPhase.type, startDate: firstProposedPhase.startDate,
             endDate: firstProposedPhase.endDate, priorityRule: firstProposedPhase.priorityRule
         )
-        let candidates = LongTermPlanner.proposeTrainingMix(phase: previewPhase, goal: activeGoal)
-        reviewedMix = (candidates.first { $0.roles.contains(.recommended) } ?? candidates.first)?.mix
+        let proposedCandidates = LongTermPlanner.proposeTrainingMix(phase: previewPhase, goal: activeGoal)
+        candidates = proposedCandidates
+        // Stage V1 dogfooding fix: ONLY a candidate the real ranking engine
+        // itself assigned `.recommended` may ever be labeled "RECOMMENDED"
+        // to the athlete — the previous `?? candidates.first` fallback
+        // could silently substitute an arbitrary, non-recommended (even
+        // infeasible) candidate and the View would still call it
+        // "RECOMMENDED TRAINING." `rankCandidateMixes` never assigns
+        // `.recommended` to a candidate that didn't clear its own real
+        // compatibility gate (`LongTermPlanner.swift`'s §5a) — so `nil`
+        // here means "no compatible mix," never a mislabeled fallback.
+        reviewedMix = proposedCandidates.first { $0.roles.contains(.recommended) }?.mix
+    }
+
+    /// Stage V1 dogfooding fix (Part 4 — real alternatives): the athlete
+    /// picks among real, already-ranked planner candidates only — never a
+    /// custom-built mix. Only ever called with a member of `alternatives`
+    /// (already feasibility-filtered); re-asserts membership defensively
+    /// rather than trusting the caller.
+    func selectAlternative(_ candidate: CandidateTrainingMix) {
+        guard alternatives.contains(where: { $0.mix.id == candidate.mix.id }) else { return }
+        reviewedMix = candidate.mix
     }
 
     /// The one deliberate write this ViewModel performs. Guarded against

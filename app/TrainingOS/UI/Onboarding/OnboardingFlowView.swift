@@ -17,6 +17,7 @@ struct OnboardingFlowView: View {
                 switch viewModel.step {
                 case .goal: goalStep
                 case .preferences: preferencesStep
+                case .modalityPreferences: modalityPreferencesStep
                 case .environment: environmentStep
                 case .review: reviewStep
                 }
@@ -132,6 +133,61 @@ struct OnboardingFlowView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 
+    /// Stage V1 dogfooding fix (Part 3): `preferredModalities`/
+    /// `dislikedModalities` are real, already-planner-consumed fields
+    /// (`LongTermPlanner.isPreferenceAligned`) — this is only the
+    /// previously-deferred onboarding surface for them, using the real
+    /// `ProgrammingSystemKind` vocabulary and existing `PlanPresentation`
+    /// labels, never internal enum names.
+    private var modalityPreferencesStep: some View {
+        Form {
+            Section {
+                Text("Optional — TrainingOS already recommends training for your goal. Tell it more if you have strong preferences.")
+                    .font(Theme.label)
+                    .foregroundStyle(Theme.textSecondary)
+            }
+            Section("I especially want") {
+                ForEach(ProgrammingSystemKind.allCases, id: \.self) { system in
+                    Toggle(PlanPresentation.programmingSystemLabel(system), isOn: preferredBinding(system))
+                }
+            }
+            Section("I'd rather avoid") {
+                ForEach(ProgrammingSystemKind.allCases, id: \.self) { system in
+                    Toggle(PlanPresentation.programmingSystemLabel(system), isOn: dislikedBinding(system))
+                }
+                if viewModel.dislikedSystems.contains(.steadyState) {
+                    Toggle("Just running — other conditioning is fine", isOn: $viewModel.dislikesRunningSpecifically)
+                }
+            }
+            Section {
+                Button("Continue") { viewModel.advance(from: .modalityPreferences, modelContext: modelContext) }
+                    .buttonStyle(.borderedProminent)
+                    .tint(Theme.primary)
+                    .frame(maxWidth: .infinity)
+            }
+        }
+        .navigationTitle("Training Preferences")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func preferredBinding(_ system: ProgrammingSystemKind) -> Binding<Bool> {
+        Binding(
+            get: { viewModel.preferredSystems.contains(system) },
+            set: { isOn in
+                if isOn { viewModel.preferredSystems.insert(system) } else { viewModel.preferredSystems.remove(system) }
+            }
+        )
+    }
+
+    private func dislikedBinding(_ system: ProgrammingSystemKind) -> Binding<Bool> {
+        Binding(
+            get: { viewModel.dislikedSystems.contains(system) },
+            set: { isOn in
+                if isOn { viewModel.dislikedSystems.insert(system) } else { viewModel.dislikedSystems.remove(system) }
+            }
+        )
+    }
+
     private var environmentStep: some View {
         VStack(spacing: 0) {
             Text("Set up where you'll train — this controls what TrainingOS can prescribe you.")
@@ -159,6 +215,12 @@ struct OnboardingFlowView: View {
                 reviewRow("Goal", PlanPresentation.goalTypeLabel(viewModel.selectedGoalType))
                 reviewRow("Training days/week", "\(viewModel.availableTrainingDaysPerWeek)")
                 reviewRow("Variety", viewModel.varietyPreference.rawValue.capitalized)
+                if !viewModel.preferredSystems.isEmpty {
+                    reviewRow("Especially want", viewModel.preferredSystems.map(PlanPresentation.programmingSystemLabel).sorted().joined(separator: ", "))
+                }
+                if !viewModel.dislikedSystems.isEmpty {
+                    reviewRow("Rather avoid", viewModel.dislikedSystems.map(PlanPresentation.programmingSystemLabel).sorted().joined(separator: ", "))
+                }
                 reviewRow("Training Environment", viewModel.user?.profile?.defaultTrainingEnvironment?.name ?? "Not set")
             }
             .padding(14)

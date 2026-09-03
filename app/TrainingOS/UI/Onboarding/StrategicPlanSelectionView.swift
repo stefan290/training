@@ -57,6 +57,28 @@ struct StrategicPlanSelectionView: View {
                                 }
                             }
                         }
+
+                        if !viewModel.alternatives.isEmpty {
+                            InfoSection(title: "ALTERNATIVES") {
+                                ForEach(viewModel.alternatives, id: \.mix.id) { candidate in
+                                    Button {
+                                        viewModel.selectAlternative(candidate)
+                                    } label: {
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(PlanPresentation.mixSummary(candidate.mix))
+                                                .font(Theme.body)
+                                                .foregroundStyle(Theme.textPrimary)
+                                            Text(alternativeReason(candidate))
+                                                .font(Theme.label)
+                                                .foregroundStyle(Theme.textSecondary)
+                                        }
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .padding(.vertical, 4)
+                                }
+                            }
+                        }
                     } else {
                         ProgressView("Building your recommendation…")
                             .padding(.top, 40)
@@ -98,6 +120,16 @@ struct StrategicPlanSelectionView: View {
         .sheet(isPresented: $showingTrainingEnvironmentSettings) {
             TrainingEnvironmentSettingsView()
         }
+    }
+
+    /// Stage V1 dogfooding fix (Part 4): athlete-facing "why this fits,"
+    /// derived only from the real `CandidateMixRole`s the planner itself
+    /// assigned — never invented copy per mix.
+    private func alternativeReason(_ candidate: CandidateTrainingMix) -> String {
+        if candidate.roles.contains(.bestGoalAlignment) { return "The closest match to your goal." }
+        if candidate.roles.contains(.bestVarietyAlternative) { return "More variety across training types." }
+        if candidate.roles.contains(.userPreferenceAlternative) { return "Matches your stated preferences." }
+        return "Also fits your goal and availability."
     }
 }
 

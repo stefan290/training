@@ -18,7 +18,7 @@ import SwiftData
 @Observable
 final class OnboardingViewModel {
     enum Step: Int, CaseIterable {
-        case goal, preferences, environment, review
+        case goal, preferences, modalityPreferences, environment, review
     }
 
     private(set) var step: Step = .goal
@@ -40,6 +40,20 @@ final class OnboardingViewModel {
     var varietyPreference: VarietyPreference = .moderate
     var availableTrainingDaysPerWeek: Int = 4
     var allowsDoubleSessions = false
+    /// Stage V1 dogfooding fix (Part 3): real, planner-consumed
+    /// preferences — `LongTermPlanner.isPreferenceAligned` already reads
+    /// `GoalPreferences.preferredModalities`/`.dislikedModalities`
+    /// (`system`-level `ProgrammingSystemKind`). No new planner semantics;
+    /// this is the previously-deferred onboarding surface for fields that
+    /// were already real.
+    var preferredSystems: Set<ProgrammingSystemKind> = []
+    var dislikedSystems: Set<ProgrammingSystemKind> = []
+    /// Only meaningful when `.steadyState` is in `dislikedSystems` —
+    /// preserves the real, existing system-vs-activity-level distinction
+    /// `ModalityPreference(system:activityType:)` already supports:
+    /// disliking `.steadyState` with `activityType: .running` blocks
+    /// running specifically, never all conditioning work.
+    var dislikesRunningSpecifically = false
 
     /// Resumes at whichever real step this athlete's persisted state hasn't
     /// reached yet — never a separately-persisted "current step" field
@@ -56,6 +70,11 @@ final class OnboardingViewModel {
                 varietyPreference = preferences.varietyPreference
                 availableTrainingDaysPerWeek = preferences.availableTrainingDaysPerWeek ?? 4
                 allowsDoubleSessions = preferences.allowsDoubleSessions ?? false
+                preferredSystems = Set(preferences.preferredModalities.map(\.system))
+                dislikedSystems = Set(preferences.dislikedModalities.map(\.system))
+                dislikesRunningSpecifically = preferences.dislikedModalities.contains {
+                    $0.system == .steadyState && $0.activityType == .running
+                }
             }
             hasDefaultTrainingEnvironment = resolvedUser.profile?.defaultTrainingEnvironment != nil
             step = hasDefaultTrainingEnvironment ? .review : .environment
@@ -86,6 +105,8 @@ final class OnboardingViewModel {
         case .goal:
             step = .preferences
         case .preferences:
+            step = .modalityPreferences
+        case .modalityPreferences:
             createOrUpdateGoal(modelContext: modelContext)
             step = .environment
         case .environment:
@@ -99,7 +120,8 @@ final class OnboardingViewModel {
         switch currentStep {
         case .goal: break
         case .preferences: step = .goal
-        case .environment: step = .preferences
+        case .modalityPreferences: step = .preferences
+        case .environment: step = .modalityPreferences
         case .review: step = .environment
         }
     }
@@ -111,7 +133,20 @@ final class OnboardingViewModel {
     /// reads a "draft" Goal state.
     private func createOrUpdateGoal(modelContext: ModelContext) {
         guard let user else { return }
+        // Stage V1 dogfooding fix (Part 3): the real system-vs-activity
+        // distinction `ModalityPreference(system:activityType:)` already
+        // supports — disliking `.steadyState` with `activityType: .running`
+        // blocks running specifically, never all conditioning work.
+        let dislikedModalities = dislikedSystems.map { system in
+            ModalityPreference(
+                system: system,
+                activityType: (system == .steadyState && dislikesRunningSpecifically) ? .running : nil
+            )
+        }
+        let preferredModalities = preferredSystems.map { ModalityPreference(system: $0) }
         let preferences = GoalPreferences(
+            preferredModalities: preferredModalities,
+            dislikedModalities: dislikedModalities,
             varietyPreference: varietyPreference,
             availableTrainingDaysPerWeek: availableTrainingDaysPerWeek,
             allowsDoubleSessions: allowsDoubleSessions

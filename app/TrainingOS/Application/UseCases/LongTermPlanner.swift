@@ -419,6 +419,9 @@ enum LongTermPlanner {
     static func proposeTrainingMix(phase: TrainingPhase, goal: Goal) -> [CandidateTrainingMix] {
         let templates = candidateMixTemplates(phase: phase, goal: goal)
         let availability = comparisonAvailability(goal: goal)
+        for (mix, _) in templates {
+            applyCapacity(to: mix, availability: availability)
+        }
         let constraints = SchedulingConstraints(
             availability: availability,
             window: SchedulingWindow(startDate: phase.startDate, numberOfDays: 7)
@@ -433,6 +436,194 @@ enum LongTermPlanner {
         }
 
         return rankCandidateMixes(raw, preferences: goal.preferences)
+    }
+
+    /// Stage V1 dogfooding fix (Plan Recommendation Integrity — capacity
+    /// scaling POLICY CORRECTION): a candidate mix must never be presented
+    /// as schedulable when its fixed template targets exceed the athlete's
+    /// own real, stated capacity. When `allowsDoubleSessions` is false,
+    /// real capacity is exactly `trainingDaysPerWeek` total Sessions — one
+    /// per distinct day, never more (the locked V1 contract: "training
+    /// days per week" means distinct available days, never a session
+    /// count).
+    ///
+    /// **Composition-preserving, not "primary fully protected, supporting
+    /// yields to zero."** An earlier version of this function reduced
+    /// tier-by-tier (primary first, unreduced, then secondary, then
+    /// supporting) — REJECTED as a product policy: it silently destroyed a
+    /// mix's intended composition (5 Hypertrophy + 2 Zone 2 at capacity 5
+    /// became 5+0, not a real "Hypertrophy + Conditioning" mix anymore),
+    /// and could make a stated modality preference for a supporting
+    /// modality completely ineffective. The ORIGINAL component
+    /// `SessionFrequency.target` values already express the mix's intended
+    /// ratio — this function preserves that ratio as closely as integer
+    /// capacity allows via `allocateProportionally`, a standard largest-
+    /// remainder (Hamilton) apportionment, rather than inventing a new
+    /// numeric ratio. `GoalPriority` is now used ONLY as a deterministic
+    /// tie-break (never "satisfy primary fully before anyone else") — see
+    /// `allocateProportionally`'s own doc comment for the exact mechanism
+    /// and worked example (5+2 at capacity 5 → 4+1, not 5+0).
+    ///
+    /// When `allowsDoubleSessions` is true, template targets are left
+    /// untouched — more Sessions than `trainingDaysPerWeek` may be
+    /// genuinely valid, and whether they're actually placeable is exactly
+    /// what the real scheduling-based `GoalAlignment` computed just below
+    /// already determines honestly.
+    private static func applyCapacity(to mix: TrainingMix, availability: UserAvailability) {
+        guard !availability.allowsDoubleSessions else { return }
+        let capacity = availability.trainingDaysPerWeek
+        let nonZero = mix.orderedComponents.filter { $0.frequency.target > 0 }
+        guard !nonZero.isEmpty else { return }
+
+        let totalOriginalTarget = nonZero.reduce(0) { $0 + $1.frequency.target }
+        // Already fits within capacity as-is — no reduction needed, no
+        // component's target is ever inflated to "fill" unused capacity.
+        if capacity >= totalOriginalTarget {
+            mix.components.removeAll { $0.frequency.target <= 0 }
+            return
+        }
+
+        let survivors: [TrainingMixComponent]
+        if capacity >= nonZero.count {
+            // Every non-zero component can receive at least one session —
+            // proportional apportionment among all of them.
+            survivors = nonZero
+        } else {
+            // Not enough capacity for even one session per component
+            // (rule 7): retain components in `GoalPriority` order
+            // (primary -> secondary -> supporting), existing stable
+            // order as the final tie-break, dropping the lowest-priority
+            // components until what remains fits within capacity. Each
+            // survivor then gets exactly 1 session (capacity == survivor
+            // count in this branch).
+            survivors = Array(
+                nonZero.enumerated()
+                    .sorted { a, b in
+                        let pa = priorityOrdinal(a.element.priority), pb = priorityOrdinal(b.element.priority)
+                        return pa != pb ? pa < pb : a.offset < b.offset
+                    }
+                    .map(\.element)
+                    // Dropped components must be explicitly zeroed here —
+                    // they are never touched by `allocateProportionally`
+                    // (which only ever modifies `survivors`), so without
+                    // this they'd keep their stale ORIGINAL frequency and
+                    // survive the final `removeAll { target <= 0 }` below
+                    // untouched (a real bug, caught by
+                    // `testCapacityOneRetainsOnlyTheHigherPriorityComponent`
+                    // and `testNoComponentEverExceedsItsOriginalTemplateTarget`
+                    // before this fix).
+                    .prefix(capacity)
+            )
+            // Every non-zero component NOT retained must be explicitly
+            // zeroed — `allocateProportionally` below only ever touches
+            // `survivors`, so a dropped component would otherwise keep
+            // its stale original (non-zero) frequency and incorrectly
+            // survive the final `removeAll { target <= 0 }` cleanup.
+            let survivorIDs = Set(survivors.map(\.id))
+            for component in nonZero where !survivorIDs.contains(component.id) {
+                component.frequency = SessionFrequency(target: 0, minimum: nil, maximum: component.frequency.maximum)
+            }
+        }
+        // In the "not enough capacity" branch, `survivors.count == capacity`
+        // exactly (each survivor gets 1 session); in the other branch,
+        // `survivors == nonZero` and the full `capacity` is apportioned.
+        allocateProportionally(capacity: capacity, among: survivors)
+
+        mix.components.removeAll { $0.frequency.target <= 0 }
+    }
+
+    /// Largest-remainder (Hamilton) apportionment: splits `capacity`
+    /// sessions among `components` proportionally to each component's own
+    /// ORIGINAL `SessionFrequency.target` — the original targets already
+    /// express the mix's intended relative composition, so this preserves
+    /// that ratio as closely as integer capacity allows rather than
+    /// inventing a new one. Requires `capacity >= components.count` (every
+    /// caller already guarantees this — see `applyCapacity`).
+    ///
+    /// **Mechanism:** each component's exact real-valued quota is
+    /// `capacity * (originalTarget / totalOriginalTarget)`. Every
+    /// component first receives `floor(quota)`; the leftover units
+    /// (`capacity - sum of floors`, always `< components.count`) go one at
+    /// a time to whichever components have the largest fractional
+    /// remainder — `GoalPriority` (primary before secondary before
+    /// supporting) is the tie-break ONLY when two remainders are
+    /// genuinely equal, never a primary driver.
+    ///
+    /// **Worked example (locked, must reproduce exactly):** 5 Hypertrophy
+    /// + 2 Zone 2, capacity 5. Quotas: Hypertrophy `5*(5/7)≈3.571`, Zone 2
+    /// `5*(2/7)≈1.429`. Floors: 3 and 1 (sum 4). Leftover: `5-4=1`.
+    /// Remainders: Hypertrophy `0.571` vs. Zone 2 `0.429` — Hypertrophy's
+    /// is larger, so it receives the extra unit. Final: **4 Hypertrophy +
+    /// 1 Zone 2** — composition preserved (roughly the original 5:2
+    /// ratio), never the rejected 5+0.
+    ///
+    /// **Safety guarantee (rule 1 — never actually triggered by the
+    /// worked examples above, but real regardless of mix size):**
+    /// Hamilton's method already gives every component `floor(quota)`,
+    /// which is `>= 1` whenever `capacity >= components.count` UNLESS the
+    /// weights are skewed enough that a low-weight component's own quota
+    /// floors below 1 (e.g. many components with very small original
+    /// targets relative to one large one). If that occurs, the smallest
+    /// possible correction is applied: move exactly one session from
+    /// whichever component currently has the most (ties broken toward the
+    /// least-protected/supporting tier, since GoalPriority is still only a
+    /// tie-break) to the starved component — never a random or
+    /// first-found donor.
+    private static func allocateProportionally(capacity: Int, among components: [TrainingMixComponent]) {
+        let totalWeight = components.reduce(0) { $0 + $1.frequency.target }
+        guard totalWeight > 0 else { return }
+
+        var floors: [Int] = []
+        var remainders: [Double] = []
+        for component in components {
+            let quota = Double(capacity) * Double(component.frequency.target) / Double(totalWeight)
+            let floor = Int(quota)
+            floors.append(floor)
+            remainders.append(quota - Double(floor))
+        }
+
+        var leftover = capacity - floors.reduce(0, +)
+        let remainderOrder = components.indices.sorted { a, b in
+            if remainders[a] != remainders[b] { return remainders[a] > remainders[b] }
+            let pa = priorityOrdinal(components[a].priority), pb = priorityOrdinal(components[b].priority)
+            return pa != pb ? pa < pb : a < b
+        }
+        for index in remainderOrder where leftover > 0 {
+            floors[index] += 1
+            leftover -= 1
+        }
+
+        if capacity >= components.count {
+            for starvedIndex in floors.indices where floors[starvedIndex] == 0 {
+                let donorOrder = floors.indices
+                    .filter { $0 != starvedIndex && floors[$0] > 1 }
+                    .sorted { a, b in
+                        if floors[a] != floors[b] { return floors[a] > floors[b] }
+                        let pa = priorityOrdinal(components[a].priority), pb = priorityOrdinal(components[b].priority)
+                        return pa > pb // take from the least-protected (supporting) tier first on a tie
+                    }
+                guard let donorIndex = donorOrder.first else { continue }
+                floors[donorIndex] -= 1
+                floors[starvedIndex] = 1
+            }
+        }
+
+        for (index, component) in components.enumerated() {
+            let allocated = min(floors[index], component.frequency.target)
+            component.frequency = SessionFrequency(
+                target: allocated,
+                minimum: component.frequency.minimum.map { min($0, allocated) },
+                maximum: component.frequency.maximum
+            )
+        }
+    }
+
+    private static func priorityOrdinal(_ priority: GoalPriority) -> Int {
+        switch priority {
+        case .primary: return 0
+        case .secondary: return 1
+        case .supporting: return 2
+        }
     }
 
     // MARK: - Two-stage ranking (ADHERENCE_AWARE_PLANNING.md §5), pure and directly testable
@@ -558,11 +749,22 @@ enum LongTermPlanner {
     }
 
     /// §5b's three-part boolean test — never a fabricated score.
+    ///
+    /// Stage V1 dogfooding fix (Part 3): only a SYSTEM-WIDE dislike
+    /// (`ModalityPreference.activityType == nil`, e.g. "no steady-state at
+    /// all") vetoes the whole system here. An ACTIVITY-scoped dislike
+    /// (e.g. `system: .steadyState, activityType: .running` — "I dislike
+    /// running specifically") must never veto a mix merely for containing
+    /// `.steadyState` — `TrainingMixComponent` has no stored `ActivityType`
+    /// at this strategic level, so the real, correct place to honor an
+    /// activity-scoped dislike is `preferredActivityType`'s own activity
+    /// selection (it already resolves the real, materialization-time
+    /// `ActivityType` for exactly this system), not this system-level gate.
     private static func isPreferenceAligned(_ mix: TrainingMix, preferences: GoalPreferences?, bestDistinctSystems: Int) -> Bool {
         guard let preferences else { return false }
         let systems = Set(mix.orderedComponents.compactMap(\.programmingSystem))
-        let disliked = Set(preferences.dislikedModalities.map(\.system))
-        guard systems.isDisjoint(with: disliked) else { return false }
+        let systemWideDislikes = Set(preferences.dislikedModalities.filter { $0.activityType == nil }.map(\.system))
+        guard systems.isDisjoint(with: systemWideDislikes) else { return false }
         let preferred = Set(preferences.preferredModalities.map(\.system))
         guard !systems.isDisjoint(with: preferred) else { return false }
         if preferences.varietyPreference == .high {
@@ -1257,7 +1459,23 @@ enum LongTermPlanner {
     /// through to the same `.running` default as before.
     private static func preferredActivityType(component: TrainingMixComponent, goal: Goal?) -> ActivityType? {
         guard let system = component.programmingSystem else { return nil }
-        return goal?.preferences?.preferredModalities.first { $0.system == system }?.activityType
+        if let preferred = goal?.preferences?.preferredModalities.first(where: { $0.system == system })?.activityType {
+            return preferred
+        }
+        // Stage V1 dogfooding fix (Part 3): an activity-scoped dislike
+        // (e.g. "I dislike running" without disliking all steady-state,
+        // `activityType != nil`) has no system-wide veto in
+        // `isPreferenceAligned` — this is the real place it takes effect:
+        // avoid the disliked activity when choosing a fallback, never
+        // silently choosing it anyway. Deterministic, `ActivityType`'s own
+        // declared case order — never random.
+        let dislikedActivities = Set(
+            (goal?.preferences?.dislikedModalities ?? [])
+                .filter { $0.system == system }
+                .compactMap(\.activityType)
+        )
+        guard !dislikedActivities.isEmpty else { return nil }
+        return ActivityType.allCases.first { !dislikedActivities.contains($0) }
     }
 
     private static func materialize(_ parameters: GeneratorParameters, name: String, context: ModelContext) throws -> ProgramDefinition {

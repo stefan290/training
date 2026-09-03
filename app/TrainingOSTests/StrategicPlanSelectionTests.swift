@@ -24,7 +24,8 @@ final class StrategicPlanSelectionTests: XCTestCase {
     /// `GoalPreferences` — never a hand-fabricated shortcut.
     @discardableResult
     private func makeOnboardedAthlete(
-        goalType: GoalType = .generalStrength, trainingDays: Int = 4, allowsDoubles: Bool = false
+        goalType: GoalType = .generalStrength, trainingDays: Int = 4, allowsDoubles: Bool = false,
+        preferredModalities: [ModalityPreference] = [], dislikedModalities: [ModalityPreference] = []
     ) throws -> (user: User, goal: Goal) {
         let user = AppRootStateResolver.ensureBaselineIdentity(context: context)
         let environment = TrainingEnvironmentTestSupport.full(context: context)
@@ -32,7 +33,10 @@ final class StrategicPlanSelectionTests: XCTestCase {
         user.profile?.defaultTrainingEnvironment = environment
         let goal = Goal(
             ownerUserID: user.id, primaryType: goalType,
-            preferences: GoalPreferences(availableTrainingDaysPerWeek: trainingDays, allowsDoubleSessions: allowsDoubles)
+            preferences: GoalPreferences(
+                preferredModalities: preferredModalities, dislikedModalities: dislikedModalities,
+                availableTrainingDaysPerWeek: trainingDays, allowsDoubleSessions: allowsDoubles
+            )
         )
         context.insert(goal)
         user.addGoal(goal)
@@ -215,5 +219,246 @@ final class StrategicPlanSelectionTests: XCTestCase {
         let proposal = LongTermPlanner.proposeStrategicPlan(goal: goal, asOf: Date())
         XCTAssertEqual(proposal.feasibility, .feasible)
         XCTAssertFalse(proposal.phases.isEmpty)
+    }
+
+    // MARK: Plan Recommendation Integrity + Athlete Choice
+
+    // Test 1 — the real dogfooding reproduction: 5 days, no doubles, Muscle
+    // Gain must never recommend more sessions than real capacity, and the
+    // real materialized schedule must never double-book a day.
+    func testFiveDayNoDoublesMuscleGainRecommendationFitsCapacityWithNoDoubleBookedDays() throws {
+        try makeOnboardedAthlete(goalType: .muscleGain, trainingDays: 5, allowsDoubles: false)
+        let viewModel = StrategicPlanSelectionViewModel()
+        viewModel.load(modelContext: context)
+        let mix = try XCTUnwrap(viewModel.reviewedMix, "a real recommendation must exist for a 5-day Muscle Gain athlete")
+        let totalSessions = mix.orderedComponents.reduce(0) { $0 + $1.frequency.target }
+        XCTAssertLessThanOrEqual(totalSessions, 5, "recommended mix must never exceed the athlete's stated 5-day capacity")
+
+        XCTAssertTrue(viewModel.acceptAndStart(modelContext: context))
+        try context.save()
+        let sessions = try context.fetch(FetchDescriptor<Session>())
+        let dates = sessions.compactMap { $0.day?.date }
+        XCTAssertEqual(dates.count, Set(dates).count, "no two real Sessions may share the same calendar day when allowsDoubleSessions is false")
+    }
+
+    // Test 2 — with doubles allowed, capacity-scaling must not apply; the
+    // real fixed template (7 sessions) is left untouched, and whether it's
+    // actually placeable is exactly what the real scheduling-based
+    // alignment already determines honestly.
+    func testFiveDayAllowsDoublesLeavesTheRealTemplateUntouched() throws {
+        try makeOnboardedAthlete(goalType: .muscleGain, trainingDays: 5, allowsDoubles: true)
+        let viewModel = StrategicPlanSelectionViewModel()
+        viewModel.load(modelContext: context)
+        let mix = try XCTUnwrap(viewModel.reviewedMix)
+        let totalSessions = mix.orderedComponents.reduce(0) { $0 + $1.frequency.target }
+        XCTAssertEqual(totalSessions, 7, "allowsDoubleSessions=true must leave the real fixed template exactly as-is")
+    }
+
+    // Test 3 — 3 days, no doubles: whatever is recommended (if anything)
+    // must be genuinely feasible; an infeasible mix must never be silently
+    // labeled RECOMMENDED.
+    func testThreeDayNoDoublesNeverPresentsAnInfeasibleMixAsRecommended() throws {
+        try makeOnboardedAthlete(goalType: .muscleGain, trainingDays: 3, allowsDoubles: false)
+        let viewModel = StrategicPlanSelectionViewModel()
+        viewModel.load(modelContext: context)
+        if let mix = viewModel.reviewedMix {
+            let totalSessions = mix.orderedComponents.reduce(0) { $0 + $1.frequency.target }
+            XCTAssertLessThanOrEqual(totalSessions, 3)
+        } else {
+            XCTAssertTrue(viewModel.hasNoCompatibleMix, "if nothing is recommended, the ViewModel must honestly say so — never silently proceed")
+        }
+    }
+
+    // MARK: Capacity-scaling POLICY CORRECTION — composition-preserving,
+    // proportional apportionment (largest-remainder/Hamilton), never
+    // "primary fully protected, supporting yields to zero."
+
+    /// Locked worked example: the real "Focused Hypertrophy" template
+    /// (5 Hypertrophy + 2 Zone 2) at capacity 5 must become 4 Hypertrophy +
+    /// 1 Zone 2 — BOTH components survive, composition preserved, never
+    /// 5+0.
+    func testFiveDayNoDoublesCapacityScalingProducesFourHypertrophyPlusOneZoneTwo() throws {
+        let (_, goal) = try makeOnboardedAthlete(goalType: .muscleGain, trainingDays: 5, allowsDoubles: false)
+        let proposal = LongTermPlanner.proposeStrategicPlan(goal: goal, asOf: Date())
+        let proposedPhase = try XCTUnwrap(proposal.phases.first)
+        let previewPhase = TrainingPhase(
+            type: proposedPhase.type, startDate: proposedPhase.startDate,
+            endDate: proposedPhase.endDate, priorityRule: proposedPhase.priorityRule
+        )
+        let candidates = LongTermPlanner.proposeTrainingMix(phase: previewPhase, goal: goal)
+        let focusedHypertrophy = try XCTUnwrap(candidates.first { $0.mix.name == "Focused Hypertrophy" })
+        let hypertrophy = focusedHypertrophy.mix.orderedComponents.first { $0.programmingSystem == .hypertrophy }
+        let zoneTwo = focusedHypertrophy.mix.orderedComponents.first { $0.programmingSystem == .steadyState }
+        XCTAssertEqual(hypertrophy?.frequency.target, 4, "largest-remainder apportionment of 5+2 at capacity 5 must give Hypertrophy 4")
+        XCTAssertEqual(zoneTwo?.frequency.target, 1, "Zone 2 must survive with 1 session, never be zeroed out")
+    }
+
+    /// Same real template at capacity 3: both components must still
+    /// survive (capacity 3 >= 2 non-zero components), proportionally
+    /// apportioned — 5:2 ratio over 3 sessions gives 2 Hypertrophy + 1
+    /// Zone 2 (quotas 3*5/7≈2.143, 3*2/7≈0.857; floors 2+0=2, leftover 1
+    /// goes to Zone 2's larger remainder).
+    func testThreeDayNoDoublesCapacityScalingProducesTwoHypertrophyPlusOneZoneTwo() throws {
+        let (_, goal) = try makeOnboardedAthlete(goalType: .muscleGain, trainingDays: 3, allowsDoubles: false)
+        let proposal = LongTermPlanner.proposeStrategicPlan(goal: goal, asOf: Date())
+        let proposedPhase = try XCTUnwrap(proposal.phases.first)
+        let previewPhase = TrainingPhase(
+            type: proposedPhase.type, startDate: proposedPhase.startDate,
+            endDate: proposedPhase.endDate, priorityRule: proposedPhase.priorityRule
+        )
+        let candidates = LongTermPlanner.proposeTrainingMix(phase: previewPhase, goal: goal)
+        let focusedHypertrophy = try XCTUnwrap(candidates.first { $0.mix.name == "Focused Hypertrophy" })
+        let hypertrophy = focusedHypertrophy.mix.orderedComponents.first { $0.programmingSystem == .hypertrophy }
+        let zoneTwo = focusedHypertrophy.mix.orderedComponents.first { $0.programmingSystem == .steadyState }
+        XCTAssertEqual(hypertrophy?.frequency.target, 2)
+        XCTAssertEqual(zoneTwo?.frequency.target, 1, "both components must still survive at capacity 3, never dropped to 0")
+        XCTAssertEqual((hypertrophy?.frequency.target ?? 0) + (zoneTwo?.frequency.target ?? 0), 3)
+    }
+
+    /// Capacity 1 (< 2 non-zero components, rule 7): only the
+    /// higher-`GoalPriority` component (Hypertrophy, primary) survives —
+    /// Zone 2 (supporting) is dropped entirely, since there isn't even
+    /// room for 1 session per component.
+    func testCapacityOneRetainsOnlyTheHigherPriorityComponent() throws {
+        let (_, goal) = try makeOnboardedAthlete(goalType: .muscleGain, trainingDays: 1, allowsDoubles: false)
+        let proposal = LongTermPlanner.proposeStrategicPlan(goal: goal, asOf: Date())
+        let proposedPhase = try XCTUnwrap(proposal.phases.first)
+        let previewPhase = TrainingPhase(
+            type: proposedPhase.type, startDate: proposedPhase.startDate,
+            endDate: proposedPhase.endDate, priorityRule: proposedPhase.priorityRule
+        )
+        let candidates = LongTermPlanner.proposeTrainingMix(phase: previewPhase, goal: goal)
+        let focusedHypertrophy = try XCTUnwrap(candidates.first { $0.mix.name == "Focused Hypertrophy" })
+        XCTAssertEqual(focusedHypertrophy.mix.orderedComponents.count, 1, "only 1 component may survive when capacity is less than the number of non-zero components")
+        let survivor = try XCTUnwrap(focusedHypertrophy.mix.orderedComponents.first)
+        XCTAssertEqual(survivor.programmingSystem, .hypertrophy, "the primary/goal-defining component survives, not the supporting one")
+        XCTAssertEqual(survivor.frequency.target, 1)
+    }
+
+    /// No component's final target may ever exceed its own original
+    /// template target, across a range of capacities.
+    func testNoComponentEverExceedsItsOriginalTemplateTarget() throws {
+        for days in 1...10 {
+            let (_, goal) = try makeOnboardedAthlete(goalType: .muscleGain, trainingDays: days, allowsDoubles: false)
+            let proposal = LongTermPlanner.proposeStrategicPlan(goal: goal, asOf: Date())
+            let proposedPhase = try XCTUnwrap(proposal.phases.first)
+            let previewPhase = TrainingPhase(
+                type: proposedPhase.type, startDate: proposedPhase.startDate,
+                endDate: proposedPhase.endDate, priorityRule: proposedPhase.priorityRule
+            )
+            let candidates = LongTermPlanner.proposeTrainingMix(phase: previewPhase, goal: goal)
+            let focusedHypertrophy = try XCTUnwrap(candidates.first { $0.mix.name == "Focused Hypertrophy" })
+            let hypertrophy = focusedHypertrophy.mix.orderedComponents.first { $0.programmingSystem == .hypertrophy }
+            let zoneTwo = focusedHypertrophy.mix.orderedComponents.first { $0.programmingSystem == .steadyState }
+            XCTAssertLessThanOrEqual(hypertrophy?.frequency.target ?? 0, 5, "Hypertrophy's original template target is 5 — never exceeded")
+            XCTAssertLessThanOrEqual(zoneTwo?.frequency.target ?? 0, 2, "Zone 2's original template target is 2 — never exceeded")
+            let total = (hypertrophy?.frequency.target ?? 0) + (zoneTwo?.frequency.target ?? 0)
+            XCTAssertLessThanOrEqual(total, days, "total sessions must never exceed the athlete's stated capacity (day \(days))")
+        }
+    }
+
+    /// Modality-preference consequence: a REAL existing candidate mix
+    /// ("Strength Plus Variety" — 3 Strength + 2 Functional Fitness + 1
+    /// Running) at a capacity where the old "primary fully protected,
+    /// supporting yields to zero" policy would have silently zeroed out
+    /// Functional Fitness even though the athlete explicitly preferred it.
+    /// Proportional apportionment (3:2:1 ratio over capacity 4 — quotas
+    /// 2/1.333/0.667, floors 2+1+0=3, leftover 1 goes to Running's larger
+    /// remainder) must retain Functional Fitness with at least 1 session.
+    func testCapacityScalingNeverErasesAPreferredNonPrimaryModality() throws {
+        let (_, goal) = try makeOnboardedAthlete(
+            goalType: .muscleGain, trainingDays: 4, allowsDoubles: false,
+            preferredModalities: [ModalityPreference(system: .functionalFitness)]
+        )
+        let proposal = LongTermPlanner.proposeStrategicPlan(goal: goal, asOf: Date())
+        let proposedPhase = try XCTUnwrap(proposal.phases.first)
+        let previewPhase = TrainingPhase(
+            type: proposedPhase.type, startDate: proposedPhase.startDate,
+            endDate: proposedPhase.endDate, priorityRule: proposedPhase.priorityRule
+        )
+        let candidates = LongTermPlanner.proposeTrainingMix(phase: previewPhase, goal: goal)
+        let strengthPlusVariety = try XCTUnwrap(candidates.first { $0.mix.name == "Strength Plus Variety" }, "the real 'Strength Plus Variety' template (3 Strength + 2 Functional Fitness + 1 Running) must exist as a candidate for a Muscle Gain goal")
+        let functionalFitness = strengthPlusVariety.mix.orderedComponents.first { $0.programmingSystem == .functionalFitness }
+        XCTAssertNotNil(functionalFitness, "Functional Fitness must not be dropped from the mix entirely")
+        XCTAssertGreaterThanOrEqual(functionalFitness?.frequency.target ?? 0, 1, "a preferred supporting modality must retain at least 1 real session at capacity 4 — never zeroed out merely because Strength (primary) has a higher raw template target")
+    }
+
+    // Test 4 — a stated Functional Fitness preference must reach the real
+    // ranking (recommended or a real alternative), never be silently
+    // ignored by the planner.
+    func testPreferredFunctionalFitnessReachesRealPlannerRanking() throws {
+        try makeOnboardedAthlete(
+            goalType: .muscleGain, trainingDays: 6, allowsDoubles: false,
+            preferredModalities: [ModalityPreference(system: .functionalFitness)]
+        )
+        let viewModel = StrategicPlanSelectionViewModel()
+        viewModel.load(modelContext: context)
+        let selectable = [viewModel.reviewedMix].compactMap { $0 } + viewModel.alternatives.map(\.mix)
+        let containsFF = selectable.contains { mix in
+            mix.orderedComponents.contains { $0.programmingSystem == .functionalFitness }
+        }
+        XCTAssertTrue(containsFF, "a stated preference for Functional Fitness must be reachable as the recommendation or a real alternative")
+    }
+
+    // Test 5 — an activity-scoped dislike ("no running") must steer the
+    // real materialized activity away from running WITHOUT vetoing
+    // steady-state/conditioning entirely.
+    func testDislikedRunningSpecificallyExcludesRunningFromMaterializedActivity() throws {
+        // 7-day capacity so the supporting steady-state component keeps a
+        // real, nonzero allocation regardless of capacity-scaling — this
+        // test isolates activity SELECTION, not capacity REDUCTION.
+        try makeOnboardedAthlete(
+            goalType: .muscleGain, trainingDays: 7, allowsDoubles: false,
+            dislikedModalities: [ModalityPreference(system: .steadyState, activityType: .running)]
+        )
+        let viewModel = StrategicPlanSelectionViewModel()
+        viewModel.load(modelContext: context)
+        let mix = try XCTUnwrap(viewModel.reviewedMix)
+        XCTAssertTrue(mix.orderedComponents.contains { $0.programmingSystem == .steadyState }, "an activity-scoped dislike must never veto the whole steady-state system")
+
+        XCTAssertTrue(viewModel.acceptAndStart(modelContext: context))
+        try context.save()
+        let steadyStatePrescriptions = try context.fetch(FetchDescriptor<SteadyStatePrescription>())
+        XCTAssertFalse(steadyStatePrescriptions.isEmpty, "a real steady-state component must have materialized")
+        for prescription in steadyStatePrescriptions {
+            XCTAssertNotEqual(prescription.activityType, .running, "materialization must avoid the specifically-disliked activity")
+        }
+    }
+
+    // Test 6 — no modality preference at all: existing goal-first ranking
+    // remains valid (regression against Checkpoint 2's own established
+    // behavior).
+    func testNoModalityPreferenceLeavesGoalFirstRankingValid() throws {
+        try makeOnboardedAthlete(goalType: .muscleGain, trainingDays: 6, allowsDoubles: false)
+        let viewModel = StrategicPlanSelectionViewModel()
+        viewModel.load(modelContext: context)
+        XCTAssertNotNil(viewModel.reviewedMix)
+    }
+
+    // Test 7 — alternatives are real, planner-returned candidates, never
+    // UI-fabricated.
+    func testAlternativesAreRealPlannerReturnedCandidates() throws {
+        try makeOnboardedAthlete(goalType: .muscleGain, trainingDays: 6, allowsDoubles: false)
+        let viewModel = StrategicPlanSelectionViewModel()
+        viewModel.load(modelContext: context)
+        for alternative in viewModel.alternatives {
+            XCTAssertTrue(viewModel.candidates.contains { $0.mix.id == alternative.mix.id }, "every shown alternative must be a real candidate LongTermPlanner itself returned")
+        }
+    }
+
+    // Test 8 — only feasible alternatives are selectable; selecting a
+    // real, feasible alternative replaces the reviewed mix; an
+    // unrelated/non-member mix is rejected.
+    func testOnlyFeasibleAlternativesAreSelectableAndSelectionReplacesTheReviewedMix() throws {
+        try makeOnboardedAthlete(goalType: .muscleGain, trainingDays: 6, allowsDoubles: false)
+        let viewModel = StrategicPlanSelectionViewModel()
+        viewModel.load(modelContext: context)
+        for alternative in viewModel.alternatives {
+            XCTAssertGreaterThanOrEqual(alternative.alignment.rating, LongTermPlanner.compatibilityThreshold, "only genuinely feasible alternatives may ever be offered as selectable")
+        }
+        if let firstAlternative = viewModel.alternatives.first {
+            viewModel.selectAlternative(firstAlternative)
+            XCTAssertEqual(viewModel.reviewedMix?.id, firstAlternative.mix.id)
+        }
     }
 }
