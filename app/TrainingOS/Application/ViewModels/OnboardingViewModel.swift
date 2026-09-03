@@ -37,6 +37,19 @@ final class OnboardingViewModel {
     var selectedGoalType: GoalType = .generalStrength
     var hasTargetDate = false
     var targetDate = Date()
+    /// Stage V1 "Milestone Onboarding": the athlete-facing surface for the
+    /// ALREADY-REAL `Goal.milestoneDate`/`.bodyCompositionDirection` fields
+    /// (`STRATEGIC_PLAN_MODEL.md` §3) — distinct from `targetDate` (the
+    /// plan's own forward horizon). Only the single "Summer Shape"-style
+    /// direction (`.loseFat`) is exposed in this checkpoint — a full
+    /// `BodyCompositionDirection` picker would expose internal vocabulary
+    /// for no athlete-facing benefit this checkpoint's own locked scope
+    /// asks for; `.gainMuscle`/`.maintain`/`.recomposition` remain real,
+    /// reachable domain states (e.g. for a future Fat Loss-primary athlete
+    /// wanting a muscle-gain milestone) simply not surfaced by THIS control
+    /// yet — a disclosed, deliberate FOLLOW-UP, not a planner limitation.
+    var hasMilestone = false
+    var milestoneDate = Date()
     var varietyPreference: VarietyPreference = .moderate
     var availableTrainingDaysPerWeek: Int = 4
     var allowsDoubleSessions = false
@@ -66,6 +79,8 @@ final class OnboardingViewModel {
             selectedGoalType = activeGoal.primaryType
             hasTargetDate = activeGoal.targetDate != nil
             targetDate = activeGoal.targetDate ?? Date()
+            hasMilestone = activeGoal.milestoneDate != nil
+            milestoneDate = activeGoal.milestoneDate ?? Date()
             if let preferences = activeGoal.preferences {
                 varietyPreference = preferences.varietyPreference
                 availableTrainingDaysPerWeek = preferences.availableTrainingDaysPerWeek ?? 4
@@ -154,11 +169,16 @@ final class OnboardingViewModel {
         if let existingGoal = user.goals.first(where: { $0.status == .active }) {
             existingGoal.primaryType = selectedGoalType
             existingGoal.targetDate = hasTargetDate ? targetDate : nil
+            existingGoal.milestoneDate = hasMilestone ? milestoneDate : nil
+            existingGoal.bodyCompositionDirection = hasMilestone ? .loseFat : nil
             existingGoal.preferences = preferences
         } else {
             let goal = Goal(
                 ownerUserID: user.id, primaryType: selectedGoalType,
-                targetDate: hasTargetDate ? targetDate : nil, preferences: preferences
+                targetDate: hasTargetDate ? targetDate : nil,
+                milestoneDate: hasMilestone ? milestoneDate : nil,
+                bodyCompositionDirection: hasMilestone ? .loseFat : nil,
+                preferences: preferences
             )
             modelContext.insert(goal)
             user.addGoal(goal)

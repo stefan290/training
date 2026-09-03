@@ -106,6 +106,47 @@ final class OnboardingTests: XCTestCase {
         XCTAssertEqual(preferences.allowsDoubleSessions, true)
     }
 
+    // MARK: Milestone Onboarding — real onboarding input reaches the existing,
+    // already-real milestone planning mechanism (LongTermPlanner.proposeMilestoneAnchoredPhases).
+    // The athlete never selects "Fat Loss" directly — only a goal, a milestone
+    // date, and (implicitly) a "leaner by then" intent.
+
+    func testMilestoneOnboardingProducesMuscleGainTransitionFatLossMuscleGainSequence() throws {
+        let asOf = Date(timeIntervalSince1970: 1_700_000_000)
+        let milestoneDate = asOf.addingTimeInterval(20 * 7 * 86400) // 20 weeks out — enough lead time for a real primary phase + transition before it
+        let targetDate = milestoneDate.addingTimeInterval(12 * 7 * 86400) // 12 weeks after the milestone — enough for a real resume phase
+
+        let viewModel = OnboardingViewModel()
+        viewModel.start(modelContext: context)
+        viewModel.selectedGoalType = .muscleGain
+        viewModel.hasMilestone = true
+        viewModel.milestoneDate = milestoneDate
+        viewModel.hasTargetDate = true
+        viewModel.targetDate = targetDate
+        viewModel.availableTrainingDaysPerWeek = 5
+
+        viewModel.advance(from: .goal, modelContext: context)
+        viewModel.advance(from: .preferences, modelContext: context)
+        viewModel.advance(from: .modalityPreferences, modelContext: context)
+
+        let goals = try context.fetch(FetchDescriptor<Goal>())
+        let goal = try XCTUnwrap(goals.first, "the real onboarding flow must persist a real Goal")
+        XCTAssertEqual(goal.primaryType, .muscleGain, "the athlete's primary goal is never replaced by the milestone")
+        XCTAssertEqual(goal.milestoneDate, milestoneDate, "the milestone date the athlete entered must reach the real Goal")
+        XCTAssertEqual(goal.bodyCompositionDirection, .loseFat, "this onboarding control's only supported direction — the athlete never picks a BodyCompositionDirection directly")
+
+        // The real, unmodified planning entry point — never a hand-built expectation.
+        let proposal = LongTermPlanner.proposeStrategicPlan(goal: goal, asOf: asOf)
+        XCTAssertEqual(proposal.feasibility, .feasible)
+        let types = proposal.phases.map(\.type)
+        XCTAssertTrue(types.contains(.fatLoss), "the real milestone mechanism must produce a Fat Loss-flavored phase from a leaner-by-date milestone, entirely from the onboarding input — the athlete never selected this phase")
+        guard let fatLossIndex = types.firstIndex(of: .fatLoss) else {
+            return XCTFail("expected a fatLoss milestone phase in the real proposal")
+        }
+        XCTAssertTrue(types.prefix(fatLossIndex).allSatisfy { $0 == .muscleGain || $0 == .transition }, "everything before the milestone must be primary-goal fill-forward or an automatic transition, never an athlete-chosen phase")
+        XCTAssertTrue(types.suffix(from: fatLossIndex + 1).contains(.muscleGain), "the primary goal must resume after the milestone since the target date is later")
+    }
+
     // MARK: 6/7 — Training Environment created via the real TE.1 model and persists as default
 
     func testOnboardingCreatesRealTrainingEnvironmentAndSetsDefault() throws {

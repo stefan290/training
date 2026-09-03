@@ -57,10 +57,31 @@ struct OnboardingFlowView: View {
                 }
             }
 
-            Toggle("I have a target date", isOn: $viewModel.hasTargetDate)
+            // Stage V1 "Milestone Onboarding": `hasTargetDate` controls the
+            // PLAN'S OWN forward horizon (`Goal.targetDate`) — relabeled
+            // from "I have a target date" since that wording read as
+            // identical to the new milestone control below, when the two
+            // real domain concepts are deliberately distinct
+            // (`STRATEGIC_PLAN_MODEL.md` §3).
+            Toggle("Plan through a specific end date", isOn: $viewModel.hasTargetDate)
                 .font(Theme.body)
             if viewModel.hasTargetDate {
-                DatePicker("Target date", selection: $viewModel.targetDate, displayedComponents: .date)
+                DatePicker("Plan through", selection: $viewModel.targetDate, displayedComponents: .date)
+                    .font(Theme.body)
+            }
+
+            // Stage V1 "Milestone Onboarding": the athlete-facing surface
+            // for `Goal.milestoneDate`/`.bodyCompositionDirection` — never
+            // asks the athlete to pick "Fat Loss" as a training phase;
+            // TrainingOS's own existing `LongTermPlanner.proposeMilestoneAnchoredPhases`
+            // decides the real phase sequence from this single date.
+            Toggle("I also want to be ready for something by a date", isOn: $viewModel.hasMilestone)
+                .font(Theme.body)
+            if viewModel.hasMilestone {
+                Text("For example, looking leaner for summer. TrainingOS will adjust your plan to get you there, then return to your main goal.")
+                    .font(Theme.label)
+                    .foregroundStyle(Theme.textSecondary)
+                DatePicker("Ready by", selection: $viewModel.milestoneDate, displayedComponents: .date)
                     .font(Theme.body)
             }
 
@@ -213,6 +234,9 @@ struct OnboardingFlowView: View {
 
             VStack(alignment: .leading, spacing: 12) {
                 reviewRow("Goal", PlanPresentation.goalTypeLabel(viewModel.selectedGoalType))
+                if viewModel.hasMilestone {
+                    reviewRow("Milestone", "Ready by \(viewModel.milestoneDate.formatted(date: .abbreviated, time: .omitted))")
+                }
                 reviewRow("Training days/week", "\(viewModel.availableTrainingDaysPerWeek)")
                 reviewRow("Variety", viewModel.varietyPreference.rawValue.capitalized)
                 if !viewModel.preferredSystems.isEmpty {
