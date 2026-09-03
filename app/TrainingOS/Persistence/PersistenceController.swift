@@ -55,6 +55,7 @@ enum PersistenceController {
         ExerciseRelationship.self,
         SlotSelectionOverride.self,
         ActivitySelectionOverride.self,
+        FunctionalFitnessMovementFunctionOverride.self,
         // Stage 4D additions.
         IntervalPrescriptionTemplate.self,
         // Stage 4E additions.

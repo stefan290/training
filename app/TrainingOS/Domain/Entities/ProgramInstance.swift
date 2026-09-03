@@ -55,6 +55,17 @@ final class ProgramInstance {
     @Relationship(deleteRule: .cascade, inverse: \ActivitySelectionOverride.programInstance)
     var activitySelectionOverrides: [ActivitySelectionOverride] = []
 
+    /// Stage FF.M1 closure: the dynamically-composed-Functional-Fitness
+    /// sibling of `slotSelectionOverrides` above — keyed by `MovementFunction`
+    /// rather than a specific `ExerciseSlot`, since Stage C now builds a
+    /// fresh slot every tactical week. Cascade, matching the same
+    /// reasoning as `slotSelectionOverrides`: pure instance-specific
+    /// preference state, nothing worth preserving once the instance is
+    /// gone. See `FunctionalFitnessMovementFunctionOverride`'s own doc
+    /// comment.
+    @Relationship(deleteRule: .cascade, inverse: \FunctionalFitnessMovementFunctionOverride.programInstance)
+    var functionalFitnessMovementFunctionOverrides: [FunctionalFitnessMovementFunctionOverride] = []
+
     /// Stage 4F addition: `TrainingMixComponent`s that reference this
     /// instance once it has been instantiated from a recommended or
     /// selected `TrainingMix`. Nullify, not cascade — the delete rule
@@ -132,6 +143,13 @@ final class ProgramInstance {
         activitySelectionOverrides.append(override)
     }
 
+    /// The only way application code should attach a
+    /// `FunctionalFitnessMovementFunctionOverride`. Mutates exactly one
+    /// side; SwiftData maintains the declared inverse.
+    func addFunctionalFitnessMovementFunctionOverride(_ override: FunctionalFitnessMovementFunctionOverride) {
+        functionalFitnessMovementFunctionOverrides.append(override)
+    }
+
     /// The single authoritative GOING FORWARD override for a slot, if one
     /// exists — never more than one per slot (`SubstituteExerciseUseCase`
     /// enforces this at write time), so first-match is unambiguous.
@@ -146,6 +164,15 @@ final class ProgramInstance {
     /// own "Stage 4D correction" doc comment.
     func activitySelectionOverride(for templateBlock: WorkoutBlockTemplate) -> ActivitySelectionOverride? {
         activitySelectionOverrides.first { $0.templateBlock?.id == templateBlock.id }
+    }
+
+    /// The single authoritative GOING FORWARD Exercise preference for a
+    /// dynamically-composed Functional Fitness movement role, if one
+    /// exists — never more than one per `MovementFunction`
+    /// (`SubstituteFunctionalFitnessMovementUseCase.substituteGoingForward`
+    /// enforces this at write time).
+    func functionalFitnessMovementFunctionOverride(for function: MovementFunction) -> FunctionalFitnessMovementFunctionOverride? {
+        functionalFitnessMovementFunctionOverrides.first { $0.movementFunction == function }
     }
 
     /// Stage 10R.1C addition: the only way application code should attach

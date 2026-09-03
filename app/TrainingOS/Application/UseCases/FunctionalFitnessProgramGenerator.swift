@@ -73,13 +73,24 @@ enum FunctionalFitnessProgramGenerator {
                 stimulus: configuration.targetStimulus,
                 format: configuration.format,
                 requiresRecentExposureToProgress: configuration.requiresRecentExposureToProgress,
-                varianceConstraints: configuration.varianceConstraints
+                varianceConstraints: configuration.varianceConstraints,
+                isDynamicallyComposed: configuration.isDynamicallyComposed
             )
             context.insert(prescriptionTemplate)
             ffBlock.attachFunctionalFitnessPrescriptionTemplate(prescriptionTemplate)
 
-            for movementSlotTemplate in movementSlots(for: configuration.targetStimulus, context: context) {
-                prescriptionTemplate.addMovementSlot(movementSlotTemplate)
+            // Stage FF.M1: Stage C (movement-slot composition) moved to
+            // materialization time for dynamically-composed FF
+            // (`FunctionalFitnessMaterializer`/`FunctionalFitnessMovementComposer`)
+            // — pre-baking a fixed slot set here, before any real week's
+            // FINAL stimulus is known, is exactly the frozen-CONFIGURED
+            // contradiction FF.M1 closes. `isDynamicallyComposed == false`
+            // (no real content today) is the only case that still needs
+            // slots attached at generation time.
+            if !prescriptionTemplate.isDynamicallyComposed {
+                for movementSlotTemplate in movementSlots(for: configuration.targetStimulus, context: context) {
+                    prescriptionTemplate.addMovementSlot(movementSlotTemplate)
+                }
             }
         }
 

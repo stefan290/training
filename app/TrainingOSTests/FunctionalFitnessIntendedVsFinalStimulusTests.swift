@@ -152,7 +152,7 @@ final class FunctionalFitnessIntendedVsFinalStimulusTests: XCTestCase {
         let ffConfiguration = FunctionalFitnessProgramConfiguration(
             daysPerWeek: 2, lengthWeeks: 1, targetStimulus: heavySquatMaterializableStimulus(), format: .maxLoad,
             sessionRole: .functionalFitness, varianceConstraints: VarianceConstraints(),
-            requiresRecentExposureToProgress: false, includeStrengthBlock: false
+            requiresRecentExposureToProgress: false, includeStrengthBlock: false, isDynamicallyComposed: false
         )
         let ffDefinition = FunctionalFitnessProgramGenerator.generate(configuration: ffConfiguration, provenance: .constructed(reason: "test"), context: context)
         let ffInstance = ProgramInstance(ownerUserID: ownerUserID)

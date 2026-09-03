@@ -223,7 +223,7 @@ final class CrossModalityFunctionalFitnessProgrammingTests: XCTestCase {
         let ffConfiguration = FunctionalFitnessProgramConfiguration(
             daysPerWeek: 1, lengthWeeks: 1, targetStimulus: heavySquatMaterializableStimulus(), format: .maxLoad,
             sessionRole: .functionalFitness, varianceConstraints: VarianceConstraints(),
-            requiresRecentExposureToProgress: false, includeStrengthBlock: false
+            requiresRecentExposureToProgress: false, includeStrengthBlock: false, isDynamicallyComposed: false
         )
         let ffDefinition = FunctionalFitnessProgramGenerator.generate(configuration: ffConfiguration, provenance: .constructed(reason: "test"), context: context)
         let ffInstance = ProgramInstance(ownerUserID: ownerUserID)
@@ -292,7 +292,7 @@ final class CrossModalityFunctionalFitnessProgrammingTests: XCTestCase {
         let ffConfiguration = FunctionalFitnessProgramConfiguration(
             daysPerWeek: 1, lengthWeeks: 1, targetStimulus: heavySquatStimulus(), format: .maxLoad,
             sessionRole: .functionalFitness, varianceConstraints: VarianceConstraints(),
-            requiresRecentExposureToProgress: false, includeStrengthBlock: false
+            requiresRecentExposureToProgress: false, includeStrengthBlock: false, isDynamicallyComposed: false
         )
         let ffDefinition = FunctionalFitnessProgramGenerator.generate(configuration: ffConfiguration, provenance: .constructed(reason: "test"), context: context)
         let ffInstance = ProgramInstance(ownerUserID: ownerUserID)
@@ -332,7 +332,7 @@ final class CrossModalityFunctionalFitnessProgrammingTests: XCTestCase {
         let ffConfiguration = FunctionalFitnessProgramConfiguration(
             daysPerWeek: 1, lengthWeeks: 1, targetStimulus: heavySquatStimulus(), format: .maxLoad,
             sessionRole: .functionalFitness, varianceConstraints: VarianceConstraints(),
-            requiresRecentExposureToProgress: false, includeStrengthBlock: false
+            requiresRecentExposureToProgress: false, includeStrengthBlock: false, isDynamicallyComposed: false
         )
         let ffDefinition = FunctionalFitnessProgramGenerator.generate(configuration: ffConfiguration, provenance: .constructed(reason: "test"), context: context)
         let ffInstance = ProgramInstance(ownerUserID: ownerUserID)
@@ -523,7 +523,7 @@ final class CrossModalityFunctionalFitnessProgrammingTests: XCTestCase {
         let configuration = FunctionalFitnessProgramConfiguration(
             daysPerWeek: 2, lengthWeeks: 1, targetStimulus: heavySquatMaterializableStimulus(), format: .maxLoad,
             sessionRole: .functionalFitness, varianceConstraints: VarianceConstraints(),
-            requiresRecentExposureToProgress: false, includeStrengthBlock: false
+            requiresRecentExposureToProgress: false, includeStrengthBlock: false, isDynamicallyComposed: false
         )
         let definition = FunctionalFitnessProgramGenerator.generate(configuration: configuration, provenance: .constructed(reason: "test"), context: context)
         let instance = ProgramInstance(ownerUserID: ownerUserID)
@@ -557,7 +557,7 @@ final class CrossModalityFunctionalFitnessProgrammingTests: XCTestCase {
         let configuration = FunctionalFitnessProgramConfiguration(
             daysPerWeek: 1, lengthWeeks: 1, targetStimulus: heavySquatMaterializableStimulus(), format: .maxLoad,
             sessionRole: .functionalFitness, varianceConstraints: VarianceConstraints(),
-            requiresRecentExposureToProgress: false, includeStrengthBlock: false
+            requiresRecentExposureToProgress: false, includeStrengthBlock: false, isDynamicallyComposed: false
         )
         let definition = FunctionalFitnessProgramGenerator.generate(configuration: configuration, provenance: .constructed(reason: "test"), context: context)
         let instance = ProgramInstance(ownerUserID: ownerUserID)
@@ -624,7 +624,7 @@ final class CrossModalityFunctionalFitnessProgrammingTests: XCTestCase {
         let configuration = FunctionalFitnessProgramConfiguration(
             daysPerWeek: 1, lengthWeeks: 2, targetStimulus: heavySquatMaterializableStimulus(), format: .maxLoad,
             sessionRole: .functionalFitness, varianceConstraints: VarianceConstraints(),
-            requiresRecentExposureToProgress: false, includeStrengthBlock: false
+            requiresRecentExposureToProgress: false, includeStrengthBlock: false, isDynamicallyComposed: false
         )
         let definition = FunctionalFitnessProgramGenerator.generate(configuration: configuration, provenance: .constructed(reason: "test"), context: context)
         let instance = ProgramInstance(ownerUserID: ownerUserID, startDate: startDate)

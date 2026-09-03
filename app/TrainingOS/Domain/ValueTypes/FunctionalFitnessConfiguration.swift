@@ -22,4 +22,10 @@ struct FunctionalFitnessProgramConfiguration: Codable, Equatable {
     /// same Session, proving the existing generic Session/WorkoutBlock
     /// architecture needs no "CrossFitSession" special case.
     var includeStrengthBlock: Bool
+    /// Stage FF.M1: threaded onto the generated `FunctionalFitnessPrescriptionTemplate`
+    /// — `true` (default) defers movement-slot composition to materialization
+    /// time; `false` pre-bakes slots from `targetStimulus` here at
+    /// generation time exactly as before FF.M1 (for authored/benchmark-
+    /// shaped content, or a test isolating a fixed slot set).
+    var isDynamicallyComposed: Bool = true
 }

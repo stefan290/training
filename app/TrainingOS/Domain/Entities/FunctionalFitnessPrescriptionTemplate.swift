@@ -48,18 +48,33 @@ final class FunctionalFitnessPrescriptionTemplate {
     /// (`DeloadPositionOverride`/`TrainingStressProfile`'s precedent).
     var varianceConstraints: VarianceConstraints?
 
+    /// Stage FF.M1: `true` (the default, including every legacy row — safe
+    /// because zero authored/benchmark FF content exists in production
+    /// today) means this template's movement slots are composed FRESH at
+    /// each real tactical materialization (`FunctionalFitnessMaterializer`
+    /// now owns Stage C, reading that week's FINAL stimulus — see
+    /// `FunctionalFitnessMovementComposer`), never pre-baked at generation
+    /// time. `false` marks a future fixed/authored/benchmark prescription
+    /// whose `movementSlots` are generation-time content the materializer
+    /// must never dynamically recompose. Deliberately NOT expressed via
+    /// `ProgramProvenance` (`.sourced`/`.constructed` encode import
+    /// traceability, an unrelated concept).
+    var isDynamicallyComposed: Bool = true
+
     init(
         id: UUID = UUID(),
         stimulus: Stimulus,
         format: WorkoutFormat,
         requiresRecentExposureToProgress: Bool = false,
-        varianceConstraints: VarianceConstraints? = nil
+        varianceConstraints: VarianceConstraints? = nil,
+        isDynamicallyComposed: Bool = true
     ) {
         self.id = id
         self.stimulus = stimulus
         self.format = format
         self.requiresRecentExposureToProgress = requiresRecentExposureToProgress
         self.varianceConstraints = varianceConstraints
+        self.isDynamicallyComposed = isDynamicallyComposed
     }
 
     /// The only way application code should attach a movement slot.

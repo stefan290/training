@@ -1,4 +1,5 @@
 import Foundation
+import SwiftData
 
 /// Stage 8B: the Functional Fitness sibling of
 /// `SubstituteExerciseUseCase.substituteThisSessionOnly` — mechanical
@@ -61,5 +62,44 @@ enum SubstituteFunctionalFitnessMovementUseCase {
         }
 
         return movement
+    }
+
+    /// **GOING FORWARD, for dynamically-composed Functional Fitness only.**
+    /// Writes (or updates in place — see
+    /// `FunctionalFitnessMovementFunctionOverride`'s "at most one row per
+    /// (instance, movementFunction)" invariant) the single authoritative
+    /// Exercise preference future dynamic materialization will consult
+    /// for this semantic movement role. `slot` is only used to validate
+    /// the candidate (the currently-displayed movement's own
+    /// `sourceExerciseSlot` — real `allowedMovementFunctions`/
+    /// `allowedModalities` for this role); it is never itself persisted,
+    /// since a future week's slot for the same function is a different
+    /// object. Never touches `ProgramDefinition`/the template graph, and
+    /// never rewrites any already-materialized Session — this only
+    /// changes what a NOT-YET-materialized future week's Stage D
+    /// prefers.
+    @discardableResult
+    static func substituteGoingForward(
+        instance: ProgramInstance,
+        movementFunction: MovementFunction,
+        slot: ExerciseSlot,
+        with exercise: Exercise,
+        reason: SubstitutionReason? = nil,
+        environment: TrainingEnvironment?,
+        context: ModelContext
+    ) throws -> FunctionalFitnessMovementFunctionOverride {
+        guard SubstitutionValidator.isValid(candidate: exercise, for: slot, environment: environment) else {
+            throw SubstitutionError.invalidForSlot
+        }
+        if let existing = instance.functionalFitnessMovementFunctionOverride(for: movementFunction) {
+            existing.selectedExercise = exercise
+            existing.reason = reason
+            existing.createdAt = Date()
+            return existing
+        }
+        let override = FunctionalFitnessMovementFunctionOverride(movementFunction: movementFunction, selectedExercise: exercise, reason: reason)
+        context.insert(override)
+        instance.addFunctionalFitnessMovementFunctionOverride(override)
+        return override
     }
 }

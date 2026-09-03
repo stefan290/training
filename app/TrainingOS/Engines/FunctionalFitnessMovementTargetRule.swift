@@ -50,6 +50,40 @@ enum FunctionalFitnessMovementTargetRule {
             guard exercise?.equipment != "bike" else { return Target(reps: nil, distanceMeters: nil) }
             return Target(reps: nil, distanceMeters: 200)
         }
+        // Stage FF.M1: per-Exercise branches, keyed on `canonicalName`
+        // exactly like the Assault Bike exception above — these pools
+        // each span too wide an honest rep range for one shared
+        // family-level target (FF.M1 Numeric Dose Lock). Locked PRODUCT
+        // VALUES, not exercise-science formulas.
+        if modality == .weightlifting, movementFunctions.contains(.hingeLoaded) {
+            switch exercise?.canonicalName {
+            case "Kettlebell Swing": return Target(reps: 15, distanceMeters: nil)
+            case "Deadlift": return Target(reps: 8, distanceMeters: nil)
+            // hingeLoaded-context branch — structurally distinct from the
+            // pressLoaded-context branch below even though both currently
+            // resolve to 10 reps; a future dose change to one must never
+            // silently affect the other.
+            case "Dumbbell Snatch": return Target(reps: 10, distanceMeters: nil)
+            default: return Target(reps: nil, distanceMeters: nil)
+            }
+        }
+        if modality == .weightlifting, movementFunctions.contains(.pressLoaded) {
+            switch exercise?.canonicalName {
+            case "Wall Ball": return Target(reps: 15, distanceMeters: nil)
+            case "Thruster": return Target(reps: 8, distanceMeters: nil)
+            // pressLoaded-context branch — structurally distinct from the
+            // hingeLoaded-context branch above.
+            case "Dumbbell Snatch": return Target(reps: 10, distanceMeters: nil)
+            default: return Target(reps: nil, distanceMeters: nil)
+            }
+        }
+        if modality == .gymnastics, movementFunctions.contains(.gymnasticsPush) {
+            switch exercise?.canonicalName {
+            case "Push-up": return Target(reps: 15, distanceMeters: nil)
+            case "Handstand Push-up": return Target(reps: 5, distanceMeters: nil)
+            default: return Target(reps: nil, distanceMeters: nil)
+            }
+        }
         return Target(reps: nil, distanceMeters: nil)
     }
 }

@@ -49,7 +49,7 @@ final class FunctionalFitnessProgramGeneratorTests: XCTestCase {
         let definition = generate(format: .amrap(capSeconds: 720), stimulus: stimulus)
         let template = try ffTemplate(in: definition)
         XCTAssertEqual(template.format, .amrap(capSeconds: 720))
-        XCTAssertEqual(template.orderedMovementSlots.count, 3, "a triplet has 3 movement slots, one per modality-mix entry")
+        XCTAssertTrue(template.orderedMovementSlots.isEmpty, "Stage FF.M1: Stage C (movement-slot composition) moved to materialization time — a freshly generated dynamically-composed template has no pre-baked slots")
         XCTAssertEqual(definition.programmingSystem, .functionalFitness)
     }
 
@@ -59,7 +59,7 @@ final class FunctionalFitnessProgramGeneratorTests: XCTestCase {
         let definition = generate(format: .emom(intervalSeconds: 60, totalSeconds: 720), stimulus: stimulus)
         let template = try ffTemplate(in: definition)
         XCTAssertEqual(template.format, .emom(intervalSeconds: 60, totalSeconds: 720))
-        XCTAssertEqual(template.orderedMovementSlots.count, 3, "a 3-station EMOM rotation has 3 movement slots")
+        XCTAssertTrue(template.orderedMovementSlots.isEmpty, "Stage FF.M1: Stage C moved to materialization time — no pre-baked slots at generation")
     }
 
     // §46.3: 21-15-9 For Time (a named benchmark shape).
@@ -90,7 +90,7 @@ final class FunctionalFitnessProgramGeneratorTests: XCTestCase {
         let definition = generate(format: .chipper(capSeconds: 1800), stimulus: stimulus)
         let template = try ffTemplate(in: definition)
         XCTAssertEqual(template.format, .chipper(capSeconds: 1800))
-        XCTAssertEqual(template.orderedMovementSlots.count, 5, "a 5-movement chipper has 5 slots, no round grouping")
+        XCTAssertTrue(template.orderedMovementSlots.isEmpty, "Stage FF.M1: Stage C moved to materialization time — no pre-baked slots at generation")
     }
 
     // §46.6: Ascending ladder.
@@ -126,7 +126,7 @@ final class FunctionalFitnessProgramGeneratorTests: XCTestCase {
         let stimulus = makeStimulus(duration: .long, loading: .bodyweightOnly, functions: [.monostructural], mix: [ModalityCount(modality: .metabolicConditioning, count: 1)], scoreType: .distance)
         let definition = generate(format: .forTime(capSeconds: nil), stimulus: stimulus)
         let template = try ffTemplate(in: definition)
-        XCTAssertEqual(template.orderedMovementSlots.count, 1, "single-modality means exactly one movement slot")
+        XCTAssertTrue(template.orderedMovementSlots.isEmpty, "Stage FF.M1: Stage C moved to materialization time — no pre-baked slots at generation")
     }
 
     // §46.10/§20: Strength + Metcon Session — proves composition through

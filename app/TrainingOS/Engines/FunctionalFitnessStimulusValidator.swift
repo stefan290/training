@@ -51,6 +51,18 @@ enum FunctionalFitnessStimulusValidator {
         format: WorkoutFormat,
         resolvedModalities: Set<FunctionalModality>,
         resolvedLoadingRoles: [LoadingClassification],
+        /// Stage FF.M1: the ACTUAL movement functions the real composed
+        /// slots this materialization resolved — `nil` for a template
+        /// whose movement-function semantics aren't yet redefined this
+        /// way (preserves prior behavior exactly for any such caller).
+        /// When non-nil, must EXACTLY equal `target.movementFunctions`
+        /// (not merely overlap, unlike `matchesModality` below) — under
+        /// FF.M1's materialization-time Stage C, `target` (FINAL
+        /// stimulus) is written FROM this same composed set (see
+        /// `FunctionalFitnessMaterializer`), so an exact-match check here
+        /// is a genuine safety net against a future wiring bug, not a
+        /// speculative tightening.
+        resolvedMovementFunctions: Set<MovementFunction>? = nil,
         against target: Stimulus
     ) -> StimulusValidation {
         var notes: [String] = []
@@ -111,7 +123,20 @@ enum FunctionalFitnessStimulusValidator {
             notes.append("Format's natural score type (\(defaultScoreType(for: format))) does not match the target stimulus's scoreType (\(target.scoreType)).")
         }
 
-        let passes = matchesDuration && matchesModality && matchesLoading && matchesScoreType
+        // Stage FF.M1: exact agreement between what was actually composed
+        // and what FINAL stimulus claims — only checked when the caller
+        // supplies the real composed set (dynamically-composed FF).
+        let matchesMovementFunctions: Bool
+        if let resolvedMovementFunctions {
+            matchesMovementFunctions = resolvedMovementFunctions == Set(target.movementFunctions)
+            if !matchesMovementFunctions {
+                notes.append("Resolved movement functions (\(resolvedMovementFunctions)) do not exactly match the target's movementFunctions (\(Set(target.movementFunctions))).")
+            }
+        } else {
+            matchesMovementFunctions = true
+        }
+
+        let passes = matchesDuration && matchesModality && matchesLoading && matchesScoreType && matchesMovementFunctions
 
         return StimulusValidation(
             estimatedDurationSeconds: estimatedSeconds,

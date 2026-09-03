@@ -163,7 +163,13 @@ final class FunctionalFitnessMovementTargetRuleTests: XCTestCase {
         context.insert(instance)
         instance.programDefinition = definition
 
-        let candidates = [wallBall(), pullUp(), rowErg()]
+        // Stage FF.M1: Back Squat (not Wall Ball) — Wall Ball satisfies
+        // BOTH squatLoaded and pressLoaded, which would make the
+        // composition engine's same-session distinctness rule leave
+        // pressLoaded unresolved in this single-session/3-candidate
+        // fixture. Back Squat is squatLoaded-only, matching this test's
+        // real intent (prove FF.P1 targets, not FF.M1 composition).
+        let candidates = [backSquat(), pullUp(), rowErg()]
         for candidate in candidates { context.insert(candidate) }
 
         let sessions = try FunctionalFitnessMaterializer.materializeWeek(
@@ -172,7 +178,7 @@ final class FunctionalFitnessMovementTargetRuleTests: XCTestCase {
         )
         let movements = try XCTUnwrap(sessions.first?.orderedBlocks.first { $0.type == .functionalFitness }?.functionalFitnessPrescription?.orderedMovements)
         XCTAssertEqual(movements.count, 3)
-        let squatMovement = try XCTUnwrap(movements.first { $0.exercise?.canonicalName == "Wall Ball" })
+        let squatMovement = try XCTUnwrap(movements.first { $0.exercise?.canonicalName == "Back Squat" })
         XCTAssertEqual(squatMovement.reps, 12, "loaded movement gets reps while loadKilograms stays nil")
         XCTAssertNil(squatMovement.loadKilograms)
         let pullMovement = try XCTUnwrap(movements.first { $0.exercise?.canonicalName == "Pull-up" })
@@ -231,9 +237,13 @@ final class FunctionalFitnessMovementTargetRuleTests: XCTestCase {
     // MARK: J/K — unsupported cases degrade truthfully
 
     func testUnsupportedMovementFunctionReceivesNoGeneratedTarget() {
+        // Stage FF.M1 expanded the locked scope to include hingeLoaded —
+        // `.trunk` remains genuinely deferred (BLOCKED BY CATALOG DEPTH,
+        // FF.M1 Design Lock Part 5), proving the "not production
+        // reachable" branch still correctly falls through to no target.
         let target = FunctionalFitnessMovementTargetRule.resolve(
-            format: realProductionFormat(), modality: .weightlifting, movementFunctions: [.hingeLoaded],
-            exercise: exercise("Deadlift", targets: [.hamstrings])
+            format: realProductionFormat(), modality: .gymnastics, movementFunctions: [.trunk],
+            exercise: exercise("Toes-to-Bar", targets: [.core])
         )
         XCTAssertNil(target.reps)
         XCTAssertNil(target.distanceMeters)
@@ -250,6 +260,11 @@ final class FunctionalFitnessMovementTargetRuleTests: XCTestCase {
     // MARK: Authored precedence — never overwritten
 
     func testExplicitAuthoredTemplateTargetIsPreservedNotOverwritten() throws {
+        // Stage FF.M1: the auto-generated path no longer pre-bakes
+        // movement slots at generation time (Stage C moved to
+        // materialization) — authored precedence is now proven against
+        // the `isDynamicallyComposed == false` path, which still attaches
+        // slots at generation time exactly as before FF.M1.
         let configuration = FunctionalFitnessProgramConfiguration(
             daysPerWeek: 1, lengthWeeks: 1, targetStimulus: realProductionStimulus(), format: realProductionFormat(),
             sessionRole: .functionalFitness, varianceConstraints: VarianceConstraints(),
@@ -260,14 +275,34 @@ final class FunctionalFitnessMovementTargetRuleTests: XCTestCase {
         context.insert(instance)
         instance.programDefinition = definition
 
-        // Simulate hand-authored/benchmark content: explicitly author the
-        // squat slot's own template with a real, non-default rep count
-        // BEFORE materialization.
-        let squatSlot = try XCTUnwrap(
-            definition.orderedTemplateSessions.first?.orderedBlockTemplates.first?
-                .functionalFitnessPrescriptionTemplate?.movementSlots.first { $0.exerciseSlot?.allowedModalities.first == .weightlifting }
+        let ffTemplate = try XCTUnwrap(
+            definition.orderedTemplateSessions.first?.orderedBlockTemplates.first?.functionalFitnessPrescriptionTemplate
         )
-        squatSlot.reps = 21
+        ffTemplate.isDynamicallyComposed = false
+
+        // Simulate hand-authored/benchmark content: a squat slot whose
+        // own template carries a real, non-default rep count BEFORE
+        // materialization.
+        let squatExerciseSlot = ExerciseSlot(name: "Squat", allowedMovementFunctions: [.squatLoaded], allowedModalities: [.weightlifting])
+        context.insert(squatExerciseSlot)
+        let squatSlot = FunctionalFitnessMovementSlotTemplate(reps: 21)
+        context.insert(squatSlot)
+        squatSlot.attachExerciseSlot(squatExerciseSlot)
+        ffTemplate.addMovementSlot(squatSlot)
+
+        let pullExerciseSlot = ExerciseSlot(name: "Pull", allowedMovementFunctions: [.gymnasticsPull], allowedModalities: [.gymnastics])
+        context.insert(pullExerciseSlot)
+        let pullSlot = FunctionalFitnessMovementSlotTemplate()
+        context.insert(pullSlot)
+        pullSlot.attachExerciseSlot(pullExerciseSlot)
+        ffTemplate.addMovementSlot(pullSlot)
+
+        let monoExerciseSlot = ExerciseSlot(name: "Mono", allowedMovementFunctions: [.monostructural], allowedModalities: [.metabolicConditioning])
+        context.insert(monoExerciseSlot)
+        let monoSlot = FunctionalFitnessMovementSlotTemplate()
+        context.insert(monoSlot)
+        monoSlot.attachExerciseSlot(monoExerciseSlot)
+        ffTemplate.addMovementSlot(monoSlot)
 
         let candidates = [backSquat(), pullUp(), rowErg()]
         for candidate in candidates { context.insert(candidate) }
@@ -324,7 +359,7 @@ final class FunctionalFitnessMovementTargetRuleTests: XCTestCase {
         context.insert(ffInstance)
         ffInstance.programDefinition = ffDefinition
 
-        let candidates = [wallBall(), pullUp(), rowErg()]
+        let candidates = [backSquat(), pullUp(), rowErg()]
         for candidate in candidates { context.insert(candidate) }
 
         let ffSessions = try FunctionalFitnessMaterializer.materializeWeek(
@@ -338,7 +373,7 @@ final class FunctionalFitnessMovementTargetRuleTests: XCTestCase {
         XCTAssertEqual(prescription.stimulus.loading, .moderate, "CP.2's real repair fired")
 
         let movements = prescription.orderedMovements
-        XCTAssertEqual(movements.first { $0.exercise?.canonicalName == "Wall Ball" }?.reps, 12, "the target is byte-identical regardless of CP.2's loading repair")
+        XCTAssertEqual(movements.first { $0.exercise?.canonicalName == "Back Squat" }?.reps, 12, "the target is byte-identical regardless of CP.2's loading repair")
         XCTAssertEqual(movements.first { $0.exercise?.canonicalName == "Pull-up" }?.reps, 8)
         XCTAssertEqual(movements.first { $0.exercise?.canonicalName == "Row Erg" }?.distanceMeters, 200)
     }

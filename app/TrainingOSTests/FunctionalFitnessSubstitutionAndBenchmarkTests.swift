@@ -165,7 +165,15 @@ final class FunctionalFitnessSubstitutionAndBenchmarkTests: XCTestCase {
         let configuration = FunctionalFitnessProgramConfiguration(
             daysPerWeek: 1, lengthWeeks: 2, targetStimulus: amrapStimulus, format: .amrap(capSeconds: 720),
             sessionRole: .functionalFitness, varianceConstraints: VarianceConstraints(),
-            requiresRecentExposureToProgress: false, includeStrengthBlock: false
+            requiresRecentExposureToProgress: false, includeStrengthBlock: false,
+            // Stage FF.M1: GOING FORWARD substitution ties an override to
+            // a persistent ExerciseSlot identity — this test's real
+            // purpose (proving the override mechanism itself, not FF.M1
+            // composition) needs the authored path's stable, generation-
+            // time slots, since a dynamically-composed slot is freshly
+            // recreated every week and has no cross-week identity to
+            // override.
+            isDynamicallyComposed: false
         )
         let definition = FunctionalFitnessProgramGenerator.generate(configuration: configuration, provenance: .constructed(reason: "test"), context: context)
         let slotTemplate = try XCTUnwrap(definition.orderedTemplateSessions.first?.orderedBlockTemplates.first?.functionalFitnessPrescriptionTemplate?.orderedMovementSlots.first { $0.exerciseSlot?.allowedModalities.contains(.weightlifting) == true })

@@ -41,6 +41,27 @@ enum ApplySubstitutionUseCase {
         return override
     }
 
+    /// Stage FF.M1 closure: GOING FORWARD for dynamically-composed
+    /// Functional Fitness — see `SubstituteFunctionalFitnessMovementUseCase
+    /// .substituteGoingForward`'s own doc comment.
+    @discardableResult
+    static func substituteFunctionalFitnessMovementGoingForward(
+        instance: ProgramInstance,
+        movementFunction: MovementFunction,
+        slot: ExerciseSlot,
+        with exercise: Exercise,
+        reason: SubstitutionReason? = nil,
+        environment: TrainingEnvironment?,
+        modelContext: ModelContext
+    ) throws -> FunctionalFitnessMovementFunctionOverride {
+        let override = try SubstituteFunctionalFitnessMovementUseCase.substituteGoingForward(
+            instance: instance, movementFunction: movementFunction, slot: slot, with: exercise,
+            reason: reason, environment: environment, context: modelContext
+        )
+        try modelContext.save()
+        return override
+    }
+
     @discardableResult
     static func substituteActivityThisSessionOnly(
         prescription: SteadyStatePrescription,

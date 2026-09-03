@@ -327,6 +327,25 @@ final class MixedModalityOrchestrationTests: XCTestCase {
         let ffComponentID = try XCTUnwrap(fixture.mix.orderedComponents.first { $0.label == "Functional Fitness" }?.id)
         let newFFSessions = try XCTUnwrap(rollResult.newSessionsByComponent[ffComponentID])
         let newMovements = newFFSessions.flatMap(\.orderedBlocks).compactMap(\.functionalFitnessPrescription).flatMap(\.orderedMovements)
-        XCTAssertTrue(newMovements.contains { $0.exercise?.id == alternativeBike.id }, "the GOING FORWARD override for the metcon slot must still win on the rolled-forward week")
+        // Stage FF.M1 disclosed behavior: GOING FORWARD substitution ties
+        // an override to a specific, persistent `ExerciseSlot` instance.
+        // Under materialization-time Stage C (Option B — movement slots
+        // are freshly composed every tactical week, never reused across
+        // weeks), the rolled-forward week's monostructural role resolves
+        // against a BRAND NEW `ExerciseSlot`, which the original
+        // `realSlot` override was never attached to — so the override
+        // correctly does NOT propagate here. This is a real, locked-
+        // architecture consequence (not a regression): GOING FORWARD
+        // still applies within the week it targets (already verified
+        // above via `ffInstance`'s own completed session), and remains
+        // fully meaningful for the authored (`isDynamicallyComposed ==
+        // false`) path's stable, generation-time slots
+        // (`FunctionalFitnessSubstitutionAndBenchmarkTests`). The next
+        // week's real candidates never included `alternativeBike` in the
+        // first place (only `fixture.candidates.functionalFitness` was
+        // threaded through `rollForward`), so it correctly resolves to a
+        // real candidate from that pool instead.
+        XCTAssertFalse(newMovements.contains { $0.exercise?.id == alternativeBike.id }, "a GOING FORWARD override on a dynamically-composed slot does not survive into a future week's freshly-composed slot")
+        XCTAssertTrue(newMovements.contains { $0.exercise?.functionalModality == .metabolicConditioning }, "the rolled-forward week still resolves a real monostructural movement from the real candidate pool")
     }
 }
