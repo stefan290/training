@@ -101,6 +101,42 @@ enum ProgramCapabilityRegistry {
         )
     }
 
+    /// V1 "Explicit Weekly Composition" checkpoint: the exact real weekly
+    /// session counts a curated source definition exists for TODAY — read
+    /// directly from the same curated libraries `capability(for:)` above
+    /// already counts, never a second hand-maintained list. `nil` means
+    /// "no curated-frequency restriction" (Functional Fitness/Steady
+    /// State/Interval already accept any positive `daysPerWeek` directly
+    /// — `PROGRAM_RECOMMENDATION_MODEL.md` §5d). This is intentionally A
+    /// STRICTER query than `canInstantiate`/`closestByDayCount`: those
+    /// exist to let a `.recommended` candidate template still resolve to
+    /// its nearest curated definition (every existing template already
+    /// authors an exact-or-deliberately-close target, so this never
+    /// changes their behavior); this query exists so a `.selected`,
+    /// athlete-built custom composition can be rejected OUTRIGHT for an
+    /// unsupported frequency, never silently approximated to the nearest
+    /// curated definition (the CRITICAL SOURCE-AUTHORITY CORRECTION this
+    /// checkpoint locks — see `LongTermPlanner.buildCustomMix`).
+    static func supportedFrequencies(for system: ProgrammingSystemKind) -> [Int]? {
+        switch system {
+        case .hypertrophy:
+            return Array(Set(HypertrophyBuiltInLibrary.all.map(\.dayCount))).sorted()
+        case .powerlifting:
+            return Array(Set(PowerliftingBuiltInLibrary.all.map(\.configuration.dayCount))).sorted()
+        case .steadyState, .interval, .functionalFitness:
+            return nil
+        }
+    }
+
+    /// `frequency <= 0` is never supported for any system — "zero
+    /// sessions of this style" is expressed by omitting the component
+    /// entirely, never by a component with a non-positive target.
+    static func isFrequencySupported(_ frequency: Int, for system: ProgrammingSystemKind) -> Bool {
+        guard frequency > 0 else { return false }
+        guard let supported = supportedFrequencies(for: system) else { return true }
+        return supported.contains(frequency)
+    }
+
     /// Structural validity of the parameters themselves — "can a real
     /// `ProgramDefinition` be produced from this, right now" — never a
     /// scheduling-feasibility check (that's `ConcurrentScheduler`'s own,

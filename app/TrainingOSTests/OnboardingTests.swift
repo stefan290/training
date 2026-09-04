@@ -93,7 +93,6 @@ final class OnboardingTests: XCTestCase {
 
         viewModel.advance(from: .goal, modelContext: context)
         viewModel.advance(from: .preferences, modelContext: context)
-        viewModel.advance(from: .modalityPreferences, modelContext: context)
 
         let goals = try context.fetch(FetchDescriptor<Goal>())
         let goal = try XCTUnwrap(goals.first)
@@ -127,7 +126,6 @@ final class OnboardingTests: XCTestCase {
 
         viewModel.advance(from: .goal, modelContext: context)
         viewModel.advance(from: .preferences, modelContext: context)
-        viewModel.advance(from: .modalityPreferences, modelContext: context)
 
         let goals = try context.fetch(FetchDescriptor<Goal>())
         let goal = try XCTUnwrap(goals.first, "the real onboarding flow must persist a real Goal")
@@ -173,7 +171,6 @@ final class OnboardingTests: XCTestCase {
 
         viewModel.advance(from: .goal, modelContext: context)
         viewModel.advance(from: .preferences, modelContext: context)
-        viewModel.advance(from: .modalityPreferences, modelContext: context)
 
         let goal = try XCTUnwrap((try context.fetch(FetchDescriptor<Goal>())).first)
         XCTAssertNil(goal.targetDate, "the 12-week default must never be written back onto the persisted Goal.targetDate")
@@ -216,7 +213,6 @@ final class OnboardingTests: XCTestCase {
 
         viewModel.advance(from: .goal, modelContext: context)
         viewModel.advance(from: .preferences, modelContext: context)
-        viewModel.advance(from: .modalityPreferences, modelContext: context)
 
         let goal = try XCTUnwrap((try context.fetch(FetchDescriptor<Goal>())).first)
         XCTAssertEqual(goal.targetDate, explicitTargetDate, "the athlete's own explicit choice must persist exactly as entered")
@@ -250,7 +246,6 @@ final class OnboardingTests: XCTestCase {
 
         viewModel.advance(from: .goal, modelContext: context)
         viewModel.advance(from: .preferences, modelContext: context)
-        viewModel.advance(from: .modalityPreferences, modelContext: context)
 
         let goal = try XCTUnwrap((try context.fetch(FetchDescriptor<Goal>())).first)
         XCTAssertEqual(goal.primaryType, .muscleGain, "the main goal is never replaced by adding a milestone")
@@ -270,7 +265,6 @@ final class OnboardingTests: XCTestCase {
 
         viewModel.advance(from: .goal, modelContext: context)
         viewModel.advance(from: .preferences, modelContext: context)
-        viewModel.advance(from: .modalityPreferences, modelContext: context)
 
         let goal = try XCTUnwrap((try context.fetch(FetchDescriptor<Goal>())).first)
         XCTAssertNil(goal.targetDate, "targetDate stays nil — a real, valid, already-supported open-ended plan")
@@ -291,17 +285,14 @@ final class OnboardingTests: XCTestCase {
         viewModel.milestoneDate = Date().addingTimeInterval(60 * 86400)
         viewModel.advance(from: .goal, modelContext: context)
         viewModel.advance(from: .preferences, modelContext: context)
-        viewModel.advance(from: .modalityPreferences, modelContext: context)
         XCTAssertNotNil((try context.fetch(FetchDescriptor<Goal>())).first?.milestoneDate)
 
         // Athlete goes back and removes it (mirrors the real "Remove" UI action).
         viewModel.goBack(from: .environment)
-        viewModel.goBack(from: .modalityPreferences)
         viewModel.goBack(from: .preferences)
         viewModel.hasMilestone = false
         viewModel.advance(from: .goal, modelContext: context)
         viewModel.advance(from: .preferences, modelContext: context)
-        viewModel.advance(from: .modalityPreferences, modelContext: context)
 
         let goal = try XCTUnwrap((try context.fetch(FetchDescriptor<Goal>())).first)
         XCTAssertEqual(goal.primaryType, .muscleGain, "removing the milestone never changes the primary goal")
@@ -330,7 +321,6 @@ final class OnboardingTests: XCTestCase {
 
         viewModel.advance(from: .goal, modelContext: context)
         viewModel.advance(from: .preferences, modelContext: context)
-        viewModel.advance(from: .modalityPreferences, modelContext: context)
 
         let goal = try XCTUnwrap((try context.fetch(FetchDescriptor<Goal>())).first)
         XCTAssertNil(goal.milestoneDate)
@@ -367,7 +357,6 @@ final class OnboardingTests: XCTestCase {
 
         viewModel.advance(from: .goal, modelContext: context)
         viewModel.advance(from: .preferences, modelContext: context)
-        viewModel.advance(from: .modalityPreferences, modelContext: context)
 
         let goal = try XCTUnwrap((try context.fetch(FetchDescriptor<Goal>())).first)
         XCTAssertEqual(goal.primaryType, .functionalFitness)
@@ -399,16 +388,13 @@ final class OnboardingTests: XCTestCase {
         viewModel.selectedGoalType = .generalStrength
         viewModel.advance(from: .goal, modelContext: context)
         viewModel.advance(from: .preferences, modelContext: context)
-        viewModel.advance(from: .modalityPreferences, modelContext: context)
 
         // Athlete goes back to Goal and changes their mind, then re-confirms.
         viewModel.goBack(from: .environment)
-        viewModel.goBack(from: .modalityPreferences)
         viewModel.goBack(from: .preferences)
         viewModel.selectedGoalType = .muscleGain
         viewModel.advance(from: .goal, modelContext: context)
         viewModel.advance(from: .preferences, modelContext: context)
-        viewModel.advance(from: .modalityPreferences, modelContext: context)
 
         let goals = try context.fetch(FetchDescriptor<Goal>())
         XCTAssertEqual(goals.count, 1, "must never create a second Goal")
@@ -445,7 +431,6 @@ final class OnboardingTests: XCTestCase {
         viewModel.varietyPreference = .low
         viewModel.advance(from: .goal, modelContext: context)
         viewModel.advance(from: .preferences, modelContext: context)
-        viewModel.advance(from: .modalityPreferences, modelContext: context)
 
         // A fresh ViewModel re-reading persisted state (simulating relaunch mid-flow
         // before the Environment step) must reflect the real, saved choices.
@@ -466,7 +451,6 @@ final class OnboardingTests: XCTestCase {
         viewModel.selectedGoalType = .generalStrength
         viewModel.advance(from: .goal, modelContext: context)
         viewModel.advance(from: .preferences, modelContext: context)
-        viewModel.advance(from: .modalityPreferences, modelContext: context)
         XCTAssertEqual(viewModel.step, .environment)
         XCTAssertFalse(viewModel.hasDefaultTrainingEnvironment, "Continue must stay disabled with no default Training Environment yet")
     }
@@ -476,7 +460,6 @@ final class OnboardingTests: XCTestCase {
         viewModel.start(modelContext: context)
         viewModel.advance(from: .goal, modelContext: context)
         viewModel.advance(from: .preferences, modelContext: context)
-        viewModel.advance(from: .modalityPreferences, modelContext: context)
         XCTAssertFalse(viewModel.hasDefaultTrainingEnvironment)
 
         // Simulate exactly what TrainingEnvironmentSettingsView does: its OWN
@@ -541,7 +524,6 @@ final class OnboardingTests: XCTestCase {
         viewModel.start(modelContext: context)
         viewModel.advance(from: .goal, modelContext: context)
         viewModel.advance(from: .preferences, modelContext: context)
-        viewModel.advance(from: .modalityPreferences, modelContext: context)
 
         let users = try context.fetch(FetchDescriptor<User>())
         let profile = try XCTUnwrap(users.first?.profile)
@@ -579,7 +561,6 @@ final class OnboardingTests: XCTestCase {
 
         viewModel.advance(from: .goal, modelContext: context)
         viewModel.advance(from: .preferences, modelContext: context)
-        viewModel.advance(from: .modalityPreferences, modelContext: context)
 
         let goal = try XCTUnwrap((try context.fetch(FetchDescriptor<Goal>())).first)
         XCTAssertEqual(goal.primaryType, .muscleGain, "the main goal is never replaced by adding a 10K race")
@@ -610,7 +591,6 @@ final class OnboardingTests: XCTestCase {
 
         viewModel.advance(from: .goal, modelContext: context)
         viewModel.advance(from: .preferences, modelContext: context)
-        viewModel.advance(from: .modalityPreferences, modelContext: context)
 
         let goal = try XCTUnwrap((try context.fetch(FetchDescriptor<Goal>())).first)
         XCTAssertEqual(goal.datedObjectives.count, 2)
@@ -635,16 +615,13 @@ final class OnboardingTests: XCTestCase {
         viewModel.runningEventDate = Date().addingTimeInterval(200 * 86400)
         viewModel.advance(from: .goal, modelContext: context)
         viewModel.advance(from: .preferences, modelContext: context)
-        viewModel.advance(from: .modalityPreferences, modelContext: context)
         XCTAssertEqual((try context.fetch(FetchDescriptor<Goal>())).first?.datedObjectives.count, 1)
 
         viewModel.goBack(from: .environment)
-        viewModel.goBack(from: .modalityPreferences)
         viewModel.goBack(from: .preferences)
         viewModel.hasRunningEvent = false
         viewModel.advance(from: .goal, modelContext: context)
         viewModel.advance(from: .preferences, modelContext: context)
-        viewModel.advance(from: .modalityPreferences, modelContext: context)
 
         let goal = try XCTUnwrap((try context.fetch(FetchDescriptor<Goal>())).first)
         XCTAssertTrue(goal.datedObjectives.isEmpty, "removal must clear the real persisted dated objective")

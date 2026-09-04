@@ -641,6 +641,164 @@ enum LongTermPlanner {
         return rankCandidateMixes(raw, preferences: goal.preferences)
     }
 
+    // MARK: - Explicit Weekly Composition (V1 Implementation Checkpoint 1)
+
+    /// The athlete-facing "how do you want to train" vocabulary this
+    /// checkpoint locks — deliberately reuses `TrainingStyle`
+    /// (`LongTermGoalTypes.swift`, shipped in the "Goal ≠ Training Method"
+    /// checkpoint) rather than inventing a second one. One `TrainingStyle`
+    /// maps to exactly one `ProgrammingSystemKind` for CONSTRUCTION
+    /// purposes here (distinct from `TrainingStyle.modalityPreferences`,
+    /// which expands Running/Cycling to two SYSTEMS for soft-preference
+    /// matching — a real weekly composition needs exactly one concrete
+    /// component per style, not two).
+    static func underlyingSystem(for style: TrainingStyle) -> ProgrammingSystemKind {
+        switch style {
+        case .hypertrophy: return .hypertrophy
+        case .strengthTraining: return .powerlifting
+        case .functionalFitness: return .functionalFitness
+        case .running, .cycling: return .steadyState
+        }
+    }
+
+    enum CustomMixValidationError: Error, Equatable {
+        /// The composition had zero non-zero selections — "0 for every
+        /// style" is not a valid weekly plan (distinct from "0" being a
+        /// valid PER-STYLE value).
+        case empty
+        /// `style` was requested at `frequency` sessions/week, but no
+        /// real curated source definition exists at that frequency
+        /// (`ProgramCapabilityRegistry.supportedFrequencies`) — the
+        /// CRITICAL SOURCE-AUTHORITY CORRECTION: never approximated to
+        /// the nearest curated definition, always rejected outright.
+        case unsupportedFrequency(style: TrainingStyle, frequency: Int)
+        case exceedsCapacity(totalSelected: Int, capacity: Int)
+        /// Running and Cycling both resolve to the same underlying
+        /// `.steadyState` system (see `underlyingSystem(for:)`), and
+        /// `TrainingMixComponent` carries no per-component `ActivityType`
+        /// of its own — only `Goal.preferences` resolves which activity a
+        /// Steady State/Interval component actually means
+        /// (`preferredActivityType`). Selecting both in the same
+        /// composition is a real, honest architectural gap (not a policy
+        /// choice) — disclosed and rejected here rather than silently
+        /// resolving both components to whichever activity preference
+        /// happens to be looked up first.
+        case conflictingEnduranceStyles
+    }
+
+    /// V1 "Explicit Weekly Composition" checkpoint (Checkpoint 1): builds
+    /// a real `.selected` `TrainingMix` DIRECTLY from the athlete's own
+    /// explicit (style, frequency) choices — the "Build My Own Mix" path.
+    /// Deliberately bypasses `candidateMixTemplates` entirely: this is the
+    /// one place a composition absent from the fixed preset list (e.g.
+    /// "3 Hypertrophy + 2 Functional Fitness") still becomes a real,
+    /// constructible `TrainingMix`, proving `CandidateTrainingMix` is an
+    /// advisory preset catalog, never the only path to a `.selected` mix.
+    /// Every non-zero selection is validated BEFORE any `TrainingMix`/
+    /// `TrainingMixComponent` is constructed — an unsupported frequency
+    /// never reaches `proposeProgram`/`closestByDayCount` at all, so this
+    /// checkpoint makes zero change to how an existing `.recommended`
+    /// template resolves its own (already curated-exact) frequencies.
+    static func buildCustomMix(
+        name: String = "Your Custom Mix",
+        selections: [(style: TrainingStyle, frequency: Int)],
+        capacity: Int
+    ) -> Result<TrainingMix, CustomMixValidationError> {
+        let nonZero = selections.filter { $0.frequency > 0 }
+        guard !nonZero.isEmpty else { return .failure(.empty) }
+
+        let stylesPresent = Set(nonZero.map(\.style))
+        guard !(stylesPresent.contains(.running) && stylesPresent.contains(.cycling)) else {
+            return .failure(.conflictingEnduranceStyles)
+        }
+
+        for selection in nonZero {
+            let system = underlyingSystem(for: selection.style)
+            guard ProgramCapabilityRegistry.isFrequencySupported(selection.frequency, for: system) else {
+                return .failure(.unsupportedFrequency(style: selection.style, frequency: selection.frequency))
+            }
+        }
+
+        let total = nonZero.reduce(0) { $0 + $1.frequency }
+        guard total <= capacity else {
+            return .failure(.exceedsCapacity(totalSelected: total, capacity: capacity))
+        }
+
+        let mix = TrainingMix(kind: .selected, name: name, preferenceStrength: .userStronglyPrefers)
+        for (index, selection) in nonZero.enumerated() {
+            let system = underlyingSystem(for: selection.style)
+            mix.addComponent(TrainingMixComponent(
+                label: componentLabel(for: selection.style),
+                programmingSystem: system,
+                priority: index == 0 ? .primary : .supporting,
+                adaptationObjectives: defaultAdaptationObjectives(for: selection.style),
+                frequency: SessionFrequency(target: selection.frequency)
+            ))
+        }
+        return .success(mix)
+    }
+
+    private static func componentLabel(for style: TrainingStyle) -> String {
+        switch style {
+        case .hypertrophy: return "Hypertrophy"
+        case .strengthTraining: return "Strength Training"
+        case .functionalFitness: return "Functional Fitness"
+        case .running: return "Running"
+        case .cycling: return "Cycling"
+        }
+    }
+
+    /// Deliberately modest, real (already-modeled) `AdaptationObjective`
+    /// values only — never a fabricated new objective. Mirrors the
+    /// objectives the equivalent system already carries in
+    /// `candidateMixTemplates`'s own factory functions above.
+    private static func defaultAdaptationObjectives(for style: TrainingStyle) -> [AdaptationObjective] {
+        switch style {
+        case .hypertrophy, .strengthTraining: return [.muscleGain]
+        case .functionalFitness: return [.workCapacity, .aerobicCapacity]
+        case .running, .cycling: return [.aerobicCapacity]
+        }
+    }
+
+    /// The exact `ModalityPreference`s that must be present on
+    /// `Goal.preferences.preferredModalities` for a custom mix's Running/
+    /// Cycling component to resolve to the RIGHT `ActivityType` at
+    /// `proposeProgram` time (`preferredActivityType` reads this same
+    /// field — no new resolution mechanism). Reuses
+    /// `TrainingStyle.modalityPreferences` unchanged; empty for
+    /// Hypertrophy/Strength Training/Functional Fitness (no activity
+    /// concept applies). The caller (`StrategicPlanSelectionViewModel
+    /// .acceptAndStart`) merges these into the real `Goal.preferences`
+    /// only at acceptance time — never at mere construction/review time.
+    static func requiredModalityPreferences(for selections: [(style: TrainingStyle, frequency: Int)]) -> [ModalityPreference] {
+        var seen: [ModalityPreference] = []
+        for selection in selections where selection.frequency > 0 {
+            for preference in selection.style.modalityPreferences where !seen.contains(preference) {
+                seen.append(preference)
+            }
+        }
+        return seen
+    }
+
+    /// Scores a custom mix through the EXACT same real scheduling +
+    /// `GoalAlignmentEvaluator` path `proposeTrainingMix` already uses for
+    /// every `.recommended` candidate — never a second scoring system.
+    /// `applyCapacity` is deliberately NOT called here: a custom mix's
+    /// component frequencies are the athlete's own explicit, already-
+    /// validated (`buildCustomMix`) choice, never silently rescaled.
+    static func evaluateCustomMix(_ mix: TrainingMix, phase: TrainingPhase, goal: Goal) -> GoalAlignment {
+        let availability = comparisonAvailability(goal: goal)
+        let inputs = mix.orderedComponents.map { component in
+            ScheduledProgramInput(component: component, sessions: representativeSessions(for: component))
+        }
+        let constraints = SchedulingConstraints(
+            availability: availability,
+            window: SchedulingWindow(startDate: phase.startDate, numberOfDays: 7)
+        )
+        let result = SchedulingPipeline.propose(mix: mix, inputs: inputs, constraints: constraints)
+        return result.alignment
+    }
+
     /// Stage V1 dogfooding fix (Plan Recommendation Integrity — capacity
     /// scaling POLICY CORRECTION): a candidate mix must never be presented
     /// as schedulable when its fixed template targets exceed the athlete's

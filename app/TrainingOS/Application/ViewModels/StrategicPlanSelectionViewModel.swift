@@ -52,8 +52,50 @@ final class StrategicPlanSelectionViewModel {
     /// never a second, independent planner call (same "propose once" rule
     /// `reviewedMix` itself already follows).
     private(set) var candidates: [CandidateTrainingMix] = []
+    /// V1 "Explicit Weekly Composition" checkpoint (Checkpoint 1): the
+    /// uninserted, in-memory phase `load()` already builds — kept so
+    /// `buildCustomMix` can evaluate a custom composition against the
+    /// exact same phase window `proposeTrainingMix` used, without a
+    /// second, independently-computed phase.
+    private var previewPhase: TrainingPhase?
+    /// The engine's own top pick this load, kept SEPARATELY from
+    /// `reviewedMix` once the athlete builds/selects a custom composition
+    /// — so "TrainingOS recommends X" can always still be shown even when
+    /// "your selected mix" is something else entirely (PLAN SCREEN
+    /// requirement: never let the athlete lose sight of what will
+    /// actually start vs. what the system would have suggested).
+    private(set) var recommendedMix: TrainingMix?
+    /// `true` once the athlete has built/accepted a "Build My Own Mix"
+    /// composition — `reviewedMix` is then that custom `TrainingMix`, not
+    /// one of `candidates`. Reset to `false` by `selectAlternative`/
+    /// `selectRecommended`.
+    private(set) var isCustomMixSelected = false
+    /// The raw (style, frequency) input behind the current custom
+    /// `reviewedMix`, if any — kept only so `acceptAndStart` can merge the
+    /// real `ModalityPreference`s a Running/Cycling component needs
+    /// (`LongTermPlanner.requiredModalityPreferences`) into `Goal
+    /// .preferences` at the one moment a selection becomes authoritative,
+    /// never earlier.
+    private var customMixSelections: [(style: TrainingStyle, frequency: Int)] = []
+    private(set) var customMixValidationError: LongTermPlanner.CustomMixValidationError?
+    /// The real, unmodified `GoalAlignmentEvaluator` result for the
+    /// current custom `reviewedMix` — `nil` whenever `reviewedMix` came
+    /// from `candidates` instead (a `CandidateTrainingMix` already carries
+    /// its own `.alignment`, this is only needed for the custom path).
+    /// CLAUDE.md rule 18: a poor rating here is disclosed, never blocked.
+    private(set) var customMixAlignment: GoalAlignment?
 
     var goalTypeLabel: String? { goal.map { PlanPresentation.goalTypeLabel($0.primaryType) } }
+    /// The athlete's real weekly training-day capacity — the one number
+    /// the "Build My Own Mix" editor must never let a composition exceed.
+    var weeklyCapacity: Int { goal?.preferences?.availableTrainingDaysPerWeek ?? 4 }
+    /// TE.1's own existing equipment-compatibility rule, unmodified —
+    /// Cycling stays gated on a real bike being available, exactly like
+    /// every other TE.1-gated activity in this app.
+    var cyclingSupported: Bool {
+        let environment = goal?.user?.profile?.defaultTrainingEnvironment
+        return TrainingEnvironmentCompatibilityRule.evaluate(required: ActivityType.cycling.requiredEquipment, environment: environment) == .compatible
+    }
     /// This is a planner RECOMMENDATION, not yet a selected/accepted
     /// configuration — `TrainingMix.kind` only actually becomes `.selected`
     /// inside `StartPhaseUseCase.start`, the moment `acceptAndStart`
@@ -61,6 +103,12 @@ final class StrategicPlanSelectionViewModel {
     /// independent read (same reasoning as `StrategicTransitionViewModel
     /// .previewMixSummary`).
     var recommendedMixSummary: String? { reviewedMix.map(PlanPresentation.mixSummary) }
+    /// Always the engine's own top pick, regardless of what the athlete
+    /// is currently reviewing — distinct from `recommendedMixSummary`
+    /// above (which reflects whatever `reviewedMix` currently is). The
+    /// PLAN SCREEN requirement: "TrainingOS recommends" must stay visible
+    /// even once "your selected mix" is a custom composition.
+    var systemRecommendationSummary: String? { recommendedMix.map(PlanPresentation.mixSummary) }
     /// V1 "Goal ≠ Training Method" checkpoint: athlete-language "why this
     /// fits" — e.g. "Recommended because your goal is to get stronger and
     /// you said you enjoy hypertrophy and functional fitness." Derived
@@ -74,7 +122,7 @@ final class StrategicPlanSelectionViewModel {
     /// which candidate was recommended (CLAUDE.md rule 16's discipline:
     /// read the typed reason code, never re-derive/guess at intent).
     var recommendationExplanation: String? {
-        guard let goal, let mix = reviewedMix else { return nil }
+        guard let goal, let mix = recommendedMix else { return nil }
         var text = "Recommended because your goal is to \(PlanPresentation.mainGoalLabel(goal.primaryType).lowercased())"
 
         let wasPreferencePromoted = candidates.first { $0.mix.id == mix.id }?
@@ -122,7 +170,10 @@ final class StrategicPlanSelectionViewModel {
     /// selectable alternative, never merely hidden by omission after the
     /// fact.
     var alternatives: [CandidateTrainingMix] {
-        candidates.filter { $0.mix.id != reviewedMix?.id && $0.alignment.rating >= LongTermPlanner.compatibilityThreshold }
+        candidates.filter {
+            $0.mix.id != reviewedMix?.id && $0.mix.id != recommendedMix?.id
+                && $0.alignment.rating >= LongTermPlanner.compatibilityThreshold
+        }
     }
 
     func load(modelContext: ModelContext) {
@@ -130,13 +181,19 @@ final class StrategicPlanSelectionViewModel {
         didSucceed = false
         needsTrainingEnvironment = false
         componentsAwaitingCalibrationCount = nil
+        isCustomMixSelected = false
+        customMixSelections = []
+        customMixValidationError = nil
+        customMixAlignment = nil
 
         let users = (try? modelContext.fetch(FetchDescriptor<User>())) ?? []
         guard let activeGoal = users.first?.goals.first(where: { $0.status == .active }) else {
             goal = nil
             proposal = nil
             reviewedMix = nil
+            recommendedMix = nil
             candidates = []
+            previewPhase = nil
             return
         }
         goal = activeGoal
@@ -146,13 +203,16 @@ final class StrategicPlanSelectionViewModel {
 
         guard proposal.feasibility == .feasible, let firstProposedPhase = proposal.phases.first else {
             reviewedMix = nil
+            recommendedMix = nil
             candidates = []
+            previewPhase = nil
             return
         }
         let previewPhase = TrainingPhase(
             type: firstProposedPhase.type, startDate: firstProposedPhase.startDate,
             endDate: firstProposedPhase.endDate, priorityRule: firstProposedPhase.priorityRule
         )
+        self.previewPhase = previewPhase
         let proposedCandidates = LongTermPlanner.proposeTrainingMix(phase: previewPhase, goal: activeGoal)
         candidates = proposedCandidates
         // Stage V1 dogfooding fix: ONLY a candidate the real ranking engine
@@ -164,7 +224,9 @@ final class StrategicPlanSelectionViewModel {
         // `.recommended` to a candidate that didn't clear its own real
         // compatibility gate (`LongTermPlanner.swift`'s §5a) — so `nil`
         // here means "no compatible mix," never a mislabeled fallback.
-        reviewedMix = proposedCandidates.first { $0.roles.contains(.recommended) }?.mix
+        let recommended = proposedCandidates.first { $0.roles.contains(.recommended) }?.mix
+        reviewedMix = recommended
+        recommendedMix = recommended
     }
 
     /// Stage V1 dogfooding fix (Part 4 — real alternatives): the athlete
@@ -175,6 +237,45 @@ final class StrategicPlanSelectionViewModel {
     func selectAlternative(_ candidate: CandidateTrainingMix) {
         guard alternatives.contains(where: { $0.mix.id == candidate.mix.id }) else { return }
         reviewedMix = candidate.mix
+        isCustomMixSelected = false
+        customMixSelections = []
+        customMixAlignment = nil
+    }
+
+    /// Returns to the engine's own top pick after having reviewed a
+    /// custom composition or alternative.
+    func selectRecommended() {
+        guard let recommendedMix else { return }
+        reviewedMix = recommendedMix
+        isCustomMixSelected = false
+        customMixSelections = []
+        customMixAlignment = nil
+    }
+
+    /// V1 "Explicit Weekly Composition" checkpoint (Checkpoint 1): "BUILD
+    /// MY OWN MIX" — constructs and reviews a real `TrainingMix` directly
+    /// from the athlete's explicit (style, frequency) choices, bypassing
+    /// `candidateMixTemplates`'s fixed preset list entirely (the core
+    /// "no planner prison" proof). Returns `false` and sets
+    /// `customMixValidationError` on any rejection (unsupported
+    /// frequency, over capacity, empty, conflicting endurance styles) —
+    /// `reviewedMix`/`isCustomMixSelected` are left untouched on failure,
+    /// never partially applied.
+    @discardableResult
+    func buildCustomMix(selections: [(style: TrainingStyle, frequency: Int)]) -> Bool {
+        guard let goal, let previewPhase else { return false }
+        customMixValidationError = nil
+        switch LongTermPlanner.buildCustomMix(selections: selections, capacity: weeklyCapacity) {
+        case .failure(let error):
+            customMixValidationError = error
+            return false
+        case .success(let mix):
+            customMixAlignment = LongTermPlanner.evaluateCustomMix(mix, phase: previewPhase, goal: goal)
+            reviewedMix = mix
+            isCustomMixSelected = true
+            customMixSelections = selections
+            return true
+        }
     }
 
     /// The one deliberate write this ViewModel performs. Guarded against
@@ -196,6 +297,23 @@ final class StrategicPlanSelectionViewModel {
         defer { isAccepting = false }
         errorMessage = nil
         needsTrainingEnvironment = false
+
+        // V1 "Explicit Weekly Composition" checkpoint: a custom mix's
+        // Running/Cycling component has no per-component `ActivityType`
+        // of its own — `proposeProgram`'s `preferredActivityType` resolves
+        // it from `Goal.preferences.preferredModalities` (the same
+        // existing mechanism `TrainingStyle`'s own soft-preference path
+        // already uses). Merged here — the one moment this composition
+        // becomes authoritative — additively (never removing an existing
+        // stated preference), never at mere construction/review time.
+        if isCustomMixSelected {
+            var preferences = goal.preferences ?? GoalPreferences()
+            let required = LongTermPlanner.requiredModalityPreferences(for: customMixSelections)
+            for preference in required where !preferences.preferredModalities.contains(preference) {
+                preferences.preferredModalities.append(preference)
+            }
+            goal.preferences = preferences
+        }
 
         do {
             let plan = try AcceptStrategicPlanUseCase.accept(proposal, context: modelContext, decidedAt: Date())

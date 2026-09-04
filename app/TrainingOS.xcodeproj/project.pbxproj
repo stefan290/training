@@ -213,6 +213,7 @@
 		7ADF2E3E171B7AF5C0100300 /* OnboardingFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1013A34D54414B96DC670E09 /* OnboardingFlowView.swift */; };
 		931A16CFEBB16E69135C3FEE /* StrategicPlanSelectionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12A8A660491B443D7FA865FD /* StrategicPlanSelectionViewModel.swift */; };
 		01C252458EA5CB4393E5057F /* StrategicPlanSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E911722E90AF26D03B0EF1F5 /* StrategicPlanSelectionView.swift */; };
+		FB325FDFB05A4EF8A42E797B /* WeeklyCompositionEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4923AFEBCF994E96993E34E2 /* WeeklyCompositionEditorView.swift */; };
 		0FB5D96FE251A7E8693E10F0 /* AppRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F35F293EAD5C9362A7C79CAB /* AppRootView.swift */; };
 		0234F49A7681E44A63B7ED95 /* OnboardingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19C376BC9781BC736AE5D6A0 /* OnboardingTests.swift */; };
 		6CC169120CB77348D4406E67 /* StrategicPlanSelectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C00FB0AA96A4DB2116FFAE9 /* StrategicPlanSelectionTests.swift */; };
@@ -338,6 +339,7 @@
 		D8BCA9DCCCC94048850547B3 /* LongTermPlannerStrategicPlanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D610205E7D344C0199028EB3 /* LongTermPlannerStrategicPlanTests.swift */; };
 		3AB52E63B3669CC9DCC8B2B3 /* DatedObjectivesReconciliationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2F006955E7709C55A212353 /* DatedObjectivesReconciliationTests.swift */; };
 		388B0B811147F15595A30B0F /* GoalTrainingStyleProductModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C093ACEA23826CB022DB286 /* GoalTrainingStyleProductModelTests.swift */; };
+		D9B5F8A857DC40D48F875526 /* ExplicitWeeklyCompositionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24A683B4C2F648368F9EC1C5 /* ExplicitWeeklyCompositionTests.swift */; };
 		D9D293EF687D4C9E8EFC61C7 /* SubstitutionAwareRecommendation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E87ABA502914319A82C1265 /* SubstitutionAwareRecommendation.swift */; };
 		DA0815C3588E4254B7572296 /* CandidateTrainingMix.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D3D37D834944F9FACAF4B03 /* CandidateTrainingMix.swift */; };
 		DA7352647EBF45659D79B8CD /* TemporaryPreferenceEvaluator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7149EEB71E3433D986C35F9 /* TemporaryPreferenceEvaluator.swift */; };
@@ -528,6 +530,7 @@
 		1013A34D54414B96DC670E09 /* OnboardingFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OnboardingFlowView.swift; path = OnboardingFlowView.swift; sourceTree = "<group>"; };
 		12A8A660491B443D7FA865FD /* StrategicPlanSelectionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = StrategicPlanSelectionViewModel.swift; path = StrategicPlanSelectionViewModel.swift; sourceTree = "<group>"; };
 		E911722E90AF26D03B0EF1F5 /* StrategicPlanSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = StrategicPlanSelectionView.swift; path = StrategicPlanSelectionView.swift; sourceTree = "<group>"; };
+		4923AFEBCF994E96993E34E2 /* WeeklyCompositionEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WeeklyCompositionEditorView.swift; path = WeeklyCompositionEditorView.swift; sourceTree = "<group>"; };
 		F35F293EAD5C9362A7C79CAB /* AppRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppRootView.swift; path = AppRootView.swift; sourceTree = "<group>"; };
 		19C376BC9781BC736AE5D6A0 /* OnboardingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OnboardingTests.swift; path = OnboardingTests.swift; sourceTree = "<group>"; };
 		3C00FB0AA96A4DB2116FFAE9 /* StrategicPlanSelectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = StrategicPlanSelectionTests.swift; path = StrategicPlanSelectionTests.swift; sourceTree = "<group>"; };
@@ -710,6 +713,7 @@
 		D610205E7D344C0199028EB3 /* LongTermPlannerStrategicPlanTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LongTermPlannerStrategicPlanTests.swift; path = LongTermPlannerStrategicPlanTests.swift; sourceTree = "<group>"; };
 		A2F006955E7709C55A212353 /* DatedObjectivesReconciliationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DatedObjectivesReconciliationTests.swift; path = DatedObjectivesReconciliationTests.swift; sourceTree = "<group>"; };
 		5C093ACEA23826CB022DB286 /* GoalTrainingStyleProductModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = GoalTrainingStyleProductModelTests.swift; path = GoalTrainingStyleProductModelTests.swift; sourceTree = "<group>"; };
+		24A683B4C2F648368F9EC1C5 /* ExplicitWeeklyCompositionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExplicitWeeklyCompositionTests.swift; path = ExplicitWeeklyCompositionTests.swift; sourceTree = "<group>"; };
 		D642401D83068E564FDA98F1 /* PersistenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PersistenceController.swift; path = PersistenceController.swift; sourceTree = "<group>"; };
 		D6BA8738E2EE4513B27BAF41 /* CompletedFunctionalFitnessDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CompletedFunctionalFitnessDetail.swift; path = CompletedFunctionalFitnessDetail.swift; sourceTree = "<group>"; };
 		D75D795660744E94A6818B4C /* LogIntervalRepUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LogIntervalRepUseCase.swift; path = LogIntervalRepUseCase.swift; sourceTree = "<group>"; };
@@ -1027,6 +1031,7 @@
 			children = (
 				1013A34D54414B96DC670E09 /* OnboardingFlowView.swift */,
 				E911722E90AF26D03B0EF1F5 /* StrategicPlanSelectionView.swift */,
+				4923AFEBCF994E96993E34E2 /* WeeklyCompositionEditorView.swift */,
 			);
 			name = Onboarding;
 			path = Onboarding;
@@ -1201,6 +1206,7 @@
 				D610205E7D344C0199028EB3 /* LongTermPlannerStrategicPlanTests.swift */,
 				A2F006955E7709C55A212353 /* DatedObjectivesReconciliationTests.swift */,
 				5C093ACEA23826CB022DB286 /* GoalTrainingStyleProductModelTests.swift */,
+				24A683B4C2F648368F9EC1C5 /* ExplicitWeeklyCompositionTests.swift */,
 				3F68524FCF48458397F19E9B /* LongTermPlannerRevisionTests.swift */,
 				96957ECF3701403F946023B8 /* TemporaryPreferenceAndModalitySwitchTests.swift */,
 				B5FBF35C540B41F4A3F8FE1E /* TacticalWindowPolicyTests.swift */,
@@ -1551,6 +1557,7 @@
 				D8BCA9DCCCC94048850547B3 /* LongTermPlannerStrategicPlanTests.swift in Sources */,
 				3AB52E63B3669CC9DCC8B2B3 /* DatedObjectivesReconciliationTests.swift in Sources */,
 				388B0B811147F15595A30B0F /* GoalTrainingStyleProductModelTests.swift in Sources */,
+				D9B5F8A857DC40D48F875526 /* ExplicitWeeklyCompositionTests.swift in Sources */,
 				9DC345C6A3A5410F840C85AC /* LongTermPlannerRevisionTests.swift in Sources */,
 				CB4485429B55490D841976B4 /* TemporaryPreferenceAndModalitySwitchTests.swift in Sources */,
 				5F43F7B5A63F484882833466 /* TacticalWindowPolicyTests.swift in Sources */,
@@ -1671,6 +1678,7 @@
 				7ADF2E3E171B7AF5C0100300 /* OnboardingFlowView.swift in Sources */,
 				931A16CFEBB16E69135C3FEE /* StrategicPlanSelectionViewModel.swift in Sources */,
 				01C252458EA5CB4393E5057F /* StrategicPlanSelectionView.swift in Sources */,
+				FB325FDFB05A4EF8A42E797B /* WeeklyCompositionEditorView.swift in Sources */,
 				0FB5D96FE251A7E8693E10F0 /* AppRootView.swift in Sources */,
 				7514FD00AEB04CB7AD1F8B9D /* FunctionalFitnessReasonCode.swift in Sources */,
 				20803FB2B57D4D0D888779F5 /* FunctionalFitnessDecisionEngine.swift in Sources */,

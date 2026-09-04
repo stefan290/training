@@ -12,6 +12,7 @@ struct StrategicPlanSelectionView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var viewModel = StrategicPlanSelectionViewModel()
     @State private var showingTrainingEnvironmentSettings = false
+    @State private var showingCompositionEditor = false
     let onComplete: () -> Void
 
     var body: some View {
@@ -45,13 +46,41 @@ struct StrategicPlanSelectionView: View {
                                 .foregroundStyle(Theme.attention)
                         }
                     } else if let mixSummary = viewModel.recommendedMixSummary {
-                        InfoSection(title: "RECOMMENDED FOR YOU") {
-                            Text(mixSummary)
-                                .font(Theme.body)
-                                .foregroundStyle(Theme.textPrimary)
-                            Text(viewModel.recommendationExplanation ?? "Chosen for your goal, training availability, and preferences.")
-                                .font(Theme.label)
-                                .foregroundStyle(Theme.textSecondary)
+                        // V1 "Explicit Weekly Composition" checkpoint (PLAN
+                        // SCREEN requirement): once the athlete has built a
+                        // custom composition, "YOUR SELECTED MIX" is what
+                        // will actually start — "TrainingOS recommends"
+                        // stays visible as its own, separate, non-
+                        // authoritative section, never silently displayed
+                        // as though it were about to start instead.
+                        if viewModel.isCustomMixSelected {
+                            InfoSection(title: "YOUR SELECTED MIX") {
+                                Text(mixSummary)
+                                    .font(Theme.body)
+                                    .foregroundStyle(Theme.textPrimary)
+                                Text("This is the exact mix TrainingOS will build and schedule for you.")
+                                    .font(Theme.label)
+                                    .foregroundStyle(Theme.textSecondary)
+                            }
+                            if let systemRecommendation = viewModel.systemRecommendationSummary {
+                                InfoSection(title: "TRAININGOS RECOMMENDS") {
+                                    Text(systemRecommendation)
+                                        .font(Theme.body)
+                                        .foregroundStyle(Theme.textSecondary)
+                                    Text(viewModel.recommendationExplanation ?? "Our recommendation for maximizing your goal.")
+                                        .font(Theme.label)
+                                        .foregroundStyle(Theme.textSecondary)
+                                }
+                            }
+                        } else {
+                            InfoSection(title: "RECOMMENDED FOR YOUR GOAL") {
+                                Text(mixSummary)
+                                    .font(Theme.body)
+                                    .foregroundStyle(Theme.textPrimary)
+                                Text(viewModel.recommendationExplanation ?? "Chosen for your goal, training availability, and preferences.")
+                                    .font(Theme.label)
+                                    .foregroundStyle(Theme.textSecondary)
+                            }
                         }
 
                         if !viewModel.phaseTypeLabels.isEmpty {
@@ -90,6 +119,21 @@ struct StrategicPlanSelectionView: View {
                                     .padding(.vertical, 4)
                                 }
                             }
+                        }
+
+                        // V1 "Explicit Weekly Composition" checkpoint: the
+                        // athlete is never restricted to the
+                        // `CandidateTrainingMix` preset catalog — "no
+                        // planner prison."
+                        Button("Build My Own Mix") { showingCompositionEditor = true }
+                            .buttonStyle(.bordered)
+                            .frame(maxWidth: .infinity)
+                        if viewModel.isCustomMixSelected {
+                            Button("Use TrainingOS's Recommendation Instead") {
+                                viewModel.selectRecommended()
+                            }
+                            .font(Theme.label)
+                            .frame(maxWidth: .infinity)
                         }
                     } else {
                         ProgressView("Building your recommendation…")
@@ -131,6 +175,18 @@ struct StrategicPlanSelectionView: View {
         .task { viewModel.load(modelContext: modelContext) }
         .sheet(isPresented: $showingTrainingEnvironmentSettings) {
             TrainingEnvironmentSettingsView()
+        }
+        .sheet(isPresented: $showingCompositionEditor) {
+            WeeklyCompositionEditorView(
+                capacity: viewModel.weeklyCapacity,
+                cyclingAvailable: viewModel.cyclingSupported,
+                onCancel: { showingCompositionEditor = false },
+                onUse: { selections in
+                    let succeeded = viewModel.buildCustomMix(selections: selections)
+                    if succeeded { showingCompositionEditor = false }
+                    return succeeded
+                }
+            )
         }
     }
 

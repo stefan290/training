@@ -29,7 +29,6 @@ struct OnboardingFlowView: View {
                 switch viewModel.step {
                 case .goal: goalStep
                 case .preferences: preferencesStep
-                case .modalityPreferences: modalityPreferencesStep
                 case .environment: environmentStep
                 case .review: reviewStep
                 }
@@ -364,19 +363,18 @@ struct OnboardingFlowView: View {
         }
     }
 
+    /// V1 "Explicit Weekly Composition" checkpoint: the former "Variety"
+    /// picker is REMOVED — explicit weekly composition (chosen on the
+    /// Plan screen's "Build My Own Mix") supersedes it as the one
+    /// athlete-facing authority for desired training composition.
+    /// `VarietyPreference` itself is not deleted (still read by
+    /// `rankCandidateMixes`'s preset-ranking path), simply no longer
+    /// athlete-editable from this primary flow.
     private var preferencesStep: some View {
         Form {
             Section("Weekly training") {
                 Stepper("Training days per week: \(viewModel.availableTrainingDaysPerWeek)", value: $viewModel.availableTrainingDaysPerWeek, in: 1...7)
                 Toggle("I'm open to two sessions in one day", isOn: $viewModel.allowsDoubleSessions)
-            }
-            Section("Variety") {
-                Picker("How much variety do you want?", selection: $viewModel.varietyPreference) {
-                    Text("Low — keep it consistent").tag(VarietyPreference.low)
-                    Text("Moderate").tag(VarietyPreference.moderate)
-                    Text("High — keep it fresh").tag(VarietyPreference.high)
-                }
-                .pickerStyle(.inline)
             }
             Section {
                 Button("Continue") { viewModel.advance(from: .preferences, modelContext: modelContext) }
@@ -387,65 +385,6 @@ struct OnboardingFlowView: View {
         }
         .navigationTitle("Training Preferences")
         .navigationBarTitleDisplayMode(.inline)
-    }
-
-    /// V1 "Goal ≠ Training Method" checkpoint: TRAINING STYLE, a third
-    /// concept distinct from Main Goal (OUTCOME) and dated objectives
-    /// (WHAT/WHEN) — `preferredModalities`/`dislikedModalities` are real,
-    /// already-planner-consumed fields (`LongTermPlanner
-    /// .isPreferenceAligned`); this surfaces them through the athlete-
-    /// facing `TrainingStyle` vocabulary (`PlanPresentation
-    /// .trainingStyleLabel`) instead of the previous raw
-    /// `ProgrammingSystemKind` checkboxes, which leaked "Powerlifting"/
-    /// "Steady State"/"Intervals" verbatim. Running and Cycling are each
-    /// their own explicit, activity-scoped style — disliking one no
-    /// longer needs a separate "just running, not all conditioning"
-    /// toggle; that distinction is now inherent to which style was
-    /// disliked (`TrainingStyle.modalityPreferences`).
-    private var modalityPreferencesStep: some View {
-        Form {
-            Section {
-                Text("Optional — TrainingOS already recommends training for your goal. Tell it more if you have strong preferences.")
-                    .font(Theme.label)
-                    .foregroundStyle(Theme.textSecondary)
-            }
-            Section("I especially want") {
-                ForEach(TrainingStyle.allCases) { style in
-                    Toggle(PlanPresentation.trainingStyleLabel(style), isOn: preferredBinding(style))
-                }
-            }
-            Section("I'd rather avoid") {
-                ForEach(TrainingStyle.allCases) { style in
-                    Toggle(PlanPresentation.trainingStyleLabel(style), isOn: dislikedBinding(style))
-                }
-            }
-            Section {
-                Button("Continue") { viewModel.advance(from: .modalityPreferences, modelContext: modelContext) }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Theme.primary)
-                    .frame(maxWidth: .infinity)
-            }
-        }
-        .navigationTitle("Training Preferences")
-        .navigationBarTitleDisplayMode(.inline)
-    }
-
-    private func preferredBinding(_ style: TrainingStyle) -> Binding<Bool> {
-        Binding(
-            get: { viewModel.preferredTrainingStyles.contains(style) },
-            set: { isOn in
-                if isOn { viewModel.preferredTrainingStyles.insert(style) } else { viewModel.preferredTrainingStyles.remove(style) }
-            }
-        )
-    }
-
-    private func dislikedBinding(_ style: TrainingStyle) -> Binding<Bool> {
-        Binding(
-            get: { viewModel.dislikedTrainingStyles.contains(style) },
-            set: { isOn in
-                if isOn { viewModel.dislikedTrainingStyles.insert(style) } else { viewModel.dislikedTrainingStyles.remove(style) }
-            }
-        )
     }
 
     private var environmentStep: some View {
@@ -465,13 +404,16 @@ struct OnboardingFlowView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 
-    /// V1 "Goal ≠ Training Method" checkpoint: 5 distinct sections, only
-    /// shown when they apply — MAIN GOAL and TRAINING always do; TRAINING
-    /// STYLES only when the athlete stated any; WORKING TOWARD only when a
-    /// dated objective exists. Training Styles are never folded into or
-    /// labeled as the Main Goal section — the whole point of this
-    /// checkpoint is keeping OUTCOME/STYLE/DATED-OBJECTIVE visibly
-    /// separate on the one screen that summarizes all three.
+    /// V1 "Explicit Weekly Composition" checkpoint: TRAINING STYLES
+    /// (Especially want/Rather avoid) and Variety are REMOVED from Review
+    /// — neither is collected by this primary flow anymore. The athlete's
+    /// actual WEEKLY TRAINING composition is chosen next, on the Plan
+    /// screen (where a real `TrainingPhase` exists to build a real
+    /// `TrainingMix` against — see `StrategicPlanSelectionView`'s "Build
+    /// My Own Mix"), so this Review intentionally shows only what IS
+    /// already decided at this point: MAIN GOAL, weekly TRAINING capacity,
+    /// WORKING TOWARD (when present), and TRAINING ENVIRONMENT — never a
+    /// fabricated composition summary for a choice not made yet.
     private var reviewStep: some View {
         VStack(alignment: .leading, spacing: 20) {
             Text("Review")
@@ -486,18 +428,6 @@ struct OnboardingFlowView: View {
 
                     reviewSection("TRAINING") {
                         reviewRow("Days/week", "\(viewModel.availableTrainingDaysPerWeek)")
-                        reviewRow("Variety", viewModel.varietyPreference.rawValue.capitalized)
-                    }
-
-                    if !viewModel.preferredTrainingStyles.isEmpty || !viewModel.dislikedTrainingStyles.isEmpty {
-                        reviewSection("TRAINING STYLES") {
-                            if !viewModel.preferredTrainingStyles.isEmpty {
-                                reviewRow("Especially want", viewModel.preferredTrainingStyles.map(PlanPresentation.trainingStyleLabel).sorted().joined(separator: ", "))
-                            }
-                            if !viewModel.dislikedTrainingStyles.isEmpty {
-                                reviewRow("Rather avoid", viewModel.dislikedTrainingStyles.map(PlanPresentation.trainingStyleLabel).sorted().joined(separator: ", "))
-                            }
-                        }
                     }
 
                     if viewModel.hasMilestone || viewModel.hasRunningEvent {

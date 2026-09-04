@@ -92,8 +92,12 @@ final class GoalTrainingStyleProductModelTests: XCTestCase {
         XCTAssertFalse(viewModel.hasRunningEvent)
 
         viewModel.advance(from: .goal, modelContext: context)
+        // V1 "Explicit Weekly Composition" checkpoint: `.modalityPreferences`
+        // was removed from the primary flow — `createOrUpdateGoal` now
+        // fires on the `.preferences` step's own advance. The underlying
+        // `preferredTrainingStyles` -> `GoalPreferences.preferredModalities`
+        // write path this test proves is otherwise unchanged.
         viewModel.advance(from: .preferences, modelContext: context)
-        viewModel.advance(from: .modalityPreferences, modelContext: context)
 
         let goal = try XCTUnwrap((try context.fetch(FetchDescriptor<Goal>())).first)
         XCTAssertTrue(goal.datedObjectives.isEmpty, "Running as a style must never create a dated objective")

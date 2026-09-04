@@ -17,8 +17,22 @@ import SwiftData
 @MainActor
 @Observable
 final class OnboardingViewModel {
+    /// V1 "Explicit Weekly Composition" checkpoint: `.modalityPreferences`
+    /// (the soft "especially want/rather avoid" step) is REMOVED from the
+    /// primary flow — explicit weekly composition (chosen on the Plan
+    /// screen, where a real `TrainingPhase` exists to build a real
+    /// `TrainingMix` against — see `StrategicPlanSelectionView`'s "Build
+    /// My Own Mix") supersedes it as the one athlete-facing authority for
+    /// desired training composition. The underlying `preferredModalities`/
+    /// `dislikedModalities`/`TrainingStyle` machinery is NOT deleted —
+    /// `preferredTrainingStyles`/`dislikedTrainingStyles` below remain
+    /// real properties, still reloaded from any pre-existing persisted
+    /// data in `start()` and still written by `createOrUpdateGoal`, kept
+    /// only for backward compatibility and the still-real
+    /// `CandidateTrainingMix` preset-ranking path — simply no longer
+    /// editable from this primary flow.
     enum Step: Int, CaseIterable {
-        case goal, preferences, modalityPreferences, environment, review
+        case goal, preferences, environment, review
     }
 
     private(set) var step: Step = .goal
@@ -178,8 +192,6 @@ final class OnboardingViewModel {
         case .goal:
             step = .preferences
         case .preferences:
-            step = .modalityPreferences
-        case .modalityPreferences:
             createOrUpdateGoal(modelContext: modelContext)
             step = .environment
         case .environment:
@@ -193,8 +205,7 @@ final class OnboardingViewModel {
         switch currentStep {
         case .goal: break
         case .preferences: step = .goal
-        case .modalityPreferences: step = .preferences
-        case .environment: step = .modalityPreferences
+        case .environment: step = .preferences
         case .review: step = .environment
         }
     }
