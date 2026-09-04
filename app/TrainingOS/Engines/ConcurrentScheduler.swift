@@ -428,10 +428,23 @@ enum ConcurrentScheduler {
         guard constraints.availability.isUsable(dayWeekday) else { return .invalid(.unavailableDay) }
 
         let occupants = state.dayOccupants[offset] ?? []
-        guard occupants.count < constraints.availability.maxSessionsPerDay else { return .invalid(.maxSessionsExceeded) }
+        // R0 (mid-week start / no-double production bug fix): a day already
+        // consumed by a SIBLING component's real, already-accepted Session
+        // from an earlier, separate scheduling call
+        // (`constraints.preOccupiedDates`) counts toward this same day's
+        // capacity exactly like a real in-call occupant — this is what
+        // stops a later `materializeOnceCalibrationComplete` call from
+        // silently double-booking a day a prior call already filled.
+        let hasExternalOccupant = constraints.preOccupiedDates.contains(Calendar.current.startOfDay(for: date))
+        let effectiveOccupantCount = occupants.count + (hasExternalOccupant ? 1 : 0)
+        guard effectiveOccupantCount < constraints.availability.maxSessionsPerDay else { return .invalid(.maxSessionsExceeded) }
 
-        if !occupants.isEmpty {
+        if effectiveOccupantCount > 0 {
             guard item.allowsDoubleSessionPairing, constraints.availability.allowsDoubleSessions else { return .invalid(.maxSessionsExceeded) }
+            // An externally-occupied day is, by construction, always a
+            // DIFFERENT component/instance (a sibling from an earlier,
+            // separate materialization pass) — only a real in-call
+            // occupant needs the same-component check below.
             guard !occupants.contains(where: { ObjectIdentifier($0.component) == ObjectIdentifier(item.component) }) else { return .invalid(.maxSessionsExceeded) }
         }
 

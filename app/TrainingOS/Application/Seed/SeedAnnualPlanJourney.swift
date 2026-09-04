@@ -65,7 +65,17 @@ enum SeedAnnualPlanJourney {
         user.addGoal(goal)
 
         let proposal = LongTermPlanner.proposeStrategicPlan(goal: goal, asOf: planAcceptedAt)
-        let plan = try AcceptStrategicPlanUseCase.accept(proposal, context: context, decidedAt: planAcceptedAt)
+        // V1 R0 (mid-week start / no-double production bug fix): this
+        // journey simulates an athlete already months into an existing
+        // plan for internal dev/demo purposes — every phase's date is
+        // deliberately computed relative to `planAcceptedAt`, never a
+        // real athlete's actual first-run acceptance moment — so the new
+        // "brand-new plan begins on a full calendar week" rule
+        // (`AcceptStrategicPlanUseCase.accept`'s own doc comment) is
+        // explicitly opted out of here, not silently inherited.
+        let plan = try AcceptStrategicPlanUseCase.accept(
+            proposal, context: context, decidedAt: planAcceptedAt, alignFirstPhaseToFullCalendarWeek: false
+        )
         guard plan.orderedPhases.count >= 4 else { throw SeedAnnualPlanJourneyError.insufficientPhases }
         let phase1 = plan.orderedPhases[0]
         let phase2 = plan.orderedPhases[1]

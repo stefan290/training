@@ -69,6 +69,35 @@ enum LongTermPlanner {
         return StrategicPlanProposal(goal: goal, phases: phases, feasibility: feasibility, explanation: explanation)
     }
 
+    /// V1 R0 (mid-week start / no-double production bug fix): resolves a
+    /// date to itself if it already falls on a Monday, or to the
+    /// immediately following Monday otherwise. `Calendar`'s `.weekday`
+    /// component is always `1 = Sunday ... 7 = Saturday` regardless of
+    /// `Calendar.firstWeekday`, so this is locale-independent.
+    ///
+    /// WHY THIS EXISTS: `ProgramWeekGrouping` anchors "week 0" identity
+    /// purely to `ProgramInstance.startDate` (itself always
+    /// `TrainingPhase.startDate` verbatim — `StartPhaseUseCase.swift`),
+    /// and every source materializer (`StrengthMaterializer.materializeWeek`
+    /// and its Functional Fitness equivalent) always produces a program's
+    /// COMPLETE authored weekly template — there is no partial-week
+    /// variant and no separately-authored "bootstrap" content in any real
+    /// source program. Exposing a few real sessions before the first full
+    /// calendar week would therefore necessarily either repeat real
+    /// Week-0 content the athlete sees again days later, or require
+    /// inventing synthetic bridge training — both rejected. The smallest
+    /// truthful representation: a brand-new plan's tactical program
+    /// begins on the next genuine Monday-Sunday week; nothing is
+    /// scheduled, missed, carried as debt, or counted as adherence/
+    /// progression evidence before it.
+    static func resolvedInitialPlanStartDate(asOf: Date) -> Date {
+        let calendar = Calendar.current
+        let weekday = calendar.component(.weekday, from: asOf)
+        let daysUntilMonday = (2 - weekday + 7) % 7
+        let resolved = calendar.date(byAdding: .day, value: daysUntilMonday, to: asOf) ?? asOf
+        return calendar.startOfDay(for: resolved)
+    }
+
     private static func proposePhases(
         _ params: PlanningParameters, asOf: Date
     ) -> (phases: [ProposedPhase], feasibility: StrategicPlanFeasibility, explanation: String) {

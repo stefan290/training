@@ -135,7 +135,21 @@ final class StrategicPlanSelectionTests: XCTestCase {
         // Today's own real production ViewModel, unmodified.
         let todayViewModel = TodayViewModel()
         todayViewModel.load(modelContext: context)
-        XCTAssertFalse(todayViewModel.sessions.isEmpty, "Today must show the athlete's own real Sessions")
+        // V1 R0 (mid-week start / no-double production bug fix): a
+        // brand-new plan's first tactical week only genuinely begins on
+        // the next real Monday (`LongTermPlanner.resolvedInitialPlanStartDate`)
+        // — this test runs against real `Date()` (no controllable `asOf`
+        // exists on the real onboarding ViewModel, deliberately, since it
+        // represents "load right now"), so its assertion must reflect
+        // whichever real calendar day the suite happens to run on rather
+        // than assuming sessions always exist "today" immediately after
+        // acceptance.
+        let todayIsMonday = Calendar.current.component(.weekday, from: Date()) == 2
+        if todayIsMonday {
+            XCTAssertFalse(todayViewModel.sessions.isEmpty, "Today must show the athlete's own real Sessions once the plan's first tactical week has genuinely begun")
+        } else {
+            XCTAssertTrue(todayViewModel.sessions.isEmpty, "Today must show ZERO sessions before the plan's first full calendar week begins — never fabricated, never carried as debt")
+        }
 
         // No demo/seed journey ever ran.
         XCTAssertTrue((try context.fetch(FetchDescriptor<TrainingPlan>())).allSatisfy { $0.goal?.ownerUserID != nil })

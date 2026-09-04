@@ -222,15 +222,33 @@ struct SchedulingConstraints: Equatable {
     var availability: UserAvailability
     var window: SchedulingWindow
     var interferenceRules: [InterferenceAvoidanceRule]
+    /// R0 (mid-week start / no-double production bug fix): real calendar
+    /// days already occupied by a SIBLING component's Sessions from an
+    /// EARLIER, separate `ConcurrentScheduler.schedule` call for this same
+    /// phase — e.g. a `.rmBased` component whose materialization was
+    /// deferred until source RM calibration completed
+    /// (`StartPhaseUseCase.materializeOnceCalibrationComplete`), scheduled
+    /// after a non-`.rmBased` sibling already occupied some days in the
+    /// very same call to `start()`. Every date here is a REAL, already-
+    /// accepted `Session.day?.date` — never a session this call is placing
+    /// itself, and never re-scheduled/moved/re-evaluated by this call.
+    /// Normalized to `Calendar.current.startOfDay` by the caller; `hardCheck`
+    /// compares against the same normalization. Empty (the common case)
+    /// for a phase's very first `start()` call, where every immediately-
+    /// executable component's sessions are already scheduled together in
+    /// one joint call and so need no cross-call awareness at all.
+    var preOccupiedDates: Set<Date>
 
     init(
         availability: UserAvailability,
         window: SchedulingWindow,
-        interferenceRules: [InterferenceAvoidanceRule] = InterferenceAvoidanceRule.conservativeDefault
+        interferenceRules: [InterferenceAvoidanceRule] = InterferenceAvoidanceRule.conservativeDefault,
+        preOccupiedDates: Set<Date> = []
     ) {
         self.availability = availability
         self.window = window
         self.interferenceRules = interferenceRules
+        self.preOccupiedDates = preOccupiedDates
     }
 }
 

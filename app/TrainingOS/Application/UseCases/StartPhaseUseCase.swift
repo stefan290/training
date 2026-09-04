@@ -260,27 +260,48 @@ enum StartPhaseUseCase {
             materializationContext: materializationContext, context: context
         )
 
-        // KNOWN, DOCUMENTED LIMITATION (not solved by this slice — see
-        // STAGE10R1C_SOURCE_RM_CALIBRATION_IMPLEMENTATION_REPORT.md):
-        // the scheduler only ever sees what's in THIS call's `inputs` — it
-        // has no memory of a prior, separate `propose`/`accept` call for
-        // this same phase's OTHER components. An earlier version of this
+        // R0 (mid-week start / no-double production bug fix): the
+        // scheduler only ever sees what's in THIS call's `inputs` — it has
+        // no memory of a prior, separate `propose`/`accept` call for this
+        // same phase's OTHER components. An earlier version of this
         // function re-included every other already-instantiated
-        // component's own already-materialized sessions here, to try to
-        // reproduce one joint scheduling pass across everyone — but that
-        // re-introduces ALL of those sessions as freely re-placeable
-        // inputs (`ConcurrentScheduler` has no "already placed, do not
-        // move" concept), which reliably produced spurious `.infeasible`
-        // results for realistic mixed-modality phases (confirmed via this
-        // slice's own regression tests) — a strictly worse outcome than
-        // the narrower risk being guarded against. Scheduling ONLY this
-        // component's own newly-materialized sessions is the safer
-        // default until the scheduler itself grows a real "pinned/already
-        // placed" input concept; the residual risk (a deferred
-        // component's sessions landing on a day an already-scheduled
-        // sibling also occupies, only for an already-at-capacity mix) is
-        // accepted and documented rather than "fixed" with something that
-        // regresses the common case.
+        // component's own already-materialized SESSIONS as freely
+        // re-placeable `inputs` here, to try to reproduce one joint
+        // scheduling pass across everyone — but that let `ConcurrentScheduler`
+        // re-evaluate and potentially re-place/mark-infeasible sessions
+        // that were already real and accepted, which reliably produced
+        // spurious `.infeasible` results for realistic mixed-modality
+        // phases. The real fix is narrower: tell the scheduler which real
+        // calendar DAYS are already spoken for by those already-accepted
+        // sibling sessions — never re-placing or re-evaluating the
+        // sessions themselves, only blocking their days for THIS call's
+        // own new placements (`SchedulingConstraints.preOccupiedDates`,
+        // enforced in `ConcurrentScheduler.hardCheck`). This is what
+        // prevents a deferred `.rmBased` component's sessions from
+        // silently landing on a day an already-scheduled sibling also
+        // occupies — the exact mechanism that produced double-booked days
+        // for both a genuinely at-capacity mix and an ordinary mid-week
+        // start with a common composition.
+        //
+        // Scoped to OTHER, currently-linked components in the SAME mix
+        // (`component.programInstance`) — never `phase.programInstances`
+        // broadly. A mesocycle transition (`StartNextHypertrophyMesocycleUseCase`)
+        // repoints THIS SAME component's own `.programInstance` to a new
+        // instance for its next mesocycle; the OLD instance stays in
+        // `phase.programInstances` as ordinary historical data but is not
+        // a real concurrent sibling — treating it as pre-occupied would
+        // wrongly stack an entire earlier mesocycle's own days on top of
+        // genuine siblings like a supporting Zone 2 component, saturating
+        // every calendar day and making an ordinary next-mesocycle
+        // materialization spuriously infeasible.
+        let siblingSessionDates = Set(
+            mix.orderedComponents
+                .filter { $0.id != component.id }
+                .compactMap(\.programInstance)
+                .flatMap(\.sessions)
+                .compactMap { $0.day?.date }
+                .map { Calendar.current.startOfDay(for: $0) }
+        )
         let inputs = [ScheduledProgramInput(component: component, sessions: sessions)]
 
         let windowDays = TacticalWindowPolicy.windowLengthInDays(
@@ -289,7 +310,8 @@ enum StartPhaseUseCase {
         )
         return try scheduleAndAccept(
             phase: phase, mix: mix, inputs: inputs, windowDays: windowDays,
-            ownerUserID: ownerUserID, availability: availability, context: context
+            ownerUserID: ownerUserID, availability: availability, context: context,
+            preOccupiedDates: siblingSessionDates
         )
     }
 
@@ -300,7 +322,8 @@ enum StartPhaseUseCase {
     /// than duplicating it.
     private static func scheduleAndAccept(
         phase: TrainingPhase, mix: TrainingMix, inputs: [ScheduledProgramInput], windowDays: Int,
-        ownerUserID: UUID, availability: UserAvailability, context: ModelContext
+        ownerUserID: UUID, availability: UserAvailability, context: ModelContext,
+        preOccupiedDates: Set<Date> = []
     ) throws -> ScheduleProposal {
         // A non-primary component can materialize further out than the
         // primary system's own natural block (Steady State's whole
@@ -311,7 +334,10 @@ enum StartPhaseUseCase {
         let effectiveWindowDays = TacticalWindowPolicy.effectiveWindowDays(
             policyWindowDays: windowDays, materializedDates: materializedDates, windowStartDate: phase.startDate
         )
-        let constraints = SchedulingConstraints(availability: availability, window: SchedulingWindow(startDate: phase.startDate, numberOfDays: effectiveWindowDays))
+        let constraints = SchedulingConstraints(
+            availability: availability, window: SchedulingWindow(startDate: phase.startDate, numberOfDays: effectiveWindowDays),
+            preOccupiedDates: preOccupiedDates
+        )
         let scheduled = SchedulingPipeline.propose(mix: mix, inputs: inputs, constraints: constraints)
         try AcceptScheduleProposalUseCase.accept(scheduled.proposal, ownerUserID: ownerUserID, context: context)
         return scheduled.proposal

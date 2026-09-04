@@ -222,51 +222,65 @@ final class TacticalPlacementBoundaryTests: XCTestCase {
         }
     }
 
-    /// A phase that starts mid-calendar-week has fewer than 7 real
-    /// calendar days available in its first program-week (some fall
-    /// before `phase.startDate` and are correctly never scheduled). This
-    /// documents — not silently hides — what the scheduler does when a
-    /// mix's total weekly session count exceeds the days actually
-    /// available in that shortened first week under a strict one-
-    /// session-per-day availability: every session still lands on a
-    /// real, valid day at or after phase start, never before it and
-    /// never doubled without permission, even though that may push the
-    /// lowest-priority component's first session past the calendar-week
-    /// boundary its higher-priority peers already filled.
-    func testMidWeekPhaseStartWithAnAtCapacityMixPlacesEverySessionValidlyEvenWhenOneSpillsPastTheFirstCalendarWeek() throws {
-        // Stage 10R.1C, discovered/documented limitation: this fixture's
-        // Strength component is `.rmBased` and its materialization is now
-        // deferred until source RM calibration completes
-        // (`materializeOnceCalibrationComplete`), scheduled in a SEPARATE,
-        // LATER call that deliberately does not re-schedule FF/Running's
-        // already-placed sessions (see that function's own doc comment —
-        // re-including them was tried and reliably produced worse,
-        // spurious `.infeasible` failures across ordinary, non-at-capacity
-        // mixes). Under this specific fixture's genuine at-capacity
-        // scenario (6 sessions need to fit in 5 available days), that
-        // separate call has no visibility into which of those 5 days
-        // FF/Running already consumed, so it can legitimately double-book
-        // one. This is a real, narrow gap in the deferred-materialization
-        // architecture for tightly-packed mixed-modality phases — not
-        // something this pass silently papers over. A real fix needs the
-        // scheduler itself to gain an "already placed, do not move"
-        // input concept, which is out of this slice's scope
-        // (`STAGE10R1C_SOURCE_RM_CALIBRATION_IMPLEMENTATION_REPORT.md`).
-        throw XCTSkip("Stage 10R.1C: deferred `.rmBased` materialization does not yet coordinate with already-scheduled siblings under an at-capacity mixed-modality phase — see this test's own doc comment")
+    /// R0 LOCKED CONTRACT ROUND (supersedes this test's own two earlier,
+    /// REJECTED models — see `AcceptStrategicPlanUseCase.accept`'s own doc
+    /// comment): a brand-new plan's first tactical week may only ever be
+    /// a genuine full calendar week. A Wednesday acceptance's shortened
+    /// Wed-Sun stretch is NEVER used to partially materialize this
+    /// genuinely over-capacity mix (6 sessions: 3 Strength + 2 Functional
+    /// Fitness + Running's own first week) — `AcceptStrategicPlanUseCase
+    /// .accept` shifts `phase.startDate` itself to the following Monday,
+    /// so every downstream materializer (including Strength's deferred,
+    /// separately-scheduled `.rmBased` pass) already anchors to that
+    /// Monday — zero special-casing needed here. This is the SAME root
+    /// mechanism this suite's own dogfood-shaped sibling test
+    /// (`MidWeekNoDoubleCompositionTests`) proves for the exact-capacity
+    /// 3H+2FF composition — this test proves it generalizes to a
+    /// genuinely OVER-capacity, 3-component composition too.
+    func testMidWeekPhaseStartAlignsToTheFollowingMondayEvenForAnOverCapacityMix() throws {
+        let asOf = date(2026, 1, 7) // Wednesday
+        let fixture = try startVariedMix(asOf: asOf)
+        let expectedMonday = Calendar.current.startOfDay(for: date(2026, 1, 12))
+        XCTAssertEqual(Calendar.current.startOfDay(for: fixture.phase.startDate), expectedMonday, "a brand-new plan's phase must truthfully anchor to the resolved Monday, not the real Wednesday acceptance day")
+
+        let allSessions = fixture.mix.orderedComponents.compactMap(\.programInstance).flatMap(\.sessions)
+        XCTAssertFalse(allSessions.isEmpty)
+
+        let byDay = Dictionary(grouping: allSessions) { Calendar.current.startOfDay(for: $0.day?.date ?? .distantPast) }
+        for (day, sessions) in byDay {
+            XCTAssertLessThanOrEqual(sessions.count, 1, "\(day) holds \(sessions.count) sessions — no-double must survive the separate deferred-calibration scheduling pass")
+        }
+
+        // Zero sessions before the resolved Monday — never a partially-
+        // used Wed-Sun stretch, even though this mix's 6-session nominal
+        // total would have fit those 5 real days almost exactly.
+        for session in allSessions {
+            XCTAssertGreaterThanOrEqual(Calendar.current.startOfDay(for: session.day?.date ?? .distantPast), expectedMonday, "\(session.name) must never schedule before the resolved Monday the phase itself now truthfully starts on")
+        }
     }
 
-    // MARK: B — a partial first calendar week may legitimately contain fewer than the mix's nominal weekly frequency
+    // MARK: B — the shortened Wed-Sun stretch no longer exists as a placement target under the locked start-of-plan contract
 
-    func testPartialFirstCalendarWeekLegitimatelyContainsFewerSessionsThanTheMixsNominalFrequency() throws {
-        // Stage 10R.1C, same discovered/documented limitation as the test
-        // above: this fixture's exact "6 sessions need to fit in 5 days"
-        // capacity crunch is precisely the scenario the deferred
-        // `.rmBased` materialization path (Strength scheduled separately,
-        // without visibility into which days FF/Running already used)
-        // cannot yet coordinate correctly. See
-        // `testMidWeekPhaseStartWithAnAtCapacityMixPlacesEverySessionValidlyEvenWhenOneSpillsPastTheFirstCalendarWeek`'s
-        // doc comment for the full explanation.
-        throw XCTSkip("Stage 10R.1C: deferred `.rmBased` materialization does not yet coordinate with already-scheduled siblings under an at-capacity mixed-modality phase")
+    func testShortenedFirstCalendarWeekNoLongerReceivesAnySessionsUnderTheLockedContract() throws {
+        // Same fixture/mechanism as the test above. Before the locked
+        // contract, a shortened Wed-Sun first calendar week could
+        // legitimately hold fewer than the mix's nominal weekly total;
+        // now, it holds none at all — the whole notion of a "partial
+        // first calendar week" is gone for a brand-new plan.
+        let asOf = date(2026, 1, 7) // Wednesday
+        let fixture = try startVariedMix(asOf: asOf)
+        let allSessions = fixture.mix.orderedComponents.compactMap(\.programInstance).flatMap(\.sessions)
+
+        let sunday = Calendar.current.startOfDay(for: date(2026, 1, 11))
+        let shortenedFirstWeekSessions = allSessions.filter { Calendar.current.startOfDay(for: $0.day?.date ?? .distantPast) <= sunday }
+        XCTAssertEqual(shortenedFirstWeekSessions.count, 0, "the shortened Wed-Sun stretch before the resolved Monday must contain ZERO sessions — never a partial-week placement, never fabricated debt")
+
+        // No false missed sessions: every real session remains a normal,
+        // real, `.scheduled` Session — the locked contract is expressed
+        // entirely through WHERE sessions land, never through their status.
+        for session in allSessions {
+            XCTAssertEqual(session.status, .scheduled, "\(session.name) must not be marked missed purely due to the start-of-plan rule")
+        }
     }
 
     // MARK: D/E/F — the deferred (lowest-priority) session preserves cadence: no calendar week ever receives more than one, and no debt accumulates into a later week

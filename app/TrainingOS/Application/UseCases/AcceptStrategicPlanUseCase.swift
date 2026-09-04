@@ -30,7 +30,20 @@ enum AcceptStrategicPlanUseCase {
         lineageID: UUID? = nil,
         decisionType: PlannerDecisionType = .phaseSelected,
         decisionReasonCode: PlannerReasonCode = .phaseSelectedForGoal,
-        decisionSource: DecisionSource = .systemRecommended
+        decisionSource: DecisionSource = .systemRecommended,
+        /// V1 R0 (mid-week start / no-double production bug fix): whether
+        /// this acceptance should apply the "a brand-new plan's first
+        /// tactical week begins on a genuine calendar-week boundary" rule
+        /// (`LongTermPlanner.resolvedInitialPlanStartDate`). Defaults to
+        /// `true` for every REAL athlete acceptance path. `SeedAnnualPlanJourney`
+        /// is the one disclosed, deliberate exception: it simulates an
+        /// athlete already MONTHS into an existing plan for internal
+        /// dev/demo purposes, with every phase's date deliberately
+        /// computed relative to its own `planAcceptedAt` — never a real
+        /// athlete's actual first-run acceptance moment — so it explicitly
+        /// passes `false` here. This is a narrow, disclosed opt-out, never
+        /// a second start-date concept.
+        alignFirstPhaseToFullCalendarWeek: Bool = true
     ) throws -> TrainingPlan {
         switch proposal.feasibility {
         case .feasible: break
@@ -54,9 +67,33 @@ enum AcceptStrategicPlanUseCase {
         context.insert(plan)
         proposal.goal.addPlan(plan)
 
+        // V1 R0 (mid-week start / no-double production bug fix): a
+        // BRAND-NEW plan's first tactical/source-backed week may only
+        // ever be a genuine full calendar week (`LongTermPlanner
+        // .resolvedInitialPlanStartDate`'s own doc comment has the full
+        // architectural reasoning). `supersedes == nil` is this method's
+        // own already-existing, exact signal for "this is a first-ever
+        // plan, not a revision" — a revision/transition's own proposal
+        // (`supersedes` set) is deliberately never shifted, matching the
+        // locked "start-of-plan rule only" scope. Every phase in the
+        // proposal shifts by the SAME fixed time interval, so the whole
+        // already-reconciled sequence's contiguity/duration is preserved
+        // exactly — this never re-derives or repeats any dated-objective/
+        // reconciliation math, only moves where on the calendar the
+        // already-correct sequence lands.
+        let startDateShift: TimeInterval
+        if alignFirstPhaseToFullCalendarWeek, supersedes == nil, let firstPhaseStart = proposal.phases.first?.startDate {
+            let resolvedStart = LongTermPlanner.resolvedInitialPlanStartDate(asOf: firstPhaseStart)
+            startDateShift = resolvedStart.timeIntervalSince(firstPhaseStart)
+        } else {
+            startDateShift = 0
+        }
+
         for proposedPhase in proposal.phases {
             let phase = TrainingPhase(
-                type: proposedPhase.type, startDate: proposedPhase.startDate, endDate: proposedPhase.endDate,
+                type: proposedPhase.type,
+                startDate: proposedPhase.startDate.addingTimeInterval(startDateShift),
+                endDate: proposedPhase.endDate.map { $0.addingTimeInterval(startDateShift) },
                 priorityRule: proposedPhase.priorityRule, status: .planned
             )
             context.insert(phase)
