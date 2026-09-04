@@ -1031,7 +1031,29 @@ enum LongTermPlanner {
                 (fatLossVariedMix(), codes),
             ]
         case .strength:
-            return [(strengthFocusedMix(), [.phaseSelectedForGoal])]
+            // V1 "Goal ≠ Training Method" checkpoint fix: `.strength` had
+            // exactly ONE candidate — `strengthFocusedMix()` (4x
+            // Powerlifting) — so no stated preference (e.g. "especially
+            // want Hypertrophy + Functional Fitness") could ever be
+            // reflected in the recommendation, no matter how strong the
+            // signal; `rankCandidateMixes` §5b can only promote AMONG
+            // candidates it is given. This was a real candidate-library
+            // gap (dogfooding bug: General Strength + Hypertrophy/
+            // Functional-Fitness preference still recommended 4x
+            // Powerlifting), not a ranking-logic defect. Fix: expose the
+            // real, already-existing `muscleGainVariedMix()` ("Strength
+            // Plus Variety" — Strength/Hypertrophy + Functional Fitness +
+            // Running) as a second `.strength` candidate too — reusing a
+            // real, already-tested template from a different phase type,
+            // never fabricating a new one. §5a/§5b's existing gate-then-
+            // promote logic then naturally surfaces whichever candidate
+            // actually matches the athlete's stated preference, while
+            // `strengthFocusedMix()` is still always shown (never hidden)
+            // as the `.bestGoalAlignment` alternative when it isn't chosen.
+            return [
+                (strengthFocusedMix(), [.phaseSelectedForGoal]),
+                (muscleGainVariedMix(), [.phaseSelectedForGoal]),
+            ]
         case .enduranceEvent:
             // Dated Objectives + 10K Strategic Reconciliation V1: when
             // `.enduranceEvent` is NOT the primary goal's own phase type,

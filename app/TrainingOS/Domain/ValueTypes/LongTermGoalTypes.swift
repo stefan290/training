@@ -51,6 +51,59 @@ struct ModalityPreference: Codable, Equatable {
     }
 }
 
+// MARK: - Training Style (V1 "Goal ≠ Training Method" product correction)
+
+/// The athlete-facing vocabulary for "how do you like to train" —
+/// deliberately DISTINCT from both `GoalType` (the OUTCOME/Main Goal —
+/// what result the athlete wants) and `DatedObjective` (WHAT they want to
+/// be ready for, and when). Never shown alongside `ProgrammingSystemKind`/
+/// `ActivityType` raw case names in athlete-facing UI — this is the one
+/// translation layer between the two. A strict, deliberately small V1 set;
+/// `.strengthTraining` maps to `.powerlifting` rather than `.hypertrophy`
+/// specifically so it stays distinguishable from the separate
+/// `.hypertrophy` style (an athlete who wants both simply selects both).
+/// `.running`/`.cycling` are selectable independent of any dated
+/// objective/event — a 10K event changes running's strategic priority, it
+/// does not create the athlete's ability to prefer running as a style.
+enum TrainingStyle: String, Codable, CaseIterable, Identifiable {
+    case hypertrophy
+    case strengthTraining
+    case functionalFitness
+    case running
+    case cycling
+
+    var id: String { rawValue }
+
+    /// The one place a `TrainingStyle` becomes real `ModalityPreference`
+    /// vocabulary — used identically for both "especially want" and "I'd
+    /// rather avoid" (`STRATEGIC_PLAN_MODEL.md` §1d's existing
+    /// `ProgrammingSystemKind`/`ActivityType` fields, never a parallel
+    /// preference authority). Running/Cycling each expand to BOTH the
+    /// Steady State and Interval systems at their own activity, since a
+    /// real compatible mix may express either style through either
+    /// programming approach (`enduranceFocusedMix`/`enduranceVariedMix`).
+    var modalityPreferences: [ModalityPreference] {
+        switch self {
+        case .hypertrophy:
+            return [ModalityPreference(system: .hypertrophy)]
+        case .strengthTraining:
+            return [ModalityPreference(system: .powerlifting)]
+        case .functionalFitness:
+            return [ModalityPreference(system: .functionalFitness)]
+        case .running:
+            return [
+                ModalityPreference(system: .steadyState, activityType: .running),
+                ModalityPreference(system: .interval, activityType: .running),
+            ]
+        case .cycling:
+            return [
+                ModalityPreference(system: .steadyState, activityType: .cycling),
+                ModalityPreference(system: .interval, activityType: .cycling),
+            ]
+        }
+    }
+}
+
 /// `STRATEGIC_PLAN_MODEL.md` §13/`ADHERENCE_AWARE_PLANNING.md` §1 — a
 /// stated input, never a predicted quantity. Default `.moderate`.
 enum VarietyPreference: String, Codable, CaseIterable {

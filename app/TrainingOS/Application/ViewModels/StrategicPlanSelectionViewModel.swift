@@ -61,6 +61,38 @@ final class StrategicPlanSelectionViewModel {
     /// independent read (same reasoning as `StrategicTransitionViewModel
     /// .previewMixSummary`).
     var recommendedMixSummary: String? { reviewedMix.map(PlanPresentation.mixSummary) }
+    /// V1 "Goal ≠ Training Method" checkpoint: athlete-language "why this
+    /// fits" — e.g. "Recommended because your goal is to get stronger and
+    /// you said you enjoy hypertrophy and functional fitness." Derived
+    /// ONLY from real data already on hand this load (the goal's own Main
+    /// Goal label, plus whichever `TrainingStyle`s the athlete's real
+    /// stated `preferredModalities` and the real recommended mix's own
+    /// components both actually contain) — never fabricated copy, and
+    /// never a second planner call. The preference clause only appears
+    /// when the planner's own `.adherencePreferencePromotedAlternative`
+    /// reason code is present, i.e. a stated preference genuinely changed
+    /// which candidate was recommended (CLAUDE.md rule 16's discipline:
+    /// read the typed reason code, never re-derive/guess at intent).
+    var recommendationExplanation: String? {
+        guard let goal, let mix = reviewedMix else { return nil }
+        var text = "Recommended because your goal is to \(PlanPresentation.mainGoalLabel(goal.primaryType).lowercased())"
+
+        let wasPreferencePromoted = candidates.first { $0.mix.id == mix.id }?
+            .reasonCodes.contains(.adherencePreferencePromotedAlternative) ?? false
+        if wasPreferencePromoted {
+            let preferredSystems = Set(goal.preferences?.preferredModalities.map(\.system) ?? [])
+            let mixSystems = Set(mix.orderedComponents.compactMap(\.programmingSystem))
+            let matchedStyles = TrainingStyle.allCases.filter { style in
+                !Set(style.modalityPreferences.map(\.system)).isDisjoint(with: preferredSystems.intersection(mixSystems))
+            }
+            if !matchedStyles.isEmpty {
+                let names = matchedStyles.map(PlanPresentation.trainingStyleLabel).sorted().joined(separator: " and ")
+                text += ", and you said you enjoy \(names)"
+            }
+        }
+        text += "."
+        return text
+    }
     var phaseTypeLabels: [String] { proposal?.phases.map { PlanPresentation.phaseTypeLabel($0.type) } ?? [] }
     /// Dated Objectives + 10K Strategic Reconciliation V1: true when any
     /// proposed phase's own prep window was compressed below its ideal

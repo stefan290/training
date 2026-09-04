@@ -14,6 +14,45 @@ enum PlanPresentation {
         }
     }
 
+    /// V1 "Goal ≠ Training Method" checkpoint: the curated, athlete-facing
+    /// Main Goal (OUTCOME) options — deliberately excludes
+    /// `.functionalFitness` (a Training Style, `trainingStyleLabel` below)
+    /// from ever being iterated/selected as a Main Goal. Existing
+    /// persisted `Goal.primaryType == .functionalFitness` data (if any)
+    /// is never migrated or blocked by this — this is only which options
+    /// the picker itself offers going forward.
+    static let mainGoalOptions: [GoalType] = [.muscleGain, .generalStrength, .fatLoss, .enduranceEvent, .maintenance]
+
+    /// Athlete-facing OUTCOME phrasing for the Main Goal screen —
+    /// deliberately distinct from `goalTypeLabel` above (which stays the
+    /// more literal/internal-adjacent label used elsewhere, e.g. Plan
+    /// review surfaces predating this checkpoint). `.functionalFitness` is
+    /// never offered via `mainGoalOptions`, but the switch stays exhaustive
+    /// for the rare case a pre-existing Goal still carries it.
+    static func mainGoalLabel(_ type: GoalType) -> String {
+        switch type {
+        case .muscleGain: "Build Muscle"
+        case .generalStrength: "Get Stronger"
+        case .fatLoss: "Lose Fat"
+        case .enduranceEvent: "Improve Fitness & Endurance"
+        case .maintenance: "Maintain My Fitness"
+        case .functionalFitness: "Functional Fitness"
+        }
+    }
+
+    /// V1 "Goal ≠ Training Method" checkpoint: athlete-facing Training
+    /// Style labels — never "Powerlifting"/"Steady State"/"Intervals"/any
+    /// raw `ProgrammingSystemKind` name.
+    static func trainingStyleLabel(_ style: TrainingStyle) -> String {
+        switch style {
+        case .hypertrophy: "Hypertrophy"
+        case .strengthTraining: "Strength Training"
+        case .functionalFitness: "Functional Fitness"
+        case .running: "Running"
+        case .cycling: "Cycling"
+        }
+    }
+
     static func phaseTypeLabel(_ type: PhaseType) -> String {
         switch type {
         case .muscleGain: "Muscle Gain"

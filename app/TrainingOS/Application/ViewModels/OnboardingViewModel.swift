@@ -72,20 +72,20 @@ final class OnboardingViewModel {
     var varietyPreference: VarietyPreference = .moderate
     var availableTrainingDaysPerWeek: Int = 4
     var allowsDoubleSessions = false
-    /// Stage V1 dogfooding fix (Part 3): real, planner-consumed
-    /// preferences — `LongTermPlanner.isPreferenceAligned` already reads
-    /// `GoalPreferences.preferredModalities`/`.dislikedModalities`
-    /// (`system`-level `ProgrammingSystemKind`). No new planner semantics;
-    /// this is the previously-deferred onboarding surface for fields that
-    /// were already real.
-    var preferredSystems: Set<ProgrammingSystemKind> = []
-    var dislikedSystems: Set<ProgrammingSystemKind> = []
-    /// Only meaningful when `.steadyState` is in `dislikedSystems` —
-    /// preserves the real, existing system-vs-activity-level distinction
-    /// `ModalityPreference(system:activityType:)` already supports:
-    /// disliking `.steadyState` with `activityType: .running` blocks
-    /// running specifically, never all conditioning work.
-    var dislikesRunningSpecifically = false
+    /// V1 "Goal ≠ Training Method" checkpoint: the athlete-facing Training
+    /// Style vocabulary (`TrainingStyle`) — replaces the previous raw
+    /// `ProgrammingSystemKind` checkboxes (which leaked "Powerlifting"/
+    /// "Steady State"/"Intervals" verbatim to the athlete). Each style
+    /// expands to real `ModalityPreference`(s) via
+    /// `TrainingStyle.modalityPreferences` — the exact same
+    /// `GoalPreferences.preferredModalities`/`.dislikedModalities` fields
+    /// `LongTermPlanner.isPreferenceAligned`/`preferredActivityType` already
+    /// read; no new planner semantics. Running/Cycling being their own
+    /// explicit, activity-scoped styles means disliking one no longer
+    /// needs a separate "just running, not all conditioning" toggle — that
+    /// distinction is now inherent to which style was disliked.
+    var preferredTrainingStyles: Set<TrainingStyle> = []
+    var dislikedTrainingStyles: Set<TrainingStyle> = []
 
     /// Resumes at whichever real step this athlete's persisted state hasn't
     /// reached yet — never a separately-persisted "current step" field
@@ -111,11 +111,8 @@ final class OnboardingViewModel {
                 varietyPreference = preferences.varietyPreference
                 availableTrainingDaysPerWeek = preferences.availableTrainingDaysPerWeek ?? 4
                 allowsDoubleSessions = preferences.allowsDoubleSessions ?? false
-                preferredSystems = Set(preferences.preferredModalities.map(\.system))
-                dislikedSystems = Set(preferences.dislikedModalities.map(\.system))
-                dislikesRunningSpecifically = preferences.dislikedModalities.contains {
-                    $0.system == .steadyState && $0.activityType == .running
-                }
+                preferredTrainingStyles = trainingStyles(matching: preferences.preferredModalities)
+                dislikedTrainingStyles = trainingStyles(matching: preferences.dislikedModalities)
             }
             hasDefaultTrainingEnvironment = resolvedUser.profile?.defaultTrainingEnvironment != nil
             step = hasDefaultTrainingEnvironment ? .review : .environment
@@ -135,6 +132,22 @@ final class OnboardingViewModel {
     /// the locked spec is explicit that inventing that signal is out of
     /// scope; recent running activity at all only ever justifies the more
     /// conservative `.occasionalShorterDistances` tier.
+    /// Reverse-maps real, persisted `ModalityPreference`s back to the
+    /// athlete-facing `TrainingStyle`(s) that would have produced them — a
+    /// style counts as selected when EVERY one of its own
+    /// `modalityPreferences` is present (mirrors that `createOrUpdateGoal`
+    /// always writes a style's full set atomically). Legacy pre-checkpoint
+    /// data (a raw system-wide `ModalityPreference(system: .steadyState)`
+    /// with no `activityType`, from the previous raw-`ProgrammingSystemKind`
+    /// UI) does not match `.running`/`.cycling` — a disclosed, non-
+    /// destructive FOLLOW-UP (re-opening onboarding simply shows that style
+    /// unchecked; the athlete can re-select, nothing is corrupted or lost).
+    private func trainingStyles(matching modalities: [ModalityPreference]) -> Set<TrainingStyle> {
+        Set(TrainingStyle.allCases.filter { style in
+            style.modalityPreferences.allSatisfy(modalities.contains)
+        })
+    }
+
     private func suggestedRunningStartingState(user: User) -> RunningStartingState {
         guard let lastRun = user.performanceProfile?.activityProfile(for: .running)?.lastPerformedAt else {
             return .notCurrentlyRunning
@@ -193,17 +206,12 @@ final class OnboardingViewModel {
     /// reads a "draft" Goal state.
     private func createOrUpdateGoal(modelContext: ModelContext) {
         guard let user else { return }
-        // Stage V1 dogfooding fix (Part 3): the real system-vs-activity
-        // distinction `ModalityPreference(system:activityType:)` already
-        // supports — disliking `.steadyState` with `activityType: .running`
-        // blocks running specifically, never all conditioning work.
-        let dislikedModalities = dislikedSystems.map { system in
-            ModalityPreference(
-                system: system,
-                activityType: (system == .steadyState && dislikesRunningSpecifically) ? .running : nil
-            )
-        }
-        let preferredModalities = preferredSystems.map { ModalityPreference(system: $0) }
+        // V1 "Goal ≠ Training Method" checkpoint: each selected
+        // `TrainingStyle` expands to its own real `ModalityPreference`(s) —
+        // the single, shared mapping used for both "especially want" and
+        // "I'd rather avoid," never two separate translation tables.
+        let preferredModalities = preferredTrainingStyles.flatMap(\.modalityPreferences)
+        let dislikedModalities = dislikedTrainingStyles.flatMap(\.modalityPreferences)
         let preferences = GoalPreferences(
             preferredModalities: preferredModalities,
             dislikedModalities: dislikedModalities,

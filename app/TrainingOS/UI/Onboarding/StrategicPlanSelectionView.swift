@@ -45,11 +45,11 @@ struct StrategicPlanSelectionView: View {
                                 .foregroundStyle(Theme.attention)
                         }
                     } else if let mixSummary = viewModel.recommendedMixSummary {
-                        InfoSection(title: "RECOMMENDED TRAINING") {
+                        InfoSection(title: "RECOMMENDED FOR YOU") {
                             Text(mixSummary)
                                 .font(Theme.body)
                                 .foregroundStyle(Theme.textPrimary)
-                            Text("Chosen for your goal, training availability, and preferences.")
+                            Text(viewModel.recommendationExplanation ?? "Chosen for your goal, training availability, and preferences.")
                                 .font(Theme.label)
                                 .foregroundStyle(Theme.textSecondary)
                         }
@@ -71,7 +71,7 @@ struct StrategicPlanSelectionView: View {
                         }
 
                         if !viewModel.alternatives.isEmpty {
-                            InfoSection(title: "ALTERNATIVES") {
+                            InfoSection(title: "OTHER COMPATIBLE OPTIONS") {
                                 ForEach(viewModel.alternatives, id: \.mix.id) { candidate in
                                     Button {
                                         viewModel.selectAlternative(candidate)

@@ -63,7 +63,16 @@ struct OnboardingFlowView: View {
 
             ScrollView {
                 VStack(spacing: 12) {
-                    ForEach(GoalType.allCases, id: \.self) { type in
+                    // V1 "Goal ≠ Training Method" checkpoint: Main Goal is
+                    // the OUTCOME the athlete wants — `PlanPresentation
+                    // .mainGoalOptions` deliberately excludes
+                    // `.functionalFitness` (a Training Style, chosen on its
+                    // own step below) and `.enduranceEvent` is relabeled
+                    // "Improve Fitness & Endurance" here, never "Endurance
+                    // Event" (that phrase still names the internal
+                    // `PhaseType`/`GoalType`, just not what the athlete
+                    // reads on this screen).
+                    ForEach(PlanPresentation.mainGoalOptions, id: \.self) { type in
                         goalOptionRow(type)
                     }
                 }
@@ -103,7 +112,7 @@ struct OnboardingFlowView: View {
         } label: {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(PlanPresentation.goalTypeLabel(type))
+                    Text(PlanPresentation.mainGoalLabel(type))
                         .font(Theme.body)
                         .foregroundStyle(Theme.textPrimary)
                     Text(goalTypeDescription(type))
@@ -128,43 +137,67 @@ struct OnboardingFlowView: View {
     /// "Get leaner / Summer shape" option, which maps to the EXISTING
     /// `Goal.milestoneDate`/`.bodyCompositionDirection = .loseFat` fields,
     /// never a new persisted model.
+    /// V1 "Goal ≠ Training Method" checkpoint UX fix: two real, reported
+    /// bugs, both rooted in the same cause — the two objective types'
+    /// "add" affordances and edit panels were each gated independently,
+    /// with no shared "is something already being edited" state. Fixed by
+    /// (1) a single add affordance (`addObjectiveMenu`) whose LABEL alone
+    /// depends on whether any objective already exists (never two buttons
+    /// visible at once), and (2) gating every row/panel on `isEditingAnyObjective`
+    /// so only one editor can ever be open — tapping "Edit" on one
+    /// objective is impossible while the other's panel is open (its row,
+    /// including its own Edit button, is simply not shown until the
+    /// in-progress edit finishes).
+    private var isEditingAnyObjective: Bool { isAddingWorkingToward || isAddingRunningEvent }
+
     private var workingTowardSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Anything you're working toward?")
                 .font(Theme.body)
                 .foregroundStyle(Theme.textPrimary)
 
-            if viewModel.hasMilestone, !isAddingWorkingToward {
+            if viewModel.hasMilestone, !isEditingAnyObjective {
                 workingTowardRow
             }
-
             if isAddingWorkingToward {
                 addWorkingTowardPanel
-            } else if !viewModel.hasMilestone {
-                Button {
-                    viewModel.milestoneDate = Date().addingTimeInterval(90 * 86400)
-                    isAddingWorkingToward = true
-                } label: {
-                    Label("Add a goal or event", systemImage: "plus.circle")
-                        .font(Theme.body)
-                }
             }
 
-            if viewModel.hasRunningEvent, !isAddingRunningEvent {
+            if viewModel.hasRunningEvent, !isEditingAnyObjective {
                 runningEventRow
             }
-
             if isAddingRunningEvent {
                 addRunningEventPanel
-            } else if !viewModel.hasRunningEvent {
-                Button {
-                    viewModel.runningEventDate = Date().addingTimeInterval(120 * 86400)
-                    isAddingRunningEvent = true
-                } label: {
-                    Label("Add another goal or event", systemImage: "plus.circle")
-                        .font(Theme.body)
+            }
+
+            if !isEditingAnyObjective, !viewModel.hasMilestone || !viewModel.hasRunningEvent {
+                addObjectiveMenu
+            }
+        }
+    }
+
+    /// A single add affordance for both dated-objective types — never two
+    /// simultaneous "Add a goal/event" buttons. The label alone reflects
+    /// whether an objective already exists; which concrete type gets added
+    /// is chosen from the menu (only the not-yet-added type(s) appear).
+    private var addObjectiveMenu: some View {
+        let label = (viewModel.hasMilestone || viewModel.hasRunningEvent) ? "Add another goal or event" : "Add a goal or event"
+        return Menu {
+            if !viewModel.hasMilestone {
+                Button("Get leaner / Summer shape") {
+                    viewModel.milestoneDate = Date().addingTimeInterval(90 * 86400)
+                    isAddingWorkingToward = true
                 }
             }
+            if !viewModel.hasRunningEvent {
+                Button("10K Race") {
+                    viewModel.runningEventDate = Date().addingTimeInterval(120 * 86400)
+                    isAddingRunningEvent = true
+                }
+            }
+        } label: {
+            Label(label, systemImage: "plus.circle")
+                .font(Theme.body)
         }
     }
 
@@ -207,13 +240,14 @@ struct OnboardingFlowView: View {
                 .font(Theme.body)
                 .foregroundStyle(Theme.textPrimary)
                 .padding(.top, 4)
-            Picker("Where are you starting from?", selection: $viewModel.runningStartingState) {
-                Text("Not currently running").tag(RunningStartingState.notCurrentlyRunning)
-                Text("I run occasionally / shorter distances").tag(RunningStartingState.occasionalShorterDistances)
-                Text("I can comfortably run 10K").tag(RunningStartingState.comfortably10K)
-            }
-            .pickerStyle(.inline)
-            .labelsHidden()
+            // V1 "Goal ≠ Training Method" checkpoint UX fix (real-device
+            // bug): `.pickerStyle(.inline)` renders reliably inside a
+            // `List`/`Form` — this panel is a plain `VStack`, where an
+            // inline `Picker` is not guaranteed to render its options as
+            // visible, selectable rows at all. Replaced with the same
+            // explicit tappable-row pattern `goalOptionRow` already uses
+            // elsewhere in this same flow, which has no such dependency.
+            runningStartingStateOptions
             HStack {
                 Button("Cancel") { isAddingRunningEvent = false }
                     .font(Theme.label)
@@ -229,6 +263,38 @@ struct OnboardingFlowView: View {
         }
         .padding(14)
         .background(Theme.surfacePrimary, in: RoundedRectangle(cornerRadius: 12))
+    }
+
+    /// Explicit, always-visible/tappable rows for `RunningStartingState` —
+    /// see the UX-fix note at its call site in `addRunningEventPanel`.
+    private var runningStartingStateOptions: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ForEach(RunningStartingState.allCases, id: \.self) { state in
+                Button {
+                    viewModel.runningStartingState = state
+                } label: {
+                    HStack {
+                        Text(runningStartingStateLabel(state))
+                            .font(Theme.body)
+                            .foregroundStyle(Theme.textPrimary)
+                            .multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Spacer(minLength: 8)
+                        Image(systemName: viewModel.runningStartingState == state ? "checkmark.circle.fill" : "circle")
+                            .foregroundStyle(viewModel.runningStartingState == state ? Theme.primary : Theme.textSecondary)
+                    }
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private func runningStartingStateLabel(_ state: RunningStartingState) -> String {
+        switch state {
+        case .notCurrentlyRunning: "Not currently running"
+        case .occasionalShorterDistances: "I run occasionally / shorter distances"
+        case .comfortably10K: "I can comfortably run 10K"
+        }
     }
 
     /// Shows the athlete's own already-chosen intent directly — never an
@@ -323,12 +389,19 @@ struct OnboardingFlowView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 
-    /// Stage V1 dogfooding fix (Part 3): `preferredModalities`/
-    /// `dislikedModalities` are real, already-planner-consumed fields
-    /// (`LongTermPlanner.isPreferenceAligned`) — this is only the
-    /// previously-deferred onboarding surface for them, using the real
-    /// `ProgrammingSystemKind` vocabulary and existing `PlanPresentation`
-    /// labels, never internal enum names.
+    /// V1 "Goal ≠ Training Method" checkpoint: TRAINING STYLE, a third
+    /// concept distinct from Main Goal (OUTCOME) and dated objectives
+    /// (WHAT/WHEN) — `preferredModalities`/`dislikedModalities` are real,
+    /// already-planner-consumed fields (`LongTermPlanner
+    /// .isPreferenceAligned`); this surfaces them through the athlete-
+    /// facing `TrainingStyle` vocabulary (`PlanPresentation
+    /// .trainingStyleLabel`) instead of the previous raw
+    /// `ProgrammingSystemKind` checkboxes, which leaked "Powerlifting"/
+    /// "Steady State"/"Intervals" verbatim. Running and Cycling are each
+    /// their own explicit, activity-scoped style — disliking one no
+    /// longer needs a separate "just running, not all conditioning"
+    /// toggle; that distinction is now inherent to which style was
+    /// disliked (`TrainingStyle.modalityPreferences`).
     private var modalityPreferencesStep: some View {
         Form {
             Section {
@@ -337,16 +410,13 @@ struct OnboardingFlowView: View {
                     .foregroundStyle(Theme.textSecondary)
             }
             Section("I especially want") {
-                ForEach(ProgrammingSystemKind.allCases, id: \.self) { system in
-                    Toggle(PlanPresentation.programmingSystemLabel(system), isOn: preferredBinding(system))
+                ForEach(TrainingStyle.allCases) { style in
+                    Toggle(PlanPresentation.trainingStyleLabel(style), isOn: preferredBinding(style))
                 }
             }
             Section("I'd rather avoid") {
-                ForEach(ProgrammingSystemKind.allCases, id: \.self) { system in
-                    Toggle(PlanPresentation.programmingSystemLabel(system), isOn: dislikedBinding(system))
-                }
-                if viewModel.dislikedSystems.contains(.steadyState) {
-                    Toggle("Just running — other conditioning is fine", isOn: $viewModel.dislikesRunningSpecifically)
+                ForEach(TrainingStyle.allCases) { style in
+                    Toggle(PlanPresentation.trainingStyleLabel(style), isOn: dislikedBinding(style))
                 }
             }
             Section {
@@ -360,20 +430,20 @@ struct OnboardingFlowView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 
-    private func preferredBinding(_ system: ProgrammingSystemKind) -> Binding<Bool> {
+    private func preferredBinding(_ style: TrainingStyle) -> Binding<Bool> {
         Binding(
-            get: { viewModel.preferredSystems.contains(system) },
+            get: { viewModel.preferredTrainingStyles.contains(style) },
             set: { isOn in
-                if isOn { viewModel.preferredSystems.insert(system) } else { viewModel.preferredSystems.remove(system) }
+                if isOn { viewModel.preferredTrainingStyles.insert(style) } else { viewModel.preferredTrainingStyles.remove(style) }
             }
         )
     }
 
-    private func dislikedBinding(_ system: ProgrammingSystemKind) -> Binding<Bool> {
+    private func dislikedBinding(_ style: TrainingStyle) -> Binding<Bool> {
         Binding(
-            get: { viewModel.dislikedSystems.contains(system) },
+            get: { viewModel.dislikedTrainingStyles.contains(style) },
             set: { isOn in
-                if isOn { viewModel.dislikedSystems.insert(system) } else { viewModel.dislikedSystems.remove(system) }
+                if isOn { viewModel.dislikedTrainingStyles.insert(style) } else { viewModel.dislikedTrainingStyles.remove(style) }
             }
         )
     }
@@ -395,34 +465,57 @@ struct OnboardingFlowView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 
+    /// V1 "Goal ≠ Training Method" checkpoint: 5 distinct sections, only
+    /// shown when they apply — MAIN GOAL and TRAINING always do; TRAINING
+    /// STYLES only when the athlete stated any; WORKING TOWARD only when a
+    /// dated objective exists. Training Styles are never folded into or
+    /// labeled as the Main Goal section — the whole point of this
+    /// checkpoint is keeping OUTCOME/STYLE/DATED-OBJECTIVE visibly
+    /// separate on the one screen that summarizes all three.
     private var reviewStep: some View {
         VStack(alignment: .leading, spacing: 20) {
             Text("Review")
                 .font(Theme.heading)
                 .foregroundStyle(Theme.textPrimary)
 
-            VStack(alignment: .leading, spacing: 12) {
-                reviewRow("Main Goal", PlanPresentation.goalTypeLabel(viewModel.selectedGoalType))
-                if viewModel.hasMilestone {
-                    reviewRow("Working Toward", "Summer Shape — \(viewModel.milestoneDate.formatted(date: .abbreviated, time: .omitted))")
-                }
-                if viewModel.hasRunningEvent {
-                    reviewRow("Working Toward", "10K Race — \(viewModel.runningEventDate.formatted(date: .abbreviated, time: .omitted))")
-                }
-                reviewRow("Training days/week", "\(viewModel.availableTrainingDaysPerWeek)")
-                reviewRow("Variety", viewModel.varietyPreference.rawValue.capitalized)
-                if !viewModel.preferredSystems.isEmpty {
-                    reviewRow("Especially want", viewModel.preferredSystems.map(PlanPresentation.programmingSystemLabel).sorted().joined(separator: ", "))
-                }
-                if !viewModel.dislikedSystems.isEmpty {
-                    reviewRow("Rather avoid", viewModel.dislikedSystems.map(PlanPresentation.programmingSystemLabel).sorted().joined(separator: ", "))
-                }
-                reviewRow("Training Environment", viewModel.user?.profile?.defaultTrainingEnvironment?.name ?? "Not set")
-            }
-            .padding(14)
-            .background(Theme.surfacePrimary, in: RoundedRectangle(cornerRadius: 12))
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    reviewSection("MAIN GOAL") {
+                        reviewRow("Goal", PlanPresentation.mainGoalLabel(viewModel.selectedGoalType))
+                    }
 
-            Spacer()
+                    reviewSection("TRAINING") {
+                        reviewRow("Days/week", "\(viewModel.availableTrainingDaysPerWeek)")
+                        reviewRow("Variety", viewModel.varietyPreference.rawValue.capitalized)
+                    }
+
+                    if !viewModel.preferredTrainingStyles.isEmpty || !viewModel.dislikedTrainingStyles.isEmpty {
+                        reviewSection("TRAINING STYLES") {
+                            if !viewModel.preferredTrainingStyles.isEmpty {
+                                reviewRow("Especially want", viewModel.preferredTrainingStyles.map(PlanPresentation.trainingStyleLabel).sorted().joined(separator: ", "))
+                            }
+                            if !viewModel.dislikedTrainingStyles.isEmpty {
+                                reviewRow("Rather avoid", viewModel.dislikedTrainingStyles.map(PlanPresentation.trainingStyleLabel).sorted().joined(separator: ", "))
+                            }
+                        }
+                    }
+
+                    if viewModel.hasMilestone || viewModel.hasRunningEvent {
+                        reviewSection("WORKING TOWARD") {
+                            if viewModel.hasMilestone {
+                                reviewRow("Summer Shape", viewModel.milestoneDate.formatted(date: .abbreviated, time: .omitted))
+                            }
+                            if viewModel.hasRunningEvent {
+                                reviewRow("10K Race", viewModel.runningEventDate.formatted(date: .abbreviated, time: .omitted))
+                            }
+                        }
+                    }
+
+                    reviewSection("TRAINING ENVIRONMENT") {
+                        reviewRow("Environment", viewModel.user?.profile?.defaultTrainingEnvironment?.name ?? "Not set")
+                    }
+                }
+            }
 
             Button("Start Training with TrainingOS") { onComplete() }
                 .buttonStyle(.borderedProminent)
@@ -434,11 +527,38 @@ struct OnboardingFlowView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 
+    private func reviewSection<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(Theme.label)
+                .foregroundStyle(Theme.textSecondary)
+            VStack(alignment: .leading, spacing: 10) {
+                content()
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Theme.surfacePrimary, in: RoundedRectangle(cornerRadius: 12))
+        }
+    }
+
+    /// V1 "Goal ≠ Training Method" checkpoint UX fix (real-device
+    /// truncation bug): `.fixedSize(horizontal: false, vertical: true)`
+    /// forces the value to wrap onto additional lines instead of being
+    /// compressed/truncated when it's long (e.g. several joined Training
+    /// Style names) — the standard SwiftUI fix for a trailing `Text` in an
+    /// `HStack` that would otherwise clip.
     private func reviewRow(_ label: String, _ value: String) -> some View {
-        HStack {
-            Text(label).font(Theme.label).foregroundStyle(Theme.textSecondary)
-            Spacer()
-            Text(value).font(Theme.body).foregroundStyle(Theme.textPrimary)
+        HStack(alignment: .top) {
+            Text(label)
+                .font(Theme.label)
+                .foregroundStyle(Theme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 12)
+            Text(value)
+                .font(Theme.body)
+                .foregroundStyle(Theme.textPrimary)
+                .multilineTextAlignment(.trailing)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }
