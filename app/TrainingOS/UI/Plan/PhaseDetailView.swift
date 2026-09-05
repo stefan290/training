@@ -72,7 +72,7 @@ struct PhaseDetailView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(14)
-                .background(Theme.primary, in: RoundedRectangle(cornerRadius: 12))
+                .background(Theme.primary, in: RoundedRectangle(cornerRadius: Theme.cardCornerRadius))
             }
             .buttonStyle(.plain)
         } else if viewModel.isFinalStrategicPhaseComplete {
@@ -105,8 +105,7 @@ struct PhaseDetailView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(Theme.surfacePrimary, in: RoundedRectangle(cornerRadius: 12))
+        .trainingOSCard()
     }
 
     // MARK: Active — the full "Current Phase" detail
@@ -397,19 +396,20 @@ struct PhaseDetailView: View {
     }
 }
 
+/// V1 R3 (Plan/strategic spine reconciliation): restyled onto the R1
+/// design foundation (`SectionHeader`/`.trainingOSCard()`) — zero change
+/// to what any caller passes in or how `PhaseDetailViewModel`'s own
+/// already-real state drives this view.
 private struct InfoCard<Content: View>: View {
     let title: String
     @ViewBuilder let content: Content
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(title)
-                .font(Theme.label)
-                .foregroundStyle(Theme.primary)
+            SectionHeader(title: title, color: Theme.primary)
             content
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(Theme.surfacePrimary, in: RoundedRectangle(cornerRadius: 12))
+        .trainingOSCard()
     }
 }

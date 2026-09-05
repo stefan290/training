@@ -119,4 +119,15 @@ enum PlanPresentation {
     static func mixSummary(_ mix: TrainingMix) -> String {
         mix.orderedComponents.map(componentSummary).joined(separator: " + ")
     }
+
+    /// V1 R3 (Plan/strategic spine reconciliation): the same athlete-
+    /// facing objective vocabulary already established during onboarding
+    /// (`OnboardingFlowView`'s own "Summer Shape"/"10K Race" rows) — reused
+    /// here, never a second/renamed label for the same real concept.
+    static func datedObjectiveLabel(_ objective: DatedObjective) -> String {
+        switch objective.kind {
+        case .bodyCompositionMilestone: "Summer Shape"
+        case .runningEvent: "10K Race"
+        }
+    }
 }
