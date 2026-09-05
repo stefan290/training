@@ -292,6 +292,7 @@
 		B2E1F5D09A344AFE9DFCC524 /* ActivitySelectionOverride.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB0FE8E2F37542C58588737F /* ActivitySelectionOverride.swift */; };
 		B50F6EB197E54491B7C0AF0D /* IntervalTimerResolutionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A50B7F2EEDA4E4EAA89C021 /* IntervalTimerResolutionTests.swift */; };
 		B6D54E9A81CD9A6CAE70C838 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53484F589FD15FDA6F0485E3 /* Theme.swift */; };
+		A1B2C3D4E5F607182930A1B2 /* TrainingOSComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2D3E4F506172839405162B3 /* TrainingOSComponents.swift */; };
 		B8C24931BBFCEEF452E84C0E /* Day.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80CF49528A06C5309907B942 /* Day.swift */; };
 		B98BC5662FAB42929AAAB101 /* CompletedHistoryPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7B1CE4E11D4488488940A7A /* CompletedHistoryPresentation.swift */; };
 		B9FE91BFF20644C38A34762A /* MuscleGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 236BAED98B284202AFDC7F53 /* MuscleGroup.swift */; };
@@ -340,6 +341,7 @@
 		3AB52E63B3669CC9DCC8B2B3 /* DatedObjectivesReconciliationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2F006955E7709C55A212353 /* DatedObjectivesReconciliationTests.swift */; };
 		388B0B811147F15595A30B0F /* GoalTrainingStyleProductModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C093ACEA23826CB022DB286 /* GoalTrainingStyleProductModelTests.swift */; };
 		D9B5F8A857DC40D48F875526 /* ExplicitWeeklyCompositionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24A683B4C2F648368F9EC1C5 /* ExplicitWeeklyCompositionTests.swift */; };
+		F1E2D3C4B5A607182930F1E2 /* TodayViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A6B5C4D3E2F108293A4B5C6 /* TodayViewModelTests.swift */; };
 		E2E2196CDE83C072DDD7536A /* MidWeekNoDoubleCompositionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56AD95F3FE9601F97ECFEF1D /* MidWeekNoDoubleCompositionTests.swift */; };
 		D9D293EF687D4C9E8EFC61C7 /* SubstitutionAwareRecommendation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E87ABA502914319A82C1265 /* SubstitutionAwareRecommendation.swift */; };
 		DA0815C3588E4254B7572296 /* CandidateTrainingMix.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D3D37D834944F9FACAF4B03 /* CandidateTrainingMix.swift */; };
@@ -499,6 +501,7 @@
 		51583999363247E0B8E3F8A9 /* SteadyStateProgressionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SteadyStateProgressionEngine.swift; path = SteadyStateProgressionEngine.swift; sourceTree = "<group>"; };
 		528841C8B1BA640B0D7CFF1F /* TrainingOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TrainingOSApp.swift; path = TrainingOSApp.swift; sourceTree = "<group>"; };
 		53484F589FD15FDA6F0485E3 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Theme.swift; path = Theme.swift; sourceTree = "<group>"; };
+		C2D3E4F506172839405162B3 /* TrainingOSComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TrainingOSComponents.swift; path = TrainingOSComponents.swift; sourceTree = "<group>"; };
 		5431AFF9B89347E69AD3AA56 /* SchedulingPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SchedulingPipeline.swift; path = SchedulingPipeline.swift; sourceTree = "<group>"; };
 		548555B1729E665AC98063B5 /* WeekNavigationAndUpcomingPhasePreviewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WeekNavigationAndUpcomingPhasePreviewTests.swift; path = WeekNavigationAndUpcomingPhasePreviewTests.swift; sourceTree = "<group>"; };
 		587C213741DA4FC3BC0B97CD /* FunctionalFitnessProgramGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FunctionalFitnessProgramGenerator.swift; path = FunctionalFitnessProgramGenerator.swift; sourceTree = "<group>"; };
@@ -715,6 +718,7 @@
 		A2F006955E7709C55A212353 /* DatedObjectivesReconciliationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DatedObjectivesReconciliationTests.swift; path = DatedObjectivesReconciliationTests.swift; sourceTree = "<group>"; };
 		5C093ACEA23826CB022DB286 /* GoalTrainingStyleProductModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = GoalTrainingStyleProductModelTests.swift; path = GoalTrainingStyleProductModelTests.swift; sourceTree = "<group>"; };
 		24A683B4C2F648368F9EC1C5 /* ExplicitWeeklyCompositionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExplicitWeeklyCompositionTests.swift; path = ExplicitWeeklyCompositionTests.swift; sourceTree = "<group>"; };
+		7A6B5C4D3E2F108293A4B5C6 /* TodayViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TodayViewModelTests.swift; path = TodayViewModelTests.swift; sourceTree = "<group>"; };
 		56AD95F3FE9601F97ECFEF1D /* MidWeekNoDoubleCompositionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MidWeekNoDoubleCompositionTests.swift; path = MidWeekNoDoubleCompositionTests.swift; sourceTree = "<group>"; };
 		D642401D83068E564FDA98F1 /* PersistenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PersistenceController.swift; path = PersistenceController.swift; sourceTree = "<group>"; };
 		D6BA8738E2EE4513B27BAF41 /* CompletedFunctionalFitnessDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CompletedFunctionalFitnessDetail.swift; path = CompletedFunctionalFitnessDetail.swift; sourceTree = "<group>"; };
@@ -1209,6 +1213,7 @@
 				A2F006955E7709C55A212353 /* DatedObjectivesReconciliationTests.swift */,
 				5C093ACEA23826CB022DB286 /* GoalTrainingStyleProductModelTests.swift */,
 				24A683B4C2F648368F9EC1C5 /* ExplicitWeeklyCompositionTests.swift */,
+				7A6B5C4D3E2F108293A4B5C6 /* TodayViewModelTests.swift */,
 				56AD95F3FE9601F97ECFEF1D /* MidWeekNoDoubleCompositionTests.swift */,
 				3F68524FCF48458397F19E9B /* LongTermPlannerRevisionTests.swift */,
 				96957ECF3701403F946023B8 /* TemporaryPreferenceAndModalitySwitchTests.swift */,
@@ -1369,6 +1374,7 @@
 			isa = PBXGroup;
 			children = (
 				53484F589FD15FDA6F0485E3 /* Theme.swift */,
+				C2D3E4F506172839405162B3 /* TrainingOSComponents.swift */,
 			);
 			name = Theme;
 			path = Theme;
@@ -1561,6 +1567,7 @@
 				3AB52E63B3669CC9DCC8B2B3 /* DatedObjectivesReconciliationTests.swift in Sources */,
 				388B0B811147F15595A30B0F /* GoalTrainingStyleProductModelTests.swift in Sources */,
 				D9B5F8A857DC40D48F875526 /* ExplicitWeeklyCompositionTests.swift in Sources */,
+				F1E2D3C4B5A607182930F1E2 /* TodayViewModelTests.swift in Sources */,
 				E2E2196CDE83C072DDD7536A /* MidWeekNoDoubleCompositionTests.swift in Sources */,
 				9DC345C6A3A5410F840C85AC /* LongTermPlannerRevisionTests.swift in Sources */,
 				CB4485429B55490D841976B4 /* TemporaryPreferenceAndModalitySwitchTests.swift in Sources */,
@@ -1623,6 +1630,7 @@
 				F7C3EE0B5EE21DB907682359 /* PhaseDetailView.swift in Sources */,
 				FE745E3F528AFF27057B94F9 /* StrategicPhaseTransitionSheet.swift in Sources */,
 				B6D54E9A81CD9A6CAE70C838 /* Theme.swift in Sources */,
+				A1B2C3D4E5F607182930A1B2 /* TrainingOSComponents.swift in Sources */,
 				355E4F519569B26DB7E6814D /* RootTabView.swift in Sources */,
 				E8BC41AAB80633416FED8810 /* ProgressView.swift in Sources */,
 				0A39407AAB8E500DCA5A5C1F /* SteadyStatePrescription.swift in Sources */,

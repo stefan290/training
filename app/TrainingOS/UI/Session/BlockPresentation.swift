@@ -67,6 +67,30 @@ enum BlockPresentation {
         return prescriptions.compactMap { $0.exercise?.canonicalName }
     }
 
+    /// V1 R2 (Today reconciliation): a human label for `WorkoutBlockType`
+    /// — Today's block-type eyebrow previously rendered the raw enum case
+    /// (`block.type.rawValue.uppercased()`), which reads correctly for
+    /// most cases but produces "STEADYSTATE"/"FORTIME"/"AMROP"-style
+    /// concatenated internal terminology for the camelCase cases. Never a
+    /// business decision, purely a display string, same purpose as every
+    /// other function in this file.
+    static func blockTypeLabel(_ type: WorkoutBlockType) -> String {
+        switch type {
+        case .warmup: "Warm-up"
+        case .strength: "Strength"
+        case .hypertrophy: "Hypertrophy"
+        case .accessory: "Accessory"
+        case .steadyState: "Steady State"
+        case .intervals: "Intervals"
+        case .amrap: "AMRAP"
+        case .emom: "EMOM"
+        case .forTime: "For Time"
+        case .cooldown: "Cooldown"
+        case .mobility: "Mobility"
+        case .functionalFitness: "Functional Fitness"
+        }
+    }
+
     static func statusLabel(_ block: WorkoutBlock) -> String {
         switch block.status {
         case .pending: "Pending"

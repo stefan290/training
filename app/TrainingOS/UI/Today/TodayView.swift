@@ -3,6 +3,14 @@ import SwiftData
 
 /// Renders whatever the ViewModel loaded. No querying, sorting or
 /// filtering happens here — that is TodayViewModel's job.
+///
+/// V1 R2 "Today reconciliation" checkpoint: rebuilt on the R1 design
+/// foundation (`Theme`/`TrainingOSCard`/`SectionHeader`) to answer the
+/// approved product's one locked question — "what am I doing today?" —
+/// truthfully across every real domain state, including the R0 "a
+/// brand-new plan's first tactical week begins on a genuine calendar
+/// week" upcoming-start state. No ViewModel/domain behavior changed;
+/// only presentation.
 struct TodayView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var viewModel = TodayViewModel()
@@ -33,21 +41,50 @@ struct TodayView: View {
     /// Environment configuration directly, the only piece TE.1 needs.
     @State private var showingTrainingEnvironmentSettings = false
 
+    /// The one session this screen treats as primary — the first not-yet-
+    /// finished Session if any exist, otherwise the first Session (every
+    /// Session for today already completed/terminal). Never reorders
+    /// `viewModel.sessions` itself; only picks which one leads.
+    private var primarySession: Session? {
+        viewModel.sessions.first { $0.status == .scheduled || $0.status == .inProgress } ?? viewModel.sessions.first
+    }
+
+    private var secondarySessions: [Session] {
+        guard let primarySession else { return [] }
+        return viewModel.sessions.filter { $0.id != primarySession.id }
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
-                if viewModel.sessions.isEmpty {
-                    ContentUnavailableView("No sessions today", systemImage: "calendar")
-                        .padding(.top, 60)
-                } else {
-                    VStack(alignment: .leading, spacing: 20) {
-                        ForEach(viewModel.sessions) { session in
+                VStack(alignment: .leading, spacing: 20) {
+                    header
+
+                    if let primarySession {
+                        if viewModel.sessions.count > 1 {
+                            SectionHeader(title: sessionEyebrow(for: primarySession, isPrimary: true))
+                        }
+                        NavigationLink {
+                            SessionDetailView(session: primarySession, onChange: {
+                                viewModel.load(modelContext: modelContext)
+                            })
+                        } label: {
+                            SessionHeroCard(
+                                session: primarySession,
+                                onStart: { readinessGateSession = primarySession },
+                                onMarkMissed: { viewModel.markMissed(primarySession, modelContext: modelContext) }
+                            )
+                        }
+                        .buttonStyle(.plain)
+
+                        ForEach(secondarySessions) { session in
+                            SectionHeader(title: sessionEyebrow(for: session, isPrimary: false))
                             NavigationLink {
                                 SessionDetailView(session: session, onChange: {
                                     viewModel.load(modelContext: modelContext)
                                 })
                             } label: {
-                                SessionCard(
+                                SessionSecondaryCard(
                                     session: session,
                                     onStart: { readinessGateSession = session },
                                     onMarkMissed: { viewModel.markMissed(session, modelContext: modelContext) }
@@ -55,42 +92,55 @@ struct TodayView: View {
                             }
                             .buttonStyle(.plain)
                         }
-
-                        // Part D/U: Today's simple route to the full
-                        // training week — never itself becoming the
-                        // planner.
-                        NavigationLink {
-                            WeekView()
-                        } label: {
-                            Label("View Week", systemImage: "calendar")
-                                .font(Theme.body)
-                                .foregroundStyle(Theme.primary)
-                        }
-                        .padding(.top, 4)
-                        // Stage V1 dogfooding fix (Part 5): the Stage 8B
-                        // manual-acceptance debug button removed. Even
-                        // `#if DEBUG`-gated, it inserted real, ad-hoc
-                        // Session rows directly into the same real store an
-                        // athlete's own real Sessions live in — reachable
-                        // during exactly the kind of Debug-configuration
-                        // build real-device dogfooding uses. The underlying
-                        // `DebugAcceptanceFixturesUseCase` and its own
-                        // dedicated test coverage
-                        // (`DebugAcceptanceFixturesUseCaseTests`) are
-                        // untouched — only this athlete-facing trigger is
-                        // removed.
+                    } else if let upcoming = viewModel.upcomingPlanStart {
+                        UpcomingPlanStartCard(upcoming: upcoming)
+                    } else {
+                        RestDayCard(phaseType: viewModel.currentPhaseType)
                     }
-                    .padding(16)
+
+                    // Part D/U: Today's simple route to the full
+                    // training week — never itself becoming the
+                    // planner.
+                    NavigationLink {
+                        WeekView()
+                    } label: {
+                        Label("View Week", systemImage: "calendar")
+                            .font(Theme.body)
+                            .foregroundStyle(Theme.primary)
+                    }
+                    .padding(.top, 4)
+                    // Stage V1 dogfooding fix (Part 5): the Stage 8B
+                    // manual-acceptance debug button removed. Even
+                    // `#if DEBUG`-gated, it inserted real, ad-hoc
+                    // Session rows directly into the same real store an
+                    // athlete's own real Sessions live in — reachable
+                    // during exactly the kind of Debug-configuration
+                    // build real-device dogfooding uses. The underlying
+                    // `DebugAcceptanceFixturesUseCase` and its own
+                    // dedicated test coverage
+                    // (`DebugAcceptanceFixturesUseCaseTests`) are
+                    // untouched — only this athlete-facing trigger is
+                    // removed.
                 }
+                .padding(Theme.screenPadding)
             }
             .background(Theme.ground)
+            // Accessibility: kept as a real (if visually secondary)
+            // navigation title so VoiceOver/screen-name context is never
+            // lost even though the screen's own large header carries the
+            // primary visual answer — the artifact's own header design
+            // never shows a system nav bar title at all, but removing it
+            // outright would be an accessibility regression this
+            // checkpoint's own "preserve or improve accessibility"
+            // instruction forbids trading away for pixel fidelity.
             .navigationTitle("Today")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         showingTrainingEnvironmentSettings = true
                     } label: {
-                        Image(systemName: "person.crop.circle")
+                        ProfileAvatarGlyph()
                     }
                     .accessibilityLabel("Profile")
                 }
@@ -113,30 +163,55 @@ struct TodayView: View {
             TrainingEnvironmentSettingsView()
         }
     }
+
+    /// The date/title header answering "what am I doing today" at a
+    /// glance — the artifact's own recurring "uppercase date eyebrow +
+    /// large direct-answer title" pattern (screen 06). The title itself
+    /// is the one place this screen states its own overall answer before
+    /// any card detail.
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(Date().formatted(.dateTime.weekday(.wide).day().month(.wide)).uppercased())
+                .font(Theme.eyebrow)
+                .tracking(1.4)
+                .foregroundStyle(Theme.textSecondary)
+            Text(headerTitle)
+                .font(Theme.headingXL)
+                .foregroundStyle(Theme.textPrimary)
+        }
+    }
+
+    private var headerTitle: String {
+        if viewModel.sessions.count > 1 { return "\(viewModel.sessions.count) sessions" }
+        if let session = primarySession { return session.name }
+        if viewModel.upcomingPlanStart != nil { return "Not started yet" }
+        return "Rest day"
+    }
+
+    private func sessionEyebrow(for session: Session, isPrimary: Bool) -> String {
+        let timeLabel = session.scheduledTime.map(SessionPresentation.scheduledTimeLabel) ?? "Anytime"
+        return isPrimary ? "\(timeLabel) · up next" : timeLabel
+    }
 }
 
-/// A Session's Today card: role/duration/purpose/status/major blocks and
-/// its own start-resume-complete state — never the engine internals
-/// behind that state (Part C). Multiple sessions on one Day each get
-/// their own independent card and status; nothing here implies "the Day"
-/// has an aggregate state.
-private struct SessionCard: View {
+/// V1 R2: the primary, emphasized session — full ordered-block preview,
+/// the screen's one clear "Start Session" primary action. Multiple
+/// Sessions today (Part B) are never merged into this one card; a second
+/// real Session gets its own `SessionSecondaryCard` below, never folded
+/// into this card's own block list.
+private struct SessionHeroCard: View {
     let session: Session
     let onStart: () -> Void
     let onMarkMissed: () -> Void
 
-    /// Purely a display check — a scheduled Session whose time has
-    /// passed is *shown* as possibly missed, but nothing is written until
-    /// the user actually taps a button (SESSION_STATE_MACHINE.md §7). See
-    /// `SessionPresentation.isPastDueUnstarted` for the actual decision.
     private var isPastDueUnstarted: Bool {
         SessionPresentation.isPastDueUnstarted(status: session.status, scheduledTime: session.scheduledTime)
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 3) {
                     Text(session.name)
                         .font(Theme.heading)
                         .foregroundStyle(Theme.textPrimary)
@@ -147,37 +222,14 @@ private struct SessionCard: View {
                     }
                 }
                 Spacer()
-                if let time = session.scheduledTime {
-                    Text(SessionPresentation.scheduledTimeLabel(time))
-                        .font(Theme.numeric)
-                        .foregroundStyle(Theme.textSecondary)
-                }
+                StatusPill(status: session.status)
             }
 
-            StatusPill(status: session.status)
-
-            ForEach(session.orderedBlocks) { block in
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack {
-                        Text(block.type.rawValue.uppercased())
-                            .font(Theme.label)
-                            .foregroundStyle(Theme.primary)
-                        if let detail = BlockPresentation.compactDetail(for: block) {
-                            Text(detail)
-                                .font(Theme.body)
-                                .foregroundStyle(Theme.textSecondary)
-                        }
-                        Spacer()
-                    }
-                    // Part D: a compact preview of which exercises, never
-                    // the full workout — a multi-exercise Strength block
-                    // must never read as if its first exercise were the
-                    // entire session.
-                    if let names = BlockPresentation.exerciseNames(for: block), !names.isEmpty {
-                        Text(compactList(names))
-                            .font(Theme.label)
-                            .foregroundStyle(Theme.textSecondary)
-                            .lineLimit(1)
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(Array(session.orderedBlocks.enumerated()), id: \.element.id) { index, block in
+                    BlockRow(index: index + 1, block: block)
+                    if index < session.orderedBlocks.count - 1 {
+                        Divider().opacity(0.5)
                     }
                 }
             }
@@ -194,26 +246,32 @@ private struct SessionCard: View {
                         .buttonStyle(.bordered)
                 }
             } else if session.status == .scheduled {
-                Button("Start", action: onStart)
-                    .buttonStyle(.borderedProminent)
-                    .tint(Theme.primary)
+                Button(action: onStart) {
+                    Text("Start \(session.name)")
+                        .font(Theme.heading)
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Theme.primary)
+                .controlSize(.large)
             } else {
                 // Stage 6E fix: every other status (in progress/
                 // completed/skipped/missed/abandoned) has no button of
                 // its own, so it must never rely on incidental "the
                 // background happens to be tappable" behavior — an
-                // explicit, unmissable affordance instead.
+                // explicit, unmissable affordance instead (Part C: never
+                // keep presenting Start as the primary action once a
+                // Session is no longer startable).
                 HStack {
                     Spacer()
-                    Text(navigationAffordanceLabel)
+                    Text(navigationAffordanceLabel(for: session.status))
                     Image(systemName: "chevron.right")
                 }
                 .font(Theme.label)
                 .foregroundStyle(Theme.primary)
             }
         }
-        .padding(14)
-        .background(Theme.surfacePrimary, in: RoundedRectangle(cornerRadius: 12))
+        .trainingOSCard(emphasized: session.status == .scheduled || session.status == .inProgress)
         // Stage 6E fix: a custom NavigationLink label with .buttonStyle(.plain)
         // otherwise only reliably registers taps on rendered content
         // (text/icon glyphs), not on the background/padding around it —
@@ -221,13 +279,87 @@ private struct SessionCard: View {
         // one tap target, never dependent on where a finger happens to land.
         .contentShape(Rectangle())
     }
+}
 
-    private var navigationAffordanceLabel: String {
-        switch session.status {
-        case .inProgress: "Resume"
-        case .completed, .skipped, .missed, .abandoned: "View Workout"
-        case .scheduled: ""
+/// V1 R2: a genuinely second (or later) real Session today — lower
+/// visual priority than the hero, but never hidden or merged into it
+/// (Part B: legitimate multiple sessions must be represented truthfully).
+private struct SessionSecondaryCard: View {
+    let session: Session
+    let onStart: () -> Void
+    let onMarkMissed: () -> Void
+
+    private var isPastDueUnstarted: Bool {
+        SessionPresentation.isPastDueUnstarted(status: session.status, scheduledTime: session.scheduledTime)
+    }
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(session.name)
+                    .font(Theme.body.weight(.medium))
+                    .foregroundStyle(Theme.textPrimary)
+                if let detail = session.orderedBlocks.first.flatMap(BlockPresentation.compactDetail) {
+                    Text(detail)
+                        .font(Theme.label)
+                        .foregroundStyle(Theme.textSecondary)
+                }
+            }
+            Spacer()
+            if isPastDueUnstarted {
+                Button("Start Anyway", action: onStart)
+                    .buttonStyle(.bordered)
+                    .tint(Theme.attention)
+            } else if session.status == .scheduled {
+                Button("Start", action: onStart)
+                    .buttonStyle(.bordered)
+                    .tint(Theme.primary)
+            } else {
+                StatusPill(status: session.status)
+            }
         }
+        .trainingOSCard()
+        .contentShape(Rectangle())
+    }
+}
+
+/// V1 R2: one numbered, ordered `WorkoutBlock` row — the artifact's own
+/// numbered-list Today block preview, restyled onto R1 tokens. Enough to
+/// understand the upcoming session's shape without becoming full
+/// execution UI (never the full per-set logging surface).
+private struct BlockRow: View {
+    let index: Int
+    let block: WorkoutBlock
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Text(String(format: "%02d", index))
+                .font(Theme.label)
+                .foregroundStyle(Theme.textInactive)
+                .frame(width: 20, alignment: .leading)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(BlockPresentation.blockTypeLabel(block.type))
+                    .font(Theme.body.weight(.medium))
+                    .foregroundStyle(Theme.textPrimary)
+                if let detail = BlockPresentation.compactDetail(for: block) {
+                    Text(detail)
+                        .font(Theme.label)
+                        .foregroundStyle(Theme.textSecondary)
+                }
+                // Part D: a compact preview of which exercises, never
+                // the full workout — a multi-exercise Strength block
+                // must never read as if its first exercise were the
+                // entire session.
+                if let names = BlockPresentation.exerciseNames(for: block), !names.isEmpty {
+                    Text(compactList(names))
+                        .font(Theme.label)
+                        .foregroundStyle(Theme.textSecondary)
+                        .lineLimit(1)
+                }
+            }
+            Spacer()
+        }
+        .padding(.vertical, 8)
     }
 
     private func compactList(_ names: [String]) -> String {
@@ -235,6 +367,71 @@ private struct SessionCard: View {
         let remaining = names.count - shown.count
         let base = shown.joined(separator: ", ")
         return remaining > 0 ? "\(base), +\(remaining) more" : base
+    }
+}
+
+/// V1 R2 (Part D): a legitimate rest day should feel intentional, never
+/// like missing data — no error/empty-state iconography, just a plain,
+/// calm restatement of real phase context when it's available.
+private struct RestDayCard: View {
+    let phaseType: PhaseType?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("No training planned today")
+                .font(Theme.heading)
+                .foregroundStyle(Theme.textPrimary)
+            if let phaseType {
+                Text("Part of your \(PlanPresentation.phaseTypeLabel(phaseType)) phase.")
+                    .font(Theme.body)
+                    .foregroundStyle(Theme.textMuted)
+            } else {
+                Text("Enjoy the recovery.")
+                    .font(Theme.body)
+                    .foregroundStyle(Theme.textMuted)
+            }
+        }
+        .trainingOSCard()
+    }
+}
+
+/// V1 R2 (Part E, the new R0 state): a brand-new plan whose first
+/// tactical week hasn't genuinely begun yet — never a fake workout, never
+/// a fabricated bridge session, just a truthful, restrained statement of
+/// when real training starts (`TodayViewModel.upcomingPlanStart`, itself
+/// only ever reading R0's own already-resolved `TrainingPhase.startDate`).
+private struct UpcomingPlanStartCard: View {
+    let upcoming: TodayViewModel.UpcomingPlanStart
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Your plan starts \(upcoming.startDate.formatted(.dateTime.weekday(.wide).day().month(.wide)))")
+                .font(Theme.heading)
+                .foregroundStyle(Theme.textPrimary)
+            Text("Your \(PlanPresentation.phaseTypeLabel(upcoming.phaseType)) phase begins then — nothing to do before it starts.")
+                .font(Theme.body)
+                .foregroundStyle(Theme.textMuted)
+        }
+        .trainingOSCard(emphasized: true)
+    }
+}
+
+/// V1 R1: a restrained circular avatar glyph in place of the bare SF
+/// Symbol toolbar icon — the artifact's own Today-header profile
+/// affordance treatment (a plain tinted circle, screen 06), without
+/// building the still-missing full Profile hub this checkpoint
+/// deliberately leaves out of scope.
+private struct ProfileAvatarGlyph: View {
+    var body: some View {
+        Circle()
+            .fill(Theme.surfaceSecondary)
+            .overlay(Circle().strokeBorder(Color.primary.opacity(0.12)))
+            .overlay(
+                Image(systemName: "person.fill")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Theme.textSecondary)
+            )
+            .frame(width: 32, height: 32)
     }
 }
 
@@ -247,6 +444,14 @@ struct StatusPill: View {
         Label(SessionPresentation.statusLabel(status), systemImage: SessionPresentation.statusIcon(status))
             .font(Theme.label)
             .foregroundStyle(SessionPresentation.statusColor(status))
+    }
+}
+
+private func navigationAffordanceLabel(for status: SessionStatus) -> String {
+    switch status {
+    case .inProgress: "Resume"
+    case .completed, .skipped, .missed, .abandoned: "View Workout"
+    case .scheduled: ""
     }
 }
 
