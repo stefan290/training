@@ -342,6 +342,7 @@
 		388B0B811147F15595A30B0F /* GoalTrainingStyleProductModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C093ACEA23826CB022DB286 /* GoalTrainingStyleProductModelTests.swift */; };
 		D9B5F8A857DC40D48F875526 /* ExplicitWeeklyCompositionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24A683B4C2F648368F9EC1C5 /* ExplicitWeeklyCompositionTests.swift */; };
 		F1E2D3C4B5A607182930F1E2 /* TodayViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A6B5C4D3E2F108293A4B5C6 /* TodayViewModelTests.swift */; };
+		D3C06F67C2F54CE0A46DD711 /* ProgressViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC80FA68407A4CDFA01495F4 /* ProgressViewModelTests.swift */; };
 		E2E2196CDE83C072DDD7536A /* MidWeekNoDoubleCompositionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56AD95F3FE9601F97ECFEF1D /* MidWeekNoDoubleCompositionTests.swift */; };
 		3E4F5A6B7C8D9021324354D6 /* PlanViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B5C6D7E8F90A1B2C3D4E5F7 /* PlanViewModelTests.swift */; };
 		D9D293EF687D4C9E8EFC61C7 /* SubstitutionAwareRecommendation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E87ABA502914319A82C1265 /* SubstitutionAwareRecommendation.swift */; };
@@ -362,6 +363,9 @@
 		E66356BDFCBB4948B16908D5 /* SteadyStateProgressionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51583999363247E0B8E3F8A9 /* SteadyStateProgressionEngine.swift */; };
 		E80C91EB0FC74C11AC65B159 /* PowerliftingRegressionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60D9C8CDB6574111B7F814E3 /* PowerliftingRegressionTests.swift */; };
 		E8BC41AAB80633416FED8810 /* ProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 166947E68E27B7CBE236C27B /* ProgressView.swift */; };
+		278C01208A204DEAAA0C2CA1 /* ProgressPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EB811F17988448BBBE68C4E /* ProgressPresentation.swift */; };
+		4D6981E617C1481FBE53E53B /* ExerciseDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D734DAC0F784D0EA0BF9B9B /* ExerciseDetailView.swift */; };
+		344083027D284684BCD0EB52 /* BenchmarkDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DD196BCB6574520A46186B2 /* BenchmarkDetailView.swift */; };
 		E94F45CDA1EEED4F2F4D862F /* TrainingOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 528841C8B1BA640B0D7CFF1F /* TrainingOSApp.swift */; };
 		EAC26DC9D5FA453BB0459663 /* OrchestratingUseCaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 821F86C0738E4D5BBF958B49 /* OrchestratingUseCaseTests.swift */; };
 		EACB05E3984744AD89FE070B /* StrategicPlanProposal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B11C89D284D4F8DA812C302 /* StrategicPlanProposal.swift */; };
@@ -423,6 +427,9 @@
 		153ECE010B6C54C7C3947982 /* AnnualPlanOrchestrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AnnualPlanOrchestrationTests.swift; path = AnnualPlanOrchestrationTests.swift; sourceTree = "<group>"; };
 		15DF6F204F4044CB89859640 /* ChangeExerciseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChangeExerciseView.swift; path = ChangeExerciseView.swift; sourceTree = "<group>"; };
 		166947E68E27B7CBE236C27B /* ProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ProgressView.swift; path = ProgressView.swift; sourceTree = "<group>"; };
+		8EB811F17988448BBBE68C4E /* ProgressPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ProgressPresentation.swift; path = ProgressPresentation.swift; sourceTree = "<group>"; };
+		0D734DAC0F784D0EA0BF9B9B /* ExerciseDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExerciseDetailView.swift; path = ExerciseDetailView.swift; sourceTree = "<group>"; };
+		2DD196BCB6574520A46186B2 /* BenchmarkDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = BenchmarkDetailView.swift; path = BenchmarkDetailView.swift; sourceTree = "<group>"; };
 		1793CF229B5B4ECEA2495970 /* StrengthExecutionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = StrengthExecutionViewModel.swift; path = StrengthExecutionViewModel.swift; sourceTree = "<group>"; };
 		1A5E6E7EC9C54EA5BA38CBD9 /* IntervalPrescriptionTemplate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = IntervalPrescriptionTemplate.swift; path = IntervalPrescriptionTemplate.swift; sourceTree = "<group>"; };
 		1CD74FA199A710C3A9EB5F56 /* DoubleProgressionEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DoubleProgressionEngineTests.swift; path = DoubleProgressionEngineTests.swift; sourceTree = "<group>"; };
@@ -720,6 +727,7 @@
 		5C093ACEA23826CB022DB286 /* GoalTrainingStyleProductModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = GoalTrainingStyleProductModelTests.swift; path = GoalTrainingStyleProductModelTests.swift; sourceTree = "<group>"; };
 		24A683B4C2F648368F9EC1C5 /* ExplicitWeeklyCompositionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExplicitWeeklyCompositionTests.swift; path = ExplicitWeeklyCompositionTests.swift; sourceTree = "<group>"; };
 		7A6B5C4D3E2F108293A4B5C6 /* TodayViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TodayViewModelTests.swift; path = TodayViewModelTests.swift; sourceTree = "<group>"; };
+		CC80FA68407A4CDFA01495F4 /* ProgressViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ProgressViewModelTests.swift; path = ProgressViewModelTests.swift; sourceTree = "<group>"; };
 		56AD95F3FE9601F97ECFEF1D /* MidWeekNoDoubleCompositionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MidWeekNoDoubleCompositionTests.swift; path = MidWeekNoDoubleCompositionTests.swift; sourceTree = "<group>"; };
 		4B5C6D7E8F90A1B2C3D4E5F7 /* PlanViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PlanViewModelTests.swift; path = PlanViewModelTests.swift; sourceTree = "<group>"; };
 		D642401D83068E564FDA98F1 /* PersistenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PersistenceController.swift; path = PersistenceController.swift; sourceTree = "<group>"; };
@@ -1077,6 +1085,9 @@
 			isa = PBXGroup;
 			children = (
 				166947E68E27B7CBE236C27B /* ProgressView.swift */,
+				8EB811F17988448BBBE68C4E /* ProgressPresentation.swift */,
+				0D734DAC0F784D0EA0BF9B9B /* ExerciseDetailView.swift */,
+				2DD196BCB6574520A46186B2 /* BenchmarkDetailView.swift */,
 			);
 			name = Progress;
 			path = Progress;
@@ -1216,6 +1227,7 @@
 				5C093ACEA23826CB022DB286 /* GoalTrainingStyleProductModelTests.swift */,
 				24A683B4C2F648368F9EC1C5 /* ExplicitWeeklyCompositionTests.swift */,
 				7A6B5C4D3E2F108293A4B5C6 /* TodayViewModelTests.swift */,
+				CC80FA68407A4CDFA01495F4 /* ProgressViewModelTests.swift */,
 				56AD95F3FE9601F97ECFEF1D /* MidWeekNoDoubleCompositionTests.swift */,
 				4B5C6D7E8F90A1B2C3D4E5F7 /* PlanViewModelTests.swift */,
 				3F68524FCF48458397F19E9B /* LongTermPlannerRevisionTests.swift */,
@@ -1571,6 +1583,7 @@
 				388B0B811147F15595A30B0F /* GoalTrainingStyleProductModelTests.swift in Sources */,
 				D9B5F8A857DC40D48F875526 /* ExplicitWeeklyCompositionTests.swift in Sources */,
 				F1E2D3C4B5A607182930F1E2 /* TodayViewModelTests.swift in Sources */,
+				D3C06F67C2F54CE0A46DD711 /* ProgressViewModelTests.swift in Sources */,
 				E2E2196CDE83C072DDD7536A /* MidWeekNoDoubleCompositionTests.swift in Sources */,
 				3E4F5A6B7C8D9021324354D6 /* PlanViewModelTests.swift in Sources */,
 				9DC345C6A3A5410F840C85AC /* LongTermPlannerRevisionTests.swift in Sources */,
@@ -1637,6 +1650,9 @@
 				A1B2C3D4E5F607182930A1B2 /* TrainingOSComponents.swift in Sources */,
 				355E4F519569B26DB7E6814D /* RootTabView.swift in Sources */,
 				E8BC41AAB80633416FED8810 /* ProgressView.swift in Sources */,
+				278C01208A204DEAAA0C2CA1 /* ProgressPresentation.swift in Sources */,
+				4D6981E617C1481FBE53E53B /* ExerciseDetailView.swift in Sources */,
+				344083027D284684BCD0EB52 /* BenchmarkDetailView.swift in Sources */,
 				0A39407AAB8E500DCA5A5C1F /* SteadyStatePrescription.swift in Sources */,
 				4A6242F1A3BF38EB6EF078B7 /* IntervalRepResult.swift in Sources */,
 				773843A880E71B2AFC873FAA /* BenchmarkPerformanceProfile.swift in Sources */,
