@@ -1,17 +1,20 @@
 import Foundation
 import SwiftData
 
-/// The small canonical exercise set the seeded dev dataset exercises
-/// against. Not a real exercise library — just enough distinct movements
-/// to exercise every block type without reusing one exercise for
-/// everything.
+/// The canonical exercise catalog this app resolves/substitutes against.
+/// Originally a 38-exercise placeholder ("just enough distinct movements
+/// to exercise every block type"); the Exercise Library V1 checkpoint
+/// expanded it to a credible V1 library (58 exercises) covering common
+/// Full Gym / Home Gym / minimal-equipment movement families for
+/// Hypertrophy, Strength, and Functional Fitness — still V1-complete,
+/// deliberately not encyclopedic (no full CrossFit movement library, no
+/// exhaustive machine catalog).
 ///
 /// **Stage 4E addition:** a small curated Functional Fitness set (§35) —
 /// enough monostructural/gymnastics/weightlifting examples to prove
 /// `FunctionalFitnessProgramGenerator`'s movement-slot resolution across
 /// single-modality, couplet, triplet and benchmark shapes, tagged with
 /// the new `Exercise.movementFunctions`/`.functionalModality` fields.
-/// Deliberately not a full CrossFit movement library.
 struct ExerciseCatalog {
     let benchPress: Exercise
     let backSquat: Exercise
@@ -84,6 +87,28 @@ struct ExerciseCatalog {
     // which is deliberately distinct from the "Glutes" category that
     // plain "Deadlift" belongs to.
     let stiffLeggedDeadlift: Exercise
+    // Exercise Library V1 additions (see `resolveOrInsert`'s own
+    // in-context comments for the concrete gap each one closes).
+    let flatDumbbellBenchPress: Exercise
+    let dumbbellChestFly: Exercise
+    let singleArmDumbbellRow: Exercise
+    let gobletSquat: Exercise
+    let singleLegRomanianDeadlift: Exercise
+    let nordicHamstringCurl: Exercise
+    let barbellHipThrust: Exercise
+    let gluteBridge: Exercise
+    let standingDumbbellCalfRaise: Exercise
+    let dumbbellBicepCurl: Exercise
+    let hammerCurl: Exercise
+    let dumbbellOverheadTricepsExtension: Exercise
+    let benchDip: Exercise
+    let bentOverReverseFly: Exercise
+    let dumbbellShoulderPress: Exercise
+    let sumoDeadlift: Exercise
+    let chestToBarPullUp: Exercise
+    let doubleUnders: Exercise
+    let farmersCarry: Exercise
+    let boxJump: Exercise
 
     /// Stage 10R.7A-TX rename (was `makeAndInsert`) — the old name implied
     /// "always construct fresh objects," which is exactly the behavior
@@ -100,7 +125,8 @@ struct ExerciseCatalog {
             primaryTargets: [MuscleGroup] = [],
             movementFunctions: [MovementFunction] = [],
             functionalModality: FunctionalModality? = nil,
-            requiredEquipment: [EquipmentRequirement] = []
+            requiredEquipment: [EquipmentRequirement] = [],
+            isExplosiveExpression: Bool = false
         ) -> Exercise {
             if let existing = try? context.fetch(FetchDescriptor<Exercise>(predicate: #Predicate { $0.canonicalName == name })).first {
                 return existing
@@ -108,7 +134,7 @@ struct ExerciseCatalog {
             let exercise = Exercise(
                 canonicalName: name, modality: modality, equipment: equipment, movementPattern: pattern,
                 primaryTargets: primaryTargets, movementFunctions: movementFunctions, functionalModality: functionalModality,
-                requiredEquipment: requiredEquipment
+                requiredEquipment: requiredEquipment, isExplosiveExpression: isExplosiveExpression
             )
             context.insert(exercise)
             return exercise
@@ -167,22 +193,30 @@ struct ExerciseCatalog {
         let wallBall = make(
             "Wall Ball", .functionalFitness, "medicineBall", "squatToPress",
             primaryTargets: [.quadriceps, .shoulders], movementFunctions: [.squatLoaded, .pressLoaded], functionalModality: .weightlifting,
-            requiredEquipment: [.medicineBall]
+            requiredEquipment: [.medicineBall], isExplosiveExpression: true
         )
         let burpee = make(
             "Burpee", .functionalFitness, "bodyweight", "fullBody",
             movementFunctions: [.other], functionalModality: .gymnastics,
             requiredEquipment: [.bodyweight]
         )
+        // Exercise Library V1: `.isExplosiveExpression` on these three —
+        // and Dumbbell Snatch below — is genuine domain metadata (all
+        // four ARE ballistic/power movements where speed is the point),
+        // not something invented merely to satisfy a slot. See
+        // `Exercise.isExplosiveExpression`'s own doc comment for why
+        // `movementFunctions`/`primaryTargets` alone cannot carry this
+        // distinction (a Dumbbell Snatch is legitimately `.hingeLoaded`
+        // too).
         let kettlebellSwing = make(
             "Kettlebell Swing", .functionalFitness, "kettlebell", "hipHinge",
             primaryTargets: [.glutes, .hamstrings], movementFunctions: [.hingeLoaded], functionalModality: .weightlifting,
-            requiredEquipment: [.kettlebell]
+            requiredEquipment: [.kettlebell], isExplosiveExpression: true
         )
         let thruster = make(
             "Thruster", .functionalFitness, "barbell", "squatToPress",
             primaryTargets: [.quadriceps, .shoulders], movementFunctions: [.squatLoaded, .pressLoaded], functionalModality: .weightlifting,
-            requiredEquipment: [.barbell]
+            requiredEquipment: [.barbell], isExplosiveExpression: true
         )
         // Stage 10C.1: `.verticalPullLoaded` added alongside the
         // existing `.gymnasticsPull` (never replacing it) — Pull-up is
@@ -238,7 +272,7 @@ struct ExerciseCatalog {
         let dumbbellSnatch = make(
             "Dumbbell Snatch", .functionalFitness, "dumbbell", "hingeToPress",
             primaryTargets: [.shoulders, .glutes], movementFunctions: [.hingeLoaded, .pressLoaded], functionalModality: .weightlifting,
-            requiredEquipment: [.dumbbells]
+            requiredEquipment: [.dumbbells], isExplosiveExpression: true
         )
 
         // Stage 6C additions — realistic Lower A acceptance fixture.
@@ -378,6 +412,133 @@ struct ExerciseCatalog {
             requiredEquipment: [.barbell]
         )
 
+        // Exercise Library V1: a real, intentional expansion beyond the
+        // 38-exercise placeholder — every addition below fills a
+        // concrete, previously-missing movement family/equipment
+        // combination (never mechanically generated), prioritized
+        // Hypertrophy > Strength > Functional Fitness > common
+        // conditioning per this checkpoint's own locked scope.
+
+        // Hypertrophy — Home Gym / dumbbell-equipped alternatives for
+        // families that previously only had a barbell/machine/cable
+        // option, closing the exact "no real substitute" gap the
+        // preceding V1 completion review found live.
+        let flatDumbbellBenchPress = make(
+            "Flat Dumbbell Bench Press", .hypertrophy, "dumbbell", "horizontalPush",
+            primaryTargets: [.chest, .triceps], movementFunctions: [.pressLoaded],
+            requiredEquipment: [.dumbbells, .bench]
+        )
+        let dumbbellChestFly = make(
+            "Dumbbell Chest Fly", .hypertrophy, "dumbbell", "chestFly",
+            primaryTargets: [.chest],
+            requiredEquipment: [.dumbbells, .bench]
+        )
+        let singleArmDumbbellRow = make(
+            "Single-Arm Dumbbell Row", .hypertrophy, "dumbbell", "horizontalPull",
+            primaryTargets: [.back, .biceps], movementFunctions: [.horizontalPullLoaded],
+            requiredEquipment: [.dumbbells, .bench]
+        )
+        // Goblet Squat is tagged both `.hypertrophy` (a real chest/quad-
+        // slot-eligible squat alternative) AND `functionalModality:
+        // .weightlifting` (a real FF squatLoaded movement) — a single,
+        // honestly-dual-purpose entry, never two separate fabricated rows
+        // for the same real movement.
+        let gobletSquat = make(
+            "Goblet Squat", .hypertrophy, "dumbbell", "squat",
+            primaryTargets: [.quadriceps, .glutes], movementFunctions: [.squatLoaded], functionalModality: .weightlifting,
+            requiredEquipment: [.dumbbells]
+        )
+        let singleLegRomanianDeadlift = make(
+            "Single-Leg Romanian Deadlift", .hypertrophy, "dumbbell", "hinge",
+            primaryTargets: [.hamstrings, .glutes], movementFunctions: [.hingeLoaded],
+            requiredEquipment: [.dumbbells]
+        )
+        let nordicHamstringCurl = make(
+            "Nordic Hamstring Curl", .hypertrophy, "bodyweight", "kneeFlexion",
+            primaryTargets: [.hamstrings], movementFunctions: [.kneeFlexionLoaded],
+            requiredEquipment: [.bodyweight]
+        )
+        let barbellHipThrust = make(
+            "Barbell Hip Thrust", .hypertrophy, "barbell", "hipExtension",
+            primaryTargets: [.glutes, .hamstrings], movementFunctions: [.hingeLoaded],
+            requiredEquipment: [.barbell, .bench]
+        )
+        let gluteBridge = make(
+            "Bodyweight Glute Bridge", .hypertrophy, "bodyweight", "hipExtension",
+            primaryTargets: [.glutes],
+            requiredEquipment: [.bodyweight]
+        )
+        let standingDumbbellCalfRaise = make(
+            "Standing Dumbbell Calf Raise", .hypertrophy, "dumbbell", "ankleExtension",
+            primaryTargets: [.calves],
+            requiredEquipment: [.dumbbells]
+        )
+        let dumbbellBicepCurl = make(
+            "Dumbbell Bicep Curl", .hypertrophy, "dumbbell", "elbowFlexion",
+            primaryTargets: [.biceps],
+            requiredEquipment: [.dumbbells]
+        )
+        let hammerCurl = make(
+            "Hammer Curl", .hypertrophy, "dumbbell", "elbowFlexion",
+            primaryTargets: [.biceps, .forearms],
+            requiredEquipment: [.dumbbells]
+        )
+        let dumbbellOverheadTricepsExtension = make(
+            "Dumbbell Overhead Triceps Extension", .hypertrophy, "dumbbell", "elbowExtension",
+            primaryTargets: [.triceps],
+            requiredEquipment: [.dumbbells]
+        )
+        let benchDip = make(
+            "Bench Dip", .hypertrophy, "bodyweight", "elbowExtension",
+            primaryTargets: [.triceps, .chest],
+            requiredEquipment: [.bodyweight, .bench]
+        )
+        let bentOverReverseFly = make(
+            "Bent-Over Dumbbell Reverse Fly", .hypertrophy, "dumbbell", "rearDeltFly",
+            primaryTargets: [.shoulders, .rearDelt],
+            requiredEquipment: [.dumbbells]
+        )
+        let dumbbellShoulderPress = make(
+            "Dumbbell Shoulder Press", .hypertrophy, "dumbbell", "verticalPush",
+            primaryTargets: [.shoulders, .triceps], movementFunctions: [.verticalPushLoaded],
+            requiredEquipment: [.dumbbells]
+        )
+
+        // Strength — real frequency/variety within the same Squat/Bench/
+        // Deadlift target families the Powerlifting source programs use;
+        // never a new slot/category, only a real additional candidate.
+        let sumoDeadlift = make(
+            "Sumo Deadlift", .strength, "barbell", "hinge",
+            primaryTargets: [.hamstrings, .glutes, .back], movementFunctions: [.hingeLoaded],
+            requiredEquipment: [.barbell]
+        )
+
+        // Functional Fitness — real content within the EXISTING, locked
+        // movement-function space (squatLoaded/hingeLoaded/pressLoaded/
+        // gymnasticsPull/gymnasticsPush/monostructural), plus `.carry`/
+        // `.jumping` (both already-existing cases with almost no real
+        // catalog content before this checkpoint).
+        let chestToBarPullUp = make(
+            "Chest-to-Bar Pull-up", .functionalFitness, "bodyweight", "verticalPull",
+            primaryTargets: [.back, .biceps], movementFunctions: [.gymnasticsPull, .verticalPullLoaded], functionalModality: .gymnastics,
+            requiredEquipment: [.pullUpBar]
+        )
+        let doubleUnders = make(
+            "Double-Unders", .functionalFitness, "bodyweight", "jumpRope",
+            movementFunctions: [.jumping, .monostructural], functionalModality: .metabolicConditioning,
+            requiredEquipment: [.bodyweight]
+        )
+        let farmersCarry = make(
+            "Farmer's Carry", .functionalFitness, "dumbbell", "carry",
+            primaryTargets: [.forearms, .core], movementFunctions: [.carry], functionalModality: .weightlifting,
+            requiredEquipment: [.dumbbells]
+        )
+        let boxJump = make(
+            "Box Jump", .functionalFitness, "bodyweight", "jump",
+            primaryTargets: [.quadriceps, .glutes], movementFunctions: [.jumping], functionalModality: .gymnastics,
+            requiredEquipment: [.bodyweight]
+        )
+
         return ExerciseCatalog(
             benchPress: benchPress,
             backSquat: backSquat,
@@ -416,7 +577,27 @@ struct ExerciseCatalog {
             facePull: facePull,
             latPulldown: latPulldown,
             seatedCableRow: seatedCableRow,
-            stiffLeggedDeadlift: stiffLeggedDeadlift
+            stiffLeggedDeadlift: stiffLeggedDeadlift,
+            flatDumbbellBenchPress: flatDumbbellBenchPress,
+            dumbbellChestFly: dumbbellChestFly,
+            singleArmDumbbellRow: singleArmDumbbellRow,
+            gobletSquat: gobletSquat,
+            singleLegRomanianDeadlift: singleLegRomanianDeadlift,
+            nordicHamstringCurl: nordicHamstringCurl,
+            barbellHipThrust: barbellHipThrust,
+            gluteBridge: gluteBridge,
+            standingDumbbellCalfRaise: standingDumbbellCalfRaise,
+            dumbbellBicepCurl: dumbbellBicepCurl,
+            hammerCurl: hammerCurl,
+            dumbbellOverheadTricepsExtension: dumbbellOverheadTricepsExtension,
+            benchDip: benchDip,
+            bentOverReverseFly: bentOverReverseFly,
+            dumbbellShoulderPress: dumbbellShoulderPress,
+            sumoDeadlift: sumoDeadlift,
+            chestToBarPullUp: chestToBarPullUp,
+            doubleUnders: doubleUnders,
+            farmersCarry: farmersCarry,
+            boxJump: boxJump
         )
     }
 }

@@ -28,8 +28,25 @@ enum SubstitutionCandidateRanking {
         profileLookup: @escaping (Exercise) -> ExercisePerformanceProfile?,
         environment: TrainingEnvironment?
     ) -> [Candidate] {
+        // Exercise Library V1: `SubstitutionValidator` has no access to
+        // "the exercise being replaced" (only the slot), so it cannot by
+        // itself reject a candidate that satisfies every slot dimension
+        // yet expresses a genuinely different training intent than the
+        // CURRENT exercise (e.g. Dumbbell Snatch — legitimately
+        // `.hingeLoaded`, sharing targets with a Stiff-Legged Deadlift —
+        // is a ballistic/explosive expression, not a controlled hinge
+        // accessory). This filter runs strictly AFTER validator
+        // eligibility, comparing only against `currentExercise` (already
+        // in scope here), so it changes nothing about which candidates
+        // are structurally/environmentally valid — only which of those
+        // are a semantically honest substitute for THIS specific
+        // exercise. `isExplosiveExpression` defaults `false` for every
+        // pre-existing and newly-added controlled exercise, so this is a
+        // no-op wherever neither side is tagged explosive.
         let eligible = allExercises.filter {
-            $0.id != currentExercise.id && SubstitutionValidator.isValid(candidate: $0, for: slot, environment: environment)
+            $0.id != currentExercise.id
+                && SubstitutionValidator.isValid(candidate: $0, for: slot, environment: environment)
+                && $0.isExplosiveExpression == currentExercise.isExplosiveExpression
         }
 
         let tierRank: (ProgressionReasonCode) -> Int = { code in

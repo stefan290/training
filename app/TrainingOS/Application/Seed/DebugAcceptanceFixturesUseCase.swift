@@ -144,7 +144,17 @@ enum DebugAcceptanceFixturesUseCase {
             let overheadPress = find("Barbell Overhead Press"), let legExtension = find("Leg Extension"),
             let cableChestFly = find("Cable Chest Fly"), let facePull = find("Face Pull"),
             let latPulldown = find("Lat Pulldown"), let seatedCableRow = find("Seated Cable Row"),
-            let stiffLeggedDeadlift = find("Stiff-Legged Deadlift")
+            let stiffLeggedDeadlift = find("Stiff-Legged Deadlift"),
+            let flatDumbbellBenchPress = find("Flat Dumbbell Bench Press"), let dumbbellChestFly = find("Dumbbell Chest Fly"),
+            let singleArmDumbbellRow = find("Single-Arm Dumbbell Row"), let gobletSquat = find("Goblet Squat"),
+            let singleLegRomanianDeadlift = find("Single-Leg Romanian Deadlift"), let nordicHamstringCurl = find("Nordic Hamstring Curl"),
+            let barbellHipThrust = find("Barbell Hip Thrust"), let gluteBridge = find("Bodyweight Glute Bridge"),
+            let standingDumbbellCalfRaise = find("Standing Dumbbell Calf Raise"), let dumbbellBicepCurl = find("Dumbbell Bicep Curl"),
+            let hammerCurl = find("Hammer Curl"), let dumbbellOverheadTricepsExtension = find("Dumbbell Overhead Triceps Extension"),
+            let benchDip = find("Bench Dip"), let bentOverReverseFly = find("Bent-Over Dumbbell Reverse Fly"),
+            let dumbbellShoulderPress = find("Dumbbell Shoulder Press"), let sumoDeadlift = find("Sumo Deadlift"),
+            let chestToBarPullUp = find("Chest-to-Bar Pull-up"), let doubleUnders = find("Double-Unders"),
+            let farmersCarry = find("Farmer's Carry"), let boxJump = find("Box Jump")
         else { return nil }
 
         return ExerciseCatalog(
@@ -159,7 +169,17 @@ enum DebugAcceptanceFixturesUseCase {
             dumbbellLateralRaise: dumbbellLateralRaise, barbellRow: barbellRow,
             overheadPress: overheadPress, legExtension: legExtension, cableChestFly: cableChestFly,
             facePull: facePull, latPulldown: latPulldown, seatedCableRow: seatedCableRow,
-            stiffLeggedDeadlift: stiffLeggedDeadlift
+            stiffLeggedDeadlift: stiffLeggedDeadlift,
+            flatDumbbellBenchPress: flatDumbbellBenchPress, dumbbellChestFly: dumbbellChestFly,
+            singleArmDumbbellRow: singleArmDumbbellRow, gobletSquat: gobletSquat,
+            singleLegRomanianDeadlift: singleLegRomanianDeadlift, nordicHamstringCurl: nordicHamstringCurl,
+            barbellHipThrust: barbellHipThrust, gluteBridge: gluteBridge,
+            standingDumbbellCalfRaise: standingDumbbellCalfRaise, dumbbellBicepCurl: dumbbellBicepCurl,
+            hammerCurl: hammerCurl, dumbbellOverheadTricepsExtension: dumbbellOverheadTricepsExtension,
+            benchDip: benchDip, bentOverReverseFly: bentOverReverseFly,
+            dumbbellShoulderPress: dumbbellShoulderPress, sumoDeadlift: sumoDeadlift,
+            chestToBarPullUp: chestToBarPullUp, doubleUnders: doubleUnders,
+            farmersCarry: farmersCarry, boxJump: boxJump
         )
     }
 }

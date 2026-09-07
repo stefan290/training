@@ -51,6 +51,24 @@ final class Exercise {
     /// yet recorded," not "requires nothing" — no code reads this field
     /// yet, so there is no behavioral difference either way.
     var requiredEquipment: [EquipmentRequirement] = []
+    /// Exercise Library V1 addition: distinguishes a ballistic/explosive
+    /// movement expression (e.g. Dumbbell Snatch, Kettlebell Swing,
+    /// Thruster — an athlete moves the load with speed/power as the
+    /// point of the movement) from a strict/controlled one (e.g.
+    /// Stiff-Legged Deadlift, Leg Curl), even when both share the same
+    /// `primaryTargets`/`movementFunctions` tags. Decision-gate finding:
+    /// `movementFunctions` alone cannot carry this distinction — a
+    /// Dumbbell Snatch is legitimately `.hingeLoaded` (it does start from
+    /// a hip hinge) and shares `primaryTargets` with a Stiff-Legged
+    /// Deadlift, yet substituting one for the other in a controlled
+    /// hypertrophy/strength context is a real training-intent mismatch,
+    /// not merely a coincidental muscle/pattern overlap. Default `false`
+    /// (the common, controlled case) — purely additive, zero migration
+    /// risk, every pre-existing row keeps its correct default meaning.
+    /// Consumed only by `SubstitutionCandidateRanking.rank` (never by
+    /// `SubstitutionValidator`, which has no access to "the exercise
+    /// being replaced" at all) — see that function's own doc comment.
+    var isExplosiveExpression: Bool = false
 
     @Relationship(deleteRule: .cascade, inverse: \ExerciseAlias.exercise)
     var aliases: [ExerciseAlias] = []
@@ -80,10 +98,12 @@ final class Exercise {
         primaryTargets: [MuscleGroup] = [],
         movementFunctions: [MovementFunction] = [],
         functionalModality: FunctionalModality? = nil,
-        requiredEquipment: [EquipmentRequirement] = []
+        requiredEquipment: [EquipmentRequirement] = [],
+        isExplosiveExpression: Bool = false
     ) {
         self.id = id
         self.canonicalName = canonicalName
+        self.isExplosiveExpression = isExplosiveExpression
         self.modality = modality
         self.equipment = equipment
         self.movementPattern = movementPattern

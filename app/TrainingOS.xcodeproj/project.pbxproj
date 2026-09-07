@@ -348,6 +348,7 @@
 		D3C06F67C2F54CE0A46DD711 /* ProgressViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC80FA68407A4CDFA01495F4 /* ProgressViewModelTests.swift */; };
 		E2E2196CDE83C072DDD7536A /* MidWeekNoDoubleCompositionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56AD95F3FE9601F97ECFEF1D /* MidWeekNoDoubleCompositionTests.swift */; };
 		R6ON1BUILDFILE00000000001 /* OnboardingPlanSelectionReconciliationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = R6ON1FILEREF000000000002 /* OnboardingPlanSelectionReconciliationTests.swift */; };
+		EXLIBBUILDFILE0000000001 /* ExerciseLibraryV1Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EXLIBFILEREF0000000002 /* ExerciseLibraryV1Tests.swift */; };
 		3E4F5A6B7C8D9021324354D6 /* PlanViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B5C6D7E8F90A1B2C3D4E5F7 /* PlanViewModelTests.swift */; };
 		D9D293EF687D4C9E8EFC61C7 /* SubstitutionAwareRecommendation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E87ABA502914319A82C1265 /* SubstitutionAwareRecommendation.swift */; };
 		DA0815C3588E4254B7572296 /* CandidateTrainingMix.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D3D37D834944F9FACAF4B03 /* CandidateTrainingMix.swift */; };
@@ -737,6 +738,7 @@
 		CC80FA68407A4CDFA01495F4 /* ProgressViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ProgressViewModelTests.swift; path = ProgressViewModelTests.swift; sourceTree = "<group>"; };
 		56AD95F3FE9601F97ECFEF1D /* MidWeekNoDoubleCompositionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MidWeekNoDoubleCompositionTests.swift; path = MidWeekNoDoubleCompositionTests.swift; sourceTree = "<group>"; };
 		R6ON1FILEREF000000000002 /* OnboardingPlanSelectionReconciliationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OnboardingPlanSelectionReconciliationTests.swift; path = OnboardingPlanSelectionReconciliationTests.swift; sourceTree = "<group>"; };
+		EXLIBFILEREF0000000002 /* ExerciseLibraryV1Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExerciseLibraryV1Tests.swift; path = ExerciseLibraryV1Tests.swift; sourceTree = "<group>"; };
 		4B5C6D7E8F90A1B2C3D4E5F7 /* PlanViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PlanViewModelTests.swift; path = PlanViewModelTests.swift; sourceTree = "<group>"; };
 		D642401D83068E564FDA98F1 /* PersistenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PersistenceController.swift; path = PersistenceController.swift; sourceTree = "<group>"; };
 		D6BA8738E2EE4513B27BAF41 /* CompletedFunctionalFitnessDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CompletedFunctionalFitnessDetail.swift; path = CompletedFunctionalFitnessDetail.swift; sourceTree = "<group>"; };
@@ -1240,6 +1242,7 @@
 				CC80FA68407A4CDFA01495F4 /* ProgressViewModelTests.swift */,
 				56AD95F3FE9601F97ECFEF1D /* MidWeekNoDoubleCompositionTests.swift */,
 				R6ON1FILEREF000000000002 /* OnboardingPlanSelectionReconciliationTests.swift */,
+				EXLIBFILEREF0000000002 /* ExerciseLibraryV1Tests.swift */,
 				4B5C6D7E8F90A1B2C3D4E5F7 /* PlanViewModelTests.swift */,
 				3F68524FCF48458397F19E9B /* LongTermPlannerRevisionTests.swift */,
 				96957ECF3701403F946023B8 /* TemporaryPreferenceAndModalitySwitchTests.swift */,
@@ -1600,6 +1603,7 @@
 				D3C06F67C2F54CE0A46DD711 /* ProgressViewModelTests.swift in Sources */,
 				E2E2196CDE83C072DDD7536A /* MidWeekNoDoubleCompositionTests.swift in Sources */,
 				R6ON1BUILDFILE00000000001 /* OnboardingPlanSelectionReconciliationTests.swift in Sources */,
+				EXLIBBUILDFILE0000000001 /* ExerciseLibraryV1Tests.swift in Sources */,
 				3E4F5A6B7C8D9021324354D6 /* PlanViewModelTests.swift in Sources */,
 				9DC345C6A3A5410F840C85AC /* LongTermPlannerRevisionTests.swift in Sources */,
 				CB4485429B55490D841976B4 /* TemporaryPreferenceAndModalitySwitchTests.swift in Sources */,
