@@ -368,15 +368,21 @@ final class OnboardingTests: XCTestCase {
     // MARK: 6/7 — Training Environment created via the real TE.1 model and persists as default
 
     func testOnboardingCreatesRealTrainingEnvironmentAndSetsDefault() throws {
+        // V1 R5: a brand-new athlete already has the real, auto-seeded
+        // "Full Gym" environment/default the moment their baseline
+        // identity exists — creating a second, custom environment and
+        // explicitly choosing it as the new default must add to that
+        // real count, never silently replace/hide Full Gym.
         let user = AppRootStateResolver.ensureBaselineIdentity(context: context)
+        XCTAssertEqual(user.profile?.trainingEnvironments.count, 1, "Full Gym must already exist, zero-config")
         let environment = TrainingEnvironment(name: "Garage Gym", availableEquipment: [.barbell, .rack])
         context.insert(environment)
         user.profile?.trainingEnvironments.append(environment)
         user.profile?.defaultTrainingEnvironment = environment
         try context.save()
 
-        XCTAssertEqual(user.profile?.trainingEnvironments.count, 1)
-        XCTAssertEqual(user.profile?.defaultTrainingEnvironment?.name, "Garage Gym")
+        XCTAssertEqual(user.profile?.trainingEnvironments.count, 2, "Full Gym plus the new custom environment")
+        XCTAssertEqual(user.profile?.defaultTrainingEnvironment?.name, "Garage Gym", "an explicit choice must still win over Full Gym")
         XCTAssertTrue(environment.availableEquipment.contains(.barbell))
     }
 
@@ -432,22 +438,44 @@ final class OnboardingTests: XCTestCase {
         viewModel.advance(from: .goal, modelContext: context)
         viewModel.advance(from: .preferences, modelContext: context)
 
-        // A fresh ViewModel re-reading persisted state (simulating relaunch mid-flow
-        // before the Environment step) must reflect the real, saved choices.
+        // A fresh ViewModel re-reading persisted state (simulating relaunch mid-flow)
+        // must reflect the real, saved choices.
         let resumed = OnboardingViewModel()
         resumed.start(modelContext: context)
         XCTAssertEqual(resumed.selectedGoalType, .enduranceEvent)
         XCTAssertEqual(resumed.availableTrainingDaysPerWeek, 6)
         XCTAssertEqual(resumed.varietyPreference, .low)
-        XCTAssertEqual(resumed.step, .environment, "resumes at Environment since no default Training Environment exists yet")
+        // V1 R5: Full Gym is now auto-seeded the moment baseline identity
+        // exists, so `hasDefaultTrainingEnvironment` is already true on
+        // resume — onboarding skips straight to Review, never forcing a
+        // manual environment step for a normal athlete.
+        XCTAssertEqual(resumed.step, .review, "resumes at Review — Full Gym is already a real, effective default")
     }
 
     // MARK: Dogfooding regression — Continue enables after a real Training Environment is created,
     // even though TrainingEnvironmentSettingsView mutates its own independently-fetched `profile` reference
 
+    /// V1 R5: a normal new athlete never sees this state at all anymore —
+    /// Full Gym already exists the moment baseline identity does, so
+    /// `advance(from: .preferences)` now goes straight to `.review`
+    /// (`testOnboardingReachesReviewWithoutAnyManualEnvironmentCreation`).
+    /// The genuine remaining case this guard still protects: an athlete
+    /// who has deliberately deleted every real environment
+    /// (`TrainingEnvironmentSettingsView`'s own real "Delete Environment"
+    /// action, never backfilled by `ensureBaselineIdentity` — see its own
+    /// doc comment) really does have `defaultTrainingEnvironment == nil`
+    /// again, and Continue must still correctly stay disabled for them.
     func testContinueStaysDisabledUntilARealDefaultTrainingEnvironmentExists() throws {
         let viewModel = OnboardingViewModel()
         viewModel.start(modelContext: context)
+        // Simulate an athlete who has deliberately removed every real
+        // environment before returning to onboarding.
+        let users = try context.fetch(FetchDescriptor<User>())
+        let profile = try XCTUnwrap(users.first?.profile)
+        for environment in profile.trainingEnvironments { context.delete(environment) }
+        profile.defaultTrainingEnvironment = nil
+        try context.save()
+
         viewModel.selectedGoalType = .generalStrength
         viewModel.advance(from: .goal, modelContext: context)
         viewModel.advance(from: .preferences, modelContext: context)
@@ -455,11 +483,23 @@ final class OnboardingTests: XCTestCase {
         XCTAssertFalse(viewModel.hasDefaultTrainingEnvironment, "Continue must stay disabled with no default Training Environment yet")
     }
 
+    /// V1 R5: same real remaining edge case as
+    /// `testContinueStaysDisabledUntilARealDefaultTrainingEnvironmentExists`
+    /// — an athlete who has deliberately deleted every environment before
+    /// returning to onboarding (Full Gym existing normally would already
+    /// skip straight to Review, never reaching this scenario at all).
     func testRefreshEnvironmentStateEnablesContinueAfterASiblingViewSetsTheDefault() throws {
         let viewModel = OnboardingViewModel()
         viewModel.start(modelContext: context)
+        let usersBeforeDeletion = try context.fetch(FetchDescriptor<User>())
+        let profileBeforeDeletion = try XCTUnwrap(usersBeforeDeletion.first?.profile)
+        for environment in profileBeforeDeletion.trainingEnvironments { context.delete(environment) }
+        profileBeforeDeletion.defaultTrainingEnvironment = nil
+        try context.save()
+
         viewModel.advance(from: .goal, modelContext: context)
         viewModel.advance(from: .preferences, modelContext: context)
+        XCTAssertEqual(viewModel.step, .environment)
         XCTAssertFalse(viewModel.hasDefaultTrainingEnvironment)
 
         // Simulate exactly what TrainingEnvironmentSettingsView does: its OWN
@@ -483,14 +523,23 @@ final class OnboardingTests: XCTestCase {
         viewModel.advance(from: .environment, modelContext: context)
         XCTAssertEqual(viewModel.step, .review, "Continue must now actually advance")
 
-        // No duplicate environment/default ever created by the refresh itself.
+        // V1 R5: Full Gym was deliberately deleted in this test's own
+        // setup — only the sibling's real "Home Gym" exists, never a
+        // duplicate created by the refresh itself.
         XCTAssertEqual((try context.fetch(FetchDescriptor<TrainingEnvironment>())).count, 1)
         XCTAssertEqual(try XCTUnwrap(users.first?.profile?.defaultTrainingEnvironment?.id), environment.id)
     }
 
     func testTrainingEnvironmentSettingsViewPostsTheRefreshNotificationOnCreateAndOnExplicitDefaultChange() throws {
+        // V1 R5: Full Gym is already the real default the moment baseline
+        // identity exists — creating a custom environment no longer
+        // auto-becomes default (there is already a real one), so no
+        // notification fires merely from creating it; only an EXPLICIT
+        // "make default" (the real `TrainingEnvironmentSettingsView`
+        // action) posts the notification.
         let user = AppRootStateResolver.ensureBaselineIdentity(context: context)
         try context.save()
+        XCTAssertNotNil(user.profile?.defaultTrainingEnvironment, "Full Gym must already be the real default")
 
         var notificationCount = 0
         let observer = NotificationCenter.default.addObserver(forName: .trainingEnvironmentDefaultChanged, object: nil, queue: nil) { _ in
@@ -498,14 +547,17 @@ final class OnboardingTests: XCTestCase {
         }
         defer { NotificationCenter.default.removeObserver(observer) }
 
-        // First environment: auto-set as default, must notify.
+        // Creating a custom environment alone must NOT notify — Full Gym
+        // is already a real, effective default.
         let first = TrainingEnvironment(name: "Home Gym", availableEquipment: [.dumbbells])
         context.insert(first)
         user.profile?.trainingEnvironments.append(first)
-        if user.profile?.defaultTrainingEnvironment == nil {
-            user.profile?.defaultTrainingEnvironment = first
-            NotificationCenter.default.post(name: .trainingEnvironmentDefaultChanged, object: nil)
-        }
+        try context.save()
+        XCTAssertEqual(notificationCount, 0, "adding a custom environment alone must never notify while a real default already exists")
+
+        // Explicit "Make Default" on that custom environment must notify.
+        user.profile?.defaultTrainingEnvironment = first
+        NotificationCenter.default.post(name: .trainingEnvironmentDefaultChanged, object: nil)
         try context.save()
         XCTAssertEqual(notificationCount, 1)
 
@@ -541,7 +593,9 @@ final class OnboardingTests: XCTestCase {
         relaunched.start(modelContext: context)
         XCTAssertEqual(relaunched.step, .review, "relaunch must resume at Review, never restart onboarding")
         XCTAssertTrue(relaunched.hasDefaultTrainingEnvironment)
-        XCTAssertEqual((try context.fetch(FetchDescriptor<TrainingEnvironment>())).count, 1, "no duplicate environment across relaunch")
+        // V1 R5: Full Gym (auto-seeded) plus the real "Home Gym" — exactly
+        // 2, never a duplicate created across relaunch.
+        XCTAssertEqual((try context.fetch(FetchDescriptor<TrainingEnvironment>())).count, 2, "no duplicate environment across relaunch")
     }
 
     // MARK: - Dated Objectives + 10K Strategic Reconciliation V1

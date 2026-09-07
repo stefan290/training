@@ -27,10 +27,28 @@ final class TodayViewModel {
     /// component type in a mixed-modality phase; disclosed as a deliberate
     /// simplification rather than an invented number.
     private(set) var currentPhaseType: PhaseType?
+    /// V1 R5 (Training Environment product reconciliation), Part 1: every
+    /// real `TrainingEnvironment` the athlete has (Full Gym plus any
+    /// custom ones) — the real, complete choice set for "use this
+    /// environment for today's workout," never a fabricated list.
+    private(set) var environments: [TrainingEnvironment] = []
+    private var defaultEnvironment: TrainingEnvironment?
 
     struct UpcomingPlanStart {
         let startDate: Date
         let phaseType: PhaseType
+    }
+
+    /// The real environment a given Session is currently associated with
+    /// — its own `materializedInEnvironment` when a materializer actually
+    /// set one (Functional Fitness/Steady State/Interval), falling back
+    /// to the athlete's real default (what a Strength/Hypertrophy
+    /// Session's exercise slots were actually resolved against at
+    /// instance-creation time, per `ResolveProgramInstanceExerciseSlotsUseCase`)
+    /// — never a fabricated "no environment" state once any real default
+    /// exists.
+    func environment(for session: Session) -> TrainingEnvironment? {
+        session.materializedInEnvironment ?? defaultEnvironment
     }
 
     /// `referenceDate` defaults to the real current moment for every
@@ -64,6 +82,35 @@ final class TodayViewModel {
         } else {
             upcomingPlanStart = nil
         }
+
+        let users = (try? modelContext.fetch(FetchDescriptor<User>())) ?? []
+        let profile = users.first?.profile
+        environments = profile?.trainingEnvironments ?? []
+        defaultEnvironment = profile?.defaultTrainingEnvironment
+    }
+
+    /// Read-only: what would change if `session` were adapted to
+    /// `targetEnvironment` — never writes anything (`WorkoutEnvironmentAdaptationUseCase.preview`).
+    func previewEnvironmentSwitch(for session: Session, to targetEnvironment: TrainingEnvironment, modelContext: ModelContext) -> [WorkoutEnvironmentAdaptationUseCase.Adaptation] {
+        let candidateExercises = (try? modelContext.fetch(FetchDescriptor<Exercise>())) ?? []
+        let curatedRelationships = (try? modelContext.fetch(FetchDescriptor<ExerciseRelationship>())) ?? []
+        let users = (try? modelContext.fetch(FetchDescriptor<User>())) ?? []
+        let performanceProfile = users.first?.performanceProfile
+        return WorkoutEnvironmentAdaptationUseCase.preview(
+            session: session, targetEnvironment: targetEnvironment, candidateExercises: candidateExercises,
+            curatedRelationships: curatedRelationships,
+            profileLookup: { exercise in performanceProfile?.exerciseProfiles.first { $0.exercise?.id == exercise.id } }
+        )
+    }
+
+    /// Commits exactly the adaptations `previewEnvironmentSwitch` already
+    /// found for THIS session only — never a going-forward preference,
+    /// never a change to any other Session/the `ProgramInstance`/the
+    /// `TrainingMix` (`WorkoutEnvironmentAdaptationUseCase.apply`).
+    func applyEnvironmentSwitch(_ adaptations: [WorkoutEnvironmentAdaptationUseCase.Adaptation], environment: TrainingEnvironment, modelContext: ModelContext) {
+        try? WorkoutEnvironmentAdaptationUseCase.apply(adaptations, environment: environment)
+        try? modelContext.save()
+        load(modelContext: modelContext)
     }
 
     /// Reads only real, already-persisted `Goal`/`TrainingPlan`/

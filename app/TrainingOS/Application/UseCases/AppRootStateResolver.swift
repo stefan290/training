@@ -25,13 +25,26 @@ enum AppRootStateResolver {
     /// Idempotent — safe to call on every launch. Creates only the baseline
     /// identity/infrastructure objects no screen ever asks the athlete
     /// about: the `User`/`UserProfile`/`PerformanceProfile` shell (mirrors
-    /// `SeedDataProvider.seedPrerequisites`'s own shape, minus the demo
-    /// `TrainingEnvironment` and any Goal/Plan) and the static Exercise
-    /// catalog (`ExerciseCatalog.resolveOrInsert` — content, not user data;
-    /// every real materializer needs it regardless of onboarding state).
-    /// Never creates a `Goal`, `TrainingEnvironment`, `TrainingPlan`,
-    /// `ProgramInstance`, or `Session` — those are only ever created by an
-    /// explicit athlete action (onboarding's own steps, or Checkpoint 2).
+    /// `SeedDataProvider.seedPrerequisites`'s own shape, minus any Goal/
+    /// Plan) and the static Exercise catalog (`ExerciseCatalog.resolveOrInsert`
+    /// — content, not user data; every real materializer needs it
+    /// regardless of onboarding state).
+    /// Never creates a `Goal`, `TrainingPlan`, `ProgramInstance`, or
+    /// `Session` — those are only ever created by an explicit athlete
+    /// action (onboarding's own steps, or Checkpoint 2).
+    ///
+    /// V1 R5 (Training Environment product reconciliation): the ONE
+    /// exception to "no environment is ever auto-created" — a brand-new
+    /// `User`'s own profile is seeded with the built-in `.fullGym()`
+    /// environment as its default, so `resolve` below never requires a
+    /// manual equipment step for a normal new athlete. Deliberately scoped
+    /// to the BRAND-NEW-user branch only, never as a backfill for an
+    /// already-existing user with zero environments — an athlete who has
+    /// already deliberately deleted every environment
+    /// (`TrainingEnvironmentSettingsView`'s own real "Delete Environment"
+    /// action) must never have Full Gym silently reappear on next launch;
+    /// `nil`/`environmentUnknown` remains a real, reachable state for that
+    /// athlete until they explicitly add one again.
     @discardableResult
     static func ensureBaselineIdentity(context: ModelContext) -> User {
         _ = ExerciseCatalog.resolveOrInsert(context: context)
@@ -58,6 +71,10 @@ enum AppRootStateResolver {
         let performanceProfile = PerformanceProfile()
         context.insert(performanceProfile)
         user.attachPerformanceProfile(performanceProfile)
+        let fullGym = TrainingEnvironment.fullGym()
+        context.insert(fullGym)
+        profile.trainingEnvironments.append(fullGym)
+        profile.defaultTrainingEnvironment = fullGym
         try? context.save()
         return user
     }

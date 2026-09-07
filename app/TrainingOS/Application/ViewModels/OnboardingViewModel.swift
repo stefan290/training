@@ -193,7 +193,18 @@ final class OnboardingViewModel {
             step = .preferences
         case .preferences:
             createOrUpdateGoal(modelContext: modelContext)
-            step = .environment
+            // V1 R5 (Training Environment product reconciliation): Full
+            // Gym is now a real, auto-seeded default the moment baseline
+            // identity exists (`AppRootStateResolver.ensureBaselineIdentity`)
+            // — refreshing here (the exact same check `start()`'s own
+            // resume branch already makes) means a normal athlete moving
+            // FORWARD through onboarding also skips the now-optional
+            // Environment step, not only an athlete who relaunches
+            // mid-flow. Environment configuration remains fully reachable
+            // (via Back from Review, or Training Environment settings) —
+            // this only stops it from being FORCED.
+            refreshEnvironmentState(modelContext: modelContext)
+            step = hasDefaultTrainingEnvironment ? .review : .environment
         case .environment:
             step = .review
         case .review:

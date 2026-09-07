@@ -40,6 +40,12 @@ struct TodayView: View {
     /// full hub out of this stage's scope; this presents Training
     /// Environment configuration directly, the only piece TE.1 needs.
     @State private var showingTrainingEnvironmentSettings = false
+    /// V1 R5 (Training Environment product reconciliation), Part 1: the
+    /// Session currently going through "use a different environment for
+    /// this workout" — contextual metadata/action on the hero card, never
+    /// a new dashboard section (this checkpoint's own "do not redesign
+    /// Today" instruction).
+    @State private var environmentSwitchSession: Session?
 
     /// The one session this screen treats as primary — the first not-yet-
     /// finished Session if any exist, otherwise the first Session (every
@@ -76,6 +82,16 @@ struct TodayView: View {
                             )
                         }
                         .buttonStyle(.plain)
+
+                        if let environment = viewModel.environment(for: primarySession), viewModel.environments.count > 1 {
+                            Button {
+                                environmentSwitchSession = primarySession
+                            } label: {
+                                Label(environment.name, systemImage: "mappin.and.ellipse")
+                                    .font(Theme.label)
+                                    .foregroundStyle(Theme.textSecondary)
+                            }
+                        }
 
                         ForEach(secondarySessions) { session in
                             SectionHeader(title: sessionEyebrow(for: session, isPrimary: false))
@@ -161,6 +177,11 @@ struct TodayView: View {
         }
         .sheet(isPresented: $showingTrainingEnvironmentSettings) {
             TrainingEnvironmentSettingsView()
+        }
+        .sheet(item: $environmentSwitchSession) { session in
+            EnvironmentSwitchSheet(session: session, viewModel: viewModel, modelContext: modelContext) {
+                environmentSwitchSession = nil
+            }
         }
     }
 
@@ -411,6 +432,123 @@ private struct UpcomingPlanStartCard: View {
             Text("Your \(PlanPresentation.phaseTypeLabel(upcoming.phaseType)) phase begins then — nothing to do before it starts.")
                 .font(Theme.body)
                 .foregroundStyle(Theme.textMuted)
+        }
+        .trainingOSCard(emphasized: true)
+    }
+}
+
+/// V1 R5 (Training Environment product reconciliation), Part 1: "use a
+/// different environment for THIS workout" — pick an environment, see
+/// exactly which real exercises would change (never a silent swap,
+/// never presented as the original prescription), confirm. Applying
+/// calls `TodayViewModel.applyEnvironmentSwitch`, which is
+/// `SubstituteExerciseUseCase.substituteThisSessionOnly` under the
+/// hood — this session's `ExercisePrescription`s only, never the
+/// `TrainingMix`/`ProgramInstance`, never a persistent "going forward"
+/// preference.
+private struct EnvironmentSwitchSheet: View {
+    let session: Session
+    let viewModel: TodayViewModel
+    let modelContext: ModelContext
+    let onDone: () -> Void
+
+    @State private var selectedEnvironment: TrainingEnvironment?
+    @State private var preview: [WorkoutEnvironmentAdaptationUseCase.Adaptation] = []
+
+    private var currentEnvironment: TrainingEnvironment? { viewModel.environment(for: session) }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        SectionHeader(title: "Train Where").padding(.bottom, 10)
+                        ForEach(Array(viewModel.environments.enumerated()), id: \.element.id) { index, environment in
+                            Button {
+                                selectedEnvironment = environment
+                                preview = environment.id == currentEnvironment?.id
+                                    ? [] : viewModel.previewEnvironmentSwitch(for: session, to: environment, modelContext: modelContext)
+                            } label: {
+                                HStack {
+                                    Text(environment.name)
+                                        .font(Theme.body)
+                                        .foregroundStyle(Theme.textPrimary)
+                                    Spacer()
+                                    if environment.id == (selectedEnvironment?.id ?? currentEnvironment?.id) {
+                                        Image(systemName: "checkmark").foregroundStyle(Theme.primary)
+                                    }
+                                }
+                                .padding(.vertical, 8)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            if index < viewModel.environments.count - 1 { Divider().opacity(0.4) }
+                        }
+                    }
+                    .trainingOSCard()
+
+                    if let selectedEnvironment, selectedEnvironment.id != currentEnvironment?.id {
+                        adaptationSummary(for: selectedEnvironment)
+                    }
+                }
+                .padding(Theme.screenPadding)
+            }
+            .background(Theme.ground)
+            .navigationTitle("Training Environment")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel", action: onDone)
+                }
+                if let selectedEnvironment, selectedEnvironment.id != currentEnvironment?.id {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Use \(selectedEnvironment.name)") {
+                            viewModel.applyEnvironmentSwitch(preview, environment: selectedEnvironment, modelContext: modelContext)
+                            onDone()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func adaptationSummary(for environment: TrainingEnvironment) -> some View {
+        let changed = preview.filter { $0.replacementExercise != nil }
+        let unresolved = preview.filter { $0.replacementExercise == nil }
+        VStack(alignment: .leading, spacing: 10) {
+            Text(environment.name.uppercased())
+                .font(Theme.eyebrow)
+                .tracking(1.2)
+                .foregroundStyle(Theme.textSecondary)
+            if preview.isEmpty {
+                Text("No exercises need to change — everything in this workout is already compatible.")
+                    .font(Theme.body)
+                    .foregroundStyle(Theme.textMuted)
+            } else {
+                Text("\(changed.count) exercise\(changed.count == 1 ? "" : "s") adapted")
+                    .font(Theme.heading)
+                    .foregroundStyle(Theme.textPrimary)
+                ForEach(changed) { adaptation in
+                    if let replacement = adaptation.replacementExercise {
+                        HStack {
+                            Text(adaptation.originalExercise.canonicalName)
+                                .font(Theme.body)
+                                .foregroundStyle(Theme.textSecondary)
+                            Image(systemName: "arrow.right")
+                                .foregroundStyle(Theme.textInactive)
+                            Text(replacement.canonicalName)
+                                .font(Theme.body.weight(.medium))
+                                .foregroundStyle(Theme.textPrimary)
+                        }
+                    }
+                }
+            }
+            if !unresolved.isEmpty {
+                Text("\(unresolved.count) exercise\(unresolved.count == 1 ? "" : "s") can't be adapted to \(environment.name) — no compatible substitute is available.")
+                    .font(Theme.label)
+                    .foregroundStyle(Theme.attention)
+            }
         }
         .trainingOSCard(emphasized: true)
     }
