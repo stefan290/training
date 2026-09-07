@@ -122,8 +122,7 @@ struct OnboardingFlowView: View {
                 Image(systemName: viewModel.selectedGoalType == type ? "checkmark.circle.fill" : "circle")
                     .foregroundStyle(viewModel.selectedGoalType == type ? Theme.primary : Theme.textSecondary)
             }
-            .padding(14)
-            .background(Theme.surfacePrimary, in: RoundedRectangle(cornerRadius: 12))
+            .trainingOSCard()
         }
         .buttonStyle(.plain)
     }
@@ -218,8 +217,7 @@ struct OnboardingFlowView: View {
             Button("Remove", role: .destructive) { viewModel.hasRunningEvent = false }
                 .font(Theme.label)
         }
-        .padding(14)
-        .background(Theme.surfacePrimary, in: RoundedRectangle(cornerRadius: 12))
+        .trainingOSCard()
     }
 
     /// Mirrors `addWorkingTowardPanel` exactly, plus the locked 3-option
@@ -260,8 +258,7 @@ struct OnboardingFlowView: View {
                 .disabled(!viewModel.isRunningEventDateValid)
             }
         }
-        .padding(14)
-        .background(Theme.surfacePrimary, in: RoundedRectangle(cornerRadius: 12))
+        .trainingOSCard()
     }
 
     /// Explicit, always-visible/tappable rows for `RunningStartingState` —
@@ -315,8 +312,7 @@ struct OnboardingFlowView: View {
             Button("Remove", role: .destructive) { viewModel.hasMilestone = false }
                 .font(Theme.label)
         }
-        .padding(14)
-        .background(Theme.surfacePrimary, in: RoundedRectangle(cornerRadius: 12))
+        .trainingOSCard()
     }
 
     /// The only real supported "working toward" item this checkpoint
@@ -348,8 +344,7 @@ struct OnboardingFlowView: View {
                 .disabled(!viewModel.isMilestoneDateValid)
             }
         }
-        .padding(14)
-        .background(Theme.surfacePrimary, in: RoundedRectangle(cornerRadius: 12))
+        .trainingOSCard()
     }
 
     private func goalTypeDescription(_ type: GoalType) -> String {
@@ -459,15 +454,12 @@ struct OnboardingFlowView: View {
 
     private func reviewSection<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(title)
-                .font(Theme.label)
-                .foregroundStyle(Theme.textSecondary)
+            SectionHeader(title: title)
             VStack(alignment: .leading, spacing: 10) {
                 content()
             }
-            .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Theme.surfacePrimary, in: RoundedRectangle(cornerRadius: 12))
+            .trainingOSCard()
         }
     }
 

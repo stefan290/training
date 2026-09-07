@@ -142,6 +142,18 @@ final class StrategicPlanSelectionViewModel {
         return text
     }
     var phaseTypeLabels: [String] { proposal?.phases.map { PlanPresentation.phaseTypeLabel($0.type) } ?? [] }
+    /// V1 R6 (Onboarding + Plan Selection reconciliation): the REAL,
+    /// truthful R0-resolved start date for a brand-new plan — the exact
+    /// same pure, deterministic `LongTermPlanner.resolvedInitialPlanStartDate`
+    /// call `AcceptStrategicPlanUseCase.accept` itself makes internally,
+    /// applied here only as a read-only PREVIEW so Review can honestly
+    /// show "Starts Monday, Sep 14" (never "Starts today" for a
+    /// Tuesday-Sunday acceptance) before the athlete taps Accept. Never a
+    /// second/independent computation — same real proposed first-phase
+    /// start date, same real function, zero new semantics.
+    var resolvedStartDate: Date? {
+        proposal?.phases.first.map { LongTermPlanner.resolvedInitialPlanStartDate(asOf: $0.startDate) }
+    }
     /// Dated Objectives + 10K Strategic Reconciliation V1: true when any
     /// proposed phase's own prep window was compressed below its ideal
     /// lead time because an earlier dated objective's own phase ran late
@@ -176,7 +188,12 @@ final class StrategicPlanSelectionViewModel {
         }
     }
 
-    func load(modelContext: ModelContext) {
+    /// `referenceDate` defaults to the real current moment for every
+    /// existing caller (mirrors `TodayViewModel`/`PlanViewModel.load`'s
+    /// own identical parameter) — a deterministic override exists only so
+    /// tests can prove the R0 start-date preview without depending on the
+    /// real wall-clock date the suite happens to run on.
+    func load(modelContext: ModelContext, referenceDate: Date = Date()) {
         errorMessage = nil
         didSucceed = false
         needsTrainingEnvironment = false
@@ -198,7 +215,7 @@ final class StrategicPlanSelectionViewModel {
         }
         goal = activeGoal
 
-        let proposal = LongTermPlanner.proposeStrategicPlan(goal: activeGoal, asOf: Date())
+        let proposal = LongTermPlanner.proposeStrategicPlan(goal: activeGoal, asOf: referenceDate)
         self.proposal = proposal
 
         guard proposal.feasibility == .feasible, let firstProposedPhase = proposal.phases.first else {
@@ -287,7 +304,7 @@ final class StrategicPlanSelectionViewModel {
     /// guard, so the ViewModel owns that discipline, same shape as
     /// `StrategicTransitionViewModel.startTransition`).
     @discardableResult
-    func acceptAndStart(modelContext: ModelContext) -> Bool {
+    func acceptAndStart(modelContext: ModelContext, referenceDate: Date = Date()) -> Bool {
         guard !isAccepting, !didSucceed else { return false }
         guard let goal, let proposal, let mix = reviewedMix else {
             errorMessage = "No plan recommendation is available yet."
@@ -316,7 +333,7 @@ final class StrategicPlanSelectionViewModel {
         }
 
         do {
-            let plan = try AcceptStrategicPlanUseCase.accept(proposal, context: modelContext, decidedAt: Date())
+            let plan = try AcceptStrategicPlanUseCase.accept(proposal, context: modelContext, decidedAt: referenceDate)
             guard let firstPhase = plan.orderedPhases.first else {
                 errorMessage = "Your plan could not be started. Nothing was changed."
                 return false
@@ -343,7 +360,7 @@ final class StrategicPlanSelectionViewModel {
             )
 
             let result = try StartPhaseUseCase.start(
-                phase: firstPhase, mix: mix, asOf: Date(), ownerUserID: goal.ownerUserID,
+                phase: firstPhase, mix: mix, asOf: referenceDate, ownerUserID: goal.ownerUserID,
                 performanceProfile: user?.performanceProfile,
                 availability: UserAvailability(
                     trainingDaysPerWeek: trainingDays, allowsDoubleSessions: allowsDoubles,
