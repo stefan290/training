@@ -65,10 +65,8 @@ struct ReadinessCheckInView: View {
                             .font(Theme.body)
                             .foregroundStyle(Theme.textPrimary)
                         HStack(spacing: 10) {
-                            Button("No") { answerGateway(false) }
-                                .buttonStyle(.bordered)
-                            Button("Yes") { answerGateway(true) }
-                                .buttonStyle(.bordered)
+                            TrainingOSChip(label: "No", isSelected: gatewayAnswered && !hasPainOrStiffness) { answerGateway(false) }
+                            TrainingOSChip(label: "Yes", isSelected: gatewayAnswered && hasPainOrStiffness) { answerGateway(true) }
                         }
                     }
 
@@ -89,8 +87,7 @@ struct ReadinessCheckInView: View {
                     Spacer(minLength: 12)
 
                     Button("Continue", action: submit)
-                        .buttonStyle(.borderedProminent)
-                        .tint(Theme.primary)
+                        .buttonStyle(.trainingOSPrimary)
                         .frame(maxWidth: .infinity)
                         .disabled(!canContinue)
 
@@ -145,9 +142,7 @@ struct ReadinessCheckInView: View {
     }
 
     private func levelButton(_ label: String, level: ReadinessLevel, selection: Binding<ReadinessLevel?>) -> some View {
-        Button(label) { selection.wrappedValue = level }
-            .buttonStyle(.bordered)
-            .tint(selection.wrappedValue == level ? Theme.primary : nil)
+        TrainingOSChip(label: label, isSelected: selection.wrappedValue == level) { selection.wrappedValue = level }
     }
 
     private func areaPicker(title: String, selection: Binding<Set<MuscleGroup>>) -> some View {
@@ -171,11 +166,9 @@ private struct FlowChips: View {
             HStack(spacing: 8) {
                 ForEach(items, id: \.self) { item in
                     let isSelected = selection.contains(item)
-                    Button(item.rawValue.capitalized) {
+                    TrainingOSChip(label: item.rawValue.capitalized, isSelected: isSelected) {
                         if isSelected { selection.remove(item) } else { selection.insert(item) }
                     }
-                    .buttonStyle(.bordered)
-                    .tint(isSelected ? Theme.primary : nil)
                 }
             }
         }

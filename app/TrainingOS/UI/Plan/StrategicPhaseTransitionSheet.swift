@@ -108,7 +108,7 @@ struct StrategicPhaseTransitionSheet: View {
                 Button("Configure Training Environment") {
                     showingTrainingEnvironmentSettings = true
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.trainingOSSecondary)
                 .frame(maxWidth: .infinity)
             }
 
@@ -124,8 +124,7 @@ struct StrategicPhaseTransitionSheet: View {
                 }
                 .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
-            .tint(Theme.primary)
+            .buttonStyle(.trainingOSPrimary)
             .disabled(viewModel.isTransitioning)
         } else {
             Text("No next phase is available to start.")

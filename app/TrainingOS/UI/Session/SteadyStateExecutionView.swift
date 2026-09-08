@@ -5,6 +5,12 @@ import SwiftData
 /// intensity, a plain elapsed-time clock, and a completion form covering
 /// whichever metrics this modality can actually supply — never blocked on
 /// a missing sensor/HealthKit permission (CLAUDE.md rule 13/14).
+///
+/// Visual Design checkpoint (continuation): restyled onto the R1
+/// foundation — the same large centered monospace clock treatment
+/// Functional Fitness's timers already use, and the shared
+/// `TrainingOSPrimaryButtonStyle`/`TrainingOSSecondaryButtonStyle` CTAs —
+/// zero ViewModel/timer/persistence behavior changed, only presentation.
 struct SteadyStateExecutionView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
@@ -38,18 +44,18 @@ struct SteadyStateExecutionView: View {
                         clock
 
                         Button("Finish Activity") { showingCompletion = true }
-                            .buttonStyle(.borderedProminent)
-                            .tint(Theme.primary)
+                            .buttonStyle(.trainingOSPrimary)
                             .frame(maxWidth: .infinity)
 
                         Button("Change Activity") { showingChangeActivity = true }
-                            .buttonStyle(.bordered)
+                            .buttonStyle(.trainingOSSecondary)
+                            .frame(maxWidth: .infinity)
                     } else {
                         ContentUnavailableView("Activity logged", systemImage: "checkmark.circle")
                     }
                 }
             }
-            .padding(16)
+            .padding(Theme.screenPadding)
         }
         .background(Theme.ground)
         .navigationTitle(viewModel.prescription.map { IntensityPresentation.activityLabel($0.activityType) } ?? "Steady State")
@@ -77,7 +83,7 @@ struct SteadyStateExecutionView: View {
     private func header(_ prescription: SteadyStatePrescription) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(IntensityPresentation.activityLabel(prescription.activityType))
-                .font(Theme.heading)
+                .font(Theme.headingXL)
                 .foregroundStyle(Theme.textPrimary)
             HStack(spacing: 12) {
                 if let duration = prescription.durationSeconds {
@@ -87,7 +93,7 @@ struct SteadyStateExecutionView: View {
                     Text("\(Int(distance)) m")
                 }
             }
-            .font(Theme.body)
+            .font(Theme.numeric)
             .foregroundStyle(Theme.textSecondary)
             if let label = IntensityPresentation.label(prescription.primaryIntensity) {
                 Text(label)
@@ -97,31 +103,36 @@ struct SteadyStateExecutionView: View {
         }
     }
 
+    /// The same centered eyebrow + massive monospace-value shape
+    /// `FunctionalFitnessExecutionView.timerBlock` already established —
+    /// a plain elapsed clock never needs its own bespoke presentation.
     private var clock: some View {
         Group {
             if let state = viewModel.block.timerState {
                 TimelineView(.periodic(from: .now, by: 1)) { context in
                     let elapsed = max(0, WorkoutTimer.elapsedSeconds(state, asOf: context.date))
                     let isPaused = state.pausedAt != nil
-                    VStack(spacing: 10) {
+                    VStack(spacing: 14) {
+                        Text("ELAPSED")
+                            .font(Theme.eyebrow)
+                            .tracking(1.4)
+                            .foregroundStyle(Theme.textSecondary)
                         Text(formatted(elapsed))
-                            .font(.system(.largeTitle, design: .monospaced)).bold()
+                            .font(.system(size: 72, weight: .bold, design: .monospaced))
+                            .monospacedDigit()
                             .foregroundStyle(Theme.textPrimary)
-                        HStack(spacing: 12) {
-                            Button(isPaused ? "Resume" : "Pause") {
-                                if isPaused {
-                                    try? UpdateBlockTimerUseCase.resume(viewModel.block, asOf: Date(), modelContext: modelContext)
-                                } else {
-                                    try? UpdateBlockTimerUseCase.pause(viewModel.block, asOf: Date(), modelContext: modelContext)
-                                }
+                        Button(isPaused ? "Resume" : "Pause") {
+                            if isPaused {
+                                try? UpdateBlockTimerUseCase.resume(viewModel.block, asOf: Date(), modelContext: modelContext)
+                            } else {
+                                try? UpdateBlockTimerUseCase.pause(viewModel.block, asOf: Date(), modelContext: modelContext)
                             }
                         }
-                        .buttonStyle(.bordered)
+                        .buttonStyle(.trainingOSSecondary)
                     }
                 }
-                .padding(14)
                 .frame(maxWidth: .infinity)
-                .background(Theme.surfaceSecondary, in: RoundedRectangle(cornerRadius: 12))
+                .padding(.vertical, 8)
             }
         }
     }

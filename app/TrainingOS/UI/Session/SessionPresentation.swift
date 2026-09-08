@@ -89,6 +89,23 @@ enum SessionPresentation {
         return scheduledTime < asOf
     }
 
+    /// Visual Design checkpoint: athlete-facing translation of the real,
+    /// already-persisted `LoadOverlayReasonCode` for the "Why?" load
+    /// disclosure — pure display copy over a real engine decision, never
+    /// a new business rule.
+    static func loadOverlayReasonLabel(_ code: LoadOverlayReasonCode) -> String {
+        switch code {
+        case .sourceBaseline: "This is the program's own next scheduled load."
+        case .loadIncreaseEasyPerformance: "Last time was clearly easy at target effort, so the load moved up."
+        case .holdMatchedTarget: "Last time matched the prescribed effort, so the load holds."
+        case .holdInsufficientData: "Not enough recent history yet, so the load holds at the program's baseline."
+        case .holdIncrementTooLarge: "You've earned an increase, but the smallest jump would be too big for this exposure — held for now."
+        case .loadDecreaseRepeatedHardPerformance: "The last two sessions were harder than prescribed, so the load stepped back."
+        case .deloadSourceAuthority: "This is a deload week — load follows the program's own reduced plan."
+        case .readinessExcluded: "Your last exposure was readiness-adapted, so it wasn't used to adjust this load."
+        }
+    }
+
     static func roleLabel(_ role: SessionRole) -> String {
         switch role {
         case .strength: "Strength"

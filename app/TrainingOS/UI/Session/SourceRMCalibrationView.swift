@@ -52,8 +52,7 @@ struct SourceRMCalibrationView: View {
                         viewModel.completeCalibrationAndStart(modelContext: modelContext)
                         onCompleted()
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Theme.primary)
+                    .buttonStyle(.trainingOSPrimary)
                     .frame(maxWidth: .infinity)
                     .disabled(!viewModel.allSatisfied)
                 }

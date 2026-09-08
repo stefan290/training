@@ -7,6 +7,18 @@ import SwiftData
 /// shapes, never rebuilding `FunctionalFitnessProgrammingSystem` or
 /// parsing a workout string. Large tap targets/readable numbers/minimal
 /// keyboard use throughout, per Part O's gym-usability deviation rule.
+///
+/// Visual Design checkpoint: restyled onto the R1 foundation to match the
+/// approved artifact's "Functional fitness" screen (a massive centered
+/// monospace timer, an "Each round" movements card, and a Rounds/+reps
+/// two-up stat-stepper row) — zero ViewModel/scoring/persistence
+/// behavior changed, only presentation. The artifact's Rx-vs-Scaled
+/// amber distinction inside the movements card is NOT reproduced here:
+/// no scaled/substitution flag is currently exposed to this ViewModel
+/// (only the plain prescribed movement line is), so adding that color
+/// distinction now would require inventing display data this screen
+/// doesn't actually have — flagged as a disclosed gap, not silently
+/// skipped.
 struct FunctionalFitnessExecutionView: View {
     @Environment(\.modelContext) private var modelContext
     let session: Session
@@ -36,7 +48,7 @@ struct FunctionalFitnessExecutionView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 18) {
                 if let prescription = viewModel.prescription {
                     header(prescription)
 
@@ -45,16 +57,24 @@ struct FunctionalFitnessExecutionView: View {
                     }
 
                     if viewModel.block.status == .completed {
-                        ContentUnavailableView("Result logged", systemImage: "checkmark.circle")
+                        completedContent
                     } else {
                         content(for: prescription.format)
+
+                        if !prescription.orderedMovements.isEmpty {
+                            movementsCard(prescription)
+                        }
                     }
                 }
             }
-            .padding(16)
+            .padding(Theme.screenPadding)
         }
         .background(Theme.ground)
-        .navigationTitle(viewModel.prescription.map { BlockPresentation.formatLabel($0.format) } ?? "Functional Fitness")
+        // Stage V1 R1 nav-bar correction: the format ("AMRAP 12min") is
+        // already the huge display headline in the body — the native
+        // nav bar title only needs the block-type context, never a
+        // duplicate of the exact same string shown prominently below.
+        .navigationTitle(BlockPresentation.blockTypeLabel(viewModel.block.type))
         .navigationBarTitleDisplayMode(.inline)
         .task {
             try? CompleteBlockUseCase.start(viewModel.block, modelContext: modelContext)
@@ -96,7 +116,7 @@ struct FunctionalFitnessExecutionView: View {
     private func header(_ prescription: FunctionalFitnessPrescription) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(BlockPresentation.formatLabel(prescription.format))
-                .font(Theme.heading)
+                .font(Theme.headingXL)
                 .foregroundStyle(Theme.textPrimary)
             // Stage FF.P1: the athlete-visible concrete prescription
             // (e.g. "12 Wall Ball · 8 Pull-ups · 200 m Row Erg") — the
@@ -107,10 +127,19 @@ struct FunctionalFitnessExecutionView: View {
             let lines = prescription.orderedMovements.map(BlockPresentation.prescribedMovementLine)
             if !lines.isEmpty {
                 Text(lines.joined(separator: " · "))
-                    .font(Theme.body)
-                    .foregroundStyle(Theme.textSecondary)
+                    .font(Theme.numeric)
+                    .foregroundStyle(Theme.textMuted)
             }
         }
+    }
+
+    private var completedContent: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Result logged")
+                .font(Theme.heading)
+                .foregroundStyle(Theme.positive)
+        }
+        .trainingOSCard()
     }
 
     private func highlightBanner(_ highlight: LoggedResultHighlight) -> some View {
@@ -119,6 +148,21 @@ struct FunctionalFitnessExecutionView: View {
              : "Logged: \(highlight.value)")
             .font(Theme.body)
             .foregroundStyle(highlight.isPersonalRecord ? Theme.positive : Theme.textSecondary)
+    }
+
+    /// The artifact's own "Each round" movements card — same real
+    /// `prescribedMovementLine` data Today/Session Detail already show,
+    /// just restyled into the design's bordered surface card.
+    private func movementsCard(_ prescription: FunctionalFitnessPrescription) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            SectionHeader(title: "Each round")
+            ForEach(Array(prescription.orderedMovements.enumerated()), id: \.offset) { _, movement in
+                Text(BlockPresentation.prescribedMovementLine(movement))
+                    .font(Theme.body)
+                    .foregroundStyle(Theme.textPrimary)
+            }
+        }
+        .trainingOSCard()
     }
 
     private func startClock(for format: WorkoutFormat) {
@@ -167,13 +211,13 @@ struct FunctionalFitnessExecutionView: View {
                 TimelineView(.periodic(from: .now, by: 1)) { context in
                     let remaining = max(0, WorkoutTimer.remainingSeconds(state, asOf: context.date) ?? 0)
                     let expired = WorkoutTimer.isExpired(state, asOf: context.date)
-                    VStack(spacing: 14) {
-                        Text(formattedClock(remaining))
-                            .font(.system(size: 56, design: .monospaced)).bold()
-                            .foregroundStyle(expired ? Theme.attention : Theme.textPrimary)
-                        Text("\(viewModel.roundsCompleted) rounds")
-                            .font(Theme.body)
-                            .foregroundStyle(Theme.textSecondary)
+                    VStack(spacing: 18) {
+                        timerBlock(phaseLabel: "AMRAP", value: formattedClock(remaining), caption: "\(capSeconds / 60) min AMRAP", expired: expired)
+
+                        TrainingOSStatStepper(
+                            label: "Rounds", value: viewModel.roundsCompleted, emphasizePlus: true,
+                            onDecrement: { viewModel.decrementRound() }, onIncrement: { viewModel.incrementRound() }
+                        )
 
                         if enteringFinalScore || expired {
                             partialRepsEntryView(onSave: {
@@ -183,14 +227,7 @@ struct FunctionalFitnessExecutionView: View {
                                 )
                             })
                         } else {
-                            Button("+ ROUND") { viewModel.incrementRound() }
-                                .buttonStyle(.borderedProminent)
-                                .tint(Theme.primary)
-                                .font(.title2)
-                                .frame(maxWidth: .infinity, minHeight: 64)
-
-                            Button("Finish") { enteringFinalScore = true }
-                                .buttonStyle(.bordered)
+                            neutralButton("Finish") { enteringFinalScore = true }
                         }
                     }
                 }
@@ -209,27 +246,22 @@ struct FunctionalFitnessExecutionView: View {
                         let currentName = movements.isEmpty ? nil : movements[position.minuteIndex % movements.count].exercise?.canonicalName
                         let nextName = movements.isEmpty ? nil : movements[(position.minuteIndex + 1) % movements.count].exercise?.canonicalName
 
-                        VStack(spacing: 12) {
-                            Text("Minute \(position.minuteIndex + 1) of \(position.totalMinutes)")
-                                .font(Theme.label)
-                                .foregroundStyle(Theme.textSecondary)
-                            if let currentName {
-                                Text("Now: \(currentName)")
-                                    .font(Theme.heading)
-                                    .foregroundStyle(Theme.textPrimary)
-                            }
-                            Text(formattedClock(position.remaining))
-                                .font(.system(size: 48, design: .monospaced)).bold()
-                                .foregroundStyle(Theme.textPrimary)
+                        VStack(spacing: 14) {
+                            timerBlock(
+                                phaseLabel: "Minute \(position.minuteIndex + 1) of \(position.totalMinutes)",
+                                value: formattedClock(position.remaining), caption: currentName.map { "Now: \($0)" } ?? "", expired: false
+                            )
                             if let nextName {
                                 Text("Next: \(nextName)")
-                                    .font(Theme.body)
+                                    .font(Theme.label)
                                     .foregroundStyle(Theme.textSecondary)
                             }
 
                             HStack(spacing: 12) {
                                 Button("Mark Minute Incomplete") { viewModel.markMinuteIncomplete(asOf: Date()) }
-                                Button("Finish") {
+                                    .buttonStyle(.trainingOSSecondary)
+                                Spacer()
+                                neutralButton("Finish") {
                                     let completed = min(position.minuteIndex + 1, position.totalMinutes)
                                     pendingFinish = PendingFinish(
                                         scoreValue: .completedIntervals(completed),
@@ -237,7 +269,6 @@ struct FunctionalFitnessExecutionView: View {
                                     )
                                 }
                             }
-                            .buttonStyle(.bordered)
                         }
                     }
                 }
@@ -254,22 +285,20 @@ struct FunctionalFitnessExecutionView: View {
                     let elapsed = WorkoutTimer.elapsedSeconds(state, asOf: context.date)
                     let timeCapped = capSeconds.map { elapsed >= Double($0) } ?? false
 
-                    VStack(spacing: 14) {
-                        Text(formattedClock(elapsed))
-                            .font(.system(size: 48, design: .monospaced)).bold()
-                            .foregroundStyle(timeCapped ? Theme.attention : Theme.textPrimary)
+                    VStack(spacing: 18) {
+                        timerBlock(
+                            phaseLabel: "For Time",
+                            value: formattedClock(elapsed),
+                            caption: capSeconds.map { "cap \(formattedClock(Double($0)))" } ?? "",
+                            expired: timeCapped
+                        )
 
                         if let targetRounds {
-                            Text("\(viewModel.roundsCompleted) of \(targetRounds) rounds")
-                                .font(Theme.body)
-                                .foregroundStyle(Theme.textSecondary)
-                            if !enteringFinalScore {
-                                Button("+ ROUND") { viewModel.incrementRound() }
-                                    .buttonStyle(.borderedProminent)
-                                    .tint(Theme.primary)
-                                    .font(.title2)
-                                    .frame(maxWidth: .infinity, minHeight: 64)
-                            }
+                            TrainingOSStatStepper(
+                                label: "Rounds", value: viewModel.roundsCompleted, emphasizePlus: true,
+                                displayValue: { "\($0) / \(targetRounds)" },
+                                onDecrement: { viewModel.decrementRound() }, onIncrement: { viewModel.incrementRound() }
+                            )
                         }
 
                         if enteringFinalScore {
@@ -280,20 +309,17 @@ struct FunctionalFitnessExecutionView: View {
                                 )
                             })
                         } else if let targetRounds, viewModel.roundsCompleted >= targetRounds {
-                            Button("Finish") {
+                            neutralButton("Finish") {
                                 pendingFinish = PendingFinish(scoreValue: .time(seconds: Int(elapsed)), completionContext: .full)
                             }
-                            .buttonStyle(.borderedProminent).tint(Theme.primary).frame(maxWidth: .infinity)
                         } else if targetRounds == nil {
-                            Button("Finish") {
+                            neutralButton("Finish") {
                                 pendingFinish = PendingFinish(
                                     scoreValue: .time(seconds: Int(elapsed)), completionContext: timeCapped ? .partial : .full
                                 )
                             }
-                            .buttonStyle(.borderedProminent).tint(Theme.primary).frame(maxWidth: .infinity)
                         } else if timeCapped {
-                            Button("Time Cap Reached") { enteringFinalScore = true }
-                                .buttonStyle(.bordered)
+                            neutralButton("Time Cap Reached") { enteringFinalScore = true }
                         }
                     }
                 }
@@ -305,17 +331,21 @@ struct FunctionalFitnessExecutionView: View {
 
     private func maxLoadBody() -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            TextField("Load (kg)", text: $loadEntry)
-                .keyboardType(.decimalPad)
-                .font(Theme.numeric)
-            Button("Save") {
-                guard let kg = Double(loadEntry) else { return }
-                pendingFinish = PendingFinish(scoreValue: .load(kilograms: kg), completionContext: .full)
+            SectionHeader(title: "Load")
+            HStack {
+                TextField("Load (kg)", text: $loadEntry)
+                    .keyboardType(.decimalPad)
+                    .font(Theme.numeric.weight(.bold))
+                    .foregroundStyle(Theme.textPrimary)
+                Spacer()
+                Button("Save") {
+                    guard let kg = Double(loadEntry) else { return }
+                    pendingFinish = PendingFinish(scoreValue: .load(kilograms: kg), completionContext: .full)
+                }
+                .buttonStyle(.trainingOSPrimary)
             }
-            .buttonStyle(.borderedProminent).tint(Theme.primary)
         }
-        .padding(14)
-        .background(Theme.surfacePrimary, in: RoundedRectangle(cornerRadius: 12))
+        .trainingOSCard()
     }
 
     private func maxRepsBody(capSeconds: Int) -> some View {
@@ -324,20 +354,19 @@ struct FunctionalFitnessExecutionView: View {
                 TimelineView(.periodic(from: .now, by: 1)) { context in
                     let remaining = max(0, WorkoutTimer.remainingSeconds(state, asOf: context.date) ?? 0)
                     let expired = WorkoutTimer.isExpired(state, asOf: context.date)
-                    VStack(spacing: 14) {
-                        Text(formattedClock(remaining))
-                            .font(.system(size: 56, design: .monospaced)).bold()
-                            .foregroundStyle(expired ? Theme.attention : Theme.textPrimary)
+                    VStack(spacing: 18) {
+                        timerBlock(phaseLabel: "Max Reps", value: formattedClock(remaining), caption: "cap \(capSeconds / 60) min", expired: expired)
 
                         if enteringFinalScore || expired {
-                            Stepper("Reps: \(repsEntry)", value: $repsEntry, in: 0...500)
-                            Button("Save") {
+                            TrainingOSStatStepper(
+                                label: "Reps", value: repsEntry,
+                                onDecrement: { repsEntry = max(0, repsEntry - 1) }, onIncrement: { repsEntry += 1 }
+                            )
+                            neutralButton("Save") {
                                 pendingFinish = PendingFinish(scoreValue: .repetitions(repsEntry), completionContext: .full)
                             }
-                            .buttonStyle(.borderedProminent).tint(Theme.primary)
                         } else {
-                            Button("Finish") { enteringFinalScore = true }
-                                .buttonStyle(.bordered)
+                            neutralButton("Finish") { enteringFinalScore = true }
                         }
                     }
                 }
@@ -352,25 +381,22 @@ struct FunctionalFitnessExecutionView: View {
             if viewModel.block.timerState != nil {
                 TimelineView(.periodic(from: .now, by: 1)) { context in
                     if let position = viewModel.intervalsPosition(asOf: context.date) {
-                        VStack(spacing: 12) {
-                            Text(position.isWork ? "WORK" : "RECOVERY")
-                                .font(Theme.label)
-                                .foregroundStyle(position.isWork ? Theme.primary : Theme.positive)
-                            Text("Interval \(position.intervalNumber) of \(count)")
-                                .font(Theme.body)
-                                .foregroundStyle(Theme.textSecondary)
-                            Text(formattedClock(position.remainingInLegSeconds))
-                                .font(.system(size: 48, design: .monospaced)).bold()
-                                .foregroundStyle(Theme.textPrimary)
+                        VStack(spacing: 14) {
+                            timerBlock(
+                                phaseLabel: position.isWork ? "WORK" : "RECOVERY",
+                                value: formattedClock(position.remainingInLegSeconds),
+                                caption: "Interval \(position.intervalNumber) of \(count)",
+                                expired: false,
+                                phaseColor: position.isWork ? Theme.primary : Theme.positive
+                            )
 
-                            Button("Finish") {
+                            neutralButton("Finish") {
                                 let completed = position.isSessionComplete ? count : position.legIndex / 2
                                 pendingFinish = PendingFinish(
                                     scoreValue: .completedIntervals(completed),
                                     completionContext: position.isSessionComplete ? .full : .partial
                                 )
                             }
-                            .buttonStyle(.borderedProminent).tint(Theme.primary)
                         }
                     }
                 }
@@ -378,15 +404,53 @@ struct FunctionalFitnessExecutionView: View {
         }
     }
 
-    // MARK: Shared
+    // MARK: Shared presentation
+
+    /// The artifact's own centered phase-label + massive monospace timer
+    /// + caption stack — reused by every timed format body. `expired`
+    /// drives the same attention-color treatment as the artifact's
+    /// `{{ timerColor }}` binding.
+    private func timerBlock(phaseLabel: String, value: String, caption: String, expired: Bool, phaseColor: Color = Theme.textSecondary) -> some View {
+        VStack(spacing: 6) {
+            if !phaseLabel.isEmpty {
+                Text(phaseLabel.uppercased())
+                    .font(Theme.eyebrow)
+                    .tracking(1.4)
+                    .foregroundStyle(phaseColor)
+            }
+            Text(value)
+                .font(.system(size: 72, weight: .bold, design: .monospaced))
+                .monospacedDigit()
+                .foregroundStyle(expired ? Theme.attention : Theme.textPrimary)
+            if !caption.isEmpty {
+                Text(caption)
+                    .font(Theme.label)
+                    .foregroundStyle(Theme.textSecondary)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
+    }
+
+    /// The artifact's own "Finish" treatment — a neutral/outlined
+    /// full-width button, deliberately distinct from Strength's
+    /// accent-filled forward-progress button, since finishing a workout
+    /// ends it rather than advancing it. Now the same shared
+    /// `TrainingOSSecondaryButtonStyle` every other screen's secondary
+    /// action uses, rather than a bespoke local shape.
+    private func neutralButton(_ title: String, action: @escaping () -> Void) -> some View {
+        Button(title, action: action)
+            .buttonStyle(.trainingOSSecondary)
+            .frame(maxWidth: .infinity)
+    }
 
     private func partialRepsEntryView(onSave: @escaping () -> Void) -> some View {
-        VStack(spacing: 10) {
-            Stepper("Extra reps: \(partialRepsEntry)", value: $partialRepsEntry, in: 0...200)
-            Button("Save") { onSave() }
-                .buttonStyle(.borderedProminent)
-                .tint(Theme.primary)
-                .frame(maxWidth: .infinity)
+        VStack(spacing: 12) {
+            TrainingOSStatStepper(
+                label: "+ reps", value: partialRepsEntry,
+                onDecrement: { partialRepsEntry = max(0, partialRepsEntry - 1) }, onIncrement: { partialRepsEntry += 1 }
+            )
+            neutralButton("Save") { onSave() }
         }
     }
 

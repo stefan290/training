@@ -11,6 +11,18 @@ import SwiftUI
 /// frequency (e.g. 2 Hypertrophy, 2 Strength Training) is never offered
 /// as a choice in the first place, rather than accepted here and failing
 /// later.
+///
+/// Visual Design checkpoint (continuation): rebuilt off the native
+/// `Form` this screen had used since R6 — the single most explicitly
+/// named priority gap in this continuation's own brief. Restyled onto
+/// the R1 foundation (`SectionHeader`/`.trainingOSCard()`/
+/// `TrainingOSStatStepper`/`TrainingOSPrimaryButtonStyle`): the artifact's
+/// "Availability" screen shows the same "big number + capacity" shape for
+/// a single weekly-load question — this generalizes that same visual
+/// language to five per-style rows instead of one, since no exact
+/// "Build My Own Mix" screen exists in the artifact for this real,
+/// V1-only capability. Zero interaction/validation logic changed — same
+/// `selections`/`allowedValues(for:)`/`onUse` contract as before.
 struct WeeklyCompositionEditorView: View {
     let capacity: Int
     /// Whether Cycling can be offered at all this session — real TE.1
@@ -34,55 +46,39 @@ struct WeeklyCompositionEditorView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section {
-                    Text("How do you want to train?")
-                        .font(Theme.body)
-                        .foregroundStyle(Theme.textPrimary)
-                    Text("Choose exactly how many sessions of each style you want each week. TrainingOS will build the best real program it can for this exact mix.")
-                        .font(Theme.label)
-                        .foregroundStyle(Theme.textSecondary)
-                }
-                Section {
-                    ForEach(TrainingStyle.allCases) { style in
-                        if style != .cycling || cyclingAvailable {
-                            row(for: style)
-                        }
-                    }
-                }
-                Section {
-                    HStack {
-                        Text("\(total) / \(capacity) sessions")
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("How do you want to train?")
+                            .font(Theme.headingXL)
+                            .foregroundStyle(Theme.textPrimary)
+                        Text("Choose exactly how many sessions of each style you want each week. TrainingOS will build the best real program it can for this exact mix.")
                             .font(Theme.body)
-                            .foregroundStyle(total > capacity ? Theme.attention : Theme.textPrimary)
-                        Spacer()
-                        Text("\(remaining) remaining")
-                            .font(Theme.label)
                             .foregroundStyle(Theme.textSecondary)
                     }
-                }
-                if !cyclingAvailable {
-                    Section {
+
+                    capacitySummary
+
+                    VStack(spacing: 10) {
+                        ForEach(TrainingStyle.allCases) { style in
+                            if style != .cycling || cyclingAvailable {
+                                row(for: style)
+                            }
+                        }
+                    }
+
+                    if !cyclingAvailable {
                         Text("Cycling needs a bike in your Training Environment.")
                             .font(Theme.label)
                             .foregroundStyle(Theme.textSecondary)
                     }
-                }
-                if let validationMessage {
-                    Section {
+
+                    if let validationMessage {
                         Text(validationMessage)
                             .font(Theme.label)
                             .foregroundStyle(Theme.attention)
                     }
-                }
-            }
-            .navigationTitle("Build My Own Mix")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel", action: onCancel)
-                }
-                ToolbarItem(placement: .confirmationAction) {
+
                     Button("Use This Mix") {
                         let nonZero = selections.compactMap { style, frequency in
                             frequency > 0 ? (style: style, frequency: frequency) : nil
@@ -91,9 +87,39 @@ struct WeeklyCompositionEditorView: View {
                             validationMessage = "This exact combination isn't supported yet — try a different mix."
                         }
                     }
+                    .buttonStyle(.trainingOSPrimary)
+                    .frame(maxWidth: .infinity)
+                }
+                .padding(Theme.screenPadding)
+            }
+            .background(Theme.ground)
+            .navigationTitle("Build My Own Mix")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel", action: onCancel)
                 }
             }
         }
+    }
+
+    /// The artifact's own "N / capacity" + "remaining" summary shape
+    /// (its "Sessions per week" card) — a real number over threshold
+    /// flips to the attention color, never a silent overflow.
+    private var capacitySummary: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                SectionHeader(title: "Sessions per week")
+                Text("\(total) / \(capacity)")
+                    .font(Theme.numeric.weight(.bold))
+                    .foregroundStyle(total > capacity ? Theme.attention : Theme.textPrimary)
+            }
+            Spacer()
+            Text("\(remaining) remaining")
+                .font(Theme.label)
+                .foregroundStyle(Theme.textSecondary)
+        }
+        .trainingOSCard()
     }
 
     private func row(for style: TrainingStyle) -> some View {
@@ -104,27 +130,36 @@ struct WeeklyCompositionEditorView: View {
                 .font(Theme.body)
                 .foregroundStyle(Theme.textPrimary)
             Spacer()
-            Button {
-                if let index = allowed.firstIndex(of: current), index > 0 {
-                    selections[style] = allowed[index - 1]
+            HStack(spacing: 10) {
+                stepButton(systemImage: "minus") {
+                    if let index = allowed.firstIndex(of: current), index > 0 {
+                        selections[style] = allowed[index - 1]
+                    }
                 }
-            } label: {
-                Image(systemName: "minus.circle")
-            }
-            .disabled(current == 0)
-            Text("\(current)")
-                .font(Theme.body)
-                .foregroundStyle(Theme.textPrimary)
-                .frame(minWidth: 24)
-                .multilineTextAlignment(.center)
-            Button {
-                if let index = allowed.firstIndex(of: current), index < allowed.count - 1 {
-                    selections[style] = allowed[index + 1]
+                .disabled(current == 0)
+                Text("\(current)")
+                    .font(Theme.numeric.weight(.bold))
+                    .foregroundStyle(Theme.textPrimary)
+                    .frame(minWidth: 24)
+                    .multilineTextAlignment(.center)
+                stepButton(systemImage: "plus") {
+                    if let index = allowed.firstIndex(of: current), index < allowed.count - 1 {
+                        selections[style] = allowed[index + 1]
+                    }
                 }
-            } label: {
-                Image(systemName: "plus.circle")
+                .disabled(allowed.last == current)
             }
-            .disabled(allowed.last == current)
+        }
+        .trainingOSCard(emphasized: current > 0)
+    }
+
+    private func stepButton(systemImage: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(.system(size: 15, weight: .semibold))
+                .frame(width: 30, height: 30)
+                .foregroundStyle(Theme.textSecondary)
+                .background(Theme.ground, in: RoundedRectangle(cornerRadius: 8))
         }
         .buttonStyle(.plain)
     }

@@ -6,6 +6,12 @@ import SwiftData
 /// Work -> Recovery -> Work from elapsed wall-clock time; distance-based
 /// intervals (no clock to derive progress from) are logged by hand, one
 /// interval at a time.
+///
+/// Visual Design checkpoint (continuation): restyled onto the R1
+/// foundation — the same large centered monospace clock treatment
+/// Functional Fitness's/Steady State's timers use, and the shared
+/// `TrainingOSPrimaryButtonStyle`/`TrainingOSSecondaryButtonStyle` CTAs —
+/// zero ViewModel/timer/persistence behavior changed, only presentation.
 struct IntervalExecutionView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
@@ -47,11 +53,12 @@ struct IntervalExecutionView: View {
 
                     if viewModel.block.status != .completed {
                         Button("Change Activity") { showingChangeActivity = true }
-                            .buttonStyle(.bordered)
+                            .buttonStyle(.trainingOSSecondary)
+                            .frame(maxWidth: .infinity)
                     }
                 }
             }
-            .padding(16)
+            .padding(Theme.screenPadding)
         }
         .background(Theme.ground)
         .navigationTitle(viewModel.prescription.map { IntensityPresentation.activityLabel($0.activityType) } ?? "Intervals")
@@ -79,10 +86,10 @@ struct IntervalExecutionView: View {
     private func header(_ prescription: IntervalPrescription) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(IntensityPresentation.activityLabel(prescription.activityType))
-                .font(Theme.heading)
+                .font(Theme.headingXL)
                 .foregroundStyle(Theme.textPrimary)
             Text("\(prescription.intervalCount) intervals")
-                .font(Theme.body)
+                .font(Theme.numeric)
                 .foregroundStyle(Theme.textSecondary)
             if let label = IntensityPresentation.label(prescription.workIntensity) {
                 Text(label)
@@ -108,15 +115,17 @@ struct IntervalExecutionView: View {
         }
 
         return AnyView(
-            VStack(spacing: 12) {
+            VStack(spacing: 14) {
                 Text(position.isWork ? "WORK" : "RECOVERY")
-                    .font(Theme.label)
+                    .font(Theme.eyebrow)
+                    .tracking(1.4)
                     .foregroundStyle(position.isWork ? Theme.primary : Theme.positive)
                 Text("Interval \(position.intervalNumber) of \(prescription.intervalCount)")
-                    .font(Theme.body)
+                    .font(Theme.numeric)
                     .foregroundStyle(Theme.textSecondary)
                 Text(formatted(position.remainingInLegSeconds))
-                    .font(.system(.largeTitle, design: .monospaced)).bold()
+                    .font(.system(size: 72, weight: .bold, design: .monospaced))
+                    .monospacedDigit()
                     .foregroundStyle(Theme.textPrimary)
 
                 HStack(spacing: 12) {
@@ -127,25 +136,25 @@ struct IntervalExecutionView: View {
                             try? UpdateBlockTimerUseCase.resume(viewModel.block, asOf: Date(), modelContext: modelContext)
                         }
                     }
+                    .buttonStyle(.trainingOSSecondary)
                     if position.isWork {
                         Button("Mark Incomplete") { viewModel.markCurrentLegIncomplete(asOf: Date()) }
+                            .buttonStyle(.trainingOSSecondary)
                     }
                 }
-                .buttonStyle(.bordered)
 
                 if position.isSessionComplete {
                     Button("Finish") { showingFinish = true }
-                        .buttonStyle(.borderedProminent)
-                        .tint(Theme.primary)
+                        .buttonStyle(.trainingOSPrimary)
                         .frame(maxWidth: .infinity)
                 } else {
                     Button("Finish Early") { showingFinish = true }
-                        .buttonStyle(.bordered)
+                        .buttonStyle(.trainingOSSecondary)
+                        .frame(maxWidth: .infinity)
                 }
             }
-            .padding(14)
             .frame(maxWidth: .infinity)
-            .background(Theme.surfaceSecondary, in: RoundedRectangle(cornerRadius: 12))
+            .padding(.vertical, 8)
         )
     }
 
@@ -168,12 +177,11 @@ struct IntervalExecutionView: View {
                     manualDistanceText = ""
                     manualCompleted = true
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(Theme.primary)
+                .buttonStyle(.trainingOSPrimary)
+                .frame(maxWidth: .infinity)
             } else {
                 Button("Finish") { showingFinish = true }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Theme.primary)
+                    .buttonStyle(.trainingOSPrimary)
                     .frame(maxWidth: .infinity)
             }
         }

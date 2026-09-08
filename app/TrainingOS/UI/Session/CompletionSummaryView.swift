@@ -54,8 +54,7 @@ struct CompletionSummaryView: View {
                 }
 
                 Button("Done", action: onDone)
-                    .buttonStyle(.borderedProminent)
-                    .tint(Theme.primary)
+                    .buttonStyle(.trainingOSPrimary)
                     .frame(maxWidth: .infinity)
             }
             .padding(16)

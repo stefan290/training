@@ -56,7 +56,7 @@ struct OnboardingFlowView: View {
     private var goalStep: some View {
         VStack(alignment: .leading, spacing: 20) {
             Text("What's your main training goal?")
-                .font(Theme.heading)
+                .font(Theme.headingXL)
                 .foregroundStyle(Theme.textPrimary)
                 .padding(.top, 24)
 
@@ -96,11 +96,11 @@ struct OnboardingFlowView: View {
             workingTowardSection
 
             Button("Continue") { viewModel.advance(from: .goal, modelContext: modelContext) }
-                .buttonStyle(.borderedProminent)
-                .tint(Theme.primary)
+                .buttonStyle(.trainingOSPrimary)
                 .frame(maxWidth: .infinity)
         }
         .padding(20)
+        .background(Theme.ground)
         .navigationTitle("Your Goal")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -196,6 +196,7 @@ struct OnboardingFlowView: View {
         } label: {
             Label(label, systemImage: "plus.circle")
                 .font(Theme.body)
+                .foregroundStyle(Theme.primary)
         }
     }
 
@@ -214,6 +215,7 @@ struct OnboardingFlowView: View {
             Spacer()
             Button("Edit") { isAddingRunningEvent = true }
                 .font(Theme.label)
+                .foregroundStyle(Theme.primary)
             Button("Remove", role: .destructive) { viewModel.hasRunningEvent = false }
                 .font(Theme.label)
         }
@@ -248,13 +250,13 @@ struct OnboardingFlowView: View {
             HStack {
                 Button("Cancel") { isAddingRunningEvent = false }
                     .font(Theme.label)
+                    .foregroundStyle(Theme.textSecondary)
                 Spacer()
                 Button(viewModel.hasRunningEvent ? "Save" : "Add to my plan") {
                     viewModel.hasRunningEvent = true
                     isAddingRunningEvent = false
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(Theme.primary)
+                .buttonStyle(.trainingOSPrimary)
                 .disabled(!viewModel.isRunningEventDateValid)
             }
         }
@@ -309,6 +311,7 @@ struct OnboardingFlowView: View {
             Spacer()
             Button("Edit") { isAddingWorkingToward = true }
                 .font(Theme.label)
+                .foregroundStyle(Theme.primary)
             Button("Remove", role: .destructive) { viewModel.hasMilestone = false }
                 .font(Theme.label)
         }
@@ -334,13 +337,13 @@ struct OnboardingFlowView: View {
             HStack {
                 Button("Cancel") { isAddingWorkingToward = false }
                     .font(Theme.label)
+                    .foregroundStyle(Theme.textSecondary)
                 Spacer()
                 Button(viewModel.hasMilestone ? "Save" : "Add to my plan") {
                     viewModel.hasMilestone = true
                     isAddingWorkingToward = false
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(Theme.primary)
+                .buttonStyle(.trainingOSPrimary)
                 .disabled(!viewModel.isMilestoneDateValid)
             }
         }
@@ -365,19 +368,61 @@ struct OnboardingFlowView: View {
     /// `VarietyPreference` itself is not deleted (still read by
     /// `rankCandidateMixes`'s preset-ranking path), simply no longer
     /// athlete-editable from this primary flow.
+    /// Visual Design checkpoint (continuation): rebuilt off the native
+    /// `Form` this step had used since Checkpoint 1 — the artifact's own
+    /// "How much week do you have?" Availability screen shows exactly
+    /// this "big number + capacity" card shape for the days-per-week
+    /// question. Zero behavior change: same `$viewModel
+    /// .availableTrainingDaysPerWeek`/`$viewModel.allowsDoubleSessions`
+    /// bindings as before.
     private var preferencesStep: some View {
-        Form {
-            Section("Weekly training") {
-                Stepper("Training days per week: \(viewModel.availableTrainingDaysPerWeek)", value: $viewModel.availableTrainingDaysPerWeek, in: 1...7)
-                Toggle("I'm open to two sessions in one day", isOn: $viewModel.allowsDoubleSessions)
-            }
-            Section {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("How much week do you have?")
+                        .font(Theme.headingXL)
+                        .foregroundStyle(Theme.textPrimary)
+                    Text("This sets frequency and session length. It can change later without rebuilding the plan.")
+                        .font(Theme.body)
+                        .foregroundStyle(Theme.textSecondary)
+                }
+
+                VStack(alignment: .leading, spacing: 12) {
+                    SectionHeader(title: "Training days per week")
+                    HStack {
+                        Text("\(viewModel.availableTrainingDaysPerWeek)")
+                            .font(Theme.numeric.weight(.bold))
+                            .foregroundStyle(Theme.primary)
+                        Spacer()
+                        Stepper("", value: $viewModel.availableTrainingDaysPerWeek, in: 1...7)
+                            .labelsHidden()
+                    }
+                }
+                .trainingOSCard()
+
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Two sessions in one day")
+                            .font(Theme.body)
+                            .foregroundStyle(Theme.textPrimary)
+                        Text("Lets a busy week fit more training")
+                            .font(Theme.label)
+                            .foregroundStyle(Theme.textSecondary)
+                    }
+                    Spacer()
+                    Toggle("", isOn: $viewModel.allowsDoubleSessions)
+                        .labelsHidden()
+                        .tint(Theme.primary)
+                }
+                .trainingOSCard()
+
                 Button("Continue") { viewModel.advance(from: .preferences, modelContext: modelContext) }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Theme.primary)
+                    .buttonStyle(.trainingOSPrimary)
                     .frame(maxWidth: .infinity)
             }
+            .padding(Theme.screenPadding)
         }
+        .background(Theme.ground)
         .navigationTitle("Training Preferences")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -390,11 +435,12 @@ struct OnboardingFlowView: View {
                 .padding()
             TrainingEnvironmentSettingsView()
             Button("Continue") { viewModel.advance(from: .environment, modelContext: modelContext) }
-                .buttonStyle(.borderedProminent)
-                .tint(Theme.primary)
+                .buttonStyle(.trainingOSPrimary)
+                .frame(maxWidth: .infinity)
                 .disabled(!viewModel.hasDefaultTrainingEnvironment)
                 .padding()
         }
+        .background(Theme.ground)
         .navigationTitle("Training Environment")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -412,7 +458,7 @@ struct OnboardingFlowView: View {
     private var reviewStep: some View {
         VStack(alignment: .leading, spacing: 20) {
             Text("Review")
-                .font(Theme.heading)
+                .font(Theme.headingXL)
                 .foregroundStyle(Theme.textPrimary)
 
             ScrollView {
@@ -443,11 +489,11 @@ struct OnboardingFlowView: View {
             }
 
             Button("Start Training with TrainingOS") { onComplete() }
-                .buttonStyle(.borderedProminent)
-                .tint(Theme.primary)
+                .buttonStyle(.trainingOSPrimary)
                 .frame(maxWidth: .infinity)
         }
         .padding(20)
+        .background(Theme.ground)
         .navigationTitle("Review")
         .navigationBarTitleDisplayMode(.inline)
     }

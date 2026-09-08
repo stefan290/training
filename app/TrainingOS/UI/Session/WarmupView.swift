@@ -40,8 +40,7 @@ struct WarmupView: View {
 
                     VStack(spacing: 10) {
                         Button("Start Workout", action: onDone)
-                            .buttonStyle(.borderedProminent)
-                            .tint(Theme.primary)
+                            .buttonStyle(.trainingOSPrimary)
                             .frame(maxWidth: .infinity)
                         Button("Skip Warm-up") {
                             try? RecordWarmupSequenceUseCase.skipEntirely(sequence, modelContext: modelContext)

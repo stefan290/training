@@ -165,7 +165,7 @@ struct PhaseDetailView: View {
                     Button("Configure Training Environment") {
                         showingTrainingEnvironmentSettings = true
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.trainingOSSecondary)
                     .frame(maxWidth: .infinity)
                     .padding(.top, 4)
                 }
@@ -174,8 +174,7 @@ struct PhaseDetailView: View {
                         viewModel.load(phase: phase, modelContext: modelContext)
                     }
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(Theme.primary)
+                .buttonStyle(.trainingOSPrimary)
                 .frame(maxWidth: .infinity)
                 .padding(.top, 4)
             }
@@ -199,7 +198,7 @@ struct PhaseDetailView: View {
                     Button("Configure Training Environment") {
                         showingTrainingEnvironmentSettings = true
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.trainingOSSecondary)
                     .frame(maxWidth: .infinity)
                     .padding(.top, 4)
                 }
@@ -208,8 +207,7 @@ struct PhaseDetailView: View {
                         viewModel.load(phase: phase, modelContext: modelContext)
                     }
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(Theme.primary)
+                .buttonStyle(.trainingOSPrimary)
                 .frame(maxWidth: .infinity)
                 .padding(.top, 4)
             }

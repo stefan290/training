@@ -46,7 +46,7 @@ struct RestTimerView: View {
                             try? UpdateBlockTimerUseCase.clear(block, modelContext: modelContext)
                         }
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.trainingOSSecondary)
                 }
                 .padding(14)
                 .frame(maxWidth: .infinity)
@@ -66,7 +66,8 @@ struct RestTimerView: View {
                         block, asOf: Date(), targetDurationSeconds: selectedPreset, modelContext: modelContext
                     )
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.trainingOSSecondary)
+                .frame(maxWidth: .infinity)
             }
             .padding(14)
             .background(Theme.surfaceSecondary, in: RoundedRectangle(cornerRadius: 12))

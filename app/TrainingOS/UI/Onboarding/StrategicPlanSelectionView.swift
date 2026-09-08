@@ -114,13 +114,14 @@ struct StrategicPlanSelectionView: View {
                         // `CandidateTrainingMix` preset catalog — "no
                         // planner prison."
                         Button("Build My Own Mix") { showingCompositionEditor = true }
-                            .buttonStyle(.bordered)
+                            .buttonStyle(.trainingOSSecondary)
                             .frame(maxWidth: .infinity)
                         if viewModel.isCustomMixSelected {
                             Button("Use TrainingOS's Recommendation Instead") {
                                 viewModel.selectRecommended()
                             }
                             .font(Theme.label)
+                            .foregroundStyle(Theme.textSecondary)
                             .frame(maxWidth: .infinity)
                         }
                     } else {
@@ -138,7 +139,7 @@ struct StrategicPlanSelectionView: View {
                         Button("Configure Training Environment") {
                             showingTrainingEnvironmentSettings = true
                         }
-                        .buttonStyle(.bordered)
+                        .buttonStyle(.trainingOSSecondary)
                         .frame(maxWidth: .infinity)
                     }
 
@@ -148,8 +149,7 @@ struct StrategicPlanSelectionView: View {
                                 onComplete()
                             }
                         }
-                        .buttonStyle(.borderedProminent)
-                        .tint(Theme.primary)
+                        .buttonStyle(.trainingOSPrimary)
                         .frame(maxWidth: .infinity)
                         .disabled(viewModel.isAccepting || viewModel.didSucceed)
                     }

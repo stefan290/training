@@ -67,6 +67,7 @@ struct WeekView: View {
             .accessibilityLabel("Next Week")
         }
         .buttonStyle(.bordered)
+        .tint(Theme.primary)
         .font(Theme.label)
     }
 

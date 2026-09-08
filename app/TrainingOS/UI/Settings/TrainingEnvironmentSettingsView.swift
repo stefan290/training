@@ -131,17 +131,13 @@ private struct TrainingEnvironmentDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 if !environment.isBuiltIn, !isDefault {
-                    Button {
+                    Button("Make Default") {
                         profile.defaultTrainingEnvironment = environment
                         try? modelContext.save()
                         NotificationCenter.default.post(name: .trainingEnvironmentDefaultChanged, object: nil)
-                    } label: {
-                        Text("Make Default")
-                            .font(Theme.body)
-                            .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Theme.primary)
+                    .buttonStyle(.trainingOSPrimary)
+                    .frame(maxWidth: .infinity)
                 }
 
                 VStack(alignment: .leading, spacing: 0) {

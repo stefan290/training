@@ -32,7 +32,7 @@ struct HypertrophyFeedbackView: View {
                     VStack(spacing: 10) {
                         ForEach(options(for: prescription), id: \.rating) { option in
                             Button(option.label) { answer(option.rating, for: prescription) }
-                                .buttonStyle(.bordered)
+                                .buttonStyle(.trainingOSSecondary)
                                 .frame(maxWidth: .infinity)
                         }
                     }

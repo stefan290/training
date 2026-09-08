@@ -261,20 +261,16 @@ private struct SessionHeroCard: View {
                     .foregroundStyle(Theme.attention)
                 HStack {
                     Button("Start Anyway", action: onStart)
-                        .buttonStyle(.borderedProminent)
-                        .tint(Theme.primary)
+                        .buttonStyle(.trainingOSPrimary)
                     Button("Mark Missed", action: onMarkMissed)
-                        .buttonStyle(.bordered)
+                        .buttonStyle(.trainingOSSecondary)
                 }
             } else if session.status == .scheduled {
                 Button(action: onStart) {
                     Text("Start \(session.name)")
-                        .font(Theme.heading)
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(Theme.primary)
-                .controlSize(.large)
+                .buttonStyle(.trainingOSPrimary)
             } else {
                 // Stage 6E fix: every other status (in progress/
                 // completed/skipped/missed/abandoned) has no button of
@@ -329,12 +325,10 @@ private struct SessionSecondaryCard: View {
             Spacer()
             if isPastDueUnstarted {
                 Button("Start Anyway", action: onStart)
-                    .buttonStyle(.bordered)
-                    .tint(Theme.attention)
+                    .buttonStyle(.trainingOSSecondary)
             } else if session.status == .scheduled {
                 Button("Start", action: onStart)
-                    .buttonStyle(.bordered)
-                    .tint(Theme.primary)
+                    .buttonStyle(.trainingOSSecondary)
             } else {
                 StatusPill(status: session.status)
             }

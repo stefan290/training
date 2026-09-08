@@ -26,8 +26,8 @@ struct BlockExecutionPlaceholderView: View {
                         try? CompleteBlockUseCase.complete(block, context: .full, modelContext: modelContext)
                         dismiss()
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Theme.primary)
+                    .buttonStyle(.trainingOSPrimary)
+                    .frame(maxWidth: .infinity)
 
                     Button("Skip", role: .destructive) {
                         try? CompleteBlockUseCase.skip(block, modelContext: modelContext)

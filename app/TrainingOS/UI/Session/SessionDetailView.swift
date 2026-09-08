@@ -138,8 +138,8 @@ struct SessionDetailView: View {
                 try? StartSessionUseCase.start(session, asOf: Date(), modelContext: modelContext)
                 onChange()
             }
-            .buttonStyle(.borderedProminent)
-            .tint(Theme.primary)
+            .buttonStyle(.trainingOSPrimary)
+            .frame(maxWidth: .infinity)
 
             Button("Can't train today", role: .destructive) {
                 try? ChangeSessionStatusUseCase.skip(session, modelContext: modelContext)
@@ -152,15 +152,16 @@ struct SessionDetailView: View {
 
             if allCompleted {
                 Button("Finish Session") { beginFinish(context: .full) }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Theme.primary)
+                    .buttonStyle(.trainingOSPrimary)
+                    .frame(maxWidth: .infinity)
             } else {
                 Button("Finish as Partial") { beginFinish(context: .partial) }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Theme.primary)
+                    .buttonStyle(.trainingOSPrimary)
+                    .frame(maxWidth: .infinity)
 
                 Button("Resume Later") { dismiss() }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.trainingOSSecondary)
+                    .frame(maxWidth: .infinity)
             }
         case .completed, .skipped, .missed, .abandoned:
             EmptyView()

@@ -45,11 +45,10 @@ struct ReadinessAdaptationProposalView: View {
 
                     VStack(spacing: 10) {
                         Button("Accept") { respond(item, accept: true) }
-                            .buttonStyle(.borderedProminent)
-                            .tint(Theme.primary)
+                            .buttonStyle(.trainingOSPrimary)
                             .frame(maxWidth: .infinity)
                         Button("Keep original") { respond(item, accept: false) }
-                            .buttonStyle(.bordered)
+                            .buttonStyle(.trainingOSSecondary)
                             .frame(maxWidth: .infinity)
                     }
                 }

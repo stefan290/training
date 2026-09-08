@@ -80,6 +80,15 @@ enum Theme {
     /// Inactive — unselected chrome (e.g. tab icons), the dimmest tier.
     /// Artifact: `#5C666B` (dark).
     static let textInactive = Color(light: "#9AA3A0", dark: "#5C666B")
+    /// Visual Design checkpoint: the label color for text sitting directly
+    /// on an accent-filled CTA (`TrainingOSPrimaryButtonStyle`) — the
+    /// artifact's own `color:#0A0D0F` on its `background:#7C9CFF` buttons.
+    /// Dark mode's light-blue accent needs a near-black label for contrast;
+    /// light mode's darker, more saturated accent (`primary`'s light value)
+    /// needs a near-white one instead — the artifact never specified a
+    /// light-mode CTA explicitly, so this pass picks the same real contrast
+    /// relationship rather than reusing the dark-mode value verbatim.
+    static let onPrimary = Color(light: "#FFFFFF", dark: "#0A0D0F")
 
     /// Primary human-facing hierarchy (Chivo's role — see the type-level
     /// doc comment on the font blocker). Large, heavy display value.
