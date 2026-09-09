@@ -1735,6 +1735,29 @@ enum LongTermPlanner {
                 gaps.append(CapabilityGap(desiredDescription: name, reason: .parametersNotInstantiable))
                 continue
             }
+            // Source Authority Repair (Family A Full Body finalization):
+            // a Full Body Hypertrophy configuration is structurally
+            // instantiable long before its real per-day content is
+            // migrated (`canInstantiate` only checks day-count/split
+            // shape) — this is the exact gap that let 4/5/6-Day Full
+            // Body silently materialize placeholder content as if it
+            // were a real recommendation. Scoped deliberately narrowly:
+            // ONLY `.fullBody` — the 2 curated non-Full-Body configs
+            // (4-Day Legs, 5-Day Arms & Shoulders) were never claimed
+            // source-verified and were never in this repair's scope;
+            // they keep using `generateLegacyFixedPair` exactly as
+            // before, unaffected by this check. Today this is a no-op
+            // in practice (3/4/5/6-Day Full Body are all real,
+            // verified content as of this repair) — its value is
+            // fail-closed defense-in-depth against a FUTURE curated
+            // Full Body entry being added without its content migrated
+            // first, never a currently-live rejection.
+            if case .hypertrophy(let configuration) = parameters,
+               configuration.split == .fullBody,
+               !ProgramCapabilityRegistry.isHypertrophySourceVerified(dayCount: configuration.dayCount, split: configuration.split) {
+                gaps.append(CapabilityGap(desiredDescription: name, reason: .sourceContentUnverified))
+                continue
+            }
             let definition: ProgramDefinition
             do {
                 definition = try materialize(parameters, name: name, context: context)

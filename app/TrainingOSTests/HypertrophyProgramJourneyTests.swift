@@ -30,7 +30,7 @@ final class HypertrophyProgramJourneyTests: XCTestCase {
         goal.addPlan(plan)
 
         let results = try HypertrophyProgramJourney.build(
-            dayCount: 4, split: .fullBody, plan: plan, ownerUserID: ownerUserID,
+            dayCount: 5, split: .fullBody, plan: plan, ownerUserID: ownerUserID,
             firstPhaseStartDate: Date(timeIntervalSince1970: 0), context: context
         )
 
@@ -83,7 +83,7 @@ final class HypertrophyProgramJourneyTests: XCTestCase {
         context.insert(plan)
 
         let results = try HypertrophyProgramJourney.build(
-            dayCount: 4, split: .fullBody, plan: plan, ownerUserID: ownerUserID,
+            dayCount: 5, split: .fullBody, plan: plan, ownerUserID: ownerUserID,
             firstPhaseStartDate: Date(timeIntervalSince1970: 0), context: context
         )
 
@@ -96,7 +96,7 @@ final class HypertrophyProgramJourneyTests: XCTestCase {
             ownerUserID: ownerUserID, equipmentProfile: EquipmentProfile(equipmentType: .barbell, smallestIncrementKg: 2.5),
             slotContext: { _ in .init(rmKilograms: 100) }, context: context
         )
-        XCTAssertEqual(materialized.sessions.count, 4)
+        XCTAssertEqual(materialized.sessions.count, 5)
 
         // The other two phases remain unmaterialized (no Sessions), which
         // is a valid, unrelated state, not a dependency violation.

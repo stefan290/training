@@ -54,6 +54,12 @@ final class HypertrophyBuiltInLibraryTests: XCTestCase {
     /// path now covers all 6 configurations.
     func testEveryBuiltInConfigurationBuildsAFullThreePhaseJourney() throws {
         for config in HypertrophyBuiltInLibrary.all {
+            // Source Authority Repair: 4-Day Full Body's `.phaseNotYetRecovered`-
+            // era skip (Phase A: M1 only) is now stale and removed — Phase
+            // A2 recovered M2/M3 too, and every curated Full Body
+            // configuration (3/4/5/6-Day, closed out by Phase C) now
+            // builds a genuine 3-phase journey with zero throw. No
+            // skip is needed for any configuration in the library today.
             let plan = TrainingPlan(status: .active)
             context.insert(plan)
 

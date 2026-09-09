@@ -66,6 +66,26 @@ enum PlanPresentation {
         }
     }
 
+    /// Year Overview (pre-acceptance strategic route): a short, generic,
+    /// per-TYPE description — never a per-instance fabricated rationale
+    /// (a specific phase's real "why" only exists for the one phase
+    /// actually being reviewed, via `recommendationExplanation`). Purely
+    /// a presentation-layer label for `PhaseType` itself, the same static
+    /// enum-to-string mapping shape every other function in this file
+    /// already uses (`phaseTypeLabel`, `mainGoalLabel`).
+    static func phasePurposeLabel(_ type: PhaseType) -> String {
+        switch type {
+        case .muscleGain: "Build muscle and add training volume"
+        case .fatLoss: "Reduce body fat while preserving muscle"
+        case .strength: "Build strength on the fundamental lifts"
+        case .enduranceEvent: "Build toward your endurance goal"
+        case .functionalFitness: "Build mixed-modal work capacity"
+        case .recovery: "Recover and reduce training stress"
+        case .transition: "Bridge toward the next phase"
+        case .maintenance: "Maintain your current fitness"
+        }
+    }
+
     static func phaseStatusLabel(_ status: PhaseStatus) -> String {
         switch status {
         case .planned: "Planned"

@@ -69,30 +69,17 @@ struct StrategicPlanSelectionView: View {
                         datedObjectivesSection
                         whatItNeedsSection
 
-                        // R6 Visual Correction Pass: only ever a full card
-                        // when the route actually carries information —
-                        // `proposeForwardOnlyPhases`'s own open-ended,
-                        // no-target-date case (the common Build Muscle
-                        // path) returns exactly ONE phase, and a single-
-                        // entry "route" added nothing but visual weight
-                        // ("1. Muscle Gain" as its own card). Real,
-                        // multi-phase routes (a dated objective, a stated
-                        // target date) still show in full.
-                        if viewModel.phaseTypeLabels.count > 1 {
-                            InfoSection(title: "Strategic Route") {
-                                ForEach(Array(viewModel.phaseTypeLabels.enumerated()), id: \.offset) { index, label in
-                                    Text("\(index + 1). \(label)")
-                                        .font(Theme.body)
-                                        .foregroundStyle(Theme.textPrimary)
-                                }
-                                if viewModel.hasCompressedObjectivePrep {
-                                    Text("One of your dated goals has less lead time than TrainingOS would normally want — this plan is a best effort within the time you actually have.")
-                                        .font(Theme.label)
-                                        .foregroundStyle(Theme.textSecondary)
-                                        .padding(.top, 4)
-                                }
-                            }
-                        }
+                        // Year Overview + Source-RM Dogfood Gate: replaces
+                        // the previous plain "1. Muscle Gain" text list —
+                        // answers the SEPARATE strategic question ("where
+                        // is TrainingOS taking me?") the immediate
+                        // recommendation card above never addresses.
+                        // Always renders (even a single real phase is a
+                        // real, truthful answer — "just this, indefinitely"
+                        // is not nothing); never a forced multi-entry
+                        // spine when the real planner only produced one
+                        // phase.
+                        yearOverviewSection
 
                         // R6 First-Run Journey Design Completion: the prior
                         // round's low-emphasis alternative-mix link STILL
@@ -343,6 +330,75 @@ struct StrategicPlanSelectionView: View {
         return "\(days) training \(dayWord) a week\(environmentClause), \(startPhrase)."
     }
 
+    /// Year Overview + Source-RM Dogfood Gate: "where is TrainingOS
+    /// taking me?" — the strategic layer, kept deliberately separate from
+    /// the immediate "what should I train now?" recommendation above.
+    /// Every entry is real: `viewModel.yearOverviewPhases` is the real
+    /// `LongTermPlanner`-proposed phase sequence (with the identical R0
+    /// date-shift preview `resolvedStartDate` already applies to phase 1
+    /// alone, applied here to every phase so this spine never disagrees
+    /// with the date shown in "What It Needs"), real `Goal.datedObjectives`
+    /// interleaved at their own real date — never a third, fabricated
+    /// entry kind. Composition (`TrainingMix`) is shown ONLY for the
+    /// first/current phase — the one phase a real `TrainingMix` actually
+    /// exists for pre-acceptance (`recommendedMixSummary`/the reviewed
+    /// mix above); every later phase truthfully has no persisted
+    /// composition yet (CLAUDE.md rule 19c — tactical/mix decisions exist
+    /// only for the current window), so it reads as a real, distinct
+    /// design decision ("Training mix will be set as this phase
+    /// approaches"), never a copy-pasted guess at what a future phase
+    /// will contain.
+    @ViewBuilder private var yearOverviewSection: some View {
+        let phases = viewModel.yearOverviewPhases
+        if !phases.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                SectionHeader(title: "Your Training Year")
+                let items = yearOverviewItems(phases: phases)
+                HStack(alignment: .top, spacing: 12) {
+                    YearOverviewSpineLine(count: items.count)
+                    VStack(alignment: .leading, spacing: 9) {
+                        ForEach(Array(items.enumerated()), id: \.offset) { index, item in
+                            yearOverviewRow(for: item, isFirst: index == 0)
+                        }
+                    }
+                }
+                if viewModel.hasCompressedObjectivePrep {
+                    Text("One of your dated goals has less lead time than TrainingOS would normally want — this plan is a best effort within the time you actually have.")
+                        .font(Theme.label)
+                        .foregroundStyle(Theme.textSecondary)
+                        .padding(.top, 2)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .trainingOSCard()
+        }
+    }
+
+    /// Real phases + real, still-`.planned` dated objectives, merged into
+    /// one chronological sequence by real date alone — the same
+    /// established "no fabricated third kind, chronology only" rule
+    /// `PlanView`'s own real, already-accepted-plan spine uses.
+    private func yearOverviewItems(phases: [ProposedPhase]) -> [YearOverviewItem] {
+        var items: [YearOverviewItem] = phases.map { .phase($0) }
+        let objectives = (viewModel.goal?.datedObjectives ?? []).filter { $0.status == .planned }
+        items.append(contentsOf: objectives.map { .objective($0) })
+        return items.sorted { $0.anchorDate < $1.anchorDate }
+    }
+
+    @ViewBuilder
+    private func yearOverviewRow(for item: YearOverviewItem, isFirst: Bool) -> some View {
+        switch item {
+        case .phase(let phase):
+            YearOverviewPhaseCard(
+                phase: phase,
+                isCurrent: isFirst,
+                currentMixSummary: isFirst ? viewModel.recommendedMixSummary : nil
+            )
+        case .objective(let objective):
+            YearOverviewObjectiveNode(objective: objective)
+        }
+    }
+
     /// Stage V1 dogfooding fix (Part 4): athlete-facing "why this fits,"
     /// derived only from the real `CandidateMixRole`s the planner itself
     /// assigned — never invented copy per mix.
@@ -367,6 +423,125 @@ private struct InfoSection<Content: View>: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .trainingOSCard()
+    }
+}
+
+/// A real spine entry — either an actual proposed `ProposedPhase` or an
+/// actual, still-`.planned` `DatedObjective`. Never a third, fabricated
+/// kind — mirrors `PlanView`'s own real, already-accepted-plan
+/// `SpineItem` exactly, one step earlier in the product's lifecycle
+/// (pre-acceptance proposal, not yet a persisted `TrainingPhase`).
+private enum YearOverviewItem {
+    case phase(ProposedPhase)
+    case objective(DatedObjective)
+
+    var anchorDate: Date {
+        switch self {
+        case .phase(let phase): phase.startDate
+        case .objective(let objective): objective.date
+        }
+    }
+}
+
+/// The same plain connecting-line visual device `PlanView`'s own
+/// `SpineLine` uses — chronology only, never a proportional calendar
+/// ruler. The whole line reads as "ahead of you" (accent) here, since
+/// nothing in this pre-acceptance preview has happened yet — there is no
+/// "before now" segment the way the real, already-accepted Plan tab has.
+private struct YearOverviewSpineLine: View {
+    let count: Int
+
+    var body: some View {
+        VStack(spacing: 0) {
+            ForEach(0..<max(count, 1), id: \.self) { _ in
+                Rectangle()
+                    .fill(Theme.primary.opacity(0.4))
+                    .frame(width: 2)
+            }
+        }
+        .frame(width: 12)
+    }
+}
+
+/// One real phase's spine node. `isCurrent` gets the same emphasized/
+/// "NOW"-labeled treatment `PlanView`'s own `CurrentPhaseCard` uses for
+/// the athlete's real active phase; every later phase is deliberately
+/// lower visual weight, matching `FuturePhaseCard`. `currentMixSummary`
+/// is non-nil ONLY for the current phase — later phases never show a
+/// composition, since no real `TrainingMix` exists for them yet.
+private struct YearOverviewPhaseCard: View {
+    let phase: ProposedPhase
+    let isCurrent: Bool
+    let currentMixSummary: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(alignment: .firstTextBaseline) {
+                if isCurrent {
+                    Text("NOW")
+                        .font(Theme.eyebrow)
+                        .tracking(1.4)
+                        .foregroundStyle(Theme.primary)
+                }
+                Text(PlanPresentation.phaseTypeLabel(phase.type))
+                    .font(isCurrent ? Theme.body.weight(.bold) : Theme.body.weight(.medium))
+                    .foregroundStyle(Theme.textPrimary)
+                Spacer()
+                Text(dateRangeLabel)
+                    .font(Theme.numeric)
+                    .foregroundStyle(Theme.textSecondary)
+            }
+            Text(PlanPresentation.phasePurposeLabel(phase.type))
+                .font(Theme.label)
+                .foregroundStyle(Theme.textMuted)
+            if let currentMixSummary {
+                Text(currentMixSummary)
+                    .font(Theme.label)
+                    .foregroundStyle(Theme.textSecondary)
+                    .padding(.top, 2)
+            } else if !isCurrent {
+                Text("Training mix will be set as this phase approaches.")
+                    .font(Theme.label)
+                    .foregroundStyle(Theme.textMuted)
+                    .padding(.top, 2)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 10)
+        .padding(.horizontal, 12)
+        .background(isCurrent ? Theme.primary.opacity(0.08) : Color.clear, in: RoundedRectangle(cornerRadius: 10))
+    }
+
+    private var dateRangeLabel: String {
+        let start = phase.startDate.formatted(.dateTime.month(.abbreviated).day())
+        guard let end = phase.endDate else { return "From \(start)" }
+        return "\(start) – \(end.formatted(.dateTime.month(.abbreviated).day()))"
+    }
+}
+
+/// A real `DatedObjective`'s own spine position — the same dashed
+/// "target" milestone treatment `PlanView`'s own `ObjectiveCard` uses,
+/// applied wherever the real objective actually falls chronologically.
+private struct YearOverviewObjectiveNode: View {
+    let objective: DatedObjective
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(PlanPresentation.datedObjectiveLabel(objective).uppercased())
+                .font(Theme.label)
+                .foregroundStyle(Theme.attention)
+            Spacer()
+            Text(objective.date.formatted(.dateTime.day().month(.abbreviated)))
+                .font(Theme.numeric)
+                .foregroundStyle(Theme.attention)
+        }
+        .padding(.vertical, 8)
+        .padding(.horizontal, 12)
+        .background(Theme.attention.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .strokeBorder(Theme.attention.opacity(0.4), style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
+        )
     }
 }
 

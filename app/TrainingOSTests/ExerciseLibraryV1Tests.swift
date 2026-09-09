@@ -3,7 +3,7 @@ import SwiftData
 @testable import TrainingOS
 
 /// Exercise Library V1 (breadth + substitution semantics): proves the
-/// expanded canonical catalog (38 -> 58) resolves idempotently, covers
+/// expanded canonical catalog (38 -> 60) resolves idempotently, covers
 /// the real Hypertrophy/Strength/Functional Fitness movement families
 /// this checkpoint targeted, and — most importantly — that the new
 /// `Exercise.isExplosiveExpression` dimension (consumed only by
@@ -39,10 +39,10 @@ final class ExerciseLibraryV1Tests: XCTestCase {
 
     // MARK: Canonical catalog uniqueness + count
 
-    func testCatalogHas58UniqueCanonicalExercises() throws {
+    func testCatalogHas60UniqueCanonicalExercises() throws {
         _ = ExerciseCatalog.resolveOrInsert(context: context)
         let exercises = try context.fetch(FetchDescriptor<Exercise>())
-        XCTAssertEqual(exercises.count, 58, "BEFORE: 38 canonical exercises. AFTER this checkpoint: 58.")
+        XCTAssertEqual(exercises.count, 60, "BEFORE: 38 canonical exercises. AFTER this checkpoint: 60.")
         XCTAssertEqual(Set(exercises.map(\.canonicalName)).count, exercises.count, "every canonical name must be unique")
     }
 
@@ -58,7 +58,7 @@ final class ExerciseLibraryV1Tests: XCTestCase {
         XCTAssertEqual(second.stiffLeggedDeadlift.id, firstStiffLeggedID)
 
         let exercises = try context.fetch(FetchDescriptor<Exercise>())
-        XCTAssertEqual(exercises.count, 58, "a second resolution must never insert duplicate rows")
+        XCTAssertEqual(exercises.count, 60, "a second resolution must never insert duplicate rows")
     }
 
     // MARK: THE CRITICAL REGRESSION — Stiff-Legged Deadlift must never resolve to Dumbbell Snatch

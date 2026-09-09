@@ -23,14 +23,19 @@ final class HypertrophyProgramGeneratorTests: XCTestCase {
         ModelContext(container)
     }
 
-    /// Every fixed-generic-mechanics test below deliberately avoids
-    /// `(dayCount: 3, split: .fullBody)` — Stage 10B repurposes exactly
-    /// that combination for its own day-focus-driven path
-    /// (`HypertrophyDayFocusGenerationTests.swift`), which no longer
-    /// produces the legacy single-primary-plus-paired-accessory shape
-    /// these tests are about. `(5, .fullBody)` exercises the identical,
-    /// completely unchanged legacy generator these tests were always
-    /// written to describe.
+    /// Every fixed-generic-mechanics test below deliberately avoids every
+    /// `(dayCount, split: .fullBody)` combination Source Authority Repair
+    /// has since migrated to the real, source-backed day-focus-driven
+    /// path (`HypertrophyDayFocusGenerationTests.swift`/
+    /// `FourDayFullBodySourceFidelityTests.swift`/`FiveDay.../SixDay...` —
+    /// by the close of Phase C, that is ALL of 3/4/5/6-Day Full Body),
+    /// none of which produce the legacy single-primary-plus-paired-
+    /// accessory shape these tests are about. `(5, .armsShoulders)`
+    /// exercises the identical, completely unchanged legacy generator
+    /// these tests were always written to describe — one of the two
+    /// curated configurations ("5-Day Upper/Arms Focus," "4-Day
+    /// Lower/Leg Focus") this repair's own Full-Body-only scope
+    /// deliberately left untouched.
     private func generate(dayCount: Int, split: HypertrophySplit, phaseType: HypertrophyPhaseType) throws -> ProgramDefinition {
         try HypertrophyProgramGenerator.generate(
             configuration: HypertrophyProgramConfiguration(dayCount: dayCount, split: split, phaseType: phaseType),
@@ -55,7 +60,7 @@ final class HypertrophyProgramGeneratorTests: XCTestCase {
     }
 
     func testEachSessionHasOnePrimaryAndOnePairedPrescriptionTemplate() throws {
-        let definition = try generate(dayCount: 5, split: .fullBody, phaseType: .basicHypertrophy)
+        let definition = try generate(dayCount: 5, split: .armsShoulders, phaseType: .basicHypertrophy)
         for session in definition.orderedTemplateSessions {
             let block = try XCTUnwrap(session.orderedBlockTemplates.first)
             XCTAssertEqual(block.type, .hypertrophy)
@@ -64,7 +69,7 @@ final class HypertrophyProgramGeneratorTests: XCTestCase {
     }
 
     func testBasicHypertrophyUsesWeekOneFactorOf0Point85() throws {
-        let definition = try generate(dayCount: 5, split: .fullBody, phaseType: .basicHypertrophy)
+        let definition = try generate(dayCount: 5, split: .armsShoulders, phaseType: .basicHypertrophy)
         let primary = try primaryTemplate(in: definition)
         guard case .rmBased(let payload) = try XCTUnwrap(primary.rules?.loadRule) else {
             return XCTFail("expected .rmBased")
@@ -74,7 +79,7 @@ final class HypertrophyProgramGeneratorTests: XCTestCase {
     }
 
     func testResensitizationUsesFullRMAsWeekOneFactor() throws {
-        let definition = try generate(dayCount: 5, split: .fullBody, phaseType: .resensitization)
+        let definition = try generate(dayCount: 5, split: .armsShoulders, phaseType: .resensitization)
         let primary = try primaryTemplate(in: definition)
         guard case .rmBased(let payload) = try XCTUnwrap(primary.rules?.loadRule) else {
             return XCTFail("expected .rmBased")
@@ -87,7 +92,7 @@ final class HypertrophyProgramGeneratorTests: XCTestCase {
     /// superset partner" — distinct from every other phase, which links
     /// the paired slot to the primary's result instead).
     func testMetaboliteFocusUsesDistinctPrimaryAndPairedFactors() throws {
-        let definition = try generate(dayCount: 5, split: .fullBody, phaseType: .metaboliteFocus)
+        let definition = try generate(dayCount: 5, split: .armsShoulders, phaseType: .metaboliteFocus)
         let session = try XCTUnwrap(definition.orderedTemplateSessions.first)
         let block = try XCTUnwrap(session.orderedBlockTemplates.first)
         let primary = try XCTUnwrap(block.orderedPrescriptionTemplates.first { $0.exerciseSlot?.name != "Chest Isolation or Triceps" })
@@ -108,7 +113,7 @@ final class HypertrophyProgramGeneratorTests: XCTestCase {
     /// `linkedResultReference` (Stage 4 §8) instead of an independent RM
     /// test.
     func testBasicHypertrophyPairsAccessoryViaLinkedResultReference() throws {
-        let definition = try generate(dayCount: 5, split: .fullBody, phaseType: .basicHypertrophy)
+        let definition = try generate(dayCount: 5, split: .armsShoulders, phaseType: .basicHypertrophy)
         let session = try XCTUnwrap(definition.orderedTemplateSessions.first)
         let block = try XCTUnwrap(session.orderedBlockTemplates.first)
         let paired = try XCTUnwrap(block.orderedPrescriptionTemplates.first { $0.exerciseSlot?.name == "Chest Isolation or Triceps" })
@@ -124,7 +129,7 @@ final class HypertrophyProgramGeneratorTests: XCTestCase {
     /// contract) — the field is reused per-row for whichever rule that
     /// row itself owns, never both purposes on the same row at once here.
     func testPrimarysPairedSlotIsItsOwnAutoregulationRatingSourceNotJustPairedsLoadLink() throws {
-        let definition = try generate(dayCount: 5, split: .fullBody, phaseType: .basicHypertrophy)
+        let definition = try generate(dayCount: 5, split: .armsShoulders, phaseType: .basicHypertrophy)
         let session = try XCTUnwrap(definition.orderedTemplateSessions.first)
         let block = try XCTUnwrap(session.orderedBlockTemplates.first)
         let primary = try XCTUnwrap(block.orderedPrescriptionTemplates.first { $0.exerciseSlot?.name != "Chest Isolation or Triceps" })
@@ -139,7 +144,7 @@ final class HypertrophyProgramGeneratorTests: XCTestCase {
     /// (decision A2) — the paired slot omits during deload, the primary
     /// does not.
     func testPairedSlotOmitsDuringDeloadPrimaryDoesNot() throws {
-        let definition = try generate(dayCount: 5, split: .fullBody, phaseType: .basicHypertrophy)
+        let definition = try generate(dayCount: 5, split: .armsShoulders, phaseType: .basicHypertrophy)
         let primary = try primaryTemplate(in: definition)
         let session = try XCTUnwrap(definition.orderedTemplateSessions.first)
         let block = try XCTUnwrap(session.orderedBlockTemplates.first)

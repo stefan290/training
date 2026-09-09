@@ -67,6 +67,11 @@
 		626A301D9215F2BDC080FA85 /* CalibrationTestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70359EE04F7A9FCC6DB5BD46 /* CalibrationTestSupport.swift */; };
 		E89AE7DEA4B671AAC892C8A3 /* SourceRMCalibrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3009493D32C0ED2CBD23EFB5 /* SourceRMCalibrationTests.swift */; };
 		E9381AEA7C9B71263D887A11 /* SourceRMCalibrationOnDiskReproTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA5689AA390CC028297F1738 /* SourceRMCalibrationOnDiskReproTests.swift */; };
+		DAF33ED792204D369166935B /* YearOverviewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C82B37523154D17AFD3EEAD /* YearOverviewTests.swift */; };
+		AA58CDEFF15E4686B6284B27 /* FourDayFullBodySourceFidelityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52034D67A698471984C4C2C4 /* FourDayFullBodySourceFidelityTests.swift */; };
+		87D2E25849AF9DEA5F02BA24 /* FiveDayFullBodySourceFidelityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9C03E30CDC897DFBF40C8D2 /* FiveDayFullBodySourceFidelityTests.swift */; };
+		6C8B454E6141E6C7514B4F02 /* SixDayFullBodySourceFidelityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 968683F5D487F786BF389CA2 /* SixDayFullBodySourceFidelityTests.swift */; };
+		C31A48F68E66FD200A36BD06 /* HypertrophySourceFidelityGateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3E4F60A63478A889386B81D /* HypertrophySourceFidelityGateTests.swift */; };
 		90A02168FFB63496DA90629A /* HypertrophyV2EndToEndTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22570FA85CDAC6BAAAEE3FAD /* HypertrophyV2EndToEndTests.swift */; };
 		231DAB33E28CF985A3217784 /* CatalogSemanticFoundationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1688610B63E157C82AB1B22 /* CatalogSemanticFoundationTests.swift */; };
 		3551ADA6C410935FE55EAE34 /* ReadinessAdaptationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9F23F0D57FE43683653E5C3 /* ReadinessAdaptationTests.swift */; };
@@ -578,6 +583,11 @@
 		70359EE04F7A9FCC6DB5BD46 /* CalibrationTestSupport.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CalibrationTestSupport.swift; sourceTree = "<group>"; };
 		3009493D32C0ED2CBD23EFB5 /* SourceRMCalibrationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SourceRMCalibrationTests.swift; sourceTree = "<group>"; };
 		EA5689AA390CC028297F1738 /* SourceRMCalibrationOnDiskReproTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SourceRMCalibrationOnDiskReproTests.swift; sourceTree = "<group>"; };
+		9C82B37523154D17AFD3EEAD /* YearOverviewTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = YearOverviewTests.swift; sourceTree = "<group>"; };
+		52034D67A698471984C4C2C4 /* FourDayFullBodySourceFidelityTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FourDayFullBodySourceFidelityTests.swift; sourceTree = "<group>"; };
+		C9C03E30CDC897DFBF40C8D2 /* FiveDayFullBodySourceFidelityTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FiveDayFullBodySourceFidelityTests.swift; sourceTree = "<group>"; };
+		968683F5D487F786BF389CA2 /* SixDayFullBodySourceFidelityTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SixDayFullBodySourceFidelityTests.swift; sourceTree = "<group>"; };
+		F3E4F60A63478A889386B81D /* HypertrophySourceFidelityGateTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HypertrophySourceFidelityGateTests.swift; sourceTree = "<group>"; };
 		22570FA85CDAC6BAAAEE3FAD /* HypertrophyV2EndToEndTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HypertrophyV2EndToEndTests.swift; sourceTree = "<group>"; };
 		B1688610B63E157C82AB1B22 /* CatalogSemanticFoundationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CatalogSemanticFoundationTests.swift; sourceTree = "<group>"; };
 		7BED2E1A33B5D3515496A443 /* ReadinessAdaptationDecisionUseCase.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReadinessAdaptationDecisionUseCase.swift; sourceTree = "<group>"; };
@@ -1263,6 +1273,11 @@
 				D29D19F954B3F1827263E609 /* TrainingEnvironmentRecoveryClassificationTests.swift */,
 				3009493D32C0ED2CBD23EFB5 /* SourceRMCalibrationTests.swift */,
 				EA5689AA390CC028297F1738 /* SourceRMCalibrationOnDiskReproTests.swift */,
+				9C82B37523154D17AFD3EEAD /* YearOverviewTests.swift */,
+				52034D67A698471984C4C2C4 /* FourDayFullBodySourceFidelityTests.swift */,
+				C9C03E30CDC897DFBF40C8D2 /* FiveDayFullBodySourceFidelityTests.swift */,
+				968683F5D487F786BF389CA2 /* SixDayFullBodySourceFidelityTests.swift */,
+				F3E4F60A63478A889386B81D /* HypertrophySourceFidelityGateTests.swift */,
 				22570FA85CDAC6BAAAEE3FAD /* HypertrophyV2EndToEndTests.swift */,
 				B1688610B63E157C82AB1B22 /* CatalogSemanticFoundationTests.swift */,
 			);
@@ -1629,6 +1644,11 @@
 				E8B0AC2B02B90645634E6F4B /* TrainingEnvironmentRecoveryClassificationTests.swift in Sources */,
 				E89AE7DEA4B671AAC892C8A3 /* SourceRMCalibrationTests.swift in Sources */,
 				E9381AEA7C9B71263D887A11 /* SourceRMCalibrationOnDiskReproTests.swift in Sources */,
+				DAF33ED792204D369166935B /* YearOverviewTests.swift in Sources */,
+				AA58CDEFF15E4686B6284B27 /* FourDayFullBodySourceFidelityTests.swift in Sources */,
+				87D2E25849AF9DEA5F02BA24 /* FiveDayFullBodySourceFidelityTests.swift in Sources */,
+				6C8B454E6141E6C7514B4F02 /* SixDayFullBodySourceFidelityTests.swift in Sources */,
+				C31A48F68E66FD200A36BD06 /* HypertrophySourceFidelityGateTests.swift in Sources */,
 				90A02168FFB63496DA90629A /* HypertrophyV2EndToEndTests.swift in Sources */,
 				231DAB33E28CF985A3217784 /* CatalogSemanticFoundationTests.swift in Sources */,
 			);

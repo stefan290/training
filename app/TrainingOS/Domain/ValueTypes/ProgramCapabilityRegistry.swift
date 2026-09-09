@@ -58,6 +58,23 @@ enum CapabilityGapReason: String, Codable, CaseIterable {
     /// this is about the generator's own output failing its own
     /// contract, a genuinely different failure mode.
     case generationFailed
+    /// Source Authority Repair (4/5/6-Day Hypertrophy): the parameters
+    /// are structurally valid and `canInstantiate` says yes — a
+    /// `ProgramDefinition` genuinely can be built — but its per-day
+    /// exercise-slot content is not yet verified against the real,
+    /// original source workbook (`ProgramCapabilityRegistry
+    /// .isHypertrophySourceVerified`). Distinct from
+    /// `parametersNotInstantiable` (an input-shape problem) and
+    /// `generationFailed` (the generator's own structural-coverage check
+    /// failing): this is a content-fidelity problem discovered by
+    /// comparing generated output against `source_workbooks/` /
+    /// `SOURCE_PROGRAM_MANIFEST.md`, not a structural one. TrainingOS
+    /// must never recommend — and `LongTermPlanner.hypertrophyParameterCandidates`
+    /// must never return — a curated configuration in this state; it is
+    /// surfaced here as a real `CapabilityGap` instead, exactly like any
+    /// other "conceptually good, not currently executable" path, never
+    /// silently substituted for the nearest verified frequency.
+    case sourceContentUnverified
 }
 
 /// A conceptually-good path the planner considered but TrainingOS cannot
@@ -135,6 +152,37 @@ enum ProgramCapabilityRegistry {
         guard frequency > 0 else { return false }
         guard let supported = supportedFrequencies(for: system) else { return true }
         return supported.contains(frequency)
+    }
+
+    /// Source Authority Repair (4/5/6-Day Hypertrophy): whether a curated
+    /// Hypertrophy `(dayCount, split)` configuration's per-day exercise-
+    /// slot CONTENT has been verified against the real, original source
+    /// workbook — never whether it merely instantiates structurally
+    /// (`canInstantiate` already answers that). `SOURCE_PROGRAM_MANIFEST.md`
+    /// §1/§4/§6 is the audit trail this reads its verdict from; keep this
+    /// list in exact sync with that manifest's "CURRENT IMPLEMENTATION
+    /// STATUS" column whenever a new configuration is migrated — never
+    /// mark a configuration verified here without the manifest and the
+    /// generator's own real `SourceDay` migration agreeing. Today this is
+    /// TRUE for ALL FOUR Family A Full Body configurations, now that
+    /// Source Authority Repair Phase C has recovered 6-Day (the last
+    /// remaining one) — every day/mesocycle of 3/4/5/6-Day Full Body is
+    /// now cell-verified against its own real workbook, matching
+    /// `HypertrophyProgramGenerator.generateDayFocusDriven`'s own
+    /// `dayCount == 3 || 4 || 5 || 6, split == .fullBody` routing
+    /// condition exactly. The two remaining curated
+    /// `HypertrophyBuiltInLibrary` entries this checkpoint deliberately
+    /// did NOT touch — "4-Day Lower/Leg Focus" (`.legs`) and "5-Day
+    /// Upper/Arms Focus" (`.armsShoulders`) — still run
+    /// `generateLegacyFixedPair` and correctly report unverified; their
+    /// recovery is separate, out-of-scope work (this repair's own scope
+    /// control is explicit: Full Body only). This is fail-closed by
+    /// design: a newly-added curated entry defaults to unverified until
+    /// explicitly listed here, never the reverse. **Still purely
+    /// declarative** — not yet read by `LongTermPlanner` (a separate,
+    /// later fidelity-gate-activation checkpoint, not this pass).
+    static func isHypertrophySourceVerified(dayCount: Int, split: HypertrophySplit) -> Bool {
+        (dayCount == 3 || dayCount == 4 || dayCount == 5 || dayCount == 6) && split == .fullBody
     }
 
     /// Structural validity of the parameters themselves — "can a real

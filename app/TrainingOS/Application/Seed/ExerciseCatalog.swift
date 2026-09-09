@@ -344,6 +344,21 @@ struct ExerciseCatalog {
             primaryTargets: [.triceps],
             requiredEquipment: [.cableStation]
         )
+        // Source Authority Repair (4-Day Full Body): both real, source-
+        // approved names (SOURCE_PROGRAM_MANIFEST.md §5's Abs/Traps
+        // category rows) — added only because the 4-Day workbook's real
+        // per-day slots require them, exactly the "exact source-slot
+        // requirements" exception to leaving Exercise Library untouched.
+        let hangingKneeRaise = make(
+            "Hanging Knee Raise", .hypertrophy, "bodyweight", "coreFlexion",
+            primaryTargets: [.core],
+            requiredEquipment: [.pullUpBar]
+        )
+        let barbellShrug = make(
+            "Barbell Shrug", .hypertrophy, "barbell", "shrug",
+            primaryTargets: [.back],
+            requiredEquipment: [.barbell]
+        )
         // Stage 10C.1: `.lateralDelt` added alongside the existing
         // generic `.shoulders` (never replacing it) — see `MuscleGroup`'s
         // own doc comment.

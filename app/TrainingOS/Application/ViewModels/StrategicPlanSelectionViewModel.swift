@@ -179,6 +179,27 @@ final class StrategicPlanSelectionViewModel {
     var resolvedStartDate: Date? {
         proposal?.phases.first.map { LongTermPlanner.resolvedInitialPlanStartDate(asOf: $0.startDate) }
     }
+    /// Year Overview (pre-acceptance strategic route): the same real
+    /// `proposal.phases` `resolvedStartDate` already previews for phase 1
+    /// alone — applied here to EVERY phase, mirroring exactly
+    /// `AcceptStrategicPlanUseCase.accept`'s own `startDateShift` (added
+    /// uniformly to every phase's `startDate`/`endDate`, never just the
+    /// first) so a pre-acceptance chronology preview never disagrees with
+    /// what acceptance will actually persist. Zero new semantics — same
+    /// real phases, same real shift formula, purely a read-only preview;
+    /// never applied when there is nothing to shift (revision/superseding
+    /// proposals are out of this V1 Year Overview's scope — it only ever
+    /// renders for a fresh, not-yet-accepted proposal).
+    var yearOverviewPhases: [ProposedPhase] {
+        guard let phases = proposal?.phases, let firstStart = phases.first?.startDate else { return [] }
+        let shift = LongTermPlanner.resolvedInitialPlanStartDate(asOf: firstStart).timeIntervalSince(firstStart)
+        return phases.map { phase in
+            var shifted = phase
+            shifted.startDate = phase.startDate.addingTimeInterval(shift)
+            shifted.endDate = phase.endDate.map { $0.addingTimeInterval(shift) }
+            return shifted
+        }
+    }
     /// Dated Objectives + 10K Strategic Reconciliation V1: true when any
     /// proposed phase's own prep window was compressed below its ideal
     /// lead time because an earlier dated objective's own phase ran late

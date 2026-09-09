@@ -60,4 +60,48 @@ final class ProgramCapabilityRegistryTests: XCTestCase {
         )
         XCTAssertFalse(ProgramCapabilityRegistry.canInstantiate(invalidSteadyState))
     }
+
+    // MARK: - Source Authority Repair (4/5/6-Day Hypertrophy): fidelity gate
+
+    /// Only the one configuration actually migrated off the legacy
+    /// placeholder generator (`HypertrophyProgramGenerator
+    /// .generateDayFocusDriven`'s real `dayCount == 3, split == .fullBody`
+    /// routing) is source-verified today — confirmed directly against
+    /// the real `3 day full body_Novice.xlsx` workbook this pass, not
+    /// merely re-asserted from `SOURCE_PROGRAM_MANIFEST.md`.
+    /// Source Authority Repair Phase C: 6-Day Full Body is now recovered
+    /// too — all four Family A Full Body configurations (3/4/5/6-Day)
+    /// report source-verified today, each independently cell-verified
+    /// against its own real workbook.
+    func testAllFourFullBodyDayCountsAreSourceVerifiedToday() {
+        XCTAssertTrue(ProgramCapabilityRegistry.isHypertrophySourceVerified(dayCount: 3, split: .fullBody))
+        XCTAssertTrue(ProgramCapabilityRegistry.isHypertrophySourceVerified(dayCount: 4, split: .fullBody))
+        XCTAssertTrue(ProgramCapabilityRegistry.isHypertrophySourceVerified(dayCount: 5, split: .fullBody))
+        XCTAssertTrue(ProgramCapabilityRegistry.isHypertrophySourceVerified(dayCount: 6, split: .fullBody))
+    }
+
+    /// Every other curated Hypertrophy configuration in
+    /// `HypertrophyBuiltInLibrary.all` still runs `generateLegacyFixedPair`
+    /// and must report unverified — fail-closed by construction, so a
+    /// newly-added curated entry defaults to unverified until explicitly
+    /// proven against its own real source workbook.
+    func testOtherCuratedHypertrophyConfigurationsAreNotYetSourceVerified() {
+        for entry in HypertrophyBuiltInLibrary.all where !((entry.dayCount == 3 || entry.dayCount == 4 || entry.dayCount == 5 || entry.dayCount == 6) && entry.split == .fullBody) {
+            XCTAssertFalse(
+                ProgramCapabilityRegistry.isHypertrophySourceVerified(dayCount: entry.dayCount, split: entry.split),
+                "\(entry.name) is not yet migrated off the legacy placeholder generator and must not report source-verified"
+            )
+        }
+    }
+
+    /// Every split at every day count remains fail-closed unless it is
+    /// an exact recovered reference configuration — never "any full-body
+    /// split at any day count."
+    func testSourceVerificationIsExactNotApproximate() {
+        XCTAssertFalse(ProgramCapabilityRegistry.isHypertrophySourceVerified(dayCount: 3, split: .legs))
+        XCTAssertFalse(ProgramCapabilityRegistry.isHypertrophySourceVerified(dayCount: 4, split: .legs))
+        XCTAssertFalse(ProgramCapabilityRegistry.isHypertrophySourceVerified(dayCount: 5, split: .legs), "correct day count, wrong split — must not approximate to 'any split at a verified day count'")
+        XCTAssertFalse(ProgramCapabilityRegistry.isHypertrophySourceVerified(dayCount: 6, split: .legs), "6-Day exists, but not for this split — .legs is a separate, unrecovered configuration")
+        XCTAssertFalse(ProgramCapabilityRegistry.isHypertrophySourceVerified(dayCount: 7, split: .fullBody), "no 7-Day Full Body configuration exists at all — must not approximate to the nearest verified day count")
+    }
 }

@@ -30,14 +30,19 @@ final class StrengthMaterializerTests: XCTestCase {
         return instance
     }
 
-    /// `(5, .fullBody)`, not `(3, .fullBody)` — Stage 10B repurposes the
-    /// latter for its own day-focus-driven path (variable slot count per
-    /// day), which would break this test's "one primary + one paired
-    /// accessory" assumption; `(5, .fullBody)` exercises the identical,
-    /// unchanged legacy generator this test was always about.
+    /// `(5, .armsShoulders)`, not `(3, .fullBody)` — Stage 10B repurposes
+    /// the latter for its own day-focus-driven path (variable slot count
+    /// per day), which would break this test's "one primary + one paired
+    /// accessory" assumption; Source Authority Repair has since migrated
+    /// ALL of 3/4/5/6-Day Full Body off the legacy generator (Phase C
+    /// closed out 6-Day, the last one), so no `(dayCount, .fullBody)`
+    /// combination exercises it anymore at all — `(5, .armsShoulders)`
+    /// ("5-Day Upper/Arms Focus," one of the two curated configurations
+    /// this repair's own Full-Body-only scope deliberately left
+    /// untouched) is the real, still-legacy fixture this test now uses.
     func testMaterializeWeekZeroCreatesOneSessionPerTemplateSessionWithCorrectValues() throws {
         let definition = try HypertrophyProgramGenerator.generate(
-            configuration: HypertrophyProgramConfiguration(dayCount: 5, split: .fullBody, phaseType: .basicHypertrophy),
+            configuration: HypertrophyProgramConfiguration(dayCount: 5, split: .armsShoulders, phaseType: .basicHypertrophy),
             provenance: .constructed(reason: "test fixture"),
             context: context
         )
@@ -198,8 +203,17 @@ final class StrengthMaterializerTests: XCTestCase {
     /// longer fabricates a floored rep count from the template — see
     /// `STAGE10R1D_SOURCE_SEMANTICS_CORRECTION.md`.
     func testMaterializeDeloadWeekAppliesFamilyARulesGivenWeekZeroResolvedValues() throws {
+        // Source Authority Repair: `dayCount: 4` used to be an arbitrary
+        // still-legacy example for this generic legacy-pair/deload
+        // mechanism test, then bumped to 5, then 6, as each Full Body
+        // day-count in turn migrated to real, source-verified content.
+        // Phase C closed out 6-Day (the last one) — no `(dayCount,
+        // .fullBody)` combination exercises the legacy generator at all
+        // anymore, so this test now uses `(5, .armsShoulders)`, one of
+        // the two curated configurations this repair's own Full-Body-
+        // only scope deliberately left untouched.
         let definition = try HypertrophyProgramGenerator.generate(
-            configuration: HypertrophyProgramConfiguration(dayCount: 4, split: .fullBody, phaseType: .basicHypertrophy),
+            configuration: HypertrophyProgramConfiguration(dayCount: 5, split: .armsShoulders, phaseType: .basicHypertrophy),
             provenance: .constructed(reason: "test fixture"),
             context: context
         )
@@ -219,12 +233,12 @@ final class StrengthMaterializerTests: XCTestCase {
             slotContext: { slot in .init(weekOneResolvedWeightKg: resolvedWeights[slot.id]) }, context: context
         )
 
-        XCTAssertEqual(deload.sessions.count, 4)
+        XCTAssertEqual(deload.sessions.count, 5)
         for (dayIndex, session) in deload.sessions.enumerated() {
             let block = try XCTUnwrap(session.orderedBlocks.first)
             let primary = try XCTUnwrap(block.orderedPrescriptions.first { !$0.orderedSetPrescriptions.isEmpty })
             XCTAssertEqual(primary.orderedSetPrescriptions.count, 2, "deload sets are always the hardcoded constant")
-            let expectedWeight = dayIndex < 2 ? 85.0 : 42.5 // ceil(4/2) = 2 full-weight days
+            let expectedWeight = dayIndex < 3 ? 85.0 : 42.5 // ceil(5/2) = 3 full-weight days
             for setPrescription in primary.orderedSetPrescriptions {
                 XCTAssertEqual(setPrescription.targetWeight ?? -1, expectedWeight, accuracy: 0.0001, "day \(dayIndex)")
                 XCTAssertNil(setPrescription.repRangeLow, "never fabricate a deload rep count from the template")

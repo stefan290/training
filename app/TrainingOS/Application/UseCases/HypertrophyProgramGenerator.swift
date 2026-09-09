@@ -236,7 +236,7 @@ enum HypertrophyProgramGenerator {
         provenance: ProgramProvenance,
         context: ModelContext
     ) throws -> ProgramDefinition {
-        if configuration.dayCount == 3, configuration.split == .fullBody {
+        if (configuration.dayCount == 3 || configuration.dayCount == 4 || configuration.dayCount == 5 || configuration.dayCount == 6), configuration.split == .fullBody {
             return try generateDayFocusDriven(configuration: configuration, provenance: provenance, context: context)
         }
         return generateLegacyFixedPair(configuration: configuration, provenance: provenance, context: context)
@@ -966,6 +966,914 @@ enum HypertrophyProgramGenerator {
         SourceRatingPairing(dayIndex: 2, slotIndex: 7, pairedDayIndex: 0, pairedSlotIndex: 5), // Hamstrings Isolation <- Push Hamstrings Isolation
     ]
 
+    /// Source Authority Repair — 4-Day Full Body, Mesocycle 1 "Basic
+    /// Hypertrophy": recovered directly from `source_workbooks/4 day
+    /// full body.xlsx`, sheet "Mesocycle 1 Basic Hypertrophy", rows
+    /// 10-45 (cell-cited: `J11='=MROUND(((G11)*0.85),2.5)'` — factor
+    /// 0.85, matching `primaryWeekOneFactor(.basicHypertrophy)` exactly;
+    /// the workbook's own `2.5` MROUND unit is a display-only convention
+    /// TrainingOS does not model — the real equipment-resolved rounding
+    /// already happens in `StrengthProgressionEngine.resolveWeight`,
+    /// exactly as already established for 3-Day). 26 slots/week (7+6+7+6),
+    /// confirmed against `SOURCE_PROGRAM_MANIFEST.md` §0/§6's own slot-
+    /// count claim. Day emphasis names ("Upper Body"/"Lower Body")
+    /// preserved verbatim from source column B/C.
+    static let fourDayFullBodyMesocycle1BasicHypertrophy: [SourceDay] = [
+        SourceDay(sourceEmphasisName: "Upper Body", categories: [
+            SourceCategorySlot(sourceLabel: "Incline Push", category: .inclinePush, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Chest Isolation or Triceps", category: .chestIsolationOrTriceps, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Horizontal Push", category: .horizontalPush, weekOneSets: 2),
+            SourceCategorySlot(sourceLabel: "Horizontal Pull", category: .horizontalPull, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Vertical Pull", category: .verticalPull, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Side Delts", category: .sideDelts, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Abs", category: .abs, weekOneSets: 2),
+        ]),
+        SourceDay(sourceEmphasisName: "Lower Body", categories: [
+            SourceCategorySlot(sourceLabel: "Quads", category: .quads, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Quads", category: .quads, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Hamstring Isolation", category: .hamstringsIsolation, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Calves", category: .calves, weekOneSets: 6),
+            SourceCategorySlot(sourceLabel: "Triceps", category: .triceps, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Front Delts", category: .frontDelts, weekOneSets: 3),
+        ]),
+        SourceDay(sourceEmphasisName: "Upper Body", categories: [
+            SourceCategorySlot(sourceLabel: "Vertical Pull", category: .verticalPull, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Vertical Pull", category: .verticalPull, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Horizontal Pull", category: .horizontalPull, weekOneSets: 2),
+            SourceCategorySlot(sourceLabel: "Rear or Side Delts", category: .rearOrSideDelts, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Horizontal Push", category: .horizontalPush, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Incline Push", category: .inclinePush, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Abs", category: .abs, weekOneSets: 2),
+        ]),
+        SourceDay(sourceEmphasisName: "Lower Body", categories: [
+            SourceCategorySlot(sourceLabel: "Glutes", category: .glutes, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Hamstring Hip Hinge", category: .hamstringsHipHinge, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Quads", category: .quads, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Biceps", category: .biceps, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Traps", category: .traps, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Calves", category: .calves, weekOneSets: 6),
+        ]),
+    ]
+
+    /// Source Authority Repair — 4-Day Full Body Mesocycle 1's real
+    /// rating web, recovered cell-by-cell from the workbook's "Week 2
+    /// Sets" formulas (`O{row}='=I{row}+({ratingCol}{pairedRow})'` — the
+    /// same chronological, most-recently-trained-related-category
+    /// mechanism already established for 3-Day, confirmed here
+    /// independently: Day1 rows 11-17 rate off Day3 rows 30-36 (the
+    /// previous week's later day), Day2 rows 21-26 rate mostly off Day4
+    /// rows 40-45 (same relationship, one week back) with two rows
+    /// (Triceps/Front Delts) falling back to Day3's Incline Push since
+    /// neither Triceps nor Front Delts has a same-category predecessor
+    /// on Day4; Day3 rows 30-36 rate off Day1 rows 11-17; Day4 rows
+    /// 40-45 rate off Day2 rows 21-24 with two rows (Biceps/Traps)
+    /// falling back to Day1 (Vertical Pull/Side Delts respectively) —
+    /// the exact same "no same-category predecessor two days back, so
+    /// reach further" shape 3-Day's own Mesocycle 1 table already
+    /// documents for its own Biceps row.
+    static let fourDayFullBodyMesocycle1RatingPairings: [SourceRatingPairing] = [
+        // Day 1 (Upper) <- Day 3 (Upper), previous week
+        SourceRatingPairing(dayIndex: 0, slotIndex: 0, pairedDayIndex: 2, pairedSlotIndex: 5), // Incline Push <- Day3 Incline Push (row11<-row35)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 1, pairedDayIndex: 2, pairedSlotIndex: 4), // Chest Isolation or Triceps <- Day3 Horizontal Push (row12<-row34)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 2, pairedDayIndex: 2, pairedSlotIndex: 4), // Horizontal Push <- Day3 Horizontal Push (row13<-row34)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 3, pairedDayIndex: 2, pairedSlotIndex: 2), // Horizontal Pull <- Day3 Horizontal Pull (row14<-row32)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 4, pairedDayIndex: 2, pairedSlotIndex: 0), // Vertical Pull <- Day3 Vertical Pull 1st (row15<-row30)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 5, pairedDayIndex: 2, pairedSlotIndex: 3), // Side Delts <- Day3 Rear or Side Delts (row16<-row33)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 6, pairedDayIndex: 2, pairedSlotIndex: 6), // Abs <- Day3 Abs (row17<-row36)
+        // Day 2 (Lower) <- Day 4 (Lower), previous week; Triceps/Front Delts <- Day 3 Incline Push
+        SourceRatingPairing(dayIndex: 1, slotIndex: 0, pairedDayIndex: 3, pairedSlotIndex: 2), // Quads 1st <- Day4 Quads (row21<-row42)
+        SourceRatingPairing(dayIndex: 1, slotIndex: 1, pairedDayIndex: 3, pairedSlotIndex: 2), // Quads 2nd <- Day4 Quads (row22<-row42)
+        SourceRatingPairing(dayIndex: 1, slotIndex: 2, pairedDayIndex: 3, pairedSlotIndex: 1), // Hamstring Isolation <- Day4 Hamstring Hip Hinge (row23<-row41)
+        SourceRatingPairing(dayIndex: 1, slotIndex: 3, pairedDayIndex: 3, pairedSlotIndex: 5), // Calves <- Day4 Calves (row24<-row45)
+        SourceRatingPairing(dayIndex: 1, slotIndex: 4, pairedDayIndex: 2, pairedSlotIndex: 5), // Triceps <- Day3 Incline Push (row25<-row35)
+        SourceRatingPairing(dayIndex: 1, slotIndex: 5, pairedDayIndex: 2, pairedSlotIndex: 5), // Front Delts <- Day3 Incline Push (row26<-row35)
+        // Day 3 (Upper) <- Day 1 (Upper), same week
+        SourceRatingPairing(dayIndex: 2, slotIndex: 0, pairedDayIndex: 0, pairedSlotIndex: 4), // Vertical Pull 1st <- Day1 Vertical Pull (row30<-row15)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 1, pairedDayIndex: 0, pairedSlotIndex: 4), // Vertical Pull 2nd <- Day1 Vertical Pull (row31<-row15)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 2, pairedDayIndex: 0, pairedSlotIndex: 3), // Horizontal Pull <- Day1 Horizontal Pull (row32<-row14)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 3, pairedDayIndex: 0, pairedSlotIndex: 5), // Rear or Side Delts <- Day1 Side Delts (row33<-row16)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 4, pairedDayIndex: 0, pairedSlotIndex: 2), // Horizontal Push <- Day1 Horizontal Push (row34<-row13)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 5, pairedDayIndex: 0, pairedSlotIndex: 0), // Incline Push <- Day1 Incline Push (row35<-row11)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 6, pairedDayIndex: 0, pairedSlotIndex: 6), // Abs <- Day1 Abs (row36<-row17)
+        // Day 4 (Lower) <- Day 2 (Lower), same week; Biceps/Traps <- Day 1 Vertical Pull/Side Delts
+        SourceRatingPairing(dayIndex: 3, slotIndex: 0, pairedDayIndex: 1, pairedSlotIndex: 0), // Glutes <- Day2 Quads 1st (row40<-row21)
+        SourceRatingPairing(dayIndex: 3, slotIndex: 1, pairedDayIndex: 1, pairedSlotIndex: 2), // Hamstring Hip Hinge <- Day2 Hamstring Isolation (row41<-row23)
+        SourceRatingPairing(dayIndex: 3, slotIndex: 2, pairedDayIndex: 1, pairedSlotIndex: 0), // Quads <- Day2 Quads 1st (row42<-row21)
+        SourceRatingPairing(dayIndex: 3, slotIndex: 3, pairedDayIndex: 0, pairedSlotIndex: 4), // Biceps <- Day1 Vertical Pull (row43<-row15)
+        SourceRatingPairing(dayIndex: 3, slotIndex: 4, pairedDayIndex: 0, pairedSlotIndex: 5), // Traps <- Day1 Side Delts (row44<-row16)
+        SourceRatingPairing(dayIndex: 3, slotIndex: 5, pairedDayIndex: 1, pairedSlotIndex: 3), // Calves <- Day2 Calves (row45<-row24)
+    ]
+
+    /// Source Authority Repair — 4-Day Full Body, Mesocycle 2 "Metabolite
+    /// Focus": recovered directly from `source_workbooks/4 day full
+    /// body.xlsx`, sheet "Mesocycle 2 Metabolite Focus", rows 11-18
+    /// (Day1), 22-28 (Day2), 32-39 (Day3), 43-49 (Day4). Confirmed
+    /// factor 0.75 (`J11='=MROUND(((G11)*0.75),5)'`) and rounding unit 5
+    /// (differs from M1's 2.5). 30 slots/week (8+7+8+7) — each day gains
+    /// exactly one slot over M1 from its own real superset partner row.
+    /// Four real supersets, one per day, cell-confirmed via the 'Super
+    /// set this exercise'/'with this one' column-A markers: Day1 Chest
+    /// Isolation or Triceps + Horizontal Push (cross-category, rows
+    /// 12-13); Day2 Triceps + Front Delts (cross-category, rows 26-27);
+    /// Day3 Rear or Side Delts + Rear or Side Delts (same-category-
+    /// doubled, rows 35-36); Day4 Biceps + Biceps (same-category-doubled,
+    /// rows 46-47) — every partner's own weight formula independently
+    /// confirmed at factor 0.6 (`=MROUND(((G13)*0.6),5)` etc.), matching
+    /// `metaboliteFocusPairedWeekOneFactor` exactly. Unlike 3-Day's own
+    /// Mesocycle 2 (where the Pull Emphasis Biceps partner freezes after
+    /// Week 2), all 4 of THIS workbook's superset partners were traced
+    /// through their real Week-3/4 formulas (`U13='=O12+(S37)'`,
+    /// `AA13='=U12+(Y37)'`, etc.) and confirmed to cascade normally off
+    /// their own primary's accumulating value every week — none freeze
+    /// (`freezeAfterWeek` stays `nil` for all 4 partner rows here; the
+    /// parameter still exists on `SourceCategorySlot` for the case where
+    /// a future recovery does find one, never removed just because this
+    /// workbook doesn't use it).
+    static let fourDayFullBodyMesocycle2MetaboliteFocus: [SourceDay] = [
+        SourceDay(sourceEmphasisName: "Upper Body", categories: [
+            SourceCategorySlot(sourceLabel: "Incline Push", category: .inclinePush, weekOneSets: 4),
+            SourceCategorySlot(sourceLabel: "Chest Isolation or Triceps", category: .chestIsolationOrTriceps, weekOneSets: 3, isSupersetPartner: false),
+            SourceCategorySlot(sourceLabel: "Horizontal Push", category: .horizontalPush, weekOneSets: 3, isSupersetPartner: true),
+            SourceCategorySlot(sourceLabel: "Horizontal Push", category: .horizontalPush, weekOneSets: 2),
+            SourceCategorySlot(sourceLabel: "Horizontal Pull", category: .horizontalPull, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Vertical Pull", category: .verticalPull, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Side Delts", category: .sideDelts, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Abs", category: .abs, weekOneSets: 2),
+        ]),
+        SourceDay(sourceEmphasisName: "Lower Body", categories: [
+            SourceCategorySlot(sourceLabel: "Quads", category: .quads, weekOneSets: 4),
+            SourceCategorySlot(sourceLabel: "Quads", category: .quads, weekOneSets: 4),
+            SourceCategorySlot(sourceLabel: "Hamstring Isolation", category: .hamstringsIsolation, weekOneSets: 4),
+            SourceCategorySlot(sourceLabel: "Calves", category: .calves, weekOneSets: 6),
+            SourceCategorySlot(sourceLabel: "Triceps", category: .triceps, weekOneSets: 3, isSupersetPartner: false),
+            SourceCategorySlot(sourceLabel: "Front Delts", category: .frontDelts, weekOneSets: 3, isSupersetPartner: true),
+            SourceCategorySlot(sourceLabel: "Front Delts", category: .frontDelts, weekOneSets: 3),
+        ]),
+        SourceDay(sourceEmphasisName: "Upper Body", categories: [
+            SourceCategorySlot(sourceLabel: "Vertical Pull", category: .verticalPull, weekOneSets: 4),
+            SourceCategorySlot(sourceLabel: "Vertical Pull", category: .verticalPull, weekOneSets: 4),
+            SourceCategorySlot(sourceLabel: "Horizontal Pull", category: .horizontalPull, weekOneSets: 2),
+            SourceCategorySlot(sourceLabel: "Rear or Side Delts", category: .rearOrSideDelts, weekOneSets: 4, isSupersetPartner: false),
+            SourceCategorySlot(sourceLabel: "Rear or Side Delts", category: .rearOrSideDelts, weekOneSets: 4, isSupersetPartner: true),
+            SourceCategorySlot(sourceLabel: "Horizontal Push", category: .horizontalPush, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Incline Push", category: .inclinePush, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Abs", category: .abs, weekOneSets: 2),
+        ]),
+        SourceDay(sourceEmphasisName: "Lower Body", categories: [
+            SourceCategorySlot(sourceLabel: "Glutes", category: .glutes, weekOneSets: 4),
+            SourceCategorySlot(sourceLabel: "Hamstring Hip Hinge", category: .hamstringsHipHinge, weekOneSets: 4),
+            SourceCategorySlot(sourceLabel: "Quads", category: .quads, weekOneSets: 4),
+            SourceCategorySlot(sourceLabel: "Biceps", category: .biceps, weekOneSets: 3, isSupersetPartner: false),
+            SourceCategorySlot(sourceLabel: "Biceps", category: .biceps, weekOneSets: 3, isSupersetPartner: true),
+            SourceCategorySlot(sourceLabel: "Traps", category: .traps, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Calves", category: .calves, weekOneSets: 6),
+        ]),
+    ]
+
+    /// Source Authority Repair — 4-Day Full Body Mesocycle 2's real
+    /// rating web, recovered cell-by-cell from the workbook's "Week 2
+    /// Sets" formulas (same `(dayIndex, slotIndex)` convention as
+    /// Mesocycle 1's table, indexing into
+    /// `fourDayFullBodyMesocycle2MetaboliteFocus` itself). Every superset
+    /// partner's own pairing target is confirmed to be the SAME external
+    /// row its own primary reads (`O13='=I12+(M37)'`, identical to
+    /// `O12='=I12+(M37)'`) — never its own independent target.
+    static let fourDayFullBodyMesocycle2RatingPairings: [SourceRatingPairing] = [
+        // Day 1 (Upper), rows 11-18
+        SourceRatingPairing(dayIndex: 0, slotIndex: 0, pairedDayIndex: 2, pairedSlotIndex: 6), // Incline Push <- Day3 Incline Push (row11<-row38)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 1, pairedDayIndex: 2, pairedSlotIndex: 5), // Chest Isolation or Triceps (primary) <- Day3 Horizontal Push (row12<-row37)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 2, pairedDayIndex: 2, pairedSlotIndex: 5), // Horizontal Push (superset partner) <- same target as slot1 (row13<-row37)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 3, pairedDayIndex: 2, pairedSlotIndex: 5), // Horizontal Push (standalone) <- Day3 Horizontal Push (row14<-row37)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 4, pairedDayIndex: 2, pairedSlotIndex: 2), // Horizontal Pull <- Day3 Horizontal Pull (row15<-row34)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 5, pairedDayIndex: 2, pairedSlotIndex: 0), // Vertical Pull <- Day3 Vertical Pull 1st (row16<-row32)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 6, pairedDayIndex: 2, pairedSlotIndex: 3), // Side Delts <- Day3 Rear or Side Delts (primary) (row17<-row35)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 7, pairedDayIndex: 2, pairedSlotIndex: 7), // Abs <- Day3 Abs (row18<-row39)
+        // Day 2 (Lower), rows 22-28
+        SourceRatingPairing(dayIndex: 1, slotIndex: 0, pairedDayIndex: 3, pairedSlotIndex: 2), // Quads 1st <- Day4 Quads (row22<-row45)
+        SourceRatingPairing(dayIndex: 1, slotIndex: 1, pairedDayIndex: 3, pairedSlotIndex: 2), // Quads 2nd <- Day4 Quads (row23<-row45)
+        SourceRatingPairing(dayIndex: 1, slotIndex: 2, pairedDayIndex: 3, pairedSlotIndex: 1), // Hamstring Isolation <- Day4 Hamstring Hip Hinge (row24<-row44)
+        SourceRatingPairing(dayIndex: 1, slotIndex: 3, pairedDayIndex: 3, pairedSlotIndex: 6), // Calves <- Day4 Calves (row25<-row49)
+        SourceRatingPairing(dayIndex: 1, slotIndex: 4, pairedDayIndex: 2, pairedSlotIndex: 6), // Triceps (primary) <- Day3 Incline Push (row26<-row38)
+        SourceRatingPairing(dayIndex: 1, slotIndex: 5, pairedDayIndex: 2, pairedSlotIndex: 6), // Front Delts (superset partner) <- same target as slot4 (row27<-row38)
+        SourceRatingPairing(dayIndex: 1, slotIndex: 6, pairedDayIndex: 2, pairedSlotIndex: 6), // Front Delts (standalone) <- Day3 Incline Push (row28<-row38)
+        // Day 3 (Upper), rows 32-39
+        SourceRatingPairing(dayIndex: 2, slotIndex: 0, pairedDayIndex: 0, pairedSlotIndex: 5), // Vertical Pull 1st <- Day1 Vertical Pull (row32<-row16)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 1, pairedDayIndex: 0, pairedSlotIndex: 5), // Vertical Pull 2nd <- Day1 Vertical Pull (row33<-row16)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 2, pairedDayIndex: 0, pairedSlotIndex: 4), // Horizontal Pull <- Day1 Horizontal Pull (row34<-row15)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 3, pairedDayIndex: 0, pairedSlotIndex: 6), // Rear or Side Delts (primary) <- Day1 Side Delts (row35<-row17)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 4, pairedDayIndex: 0, pairedSlotIndex: 6), // Rear or Side Delts (superset partner) <- same target as slot3 (row36<-row17)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 5, pairedDayIndex: 0, pairedSlotIndex: 3), // Horizontal Push <- Day1 Horizontal Push (standalone) (row37<-row14)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 6, pairedDayIndex: 0, pairedSlotIndex: 0), // Incline Push <- Day1 Incline Push (row38<-row11)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 7, pairedDayIndex: 0, pairedSlotIndex: 7), // Abs <- Day1 Abs (row39<-row18)
+        // Day 4 (Lower), rows 43-49
+        SourceRatingPairing(dayIndex: 3, slotIndex: 0, pairedDayIndex: 1, pairedSlotIndex: 0), // Glutes <- Day2 Quads 1st (row43<-row22)
+        SourceRatingPairing(dayIndex: 3, slotIndex: 1, pairedDayIndex: 1, pairedSlotIndex: 2), // Hamstring Hip Hinge <- Day2 Hamstring Isolation (row44<-row24)
+        SourceRatingPairing(dayIndex: 3, slotIndex: 2, pairedDayIndex: 1, pairedSlotIndex: 0), // Quads <- Day2 Quads 1st (row45<-row22)
+        SourceRatingPairing(dayIndex: 3, slotIndex: 3, pairedDayIndex: 0, pairedSlotIndex: 5), // Biceps (primary) <- Day1 Vertical Pull (row46<-row16)
+        SourceRatingPairing(dayIndex: 3, slotIndex: 4, pairedDayIndex: 0, pairedSlotIndex: 5), // Biceps (superset partner) <- same target as slot3 (row47<-row16)
+        SourceRatingPairing(dayIndex: 3, slotIndex: 5, pairedDayIndex: 0, pairedSlotIndex: 6), // Traps <- Day1 Side Delts (row48<-row17)
+        SourceRatingPairing(dayIndex: 3, slotIndex: 6, pairedDayIndex: 1, pairedSlotIndex: 3), // Calves <- Day2 Calves (row49<-row25)
+    ]
+
+    /// Source Authority Repair — 4-Day Full Body, Mesocycle 3
+    /// "Resensitization": recovered directly from `source_workbooks/4
+    /// day full body.xlsx`, sheet "Mesocycle 3 Resensitization", rows
+    /// 11-16 (Day1), 20-24 (Day2), 28-33 (Day3), 37-42 (Day4). Confirmed
+    /// factor 1.0 (`J11='=MROUND(((G11)),5)'`, no multiplier) and
+    /// rounding unit 5. 23 slots/week (6+5+6+6) — no supersets anywhere
+    /// (no 'Super set this exercise' marker found on any of these 23
+    /// rows). Deload confirmed 3-week block (`T8='Week 3: Deload'`, i.e.
+    /// only ONE progressive week beyond Week 1 — `progressiveWeekCount`
+    /// already returns 2 for `.resensitization`, unchanged). Deload
+    /// weight independently confirmed to follow the SAME generic
+    /// full-weight-first-half/half-weight-second-half split
+    /// `SourceCompatibleDeloadStrategy.resolveDeloadWeight`'s existing,
+    /// unmodified default formula already computes for `dayCount == 4`
+    /// (`boundary = ceil(4/2) = 2`): Day1/Day2 deload at full Week-1
+    /// weight (`V11='=J11'`), Day3/Day4 at half (`V28='=MROUND((J28*0.5),5)'`)
+    /// — this exact split, verified cell-by-cell, needs zero code change
+    /// since the strategy already derives it from `dayCount` generically.
+    static let fourDayFullBodyMesocycle3Resensitization: [SourceDay] = [
+        SourceDay(sourceEmphasisName: "Upper Body", categories: [
+            SourceCategorySlot(sourceLabel: "Incline Push", category: .inclinePush, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Horizontal Push", category: .horizontalPush, weekOneSets: 1),
+            SourceCategorySlot(sourceLabel: "Horizontal Pull", category: .horizontalPull, weekOneSets: 2),
+            SourceCategorySlot(sourceLabel: "Vertical Pull", category: .verticalPull, weekOneSets: 2),
+            SourceCategorySlot(sourceLabel: "Side Delts", category: .sideDelts, weekOneSets: 2),
+            SourceCategorySlot(sourceLabel: "Abs", category: .abs, weekOneSets: 1),
+        ]),
+        SourceDay(sourceEmphasisName: "Lower Body", categories: [
+            SourceCategorySlot(sourceLabel: "Quads", category: .quads, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Hamstring Isolation", category: .hamstringsIsolation, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Calves", category: .calves, weekOneSets: 5),
+            SourceCategorySlot(sourceLabel: "Triceps", category: .triceps, weekOneSets: 2),
+            SourceCategorySlot(sourceLabel: "Front Delts", category: .frontDelts, weekOneSets: 2),
+        ]),
+        SourceDay(sourceEmphasisName: "Upper Body", categories: [
+            SourceCategorySlot(sourceLabel: "Vertical Pull", category: .verticalPull, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Horizontal Pull", category: .horizontalPull, weekOneSets: 1),
+            SourceCategorySlot(sourceLabel: "Rear or Side Delts", category: .rearOrSideDelts, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Horizontal Push", category: .horizontalPush, weekOneSets: 2),
+            SourceCategorySlot(sourceLabel: "Incline Push", category: .inclinePush, weekOneSets: 2),
+            SourceCategorySlot(sourceLabel: "Abs", category: .abs, weekOneSets: 1),
+        ]),
+        SourceDay(sourceEmphasisName: "Lower Body", categories: [
+            SourceCategorySlot(sourceLabel: "Glutes", category: .glutes, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Hamstring Hip Hinge", category: .hamstringsHipHinge, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Quads", category: .quads, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Biceps", category: .biceps, weekOneSets: 2),
+            SourceCategorySlot(sourceLabel: "Traps", category: .traps, weekOneSets: 2),
+            SourceCategorySlot(sourceLabel: "Calves", category: .calves, weekOneSets: 5),
+        ]),
+    ]
+
+    /// Source Authority Repair — 4-Day Full Body Mesocycle 3's real
+    /// rating web, recovered cell-by-cell — same `(dayIndex, slotIndex)`
+    /// convention, indexing into `fourDayFullBodyMesocycle3Resensitization`
+    /// itself. No superset partners exist in this mesocycle (confirmed
+    /// above), so every row here is an ordinary cross-day rating
+    /// reference.
+    static let fourDayFullBodyMesocycle3RatingPairings: [SourceRatingPairing] = [
+        // Day 1 (Upper), rows 11-16
+        SourceRatingPairing(dayIndex: 0, slotIndex: 0, pairedDayIndex: 2, pairedSlotIndex: 4), // Incline Push <- Day3 Incline Push (row11<-row32)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 1, pairedDayIndex: 2, pairedSlotIndex: 3), // Horizontal Push <- Day3 Horizontal Push (row12<-row31)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 2, pairedDayIndex: 2, pairedSlotIndex: 1), // Horizontal Pull <- Day3 Horizontal Pull (row13<-row29)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 3, pairedDayIndex: 2, pairedSlotIndex: 0), // Vertical Pull <- Day3 Vertical Pull (row14<-row28)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 4, pairedDayIndex: 2, pairedSlotIndex: 2), // Side Delts <- Day3 Rear or Side Delts (row15<-row30)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 5, pairedDayIndex: 2, pairedSlotIndex: 5), // Abs <- Day3 Abs (row16<-row33)
+        // Day 2 (Lower), rows 20-24
+        SourceRatingPairing(dayIndex: 1, slotIndex: 0, pairedDayIndex: 3, pairedSlotIndex: 2), // Quads <- Day4 Quads (row20<-row39)
+        SourceRatingPairing(dayIndex: 1, slotIndex: 1, pairedDayIndex: 3, pairedSlotIndex: 1), // Hamstring Isolation <- Day4 Hamstring Hip Hinge (row21<-row38)
+        SourceRatingPairing(dayIndex: 1, slotIndex: 2, pairedDayIndex: 3, pairedSlotIndex: 5), // Calves <- Day4 Calves (row22<-row42)
+        SourceRatingPairing(dayIndex: 1, slotIndex: 3, pairedDayIndex: 2, pairedSlotIndex: 4), // Triceps <- Day3 Incline Push (row23<-row32)
+        SourceRatingPairing(dayIndex: 1, slotIndex: 4, pairedDayIndex: 2, pairedSlotIndex: 4), // Front Delts <- Day3 Incline Push (row24<-row32)
+        // Day 3 (Upper), rows 28-33
+        SourceRatingPairing(dayIndex: 2, slotIndex: 0, pairedDayIndex: 0, pairedSlotIndex: 3), // Vertical Pull <- Day1 Vertical Pull (row28<-row14)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 1, pairedDayIndex: 0, pairedSlotIndex: 2), // Horizontal Pull <- Day1 Horizontal Pull (row29<-row13)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 2, pairedDayIndex: 0, pairedSlotIndex: 4), // Rear or Side Delts <- Day1 Side Delts (row30<-row15)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 3, pairedDayIndex: 0, pairedSlotIndex: 1), // Horizontal Push <- Day1 Horizontal Push (row31<-row12)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 4, pairedDayIndex: 0, pairedSlotIndex: 0), // Incline Push <- Day1 Incline Push (row32<-row11)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 5, pairedDayIndex: 0, pairedSlotIndex: 5), // Abs <- Day1 Abs (row33<-row16)
+        // Day 4 (Lower), rows 37-42
+        SourceRatingPairing(dayIndex: 3, slotIndex: 0, pairedDayIndex: 1, pairedSlotIndex: 0), // Glutes <- Day2 Quads (row37<-row20)
+        SourceRatingPairing(dayIndex: 3, slotIndex: 1, pairedDayIndex: 1, pairedSlotIndex: 1), // Hamstring Hip Hinge <- Day2 Hamstring Isolation (row38<-row21)
+        SourceRatingPairing(dayIndex: 3, slotIndex: 2, pairedDayIndex: 1, pairedSlotIndex: 0), // Quads <- Day2 Quads (row39<-row20)
+        SourceRatingPairing(dayIndex: 3, slotIndex: 3, pairedDayIndex: 0, pairedSlotIndex: 3), // Biceps <- Day1 Vertical Pull (row40<-row14)
+        SourceRatingPairing(dayIndex: 3, slotIndex: 4, pairedDayIndex: 0, pairedSlotIndex: 4), // Traps <- Day1 Side Delts (row41<-row15)
+        SourceRatingPairing(dayIndex: 3, slotIndex: 5, pairedDayIndex: 1, pairedSlotIndex: 2), // Calves <- Day2 Calves (row42<-row22)
+    ]
+
+    /// Source Authority Repair — 5-Day Full Body, Mesocycle 1 "Basic
+    /// Hypertrophy": recovered directly from `source_workbooks/5 day
+    /// full body.xlsx`, sheet "Mesocycle 1 Basic Hypertrophy", rows
+    /// 10-50 (a "Finished programs" copy — real athlete-entered 10RMs/
+    /// exercise picks in columns C/G, but per `SOURCE_PROGRAM_MANIFEST.md`
+    /// §2, design fields — category/B-column, sets/I-column, formula/
+    /// J-column — never disagree with the "Original templates" copy;
+    /// only those design fields are used here, never the real athlete's
+    /// own numbers). Factor 0.85 confirmed (`J11='=MROUND(((G11)*0.85),5)'`),
+    /// rounding unit 5. 28 slots/week (6+4+6+5+7), matching
+    /// `SOURCE_PROGRAM_MANIFEST.md` §1/§6's own slot-count claim. Day
+    /// emphasis names ("Chest Upper," etc.) preserved verbatim from
+    /// source column B/C. Two per-workbook display-label variants
+    /// confirmed via real exercise content and resolved through
+    /// `SourceHypertrophyCategory.labelAliases`, never invented as new
+    /// categories: "Horizontal Chest" -> `.horizontalPush` (its real
+    /// exercise, "Flat Dumbbell Bench Press," is a literal
+    /// `.horizontalPush`-approved name) and "Incline Chest" ->
+    /// `.inclinePush` (its real exercise, "Incline Wide Grip Bench
+    /// Press," is a literal `.inclinePush`-approved name). "Chest
+    /// Isolation" here is genuinely standalone (never dual-tagged with
+    /// Triceps the way 3-/4-Day's workbooks pair it) — the new
+    /// `.chestIsolation` category exists for exactly this real,
+    /// observed difference.
+    ///
+    /// Known real source anomaly, disclosed rather than silently
+    /// resolved: cell `G32` (Day 3's Abs row, this "Finished programs"
+    /// copy) reads the literal text `"?"` instead of a real 10RM number
+    /// — an athlete's own not-yet-filled-in value in this specific
+    /// personal copy. This does not affect anything recovered here: `G`
+    /// is never design authority (`SOURCE_PROGRAM_MANIFEST.md` §2); the
+    /// design fields for that exact row (category "Abs," 3 sets, the
+    /// same `*0.85` formula shape as every other Day 3 row) are entirely
+    /// normal and were used unchanged.
+    static let fiveDayFullBodyMesocycle1BasicHypertrophy: [SourceDay] = [
+        SourceDay(sourceEmphasisName: "Chest Upper", categories: [
+            SourceCategorySlot(sourceLabel: "Incline Chest", category: .inclinePush, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Chest Isolation", category: .chestIsolation, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Horizontal Chest", category: .horizontalPush, weekOneSets: 2),
+            SourceCategorySlot(sourceLabel: "Horizontal Pull", category: .horizontalPull, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Rear or Side Delts", category: .rearOrSideDelts, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Abs", category: .abs, weekOneSets: 3),
+        ]),
+        SourceDay(sourceEmphasisName: "Quads Focused Legs", categories: [
+            SourceCategorySlot(sourceLabel: "Quads", category: .quads, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Quads", category: .quads, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Hamstrings Isolation", category: .hamstringsIsolation, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Calves", category: .calves, weekOneSets: 6),
+        ]),
+        SourceDay(sourceEmphasisName: "Back Upper", categories: [
+            SourceCategorySlot(sourceLabel: "Vertical Pull", category: .verticalPull, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Vertical Pull", category: .verticalPull, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Horizontal Pull", category: .horizontalPull, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Horizontal Chest", category: .horizontalPush, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Rear or Side Delts", category: .rearOrSideDelts, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Abs", category: .abs, weekOneSets: 3),
+        ]),
+        SourceDay(sourceEmphasisName: "Glute/Ham Focused Legs", categories: [
+            SourceCategorySlot(sourceLabel: "Glutes", category: .glutes, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Glutes", category: .glutes, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Hamstrings Hip Hinge", category: .hamstringsHipHinge, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Quads", category: .quads, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Calves", category: .calves, weekOneSets: 6),
+        ]),
+        SourceDay(sourceEmphasisName: "Shoulders/Arms Upper", categories: [
+            SourceCategorySlot(sourceLabel: "Biceps", category: .biceps, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Triceps", category: .triceps, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Front Delts", category: .frontDelts, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Traps", category: .traps, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Vertical Pull", category: .verticalPull, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Incline Chest", category: .inclinePush, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Abs", category: .abs, weekOneSets: 3),
+        ]),
+    ]
+
+    /// Source Authority Repair — 5-Day Full Body Mesocycle 1's real
+    /// rating web, recovered cell-by-cell from the workbook's "Week 2
+    /// Sets" formulas. Preserved exactly as authored — several rows
+    /// reference a related-but-different category rather than the
+    /// nearest same-category occurrence (e.g. Day3 slot2/"Horizontal
+    /// Pull" rates off Day5's "Vertical Pull," and Day5 slot4/"Vertical
+    /// Pull" rates off Day1's "Horizontal Pull" rather than Day3's own,
+    /// more recent, real Vertical Pull slots) — this is a real, observed
+    /// authoring choice in the source spreadsheet, not normalized or
+    /// "corrected" to a cleaner rule here.
+    static let fiveDayFullBodyMesocycle1RatingPairings: [SourceRatingPairing] = [
+        // Day 1 (Chest Upper), rows 11-16
+        SourceRatingPairing(dayIndex: 0, slotIndex: 0, pairedDayIndex: 2, pairedSlotIndex: 3), // Incline Chest <- Day3 Horizontal Chest (row11<-row30)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 1, pairedDayIndex: 2, pairedSlotIndex: 3), // Chest Isolation <- Day3 Horizontal Chest (row12<-row30)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 2, pairedDayIndex: 2, pairedSlotIndex: 3), // Horizontal Chest <- Day3 Horizontal Chest (row13<-row30)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 3, pairedDayIndex: 2, pairedSlotIndex: 2), // Horizontal Pull <- Day3 Horizontal Pull (row14<-row29)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 4, pairedDayIndex: 2, pairedSlotIndex: 4), // Rear or Side Delts <- Day3 Rear or Side Delts (row15<-row31)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 5, pairedDayIndex: 2, pairedSlotIndex: 5), // Abs <- Day3 Abs (row16<-row32)
+        // Day 2 (Quads Focused Legs), rows 20-23
+        SourceRatingPairing(dayIndex: 1, slotIndex: 0, pairedDayIndex: 3, pairedSlotIndex: 4), // Quads 1st <- Day4 Quads (row20<-row39)
+        SourceRatingPairing(dayIndex: 1, slotIndex: 1, pairedDayIndex: 3, pairedSlotIndex: 4), // Quads 2nd <- Day4 Quads (row21<-row39)
+        SourceRatingPairing(dayIndex: 1, slotIndex: 2, pairedDayIndex: 3, pairedSlotIndex: 2), // Hamstrings Isolation <- Day4 Hamstrings Hip Hinge (row22<-row38)
+        SourceRatingPairing(dayIndex: 1, slotIndex: 3, pairedDayIndex: 3, pairedSlotIndex: 5), // Calves <- Day4 Calves (row23<-row40)
+        // Day 3 (Back Upper), rows 27-32
+        SourceRatingPairing(dayIndex: 2, slotIndex: 0, pairedDayIndex: 4, pairedSlotIndex: 5), // Vertical Pull 1st <- Day5 Incline Chest (row27<-row49)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 1, pairedDayIndex: 4, pairedSlotIndex: 5), // Vertical Pull 2nd <- Day5 Incline Chest (row28<-row49)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 2, pairedDayIndex: 4, pairedSlotIndex: 4), // Horizontal Pull <- Day5 Vertical Pull (row29<-row48)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 3, pairedDayIndex: 4, pairedSlotIndex: 4), // Horizontal Chest <- Day5 Vertical Pull (row30<-row48)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 4, pairedDayIndex: 0, pairedSlotIndex: 4), // Rear or Side Delts <- Day1 Rear or Side Delts (row31<-row15)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 5, pairedDayIndex: 4, pairedSlotIndex: 6), // Abs <- Day5 Abs (row32<-row50)
+        // Day 4 (Glute/Ham Focused Legs), rows 36-40
+        SourceRatingPairing(dayIndex: 3, slotIndex: 0, pairedDayIndex: 1, pairedSlotIndex: 0), // Glutes 1st <- Day2 Quads (row36<-row20)
+        SourceRatingPairing(dayIndex: 3, slotIndex: 1, pairedDayIndex: 1, pairedSlotIndex: 0), // Glutes 2nd <- Day2 Quads (row37<-row20)
+        SourceRatingPairing(dayIndex: 3, slotIndex: 2, pairedDayIndex: 1, pairedSlotIndex: 2), // Hamstrings Hip Hinge <- Day2 Hamstrings Isolation (row38<-row22)
+        SourceRatingPairing(dayIndex: 3, slotIndex: 3, pairedDayIndex: 1, pairedSlotIndex: 0), // Quads <- Day2 Quads (row39<-row20)
+        SourceRatingPairing(dayIndex: 3, slotIndex: 4, pairedDayIndex: 1, pairedSlotIndex: 3), // Calves <- Day2 Calves (row40<-row23)
+        // Day 5 (Shoulders/Arms Upper), rows 44-50
+        SourceRatingPairing(dayIndex: 4, slotIndex: 0, pairedDayIndex: 0, pairedSlotIndex: 3), // Biceps <- Day1 Horizontal Pull (row44<-row14)
+        SourceRatingPairing(dayIndex: 4, slotIndex: 1, pairedDayIndex: 0, pairedSlotIndex: 0), // Triceps <- Day1 Incline Chest (row45<-row11)
+        SourceRatingPairing(dayIndex: 4, slotIndex: 2, pairedDayIndex: 0, pairedSlotIndex: 0), // Front Delts <- Day1 Incline Chest (row46<-row11)
+        SourceRatingPairing(dayIndex: 4, slotIndex: 3, pairedDayIndex: 0, pairedSlotIndex: 4), // Traps <- Day1 Rear or Side Delts (row47<-row15)
+        SourceRatingPairing(dayIndex: 4, slotIndex: 4, pairedDayIndex: 0, pairedSlotIndex: 3), // Vertical Pull <- Day1 Horizontal Pull (row48<-row14)
+        SourceRatingPairing(dayIndex: 4, slotIndex: 5, pairedDayIndex: 0, pairedSlotIndex: 0), // Incline Chest <- Day1 Incline Chest (row49<-row11)
+        SourceRatingPairing(dayIndex: 4, slotIndex: 6, pairedDayIndex: 0, pairedSlotIndex: 5), // Abs <- Day1 Abs (row50<-row16)
+    ]
+
+    /// Source Authority Repair — 5-Day Full Body, Mesocycle 2 "Metabolite
+    /// Focus": recovered directly from `source_workbooks/5 day full
+    /// body.xlsx`, sheet "Mesocycle 2 Metabolite Focus", rows 11-54.
+    /// Factor 0.75 confirmed (`J11='=MROUND(((G11)*0.75),5)'`), rounding
+    /// unit 5. 32 slots/week (7+4+7+5+9) — unlike 4-Day's M2 (exactly
+    /// one superset per day, every day), this workbook's 4 real supersets
+    /// are unevenly distributed: Day1 has one (Chest Isolation + primary
+    /// / Horizontal Chest partner, cross-category), Day3 has one (Rear
+    /// or Side Delts + Rear or Side Delts, same-category-doubled), Day5
+    /// has TWO (Biceps + Biceps same-category-doubled; Triceps + Front
+    /// Delts cross-category) — Day2 and Day4 have none. All 4 partners
+    /// confirmed at factor 0.6 (`metaboliteFocusPairedWeekOneFactor`)
+    /// and confirmed via real Week-3/4 formula trace to cascade normally
+    /// (none freeze — `freezeAfterWeek` stays `nil` for all 4, exactly
+    /// as 4-Day's own M2 partners do).
+    static let fiveDayFullBodyMesocycle2MetaboliteFocus: [SourceDay] = [
+        SourceDay(sourceEmphasisName: "Chest Upper", categories: [
+            SourceCategorySlot(sourceLabel: "Incline Chest", category: .inclinePush, weekOneSets: 4),
+            SourceCategorySlot(sourceLabel: "Chest Isolation", category: .chestIsolation, weekOneSets: 3, isSupersetPartner: false),
+            SourceCategorySlot(sourceLabel: "Horizontal Chest", category: .horizontalPush, weekOneSets: 3, isSupersetPartner: true),
+            SourceCategorySlot(sourceLabel: "Horizontal Chest", category: .horizontalPush, weekOneSets: 2),
+            SourceCategorySlot(sourceLabel: "Horizontal Pull", category: .horizontalPull, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Rear or Side Delts", category: .rearOrSideDelts, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Abs", category: .abs, weekOneSets: 3),
+        ]),
+        SourceDay(sourceEmphasisName: "Quads Focused Legs", categories: [
+            SourceCategorySlot(sourceLabel: "Quads", category: .quads, weekOneSets: 4),
+            SourceCategorySlot(sourceLabel: "Quads", category: .quads, weekOneSets: 4),
+            SourceCategorySlot(sourceLabel: "Hamstrings Isolation", category: .hamstringsIsolation, weekOneSets: 4),
+            SourceCategorySlot(sourceLabel: "Calves", category: .calves, weekOneSets: 6),
+        ]),
+        SourceDay(sourceEmphasisName: "Back Upper", categories: [
+            SourceCategorySlot(sourceLabel: "Vertical Pull", category: .verticalPull, weekOneSets: 4),
+            SourceCategorySlot(sourceLabel: "Vertical Pull", category: .verticalPull, weekOneSets: 4),
+            SourceCategorySlot(sourceLabel: "Horizontal Pull", category: .horizontalPull, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Horizontal Chest", category: .horizontalPush, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Rear or Side Delts", category: .rearOrSideDelts, weekOneSets: 3, isSupersetPartner: false),
+            SourceCategorySlot(sourceLabel: "Rear or Side Delts", category: .rearOrSideDelts, weekOneSets: 3, isSupersetPartner: true),
+            SourceCategorySlot(sourceLabel: "Abs", category: .abs, weekOneSets: 3),
+        ]),
+        SourceDay(sourceEmphasisName: "Glute/Ham Focused Legs", categories: [
+            SourceCategorySlot(sourceLabel: "Glutes", category: .glutes, weekOneSets: 4),
+            SourceCategorySlot(sourceLabel: "Glutes", category: .glutes, weekOneSets: 4),
+            SourceCategorySlot(sourceLabel: "Hamstrings Hip Hinge", category: .hamstringsHipHinge, weekOneSets: 4),
+            SourceCategorySlot(sourceLabel: "Quads", category: .quads, weekOneSets: 4),
+            SourceCategorySlot(sourceLabel: "Calves", category: .calves, weekOneSets: 6),
+        ]),
+        SourceDay(sourceEmphasisName: "Shoulders/Arms Upper", categories: [
+            SourceCategorySlot(sourceLabel: "Biceps", category: .biceps, weekOneSets: 4, isSupersetPartner: false),
+            SourceCategorySlot(sourceLabel: "Biceps", category: .biceps, weekOneSets: 4, isSupersetPartner: true),
+            SourceCategorySlot(sourceLabel: "Triceps", category: .triceps, weekOneSets: 4, isSupersetPartner: false),
+            SourceCategorySlot(sourceLabel: "Front Delts", category: .frontDelts, weekOneSets: 4, isSupersetPartner: true),
+            SourceCategorySlot(sourceLabel: "Front Delts", category: .frontDelts, weekOneSets: 4),
+            SourceCategorySlot(sourceLabel: "Traps", category: .traps, weekOneSets: 4),
+            SourceCategorySlot(sourceLabel: "Vertical Pull", category: .verticalPull, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Incline Chest", category: .inclinePush, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Abs", category: .abs, weekOneSets: 3),
+        ]),
+    ]
+
+    /// Source Authority Repair — 5-Day Full Body Mesocycle 2's real
+    /// rating web. Every superset partner's own pairing target confirmed
+    /// to be the SAME external row its own primary reads (e.g.
+    /// `O13='=I12+(M31)'`, identical target to `O12`, with SETS sourced
+    /// from the primary's own `I12`, never the partner's own `I13`) —
+    /// the same slaved-sets mechanism already proven for 3-/4-Day.
+    static let fiveDayFullBodyMesocycle2RatingPairings: [SourceRatingPairing] = [
+        // Day 1 (Chest Upper), rows 11-17
+        SourceRatingPairing(dayIndex: 0, slotIndex: 0, pairedDayIndex: 2, pairedSlotIndex: 3), // Incline Chest <- Day3 Horizontal Chest (row11<-row31)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 1, pairedDayIndex: 2, pairedSlotIndex: 3), // Chest Isolation (primary) <- Day3 Horizontal Chest (row12<-row31)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 2, pairedDayIndex: 2, pairedSlotIndex: 3), // Horizontal Chest (partner) <- same target as slot1 (row13<-row31)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 3, pairedDayIndex: 2, pairedSlotIndex: 4), // Horizontal Chest (standalone) <- Day3 Rear or Side Delts (row14<-row32)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 4, pairedDayIndex: 2, pairedSlotIndex: 2), // Horizontal Pull <- Day3 Horizontal Pull (row15<-row30)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 5, pairedDayIndex: 2, pairedSlotIndex: 4), // Rear or Side Delts <- Day3 Rear or Side Delts (row16<-row32)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 6, pairedDayIndex: 2, pairedSlotIndex: 6), // Abs <- Day3 Abs (row17<-row34)
+        // Day 2 (Quads Focused Legs), rows 21-24
+        SourceRatingPairing(dayIndex: 1, slotIndex: 0, pairedDayIndex: 3, pairedSlotIndex: 3), // Quads 1st <- Day4 Quads (row21<-row41)
+        SourceRatingPairing(dayIndex: 1, slotIndex: 1, pairedDayIndex: 3, pairedSlotIndex: 3), // Quads 2nd <- Day4 Quads (row22<-row41)
+        SourceRatingPairing(dayIndex: 1, slotIndex: 2, pairedDayIndex: 3, pairedSlotIndex: 2), // Hamstrings Isolation <- Day4 Hamstrings Hip Hinge (row23<-row40)
+        SourceRatingPairing(dayIndex: 1, slotIndex: 3, pairedDayIndex: 3, pairedSlotIndex: 4), // Calves <- Day4 Calves (row24<-row42)
+        // Day 3 (Back Upper), rows 28-34
+        SourceRatingPairing(dayIndex: 2, slotIndex: 0, pairedDayIndex: 4, pairedSlotIndex: 6), // Vertical Pull 1st <- Day5 Vertical Pull (row28<-row52)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 1, pairedDayIndex: 4, pairedSlotIndex: 6), // Vertical Pull 2nd <- Day5 Vertical Pull (row29<-row52)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 2, pairedDayIndex: 4, pairedSlotIndex: 6), // Horizontal Pull <- Day5 Vertical Pull (row30<-row52)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 3, pairedDayIndex: 4, pairedSlotIndex: 7), // Horizontal Chest <- Day5 Incline Chest (row31<-row53)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 4, pairedDayIndex: 0, pairedSlotIndex: 5), // Rear or Side Delts (primary) <- Day1 Rear or Side Delts (row32<-row16)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 5, pairedDayIndex: 0, pairedSlotIndex: 5), // Rear or Side Delts (partner) <- same target as slot4 (row33<-row16)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 6, pairedDayIndex: 4, pairedSlotIndex: 8), // Abs <- Day5 Abs (row34<-row54)
+        // Day 4 (Glute/Ham Focused Legs), rows 38-42
+        SourceRatingPairing(dayIndex: 3, slotIndex: 0, pairedDayIndex: 1, pairedSlotIndex: 0), // Glutes 1st <- Day2 Quads (row38<-row21)
+        SourceRatingPairing(dayIndex: 3, slotIndex: 1, pairedDayIndex: 1, pairedSlotIndex: 0), // Glutes 2nd <- Day2 Quads (row39<-row21)
+        SourceRatingPairing(dayIndex: 3, slotIndex: 2, pairedDayIndex: 1, pairedSlotIndex: 2), // Hamstrings Hip Hinge <- Day2 Hamstrings Isolation (row40<-row23)
+        SourceRatingPairing(dayIndex: 3, slotIndex: 3, pairedDayIndex: 1, pairedSlotIndex: 0), // Quads <- Day2 Quads (row41<-row21)
+        SourceRatingPairing(dayIndex: 3, slotIndex: 4, pairedDayIndex: 1, pairedSlotIndex: 3), // Calves <- Day2 Calves (row42<-row24)
+        // Day 5 (Shoulders/Arms Upper), rows 46-54
+        SourceRatingPairing(dayIndex: 4, slotIndex: 0, pairedDayIndex: 0, pairedSlotIndex: 4), // Biceps (primary) <- Day1 Horizontal Pull (row46<-row15)
+        SourceRatingPairing(dayIndex: 4, slotIndex: 1, pairedDayIndex: 0, pairedSlotIndex: 4), // Biceps (partner) <- same target as slot0 (row47<-row15)
+        SourceRatingPairing(dayIndex: 4, slotIndex: 2, pairedDayIndex: 0, pairedSlotIndex: 1), // Triceps (primary) <- Day1 Chest Isolation (row48<-row12)
+        SourceRatingPairing(dayIndex: 4, slotIndex: 3, pairedDayIndex: 0, pairedSlotIndex: 1), // Front Delts (partner) <- same target as slot2 (row49<-row12)
+        SourceRatingPairing(dayIndex: 4, slotIndex: 4, pairedDayIndex: 0, pairedSlotIndex: 0), // Front Delts (standalone) <- Day1 Incline Chest (row50<-row11)
+        SourceRatingPairing(dayIndex: 4, slotIndex: 5, pairedDayIndex: 0, pairedSlotIndex: 5), // Traps <- Day1 Rear or Side Delts (row51<-row16)
+        SourceRatingPairing(dayIndex: 4, slotIndex: 6, pairedDayIndex: 0, pairedSlotIndex: 4), // Vertical Pull <- Day1 Horizontal Pull (row52<-row15)
+        SourceRatingPairing(dayIndex: 4, slotIndex: 7, pairedDayIndex: 0, pairedSlotIndex: 0), // Incline Chest <- Day1 Incline Chest (row53<-row11)
+        SourceRatingPairing(dayIndex: 4, slotIndex: 8, pairedDayIndex: 0, pairedSlotIndex: 6), // Abs <- Day1 Abs (row54<-row17)
+    ]
+
+    /// Source Authority Repair — 5-Day Full Body, Mesocycle 3
+    /// "Resensitization": recovered directly from `source_workbooks/5
+    /// day full body.xlsx`, sheet "Mesocycle 3 Resensitization", rows
+    /// 10-46. 3-week block confirmed (`T8='Week 3: Deload'`), factor 1.0
+    /// confirmed (`J11='=MROUND(((G11)),5)'`, no multiplier), rounding
+    /// unit 5. 24 slots/week (5+3+5+4+7), no superset markers found on
+    /// any row.
+    static let fiveDayFullBodyMesocycle3Resensitization: [SourceDay] = [
+        SourceDay(sourceEmphasisName: "Chest Upper", categories: [
+            SourceCategorySlot(sourceLabel: "Incline Chest", category: .inclinePush, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Horizontal Chest", category: .horizontalPush, weekOneSets: 1),
+            SourceCategorySlot(sourceLabel: "Horizontal Pull", category: .horizontalPull, weekOneSets: 2),
+            SourceCategorySlot(sourceLabel: "Rear or Side Delts", category: .rearOrSideDelts, weekOneSets: 2),
+            SourceCategorySlot(sourceLabel: "Abs", category: .abs, weekOneSets: 2),
+        ]),
+        SourceDay(sourceEmphasisName: "Quads Focused Legs", categories: [
+            SourceCategorySlot(sourceLabel: "Quads", category: .quads, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Hamstrings Isolation", category: .hamstringsIsolation, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Calves", category: .calves, weekOneSets: 5),
+        ]),
+        SourceDay(sourceEmphasisName: "Back Upper", categories: [
+            SourceCategorySlot(sourceLabel: "Vertical Pull", category: .verticalPull, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Horizontal Pull", category: .horizontalPull, weekOneSets: 2),
+            SourceCategorySlot(sourceLabel: "Horizontal Chest", category: .horizontalPush, weekOneSets: 2),
+            SourceCategorySlot(sourceLabel: "Rear or Side Delts", category: .rearOrSideDelts, weekOneSets: 2),
+            SourceCategorySlot(sourceLabel: "Abs", category: .abs, weekOneSets: 2),
+        ]),
+        SourceDay(sourceEmphasisName: "Glute/Ham Focused Legs", categories: [
+            SourceCategorySlot(sourceLabel: "Glutes", category: .glutes, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Hamstrings Hip Hinge", category: .hamstringsHipHinge, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Quads", category: .quads, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Calves", category: .calves, weekOneSets: 5),
+        ]),
+        SourceDay(sourceEmphasisName: "Shoulders/Arms Upper", categories: [
+            SourceCategorySlot(sourceLabel: "Biceps", category: .biceps, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Triceps", category: .triceps, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Front Delts", category: .frontDelts, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Traps", category: .traps, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Vertical Pull", category: .verticalPull, weekOneSets: 2),
+            SourceCategorySlot(sourceLabel: "Incline Chest", category: .inclinePush, weekOneSets: 2),
+            SourceCategorySlot(sourceLabel: "Abs", category: .abs, weekOneSets: 2),
+        ]),
+    ]
+
+    /// Source Authority Repair — 5-Day Full Body Mesocycle 3's real
+    /// rating web (Week 1 -> Week 2 only — a 3-week block has no Week
+    /// 2 -> Week 3, since Week 3 is deload). Real deload boundary
+    /// confirmed directly (`V` column, "Week 3: Deload" weight):
+    /// Days 1-3 read full Week-1 weight unchanged, Days 4-5 read
+    /// `MROUND(J*0.5,5)` — exactly `DeloadStrategy`'s existing, UNMODIFIED
+    /// `ceil(dayCount/2)` boundary formula (`ceil(5/2)=3`) already
+    /// produces for a 5-day program; zero code change required.
+    static let fiveDayFullBodyMesocycle3RatingPairings: [SourceRatingPairing] = [
+        // Day 1 (Chest Upper), rows 11-15
+        SourceRatingPairing(dayIndex: 0, slotIndex: 0, pairedDayIndex: 2, pairedSlotIndex: 2), // Incline Chest <- Day3 Horizontal Chest (row11<-row27)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 1, pairedDayIndex: 2, pairedSlotIndex: 2), // Horizontal Chest <- Day3 Horizontal Chest (row12<-row27)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 2, pairedDayIndex: 2, pairedSlotIndex: 1), // Horizontal Pull <- Day3 Horizontal Pull (row13<-row26)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 3, pairedDayIndex: 2, pairedSlotIndex: 3), // Rear or Side Delts <- Day3 Rear or Side Delts (row14<-row28)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 4, pairedDayIndex: 2, pairedSlotIndex: 4), // Abs <- Day3 Abs (row15<-row29)
+        // Day 2 (Quads Focused Legs), rows 19-21
+        SourceRatingPairing(dayIndex: 1, slotIndex: 0, pairedDayIndex: 3, pairedSlotIndex: 2), // Quads <- Day4 Quads (row19<-row35)
+        SourceRatingPairing(dayIndex: 1, slotIndex: 1, pairedDayIndex: 3, pairedSlotIndex: 1), // Hamstrings Isolation <- Day4 Hamstrings Hip Hinge (row20<-row34)
+        SourceRatingPairing(dayIndex: 1, slotIndex: 2, pairedDayIndex: 3, pairedSlotIndex: 3), // Calves <- Day4 Calves (row21<-row36)
+        // Day 3 (Back Upper), rows 25-29
+        SourceRatingPairing(dayIndex: 2, slotIndex: 0, pairedDayIndex: 4, pairedSlotIndex: 4), // Vertical Pull <- Day5 Vertical Pull (row25<-row44)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 1, pairedDayIndex: 4, pairedSlotIndex: 4), // Horizontal Pull <- Day5 Vertical Pull (row26<-row44)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 2, pairedDayIndex: 4, pairedSlotIndex: 5), // Horizontal Chest <- Day5 Incline Chest (row27<-row45)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 3, pairedDayIndex: 0, pairedSlotIndex: 3), // Rear or Side Delts <- Day1 Rear or Side Delts (row28<-row14)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 4, pairedDayIndex: 4, pairedSlotIndex: 6), // Abs <- Day5 Abs (row29<-row46)
+        // Day 4 (Glute/Ham Focused Legs), rows 33-36
+        SourceRatingPairing(dayIndex: 3, slotIndex: 0, pairedDayIndex: 1, pairedSlotIndex: 0), // Glutes <- Day2 Quads (row33<-row19)
+        SourceRatingPairing(dayIndex: 3, slotIndex: 1, pairedDayIndex: 1, pairedSlotIndex: 1), // Hamstrings Hip Hinge <- Day2 Hamstrings Isolation (row34<-row20)
+        SourceRatingPairing(dayIndex: 3, slotIndex: 2, pairedDayIndex: 1, pairedSlotIndex: 0), // Quads <- Day2 Quads (row35<-row19)
+        SourceRatingPairing(dayIndex: 3, slotIndex: 3, pairedDayIndex: 1, pairedSlotIndex: 2), // Calves <- Day2 Calves (row36<-row21)
+        // Day 5 (Shoulders/Arms Upper), rows 40-46
+        SourceRatingPairing(dayIndex: 4, slotIndex: 0, pairedDayIndex: 0, pairedSlotIndex: 2), // Biceps <- Day1 Horizontal Pull (row40<-row13)
+        SourceRatingPairing(dayIndex: 4, slotIndex: 1, pairedDayIndex: 0, pairedSlotIndex: 0), // Triceps <- Day1 Incline Chest (row41<-row11)
+        SourceRatingPairing(dayIndex: 4, slotIndex: 2, pairedDayIndex: 0, pairedSlotIndex: 0), // Front Delts <- Day1 Incline Chest (row42<-row11)
+        SourceRatingPairing(dayIndex: 4, slotIndex: 3, pairedDayIndex: 0, pairedSlotIndex: 3), // Traps <- Day1 Rear or Side Delts (row43<-row14)
+        SourceRatingPairing(dayIndex: 4, slotIndex: 4, pairedDayIndex: 0, pairedSlotIndex: 2), // Vertical Pull <- Day1 Horizontal Pull (row44<-row13)
+        SourceRatingPairing(dayIndex: 4, slotIndex: 5, pairedDayIndex: 0, pairedSlotIndex: 0), // Incline Chest <- Day1 Incline Chest (row45<-row11)
+        SourceRatingPairing(dayIndex: 4, slotIndex: 6, pairedDayIndex: 0, pairedSlotIndex: 4), // Abs <- Day1 Abs (row46<-row15)
+    ]
+
+    /// Source Authority Repair — 6-Day Full Body, Mesocycle 1 "Basic
+    /// Hypertrophy": recovered directly from `source_workbooks/6 day full
+    /// body.xlsx`, sheet "Mesocycle 1 Basic Hypertrophy", rows 11-55.
+    /// Factor 0.85 confirmed (`J11='=MROUND(((G11)*0.85),5)'`), rounding
+    /// unit 5. 30 slots/week (5+5+5+5+5+5 — "perfectly uniform 5 slots/
+    /// day," matching `SOURCE_PROGRAM_MANIFEST.md` §6's own claim). Day
+    /// emphasis names preserved verbatim from source column B ("Chest
+    /// Focused Upper," "Quad Focused Lower," "Arms Focused Upper," "Glute
+    /// Focused Lower," "Back Focused Upper," "Ham Calf Shoulder Focused"
+    /// — Day 6 genuinely omits the "Upper/Lower" suffix in the source
+    /// itself, not a transcription simplification). This workbook's own
+    /// category labels are singular ("Quad," "Glute," "Hamstring
+    /// Isolation," "Hamstring Hip Hinge") — resolved via
+    /// `SourceHypertrophyCategory.labelAliases`' new entries to the SAME
+    /// existing categories every other Family A file labels in plural.
+    static let sixDayFullBodyMesocycle1BasicHypertrophy: [SourceDay] = [
+        SourceDay(sourceEmphasisName: "Chest Focused Upper", categories: [
+            SourceCategorySlot(sourceLabel: "Incline Push", category: .inclinePush, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Chest Isolation", category: .chestIsolation, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Horizontal Push", category: .horizontalPush, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Rear or Side Delts", category: .rearOrSideDelts, weekOneSets: 2),
+            SourceCategorySlot(sourceLabel: "Horizontal Pull", category: .horizontalPull, weekOneSets: 2),
+        ]),
+        SourceDay(sourceEmphasisName: "Quad Focused Lower", categories: [
+            SourceCategorySlot(sourceLabel: "Quad", category: .quads, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Quad", category: .quads, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Hamstring Isolation", category: .hamstringsIsolation, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Calves", category: .calves, weekOneSets: 6),
+            SourceCategorySlot(sourceLabel: "Abs", category: .abs, weekOneSets: 3),
+        ]),
+        SourceDay(sourceEmphasisName: "Arms Focused Upper", categories: [
+            SourceCategorySlot(sourceLabel: "Triceps", category: .triceps, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Triceps", category: .triceps, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Horizontal Push", category: .horizontalPush, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Biceps", category: .biceps, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Vertical Pull", category: .verticalPull, weekOneSets: 3),
+        ]),
+        SourceDay(sourceEmphasisName: "Glute Focused Lower", categories: [
+            SourceCategorySlot(sourceLabel: "Glute", category: .glutes, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Glute", category: .glutes, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Quad", category: .quads, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Calves", category: .calves, weekOneSets: 6),
+            SourceCategorySlot(sourceLabel: "Abs", category: .abs, weekOneSets: 3),
+        ]),
+        SourceDay(sourceEmphasisName: "Back Focused Upper", categories: [
+            SourceCategorySlot(sourceLabel: "Vertical Pull", category: .verticalPull, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Vertical Pull", category: .verticalPull, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Horizontal Pull", category: .horizontalPull, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Biceps", category: .biceps, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Biceps", category: .biceps, weekOneSets: 3),
+        ]),
+        SourceDay(sourceEmphasisName: "Ham Calf Shoulder Focused", categories: [
+            SourceCategorySlot(sourceLabel: "Hamstring Hip Hinge", category: .hamstringsHipHinge, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Calves", category: .calves, weekOneSets: 6),
+            SourceCategorySlot(sourceLabel: "Front Delts", category: .frontDelts, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Rear or Side Delts", category: .rearOrSideDelts, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Traps", category: .traps, weekOneSets: 3),
+        ]),
+    ]
+
+    /// Source Authority Repair — 6-Day Full Body Mesocycle 1's real
+    /// rating web, recovered cell-by-cell from the workbook's "Week 2
+    /// Sets" formulas (30 relationships, rows 11-55). Same chronological
+    /// most-recently-trained-related-category mechanism already
+    /// established for 3/4/5-Day.
+    static let sixDayFullBodyMesocycle1RatingPairings: [SourceRatingPairing] = [
+        // Day 1 (Chest Focused Upper), rows 11-15
+        SourceRatingPairing(dayIndex: 0, slotIndex: 0, pairedDayIndex: 2, pairedSlotIndex: 2), // Incline Push <- Day3 Horizontal Push (row11<-row29)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 1, pairedDayIndex: 2, pairedSlotIndex: 2), // Chest Isolation <- Day3 Horizontal Push (row12<-row29)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 2, pairedDayIndex: 2, pairedSlotIndex: 2), // Horizontal Push <- Day3 Horizontal Push (row13<-row29)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 3, pairedDayIndex: 5, pairedSlotIndex: 3), // Rear or Side Delts <- Day6 Rear or Side Delts (row14<-row54)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 4, pairedDayIndex: 2, pairedSlotIndex: 4), // Horizontal Pull <- Day3 Vertical Pull (row15<-row31)
+        // Day 2 (Quad Focused Lower), rows 19-23
+        SourceRatingPairing(dayIndex: 1, slotIndex: 0, pairedDayIndex: 3, pairedSlotIndex: 2), // Quad 1st <- Day4 Quad (row19<-row37)
+        SourceRatingPairing(dayIndex: 1, slotIndex: 1, pairedDayIndex: 3, pairedSlotIndex: 2), // Quad 2nd <- Day4 Quad (row20<-row37)
+        SourceRatingPairing(dayIndex: 1, slotIndex: 2, pairedDayIndex: 5, pairedSlotIndex: 0), // Hamstring Isolation <- Day6 Hamstring Hip Hinge (row21<-row51)
+        SourceRatingPairing(dayIndex: 1, slotIndex: 3, pairedDayIndex: 3, pairedSlotIndex: 3), // Calves <- Day4 Calves (row22<-row38)
+        SourceRatingPairing(dayIndex: 1, slotIndex: 4, pairedDayIndex: 3, pairedSlotIndex: 4), // Abs <- Day4 Abs (row23<-row39)
+        // Day 3 (Arms Focused Upper), rows 27-31
+        SourceRatingPairing(dayIndex: 2, slotIndex: 0, pairedDayIndex: 5, pairedSlotIndex: 2), // Triceps 1st <- Day6 Front Delts (row27<-row53)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 1, pairedDayIndex: 5, pairedSlotIndex: 2), // Triceps 2nd <- Day6 Front Delts (row28<-row53)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 2, pairedDayIndex: 0, pairedSlotIndex: 2), // Horizontal Push <- Day1 Horizontal Push (row29<-row13)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 3, pairedDayIndex: 4, pairedSlotIndex: 3), // Biceps <- Day5 Biceps (row30<-row46)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 4, pairedDayIndex: 4, pairedSlotIndex: 0), // Vertical Pull <- Day5 Vertical Pull (row31<-row43)
+        // Day 4 (Glute Focused Lower), rows 35-39
+        SourceRatingPairing(dayIndex: 3, slotIndex: 0, pairedDayIndex: 1, pairedSlotIndex: 0), // Glute 1st <- Day2 Quad (row35<-row19)
+        SourceRatingPairing(dayIndex: 3, slotIndex: 1, pairedDayIndex: 1, pairedSlotIndex: 0), // Glute 2nd <- Day2 Quad (row36<-row19)
+        SourceRatingPairing(dayIndex: 3, slotIndex: 2, pairedDayIndex: 1, pairedSlotIndex: 0), // Quad <- Day2 Quad (row37<-row19)
+        SourceRatingPairing(dayIndex: 3, slotIndex: 3, pairedDayIndex: 5, pairedSlotIndex: 1), // Calves <- Day6 Calves (row38<-row52)
+        SourceRatingPairing(dayIndex: 3, slotIndex: 4, pairedDayIndex: 1, pairedSlotIndex: 4), // Abs <- Day2 Abs (row39<-row23)
+        // Day 5 (Back Focused Upper), rows 43-47
+        SourceRatingPairing(dayIndex: 4, slotIndex: 0, pairedDayIndex: 0, pairedSlotIndex: 4), // Vertical Pull 1st <- Day1 Horizontal Pull (row43<-row15)
+        SourceRatingPairing(dayIndex: 4, slotIndex: 1, pairedDayIndex: 0, pairedSlotIndex: 4), // Vertical Pull 2nd <- Day1 Horizontal Pull (row44<-row15)
+        SourceRatingPairing(dayIndex: 4, slotIndex: 2, pairedDayIndex: 0, pairedSlotIndex: 4), // Horizontal Pull <- Day1 Horizontal Pull (row45<-row15)
+        SourceRatingPairing(dayIndex: 4, slotIndex: 3, pairedDayIndex: 2, pairedSlotIndex: 3), // Biceps 1st <- Day3 Biceps (row46<-row30)
+        SourceRatingPairing(dayIndex: 4, slotIndex: 4, pairedDayIndex: 2, pairedSlotIndex: 3), // Biceps 2nd <- Day3 Biceps (row47<-row30)
+        // Day 6 (Ham Calf Shoulder Focused), rows 51-55
+        SourceRatingPairing(dayIndex: 5, slotIndex: 0, pairedDayIndex: 1, pairedSlotIndex: 2), // Hamstring Hip Hinge <- Day2 Hamstring Isolation (row51<-row21)
+        SourceRatingPairing(dayIndex: 5, slotIndex: 1, pairedDayIndex: 1, pairedSlotIndex: 3), // Calves <- Day2 Calves (row52<-row22)
+        SourceRatingPairing(dayIndex: 5, slotIndex: 2, pairedDayIndex: 0, pairedSlotIndex: 0), // Front Delts <- Day1 Incline Push (row53<-row11)
+        SourceRatingPairing(dayIndex: 5, slotIndex: 3, pairedDayIndex: 0, pairedSlotIndex: 3), // Rear or Side Delts 1st <- Day1 Rear or Side Delts (row54<-row14)
+        SourceRatingPairing(dayIndex: 5, slotIndex: 4, pairedDayIndex: 0, pairedSlotIndex: 3), // Traps <- Day1 Rear or Side Delts (row55<-row14)
+    ]
+
+    /// Source Authority Repair — 6-Day Full Body, Mesocycle 2 "Metabolite
+    /// Focus": recovered directly from `source_workbooks/6 day full
+    /// body.xlsx`, sheet "Mesocycle 2 Metabolite Focus", rows 11-59.
+    /// Factor 0.75 confirmed (`J11='=MROUND(((G11)*0.75),5)'`), rounding
+    /// unit 5. 34 slots/week (6+5+6+5+6+6) — a NEW distribution not seen
+    /// in 4-/5-Day: real supersets on 4 of 6 days (Days 1, 3, 5, 6 — cell-
+    /// confirmed via the 'Super set this exercise'/'with this one'
+    /// column-A markers), Days 2 and 4 have NONE. All 4 partner rows'
+    /// weight formula independently confirmed at factor 0.6
+    /// (`=MROUND(((G13)*0.6),5)` etc.), matching
+    /// `metaboliteFocusPairedWeekOneFactor`. All 4 traced through their
+    /// real Week-3/4 formulas and confirmed to cascade normally off their
+    /// own primary's accumulating value (none freeze, same as 4-/5-Day's
+    /// own findings for this file family).
+    static let sixDayFullBodyMesocycle2MetaboliteFocus: [SourceDay] = [
+        SourceDay(sourceEmphasisName: "Chest Focused Upper", categories: [
+            SourceCategorySlot(sourceLabel: "Incline Push", category: .inclinePush, weekOneSets: 4),
+            SourceCategorySlot(sourceLabel: "Chest Isolation", category: .chestIsolation, weekOneSets: 3, isSupersetPartner: false),
+            SourceCategorySlot(sourceLabel: "Horizontal Push", category: .horizontalPush, weekOneSets: 3, isSupersetPartner: true),
+            SourceCategorySlot(sourceLabel: "Horizontal Push", category: .horizontalPush, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Rear or Side Delts", category: .rearOrSideDelts, weekOneSets: 2),
+            SourceCategorySlot(sourceLabel: "Horizontal Pull", category: .horizontalPull, weekOneSets: 2),
+        ]),
+        SourceDay(sourceEmphasisName: "Quad Focused Lower", categories: [
+            SourceCategorySlot(sourceLabel: "Quad", category: .quads, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Quad", category: .quads, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Hamstring Isolation", category: .hamstringsIsolation, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Calves", category: .calves, weekOneSets: 6),
+            SourceCategorySlot(sourceLabel: "Abs", category: .abs, weekOneSets: 3),
+        ]),
+        SourceDay(sourceEmphasisName: "Arms Focused Upper", categories: [
+            SourceCategorySlot(sourceLabel: "Triceps", category: .triceps, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Triceps", category: .triceps, weekOneSets: 3, isSupersetPartner: false),
+            SourceCategorySlot(sourceLabel: "Horizontal Push", category: .horizontalPush, weekOneSets: 3, isSupersetPartner: true),
+            SourceCategorySlot(sourceLabel: "Horizontal Push", category: .horizontalPush, weekOneSets: 4),
+            SourceCategorySlot(sourceLabel: "Biceps", category: .biceps, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Vertical Pull", category: .verticalPull, weekOneSets: 3),
+        ]),
+        SourceDay(sourceEmphasisName: "Glute Focused Lower", categories: [
+            SourceCategorySlot(sourceLabel: "Glute", category: .glutes, weekOneSets: 4),
+            SourceCategorySlot(sourceLabel: "Glute", category: .glutes, weekOneSets: 4),
+            SourceCategorySlot(sourceLabel: "Quad", category: .quads, weekOneSets: 4),
+            SourceCategorySlot(sourceLabel: "Calves", category: .calves, weekOneSets: 6),
+            SourceCategorySlot(sourceLabel: "Abs", category: .abs, weekOneSets: 3),
+        ]),
+        SourceDay(sourceEmphasisName: "Back Focused Upper", categories: [
+            SourceCategorySlot(sourceLabel: "Vertical Pull", category: .verticalPull, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Vertical Pull", category: .verticalPull, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Horizontal Pull", category: .horizontalPull, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Biceps", category: .biceps, weekOneSets: 4, isSupersetPartner: false),
+            SourceCategorySlot(sourceLabel: "Biceps", category: .biceps, weekOneSets: 4, isSupersetPartner: true),
+            SourceCategorySlot(sourceLabel: "Biceps", category: .biceps, weekOneSets: 4),
+        ]),
+        SourceDay(sourceEmphasisName: "Ham Calf Shoulder Focused", categories: [
+            SourceCategorySlot(sourceLabel: "Hamstring Hip Hinge", category: .hamstringsHipHinge, weekOneSets: 4),
+            SourceCategorySlot(sourceLabel: "Calves", category: .calves, weekOneSets: 6),
+            SourceCategorySlot(sourceLabel: "Front Delts", category: .frontDelts, weekOneSets: 4),
+            SourceCategorySlot(sourceLabel: "Rear or Side Delts", category: .rearOrSideDelts, weekOneSets: 4, isSupersetPartner: false),
+            SourceCategorySlot(sourceLabel: "Rear or Side Delts", category: .rearOrSideDelts, weekOneSets: 4, isSupersetPartner: true),
+            SourceCategorySlot(sourceLabel: "Traps", category: .traps, weekOneSets: 4),
+        ]),
+    ]
+
+    /// Source Authority Repair — 6-Day Full Body Mesocycle 2's real
+    /// rating web (34 relationships, rows 11-59). Every superset
+    /// partner's own pairing target confirmed to be the SAME external row
+    /// its own primary reads, never its own independent target — same
+    /// convention already established for 3/4/5-Day.
+    static let sixDayFullBodyMesocycle2RatingPairings: [SourceRatingPairing] = [
+        // Day 1 (Chest Focused Upper), rows 11-16
+        SourceRatingPairing(dayIndex: 0, slotIndex: 0, pairedDayIndex: 2, pairedSlotIndex: 3), // Incline Push <- Day3 Horizontal Push standalone (row11<-row31)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 1, pairedDayIndex: 2, pairedSlotIndex: 3), // Chest Isolation (primary) <- Day3 Horizontal Push standalone (row12<-row31)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 2, pairedDayIndex: 2, pairedSlotIndex: 3), // Horizontal Push (partner) <- same target as slot1 (row13<-row31)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 3, pairedDayIndex: 2, pairedSlotIndex: 3), // Horizontal Push (standalone) <- Day3 Horizontal Push standalone (row14<-row31)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 4, pairedDayIndex: 5, pairedSlotIndex: 3), // Rear or Side Delts <- Day6 Rear or Side Delts (primary) (row15<-row57)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 5, pairedDayIndex: 2, pairedSlotIndex: 5), // Horizontal Pull <- Day3 Vertical Pull (row16<-row33)
+        // Day 2 (Quad Focused Lower), rows 20-24
+        SourceRatingPairing(dayIndex: 1, slotIndex: 0, pairedDayIndex: 3, pairedSlotIndex: 2), // Quad 1st <- Day4 Quad (row20<-row39)
+        SourceRatingPairing(dayIndex: 1, slotIndex: 1, pairedDayIndex: 3, pairedSlotIndex: 2), // Quad 2nd <- Day4 Quad (row21<-row39)
+        SourceRatingPairing(dayIndex: 1, slotIndex: 2, pairedDayIndex: 5, pairedSlotIndex: 0), // Hamstring Isolation <- Day6 Hamstring Hip Hinge (row22<-row54)
+        SourceRatingPairing(dayIndex: 1, slotIndex: 3, pairedDayIndex: 3, pairedSlotIndex: 3), // Calves <- Day4 Calves (row23<-row40)
+        SourceRatingPairing(dayIndex: 1, slotIndex: 4, pairedDayIndex: 3, pairedSlotIndex: 4), // Abs <- Day4 Abs (row24<-row41)
+        // Day 3 (Arms Focused Upper), rows 28-33
+        SourceRatingPairing(dayIndex: 2, slotIndex: 0, pairedDayIndex: 5, pairedSlotIndex: 2), // Triceps (standalone) <- Day6 Front Delts (row28<-row56)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 1, pairedDayIndex: 5, pairedSlotIndex: 2), // Triceps (primary) <- Day6 Front Delts (row29<-row56)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 2, pairedDayIndex: 5, pairedSlotIndex: 2), // Horizontal Push (partner) <- same target as slot1 (row30<-row56)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 3, pairedDayIndex: 0, pairedSlotIndex: 3), // Horizontal Push (standalone) <- Day1 Horizontal Push standalone (row31<-row14)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 4, pairedDayIndex: 4, pairedSlotIndex: 3), // Biceps <- Day5 Biceps (primary) (row32<-row48)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 5, pairedDayIndex: 4, pairedSlotIndex: 0), // Vertical Pull <- Day5 Vertical Pull (row33<-row45)
+        // Day 4 (Glute Focused Lower), rows 37-41
+        SourceRatingPairing(dayIndex: 3, slotIndex: 0, pairedDayIndex: 1, pairedSlotIndex: 0), // Glute 1st <- Day2 Quad (row37<-row20)
+        SourceRatingPairing(dayIndex: 3, slotIndex: 1, pairedDayIndex: 1, pairedSlotIndex: 0), // Glute 2nd <- Day2 Quad (row38<-row20)
+        SourceRatingPairing(dayIndex: 3, slotIndex: 2, pairedDayIndex: 1, pairedSlotIndex: 0), // Quad <- Day2 Quad (row39<-row20)
+        SourceRatingPairing(dayIndex: 3, slotIndex: 3, pairedDayIndex: 5, pairedSlotIndex: 1), // Calves <- Day6 Calves (row40<-row55)
+        SourceRatingPairing(dayIndex: 3, slotIndex: 4, pairedDayIndex: 1, pairedSlotIndex: 4), // Abs <- Day2 Abs (row41<-row24)
+        // Day 5 (Back Focused Upper), rows 45-50
+        SourceRatingPairing(dayIndex: 4, slotIndex: 0, pairedDayIndex: 0, pairedSlotIndex: 5), // Vertical Pull 1st <- Day1 Horizontal Pull (row45<-row16)
+        SourceRatingPairing(dayIndex: 4, slotIndex: 1, pairedDayIndex: 0, pairedSlotIndex: 5), // Vertical Pull 2nd <- Day1 Horizontal Pull (row46<-row16)
+        SourceRatingPairing(dayIndex: 4, slotIndex: 2, pairedDayIndex: 0, pairedSlotIndex: 5), // Horizontal Pull <- Day1 Horizontal Pull (row47<-row16)
+        SourceRatingPairing(dayIndex: 4, slotIndex: 3, pairedDayIndex: 2, pairedSlotIndex: 4), // Biceps (primary) <- Day3 Biceps (row48<-row32)
+        SourceRatingPairing(dayIndex: 4, slotIndex: 4, pairedDayIndex: 2, pairedSlotIndex: 4), // Biceps (partner) <- same target as slot3 (row49<-row32)
+        SourceRatingPairing(dayIndex: 4, slotIndex: 5, pairedDayIndex: 2, pairedSlotIndex: 4), // Biceps (standalone) <- Day3 Biceps (row50<-row32)
+        // Day 6 (Ham Calf Shoulder Focused), rows 54-59
+        SourceRatingPairing(dayIndex: 5, slotIndex: 0, pairedDayIndex: 1, pairedSlotIndex: 2), // Hamstring Hip Hinge <- Day2 Hamstring Isolation (row54<-row22)
+        SourceRatingPairing(dayIndex: 5, slotIndex: 1, pairedDayIndex: 1, pairedSlotIndex: 3), // Calves <- Day2 Calves (row55<-row23)
+        SourceRatingPairing(dayIndex: 5, slotIndex: 2, pairedDayIndex: 0, pairedSlotIndex: 0), // Front Delts <- Day1 Incline Push (row56<-row11)
+        SourceRatingPairing(dayIndex: 5, slotIndex: 3, pairedDayIndex: 0, pairedSlotIndex: 4), // Rear or Side Delts (primary) <- Day1 Rear or Side Delts (row57<-row15)
+        SourceRatingPairing(dayIndex: 5, slotIndex: 4, pairedDayIndex: 0, pairedSlotIndex: 4), // Rear or Side Delts (partner) <- same target as slot3 (row58<-row15)
+        SourceRatingPairing(dayIndex: 5, slotIndex: 5, pairedDayIndex: 0, pairedSlotIndex: 4), // Traps <- Day1 Rear or Side Delts (row59<-row15)
+    ]
+
+    /// Source Authority Repair — 6-Day Full Body, Mesocycle 3
+    /// "Resensitization": recovered directly from `source_workbooks/6 day
+    /// full body.xlsx`, sheet "Mesocycle 3 Resensitization", rows 11-50.
+    /// 3-week block (`T8='Week 3: Deload'`), factor 1.0
+    /// (`J11='=MROUND(((G11)),5)'`, no multiplier), rounding unit 5. 25
+    /// slots/week (4+4+4+4+4+5) — the only mesocycle where Day 6 gains an
+    /// extra slot over the other five days (no supersets in this
+    /// mesocycle at all — none of the 25 rows carry a 'Super set this
+    /// exercise'/'with this one' marker).
+    static let sixDayFullBodyMesocycle3Resensitization: [SourceDay] = [
+        SourceDay(sourceEmphasisName: "Chest Focused Upper", categories: [
+            SourceCategorySlot(sourceLabel: "Incline Push", category: .inclinePush, weekOneSets: 2),
+            SourceCategorySlot(sourceLabel: "Horizontal Push", category: .horizontalPush, weekOneSets: 2),
+            SourceCategorySlot(sourceLabel: "Rear or Side Delts", category: .rearOrSideDelts, weekOneSets: 1),
+            SourceCategorySlot(sourceLabel: "Horizontal Pull", category: .horizontalPull, weekOneSets: 1),
+        ]),
+        SourceDay(sourceEmphasisName: "Quad Focused Lower", categories: [
+            SourceCategorySlot(sourceLabel: "Quad", category: .quads, weekOneSets: 2),
+            SourceCategorySlot(sourceLabel: "Hamstring Isolation", category: .hamstringsIsolation, weekOneSets: 2),
+            SourceCategorySlot(sourceLabel: "Calves", category: .calves, weekOneSets: 5),
+            SourceCategorySlot(sourceLabel: "Abs", category: .abs, weekOneSets: 2),
+        ]),
+        SourceDay(sourceEmphasisName: "Arms Focused Upper", categories: [
+            SourceCategorySlot(sourceLabel: "Triceps", category: .triceps, weekOneSets: 2),
+            SourceCategorySlot(sourceLabel: "Horizontal Push", category: .horizontalPush, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Biceps", category: .biceps, weekOneSets: 2),
+            SourceCategorySlot(sourceLabel: "Vertical Pull", category: .verticalPull, weekOneSets: 2),
+        ]),
+        SourceDay(sourceEmphasisName: "Glute Focused Lower", categories: [
+            SourceCategorySlot(sourceLabel: "Glute", category: .glutes, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Quad", category: .quads, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Calves", category: .calves, weekOneSets: 5),
+            SourceCategorySlot(sourceLabel: "Abs", category: .abs, weekOneSets: 2),
+        ]),
+        SourceDay(sourceEmphasisName: "Back Focused Upper", categories: [
+            SourceCategorySlot(sourceLabel: "Vertical Pull", category: .verticalPull, weekOneSets: 2),
+            SourceCategorySlot(sourceLabel: "Horizontal Pull", category: .horizontalPull, weekOneSets: 2),
+            SourceCategorySlot(sourceLabel: "Biceps", category: .biceps, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Biceps", category: .biceps, weekOneSets: 3),
+        ]),
+        SourceDay(sourceEmphasisName: "Ham Calf Shoulder Focused", categories: [
+            SourceCategorySlot(sourceLabel: "Hamstring Hip Hinge", category: .hamstringsHipHinge, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Calves", category: .calves, weekOneSets: 5),
+            SourceCategorySlot(sourceLabel: "Front Delts", category: .frontDelts, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Rear or Side Delts", category: .rearOrSideDelts, weekOneSets: 3),
+            SourceCategorySlot(sourceLabel: "Traps", category: .traps, weekOneSets: 3),
+        ]),
+    ]
+
+    /// Source Authority Repair — 6-Day Full Body Mesocycle 3's real
+    /// rating web (25 relationships, rows 11-50).
+    static let sixDayFullBodyMesocycle3RatingPairings: [SourceRatingPairing] = [
+        // Day 1 (Chest Focused Upper), rows 11-14
+        SourceRatingPairing(dayIndex: 0, slotIndex: 0, pairedDayIndex: 2, pairedSlotIndex: 1), // Incline Push <- Day3 Horizontal Push (row11<-row26)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 1, pairedDayIndex: 2, pairedSlotIndex: 1), // Horizontal Push <- Day3 Horizontal Push (row12<-row26)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 2, pairedDayIndex: 5, pairedSlotIndex: 3), // Rear or Side Delts <- Day6 Rear or Side Delts (row13<-row49)
+        SourceRatingPairing(dayIndex: 0, slotIndex: 3, pairedDayIndex: 2, pairedSlotIndex: 3), // Horizontal Pull <- Day3 Vertical Pull (row14<-row28)
+        // Day 2 (Quad Focused Lower), rows 18-21
+        SourceRatingPairing(dayIndex: 1, slotIndex: 0, pairedDayIndex: 3, pairedSlotIndex: 1), // Quad <- Day4 Quad (row18<-row33)
+        SourceRatingPairing(dayIndex: 1, slotIndex: 1, pairedDayIndex: 5, pairedSlotIndex: 0), // Hamstring Isolation <- Day6 Hamstring Hip Hinge (row19<-row46)
+        SourceRatingPairing(dayIndex: 1, slotIndex: 2, pairedDayIndex: 3, pairedSlotIndex: 2), // Calves <- Day4 Calves (row20<-row34)
+        SourceRatingPairing(dayIndex: 1, slotIndex: 3, pairedDayIndex: 3, pairedSlotIndex: 3), // Abs <- Day4 Abs (row21<-row35)
+        // Day 3 (Arms Focused Upper), rows 25-28
+        SourceRatingPairing(dayIndex: 2, slotIndex: 0, pairedDayIndex: 5, pairedSlotIndex: 2), // Triceps <- Day6 Front Delts (row25<-row48)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 1, pairedDayIndex: 0, pairedSlotIndex: 1), // Horizontal Push <- Day1 Horizontal Push (row26<-row12)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 2, pairedDayIndex: 4, pairedSlotIndex: 2), // Biceps <- Day5 Biceps (row27<-row41)
+        SourceRatingPairing(dayIndex: 2, slotIndex: 3, pairedDayIndex: 4, pairedSlotIndex: 0), // Vertical Pull <- Day5 Vertical Pull (row28<-row39)
+        // Day 4 (Glute Focused Lower), rows 32-35
+        SourceRatingPairing(dayIndex: 3, slotIndex: 0, pairedDayIndex: 1, pairedSlotIndex: 0), // Glute <- Day2 Quad (row32<-row18)
+        SourceRatingPairing(dayIndex: 3, slotIndex: 1, pairedDayIndex: 1, pairedSlotIndex: 0), // Quad <- Day2 Quad (row33<-row18)
+        SourceRatingPairing(dayIndex: 3, slotIndex: 2, pairedDayIndex: 5, pairedSlotIndex: 1), // Calves <- Day6 Calves (row34<-row47)
+        SourceRatingPairing(dayIndex: 3, slotIndex: 3, pairedDayIndex: 1, pairedSlotIndex: 3), // Abs <- Day2 Abs (row35<-row21)
+        // Day 5 (Back Focused Upper), rows 39-42
+        SourceRatingPairing(dayIndex: 4, slotIndex: 0, pairedDayIndex: 0, pairedSlotIndex: 3), // Vertical Pull <- Day1 Horizontal Pull (row39<-row14)
+        SourceRatingPairing(dayIndex: 4, slotIndex: 1, pairedDayIndex: 0, pairedSlotIndex: 3), // Horizontal Pull <- Day1 Horizontal Pull (row40<-row14)
+        SourceRatingPairing(dayIndex: 4, slotIndex: 2, pairedDayIndex: 2, pairedSlotIndex: 2), // Biceps 1st <- Day3 Biceps (row41<-row27)
+        SourceRatingPairing(dayIndex: 4, slotIndex: 3, pairedDayIndex: 2, pairedSlotIndex: 2), // Biceps 2nd <- Day3 Biceps (row42<-row27)
+        // Day 6 (Ham Calf Shoulder Focused), rows 46-50
+        SourceRatingPairing(dayIndex: 5, slotIndex: 0, pairedDayIndex: 1, pairedSlotIndex: 1), // Hamstring Hip Hinge <- Day2 Hamstring Isolation (row46<-row19)
+        SourceRatingPairing(dayIndex: 5, slotIndex: 1, pairedDayIndex: 1, pairedSlotIndex: 2), // Calves <- Day2 Calves (row47<-row20)
+        SourceRatingPairing(dayIndex: 5, slotIndex: 2, pairedDayIndex: 0, pairedSlotIndex: 0), // Front Delts <- Day1 Incline Push (row48<-row11)
+        SourceRatingPairing(dayIndex: 5, slotIndex: 3, pairedDayIndex: 0, pairedSlotIndex: 2), // Rear or Side Delts <- Day1 Rear or Side Delts (row49<-row13)
+        SourceRatingPairing(dayIndex: 5, slotIndex: 4, pairedDayIndex: 0, pairedSlotIndex: 2), // Traps <- Day1 Rear or Side Delts (row50<-row13)
+    ]
+
     /// **TrainingOS execution-layer selection** (explicitly distinct from
     /// source content, per the Stage 10R.1 architecture) — which ONE of a
     /// category's several source-approved exercises this configuration
@@ -994,6 +1902,20 @@ enum HypertrophyProgramGenerator {
         .glutes: "Conventional Deadlift",
         .hamstringsHipHinge: "Stiff-Legged Deadlift",
         .hamstringsIsolation: "Seated Leg Curl",
+        // Source Authority Repair (4-Day Full Body): real, cataloged,
+        // source-approved resolutions for the 4 additional categories
+        // the 4-Day workbook's own slots require.
+        .triceps: "Cable Triceps Pushdown",
+        .frontDelts: "Barbell Overhead Press",
+        .calves: "Seated Calf Raise",
+        .abs: "Hanging Knee Raise",
+        .traps: "Barbell Shrug",
+        // Source Authority Repair (5-Day Full Body): "Cable Chest Fly" is
+        // already a real, cataloged, source-approved exercise (shared
+        // with `.chestIsolationOrTriceps`'s own resolution) — the exact
+        // workbook cell for this slot literally reads "Cable Flye," the
+        // same movement, so no new catalog exercise is needed.
+        .chestIsolation: "Cable Chest Fly",
     ]
     private static let quadsOccurrenceNames = ["Front Squat", "Leg Press"]
 
@@ -1016,16 +1938,44 @@ enum HypertrophyProgramGenerator {
     /// pre-10R.2A bug (this path silently reused Mesocycle 1's content/
     /// factor "regardless of which `HypertrophyPhaseType` a caller
     /// passes") this stage corrects.
+    /// Source Authority Repair: `dayCount` added so this same dispatch
+    /// point can serve more than one day-focus-driven configuration.
+    /// 4-Day Full Body's real Mesocycle 1/2/3 content is now fully
+    /// recovered and wired here (Phase A2 completes Phase A1's M1-only
+    /// slice) — no 4-Day phase throws `.phaseNotYetRecovered` any
+    /// longer; the case itself is retained (never removed) for the same
+    /// reason a future frequency/split without recovered content should
+    /// throw it too, not silently reuse another configuration's content.
     private static func sourceContent(
-        for phaseType: HypertrophyPhaseType
+        for phaseType: HypertrophyPhaseType, dayCount: Int
     ) throws -> (days: [SourceDay], pairings: [SourceRatingPairing]) {
-        switch phaseType {
-        case .basicHypertrophy:
+        switch (dayCount, phaseType) {
+        case (3, .basicHypertrophy):
             return (threeDayFullBodyMesocycle1BasicHypertrophy, threeDayFullBodyMesocycle1RatingPairings)
-        case .metaboliteFocus:
+        case (3, .metaboliteFocus):
             return (threeDayFullBodyMesocycle2MetaboliteFocus, threeDayFullBodyMesocycle2RatingPairings)
-        case .resensitization:
+        case (3, .resensitization):
             return (threeDayFullBodyMesocycle3Resensitization, threeDayFullBodyMesocycle3RatingPairings)
+        case (4, .basicHypertrophy):
+            return (fourDayFullBodyMesocycle1BasicHypertrophy, fourDayFullBodyMesocycle1RatingPairings)
+        case (4, .metaboliteFocus):
+            return (fourDayFullBodyMesocycle2MetaboliteFocus, fourDayFullBodyMesocycle2RatingPairings)
+        case (4, .resensitization):
+            return (fourDayFullBodyMesocycle3Resensitization, fourDayFullBodyMesocycle3RatingPairings)
+        case (5, .basicHypertrophy):
+            return (fiveDayFullBodyMesocycle1BasicHypertrophy, fiveDayFullBodyMesocycle1RatingPairings)
+        case (5, .metaboliteFocus):
+            return (fiveDayFullBodyMesocycle2MetaboliteFocus, fiveDayFullBodyMesocycle2RatingPairings)
+        case (5, .resensitization):
+            return (fiveDayFullBodyMesocycle3Resensitization, fiveDayFullBodyMesocycle3RatingPairings)
+        case (6, .basicHypertrophy):
+            return (sixDayFullBodyMesocycle1BasicHypertrophy, sixDayFullBodyMesocycle1RatingPairings)
+        case (6, .metaboliteFocus):
+            return (sixDayFullBodyMesocycle2MetaboliteFocus, sixDayFullBodyMesocycle2RatingPairings)
+        case (6, .resensitization):
+            return (sixDayFullBodyMesocycle3Resensitization, sixDayFullBodyMesocycle3RatingPairings)
+        default:
+            throw HypertrophyGenerationError.phaseNotYetRecovered(phaseType: phaseType)
         }
     }
 
@@ -1034,13 +1984,13 @@ enum HypertrophyProgramGenerator {
         provenance: ProgramProvenance,
         context: ModelContext
     ) throws -> ProgramDefinition {
-        let (days, pairings) = try sourceContent(for: configuration.phaseType)
+        let (days, pairings) = try sourceContent(for: configuration.phaseType, dayCount: configuration.dayCount)
         let progressiveWeeks = progressiveWeekCount(for: configuration.phaseType)
 
         let definition = ProgramDefinition(
-            name: "3-Day Full Body Hypertrophy — \(phaseName(configuration.phaseType))",
+            name: "\(configuration.dayCount)-Day Full Body Hypertrophy — \(phaseName(configuration.phaseType))",
             lengthWeeks: progressiveWeeks + 1,
-            intent: "\(phaseName(configuration.phaseType)), 3-day Full Body — \(phaseName(configuration.phaseType)), recovered verbatim from the real source workbook (SOURCE_PROGRAM_MANIFEST.md §3)",
+            intent: "\(phaseName(configuration.phaseType)), \(configuration.dayCount)-day Full Body — \(phaseName(configuration.phaseType)), recovered verbatim from the real source workbook (SOURCE_PROGRAM_MANIFEST.md §0/§3)",
             programmingSystem: .hypertrophy,
             generatorVersion: currentVersion,
             provenance: provenance,

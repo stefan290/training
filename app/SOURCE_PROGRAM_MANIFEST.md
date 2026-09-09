@@ -1,5 +1,109 @@
 # Source Program Manifest
 
+## 0. CURRENT IMPLEMENTATION STATUS (Source Authority Repair pass — read this first)
+
+This section is the CURRENT-TRUTH correction layer. Everything below section 0
+is the ORIGINAL AUDIT FINDING (preserved verbatim, historical provenance) —
+where it disagrees with this section, **this section is current, the rest is
+historical**, per the "never rewrite historical findings, only add current-
+status corrections" discipline this manifest's own §11 requires.
+
+**Source files re-verified this pass**: all 15 workbooks now live at
+`app/source_workbooks/` (git-ignored via `app/.gitignore`, never committed).
+Every SHA-256 prefix in §1's table was independently recomputed against the
+real files this pass and matches exactly — these are confirmed to be the
+same files this manifest was originally built from.
+
+**3-Day Full Body — §1/§4's claim below is STALE, corrected here**: §1 and §4
+state the 3-Day config is "the most severe fidelity gap of any of the 15
+workbooks" (an invented Day A/B/C rotation, a fully-replaced
+`.doubleProgression` system). This is **no longer true**. A later engineering
+pass (evidently after this manifest was last edited, and never reflected back
+into it) migrated `HypertrophyProgramGenerator.generateDayFocusDriven` to a
+real, `SourceDay`-driven implementation. This pass independently re-verified
+Mesocycle 1 directly against the real `3 day full body_Novice.xlsx` workbook
+cell-by-cell (Day 1 "Push Emphasis" 8-slot sequence, Week-1 sets, the
+`=MROUND(((G11)*0.85),5)` formula, "3/fail" rep goal) and confirmed the
+current `threeDayFullBodyMesocycle1BasicHypertrophy` `SourceDay` array in
+`HypertrophyProgramGenerator.swift` matches exactly, slot-for-slot. **3-Day
+Full Body: SOURCE VERIFIED. PRODUCTION SAFE: YES.**
+
+**4-Day Full Body — real Mesocycle 1 structure extracted this pass, NOT yet
+migrated into code.** Directly from `4 day full body.xlsx`, Mesocycle 1 Basic
+Hypertrophy sheet (rounding unit **2.5**, Week-1 factor 0.85, later-week
+multipliers 1.05/1.075/1.1, rep goal `3/fail,3/fail,2/fail,1/fail`, deload
+2 sets fixed at Week-1 weight, "1/2 reps of Week 1"):
+
+| Day | Categories in order (Week-1 sets) |
+|---|---|
+| 1 (Upper Body) | Incline Push(3), Chest Isolation or Triceps(3), Horizontal Push(2), Horizontal Pull(3), Vertical Pull(3), Side Delts(3), Abs(2) |
+| 2 (Lower Body) | Quads(3), Quads(3), Hamstring Isolation(3), Calves(6), Triceps(3), Front Delts(3) |
+| 3 (Upper Body) | Vertical Pull(3), Vertical Pull(3), Horizontal Pull(2), Rear or Side Delts(3), Horizontal Push(3), Incline Push(3), Abs(2) |
+| 4 (Lower Body) | Glutes(3), Hamstring Hip Hinge(3), Quads(3), Biceps(3), Traps(3), Calves(6) |
+
+26 slots/week total — matches this manifest's own §1/§6 slot-count claim
+exactly. This table is a real head start for the next migration pass, not a
+substitute for it: the autoregulation rating-pairing web (which row rates
+which, week-to-week — confirmed present via `O11='=I11+(M35)'`-style formulas
+exactly analogous to 3-Day's own recovered pairing web) and Mesocycles 2/3
+were NOT extracted this pass due to time constraints. **4-Day Full Body:
+NOT YET SOURCE VERIFIED. PRODUCTION SAFE: NO** — still runs
+`generateLegacyFixedPair` (confirmed: this is the configuration the real
+canonical "Build Muscle, 5 available days" recommendation actually selects,
+via `component.frequency.target == 4` → `closestByDayCount` → "4-Day Full
+Body Hypertrophy" exact match — the highest-priority migration target).
+
+**5-Day Full Body, 6-Day Full Body, 4-Day Legs, 5-Day Arms & Shoulders,
+Powerlifting Str/Hyp — UNCHANGED from §1's original audit** *(historical
+claim as of this paragraph's original pass — 5-Day and 6-Day Full Body are
+each independently corrected below by later passes; 4-Day Legs, 5-Day Arms
+& Shoulders and Powerlifting Str/Hyp remain accurately described here,
+still unmigrated)*: real source files confirmed present and hash-verified
+this pass, but not opened/extracted this pass. **NOT YET SOURCE VERIFIED.
+PRODUCTION SAFE: NO.**
+
+**Update (Source Authority Repair, Phase C) — 6-Day Full Body: SOURCE
+VERIFIED. PRODUCTION SAFE: YES.** Directly from `6 day full body.xlsx`, all
+3 mesocycles (Basic Hypertrophy factor 0.85, 30 slots across 6 real
+"[Region] Focused [Upper/Lower]" days; Metabolite Focus factor 0.75/0.6
+superset-partner, 34 slots, 4 real supersets on Days 1/3/5/6 only; Resensi-
+tization factor 1.0, 25 slots, no supersets) were extracted cell-by-cell and
+translated into `sixDayFullBodyMesocycle{1,2,3}...` `SourceDay`/
+`SourceRatingPairing` arrays in `HypertrophyProgramGenerator.swift`, mirroring
+the 3/4/5-Day implementations already verified above. `generate()`'s routing
+now sends `(dayCount == 3 || 4 || 5 || 6), split == .fullBody` to the real
+`generateDayFocusDriven` path — 6-Day no longer touches
+`generateLegacyFixedPair`. Covered by `SixDayFullBodySourceFidelityTests.swift`
+(18 new tests, all passing). This closes out the last of the 4 curated Full
+Body configurations (3/4/5/6-Day) — all 4 are now source-verified; only the
+2 remaining out-of-scope curated configs (4-Day Legs, 5-Day Arms & Shoulders)
+still legitimately run the legacy generator.
+
+**Source fidelity gate — infrastructure built, still NOT wired into the live
+recommendation path.** `ProgramCapabilityRegistry
+.isHypertrophySourceVerified(dayCount:split:)` now reports `true` for
+`(3, .fullBody)`, `(4, .fullBody)`, `(5, .fullBody)` and `(6, .fullBody)`
+(updated across the 4/5/6-Day migration passes; was `(3, .fullBody)` only
+when this paragraph was first written) — still fail-closed for every other
+day count/split combination, and still deliberately not wired into
+`LongTermPlanner`, which remains semantically unchanged. A new
+`CapabilityGapReason.sourceContentUnverified` case
+exists for surfacing this correctly when wired. Both are real, unit-tested
+(`ProgramCapabilityRegistryTests.swift`, 3 new tests). **Wiring this into
+`LongTermPlanner.proposeProgram`'s hypertrophy branch was attempted and then
+reverted this pass** after empirically producing 38 new test failures (up
+from the 1 known pre-existing, unrelated failure) across the existing
+recommendation/onboarding/Year-Overview suite — every real scenario that
+currently recommends a 4/5/6-day Hypertrophy configuration would have
+received a `CapabilityGap` (no program at all) instead, a severe regression
+this pass could not respons­ibly triage and fix within its own time budget.
+**The gate is real, tested, ready-to-activate infrastructure — but is
+currently INERT.** Activating it live requires either completing the 4-day
+(at minimum) content migration first, or an explicit product decision to
+accept "no Hypertrophy recommendation for most athletes until migration
+completes" as an interim state.
+
+
 **Authority: the real, original `.xlsx` workbooks, read directly from disk this
 pass** (`~/Downloads/RP Diet/RP Diet/...` and its byte-identical mirror at
 `~/Documents/Private files/Träning/RP Diet/...` — every "Original templates"

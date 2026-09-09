@@ -540,7 +540,17 @@ final class HypertrophyDayFocusGenerationTests: XCTestCase {
     // MARK: - Unchanged behavior for other configurations (regression)
 
     func testOtherHypertrophyConfigurationsStillUseTheUnchangedLegacyTwoSlotShape() throws {
-        for config in HypertrophyBuiltInLibrary.all where !(config.dayCount == 3 && config.split == .fullBody) {
+        // Source Authority Repair: 4-Day Full Body (Phase A), 5-Day Full
+        // Body (Phase B), and 6-Day Full Body (Phase C, closing out the
+        // whole Family A Full Body repair) are now all day-focus-driven
+        // (real Mesocycle 1/2/3 content recovered from their own real
+        // workbooks) — excluded here exactly like 3-Day, never silently
+        // left asserting stale legacy-shape behavior for a configuration
+        // that no longer has it. Only the two remaining, deliberately
+        // out-of-scope curated configurations ("4-Day Lower/Leg Focus,"
+        // "5-Day Upper/Arms Focus") still exercise this legacy-shape
+        // assertion.
+        for config in HypertrophyBuiltInLibrary.all where !((config.dayCount == 3 || config.dayCount == 4 || config.dayCount == 5 || config.dayCount == 6) && config.split == .fullBody) {
             let definition = try HypertrophyProgramGenerator.generate(
                 configuration: HypertrophyProgramConfiguration(dayCount: config.dayCount, split: config.split, phaseType: .basicHypertrophy),
                 provenance: .constructed(reason: "regression"), context: context

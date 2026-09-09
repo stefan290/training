@@ -28,6 +28,21 @@ enum SourceHypertrophyCategory: String, Codable, CaseIterable {
     case glutes
     case hamstringsHipHinge
     case hamstringsIsolation
+    // Source Authority Repair (4-Day Full Body): the 4 additional real
+    // categories the 4-Day workbook's own slots require beyond 3-Day's
+    // 13 — same shared 24-category source database
+    // (`SOURCE_PROGRAM_MANIFEST.md` §5), never a new invented category.
+    case triceps
+    case frontDelts
+    case calves
+    case abs
+    case traps
+    // Source Authority Repair (5-Day Full Body): the 5-Day workbook uses
+    // a STANDALONE "Chest Isolation" slot (distinct from the dual-tag
+    // `.chestIsolationOrTriceps` 3-Day/4-Day already use) — same shared
+    // 24-category source database (`SOURCE_PROGRAM_MANIFEST.md` §5),
+    // never a new invented category.
+    case chestIsolation
 }
 
 extension SourceHypertrophyCategory {
@@ -43,7 +58,17 @@ extension SourceHypertrophyCategory {
     /// turns up in a future workbook.
     static let labelAliases: [String: SourceHypertrophyCategory] = [
         "Horizontal Push": .horizontalPush,
+        // Source Authority Repair (5-Day Full Body): confirmed via real
+        // exercise content — "Horizontal Chest"'s own real exercises
+        // ("Flat Dumbbell Bench Press," etc.) are the same
+        // Horizontal_Push category's exercises per the shared source
+        // database (`SOURCE_PROGRAM_MANIFEST.md` §5) — a per-workbook
+        // display-label variant, never a distinct category.
+        "Horizontal Chest": .horizontalPush,
         "Incline Push": .inclinePush,
+        // Same reasoning as "Horizontal Chest" above — confirmed via
+        // real exercise content ("Incline Wide Grip Bench Press," etc.).
+        "Incline Chest": .inclinePush,
         "Incline Push or Front Delts": .inclinePushOrFrontDelts,
         "Chest Isolation or Triceps": .chestIsolationOrTriceps,
         "Horizontal Pull": .horizontalPull,
@@ -56,6 +81,24 @@ extension SourceHypertrophyCategory {
         "Glutes": .glutes,
         "Hamstrings Hip Hinge": .hamstringsHipHinge,
         "Hamstrings Isolation": .hamstringsIsolation,
+        "Triceps": .triceps,
+        "Front Delts": .frontDelts,
+        "Calves": .calves,
+        "Abs": .abs,
+        "Traps": .traps,
+        // Source Authority Repair (6-Day Full Body): confirmed via real
+        // cells in `6 day full body.xlsx` — this workbook uses singular
+        // category display labels ("Quad"/"Glute"/"Hamstring Isolation"/
+        // "Hamstring Hip Hinge") for the SAME categories every other
+        // Family A workbook labels in plural, exactly the singular/plural
+        // per-file variance `SOURCE_PROGRAM_MANIFEST.md` §5 already
+        // documented for this specific file. Same category, never a
+        // distinct one.
+        "Quad": .quads,
+        "Glute": .glutes,
+        "Hamstring Isolation": .hamstringsIsolation,
+        "Hamstring Hip Hinge": .hamstringsHipHinge,
+        "Chest Isolation": .chestIsolation,
     ]
 
     /// The primary/most common label for this category, used when no
@@ -75,6 +118,12 @@ extension SourceHypertrophyCategory {
         case .glutes: return "Glutes"
         case .hamstringsHipHinge: return "Hamstrings Hip Hinge"
         case .hamstringsIsolation: return "Hamstrings Isolation"
+        case .triceps: return "Triceps"
+        case .frontDelts: return "Front Delts"
+        case .calves: return "Calves"
+        case .abs: return "Abs"
+        case .traps: return "Traps"
+        case .chestIsolation: return "Chest Isolation"
         }
     }
 
@@ -122,6 +171,18 @@ extension SourceHypertrophyCategory {
             return ["Stiff-Legged Deadlift", "Low Bar Good Morning", "High Bar Good Morning", "45 Degree Back Raise"]
         case .hamstringsIsolation:
             return ["Lying Leg Curl", "Seated Leg Curl", "Single-Leg Leg Curl"]
+        case .triceps:
+            return ["Skullcrusher", "EZ Bar Overhead Tricep Extension", "Barbell Overhead Tricep Extension", "Seated Overhead Tricep Extension", "JM Press", "Dips", "Assisted Dips", "Cable Tricep Pushdown", "Cable Rope Pushdown", "Bar Skull"]
+        case .frontDelts:
+            return ["Standing Barbell Shoulder Press", "Seated Barbell Shoulder Press", "Seated Dumbbell Shoulder Press", "High Incline Dumbbell Press", "Shoulder Press Machine", "Standing Dumbbell Shoulder Press"]
+        case .calves:
+            return ["Calves on Calf Machine", "Stair Calves", "Calves on Leg Press", "Smith Machine Calves"]
+        case .abs:
+            return ["Machine Crunch", "Slant Board Sit-Up", "Reaching Sit-Up", "V-Up", "Modified Candlestick", "Hanging Knee Raise", "Hanging Straight Leg Raise"]
+        case .traps:
+            return ["Barbell Shrug", "Bent Over Barbell Shrug", "Dumbbell Shrug", "Bent Over Dumbbell Shrug"]
+        case .chestIsolation:
+            return ["Flat Dumbbell Flye", "Incline Dumbbell Flye", "Cable Flye", "High Cable Flye", "Machine Chest Flye", "Cable Incline Flye", "Pec Dec Flye"]
         }
     }
 
@@ -141,6 +202,12 @@ extension SourceHypertrophyCategory {
         case .glutes: return [.glutes]
         case .hamstringsHipHinge: return [.hamstrings, .glutes]
         case .hamstringsIsolation: return [.hamstrings]
+        case .triceps: return [.triceps]
+        case .frontDelts: return [.shoulders]
+        case .calves: return [.calves]
+        case .abs: return [.core]
+        case .traps: return [.back]
+        case .chestIsolation: return [.chest]
         }
     }
 
@@ -171,6 +238,12 @@ extension SourceHypertrophyCategory {
         case .glutes: return [.hingeLoaded]
         case .hamstringsHipHinge: return [.hingeLoaded]
         case .hamstringsIsolation: return [.kneeFlexionLoaded]
+        case .triceps: return []
+        case .frontDelts: return [.verticalPushLoaded]
+        case .calves: return []
+        case .abs: return []
+        case .traps: return []
+        case .chestIsolation: return []
         }
     }
 }
