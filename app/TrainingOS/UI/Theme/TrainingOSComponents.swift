@@ -119,8 +119,24 @@ struct TrainingOSStatStepper: View {
 struct TrainingOSPrimaryButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
 
+    /// Design Fidelity Correction 01 bug fix: a caller's OWN
+    /// `.frame(maxWidth: .infinity)` at the call site (the pattern every
+    /// existing consumer already used, expecting a full-bleed CTA
+    /// matching the artifact's `height:56` buttons) does not reliably
+    /// widen this button when it sits among sibling views with a
+    /// stronger width preference (e.g. a `ScrollView` or a `Spacer`-
+    /// bearing row) in the same stack — `configuration.label` alone,
+    /// with no `.frame` of its own, reports only its own text's natural
+    /// (narrow) ideal width during the stack's layout negotiation, so it
+    /// consistently loses that negotiation regardless of the caller's
+    /// outer frame. Confirmed reproducing on the ALREADY-SHIPPED Weekly
+    /// Composition Editor's "Use This Mix" button, not something newly
+    /// introduced here. Fixed at the source, inside the style itself, so
+    /// every existing full-width call site is corrected without touching
+    /// any of them.
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
+            .frame(maxWidth: .infinity)
             .font(Theme.body.weight(.bold))
             .foregroundStyle(Theme.onPrimary)
             .padding(.vertical, 17)
@@ -180,5 +196,91 @@ struct TrainingOSChip: View {
                 .background(isSelected ? Theme.primary : Theme.surfaceSecondary, in: Capsule())
         }
         .buttonStyle(.plain)
+    }
+}
+
+/// Design Fidelity Correction 01: the artifact's recurring onboarding
+/// step tracker (Screen 17/18's `<div style="display:flex;gap:5px">`
+/// segment row, directly below the device status area — never a
+/// centered `.navigationTitle`). Cumulative fill: every segment up to
+/// and including the current step reads as progress made, matching the
+/// artifact's Screen 18 (step 2 of 4) showing its first TWO segments
+/// filled, not just the second. Currently consumed only by
+/// `OnboardingFlowView`'s Goal step; not yet propagated to the other
+/// onboarding steps — that is later, separately authorized work.
+struct OnboardingProgressIndicator: View {
+    let currentStepIndex: Int
+    let totalSteps: Int
+
+    var body: some View {
+        HStack(spacing: 5) {
+            ForEach(0..<totalSteps, id: \.self) { index in
+                Capsule()
+                    .fill(index <= currentStepIndex ? Theme.primary : Theme.progressTrackInactive)
+                    .frame(height: 3)
+            }
+        }
+    }
+}
+
+/// Screen 23's "Training days per week" bar (a row of blocks up to the
+/// chosen value, with a numeric scale beneath). Tapping a segment sets
+/// that value directly (no separate stepper needed); `range` is the real
+/// selectable bound the caller already enforces elsewhere (1...7 for
+/// training days). See `fillColor(for:)` for the distance-based fill —
+/// R6 Final User-Visual Correction replaced this struct's original flat
+/// two-tier fill (which read as materially more visually dominant than
+/// the artifact) with one that falls off with distance from the
+/// selection, matching the artifact's own real shape.
+struct TrainingOSCapacityBar: View {
+    let value: Int
+    let range: ClosedRange<Int>
+    let onSelect: (Int) -> Void
+
+    private var values: [Int] { Array(range) }
+
+    var body: some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 5) {
+                ForEach(values, id: \.self) { candidate in
+                    Button {
+                        onSelect(candidate)
+                    } label: {
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(fillColor(for: candidate))
+                            .frame(height: 36)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            HStack {
+                ForEach(values, id: \.self) { candidate in
+                    Text("\(candidate)")
+                        .font(.system(size: 10.5, weight: .regular, design: .monospaced))
+                        .foregroundStyle(candidate == value ? Theme.primary : Theme.textInactive)
+                        .frame(maxWidth: .infinity)
+                }
+            }
+        }
+    }
+
+    /// R6 Final User-Visual Correction: the artifact's own bar (Screen 23)
+    /// is not a flat "filled vs. unfilled" fill — only the selected value
+    /// itself reads at full accent; a bar one step below it reads as a
+    /// muted mid-tone, and anything two or more steps below it (or not
+    /// yet reached) reads as the same quiet, flat inactive tone. The
+    /// previous two-tier version (55%/100% accent opacity for every
+    /// filled bar) made every bar up to the selection read almost as
+    /// bright as the selection itself — materially more visually
+    /// dominant than the artifact. This reproduces the same "brightness
+    /// falls off with distance from the selection" shape without
+    /// inventing four new bespoke color tokens for one control.
+    private func fillColor(for candidate: Int) -> Color {
+        guard candidate <= value else { return Theme.progressTrackInactive }
+        switch value - candidate {
+        case 0: return Theme.primary
+        case 1: return Theme.primary.opacity(0.5)
+        default: return Theme.progressTrackInactive
+        }
     }
 }

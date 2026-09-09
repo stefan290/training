@@ -89,6 +89,13 @@ enum Theme {
     /// light-mode CTA explicitly, so this pass picks the same real contrast
     /// relationship rather than reusing the dark-mode value verbatim.
     static let onPrimary = Color(light: "#FFFFFF", dark: "#0A0D0F")
+    /// Design Fidelity Correction 01: the artifact's own inactive/
+    /// unfilled onboarding progress-segment color (`#242C31`, Screen 17's
+    /// step tracker). A light-mode value isn't specified anywhere in the
+    /// artifact (dark-only mockup); this pass reuses `surfaceSecondary`'s
+    /// light value, the same "quiet structural surface" role this token
+    /// plays in dark mode, rather than inventing an unrelated one.
+    static let progressTrackInactive = Color(light: "#E4E7E6", dark: "#242C31")
 
     /// Primary human-facing hierarchy (Chivo's role — see the type-level
     /// doc comment on the font blocker). Large, heavy display value.

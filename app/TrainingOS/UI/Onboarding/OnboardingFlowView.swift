@@ -34,13 +34,7 @@ struct OnboardingFlowView: View {
                 }
             }
             .background(Theme.ground)
-            .toolbar {
-                if viewModel.step != .goal {
-                    ToolbarItem(placement: .topBarLeading) {
-                        Button("Back") { viewModel.goBack(from: viewModel.step) }
-                    }
-                }
-            }
+            .toolbar(.hidden, for: .navigationBar)
         }
         .task { viewModel.start(modelContext: modelContext) }
         // Stage V1 dogfooding fix: `TrainingEnvironmentSettingsView` is a
@@ -53,76 +47,133 @@ struct OnboardingFlowView: View {
         }
     }
 
+    /// Design Fidelity Correction 01: reproduces Screen 17 ("Goal — Step 1
+    /// of 4") from `project/Training OS.dc.html` directly — no centered
+    /// `.navigationTitle`, a segmented step tracker below the status area,
+    /// then progress → title → supporting copy → compact rows → CTA, all
+    /// in the artifact's own scrollable content region. Domain/binding
+    /// contract is unchanged: still `PlanPresentation.mainGoalOptions`/
+    /// `viewModel.selectedGoalType`/`viewModel.advance(from: .goal,...)`.
+    /// The Dated Objective interaction (Summer Shape/10K Race) that used
+    /// to render inline here has moved to the END of `preferencesStep`
+    /// (Availability) — off the primary goal-selection screen per this
+    /// checkpoint's explicit instruction, without adding a new
+    /// `OnboardingViewModel.Step` case (which would change the progress
+    /// indicator from the artifact's stated 4 segments to 5). See
+    /// `workingTowardSection`'s own doc comment for the full reasoning.
+    ///
+    /// R6 Visual Correction Pass: now shares `topChrome` with every other
+    /// step (previously Goal alone rendered its own inline progress
+    /// indicator, while Availability/Environment/Review kept a native
+    /// `.navigationTitle` bar and a generic toolbar "Back" button — the
+    /// exact "doesn't feel like one journey" gap this pass corrects).
     private var goalStep: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            Text("What's your main training goal?")
-                .font(Theme.headingXL)
-                .foregroundStyle(Theme.textPrimary)
-                .padding(.top, 24)
+        VStack(spacing: 0) {
+            topChrome
 
             ScrollView {
-                VStack(spacing: 12) {
-                    // V1 "Goal ≠ Training Method" checkpoint: Main Goal is
-                    // the OUTCOME the athlete wants — `PlanPresentation
-                    // .mainGoalOptions` deliberately excludes
-                    // `.functionalFitness` (a Training Style, chosen on its
-                    // own step below) and `.enduranceEvent` is relabeled
-                    // "Improve Fitness & Endurance" here, never "Endurance
-                    // Event" (that phrase still names the internal
-                    // `PhaseType`/`GoalType`, just not what the athlete
-                    // reads on this screen).
-                    ForEach(PlanPresentation.mainGoalOptions, id: \.self) { type in
-                        goalOptionRow(type)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("What are you training for?")
+                        .font(Theme.headingXL)
+                        .foregroundStyle(Theme.textPrimary)
+                        .padding(.bottom, 8)
+
+                    Text("One primary goal. It decides which quality gets scheduling priority all year.")
+                        .font(Theme.body)
+                        .foregroundStyle(Theme.textSecondary)
+                        .padding(.bottom, 22)
+
+                    VStack(spacing: 9) {
+                        // V1 "Goal ≠ Training Method" checkpoint: Main Goal is
+                        // the OUTCOME the athlete wants — `PlanPresentation
+                        // .mainGoalOptions` deliberately excludes
+                        // `.functionalFitness` (a Training Style, chosen on its
+                        // own step below) and `.enduranceEvent` is relabeled
+                        // "Improve Fitness & Endurance" here, never "Endurance
+                        // Event" (that phrase still names the internal
+                        // `PhaseType`/`GoalType`, just not what the athlete
+                        // reads on this screen).
+                        ForEach(PlanPresentation.mainGoalOptions, id: \.self) { type in
+                            goalOptionRow(type)
+                        }
                     }
                 }
+                .padding(.horizontal, 22)
             }
-
-            // Stage V1 "Milestone Onboarding UX correction": the former
-            // generic "Plan through a specific end date" control is removed
-            // from normal onboarding entirely — it exposed an internal
-            // planning-horizon concept (`Goal.targetDate`) athletes don't
-            // need to understand. `Goal.targetDate` itself is NOT removed
-            // from the domain and `LongTermPlanner` is untouched: for a
-            // brand-new athlete `hasTargetDate` simply stays `false` (its
-            // declared default) since no UI here ever sets it, so
-            // `createOrUpdateGoal` continues writing `targetDate: nil` —
-            // the same real, valid, already-tested "open-ended plan" state
-            // this app has always supported. An athlete with a PRE-EXISTING
-            // `targetDate` (set via the old UI before this correction) has
-            // it re-seeded into `hasTargetDate`/`targetDate` by `start()`
-            // unchanged — removing this control never silently clears that
-            // athlete's real persisted value, it simply stops offering a
-            // way to set a NEW one from this screen.
-            workingTowardSection
 
             Button("Continue") { viewModel.advance(from: .goal, modelContext: modelContext) }
                 .buttonStyle(.trainingOSPrimary)
                 .frame(maxWidth: .infinity)
+                .padding(.horizontal, 22)
+                .padding(.bottom, 26)
         }
-        .padding(20)
         .background(Theme.ground)
-        .navigationTitle("Your Goal")
-        .navigationBarTitleDisplayMode(.inline)
     }
 
+    /// R6 Visual Correction Pass: the chrome every onboarding step now
+    /// shares — the segmented progress indicator (never a native
+    /// `.navigationTitle`), plus a small back chevron once there's
+    /// somewhere real to go back to (never shown on Goal, the first
+    /// step). Replaces the previous per-step
+    /// `.navigationTitle`/`.navigationBarTitleDisplayMode(.inline)` calls
+    /// and the generic toolbar "Back" button — the exact "large native-
+    /// looking Back pill... no visual continuity with Goal progress" gap
+    /// this pass corrects. `viewModel.step.rawValue` against
+    /// `OnboardingViewModel.Step.allCases.count` (4) matches the
+    /// artifact's own "Step N of 4" labeling exactly, with zero new
+    /// `Step` case.
+    private var topChrome: some View {
+        HStack(spacing: 14) {
+            if viewModel.step != .goal {
+                Button {
+                    viewModel.goBack(from: viewModel.step)
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(Theme.textSecondary)
+                        .frame(width: 30, height: 30)
+                }
+                .buttonStyle(.plain)
+            }
+            OnboardingProgressIndicator(currentStepIndex: viewModel.step.rawValue, totalSteps: OnboardingViewModel.Step.allCases.count)
+        }
+        .padding(.horizontal, 22)
+        .padding(.top, 10)
+        .padding(.bottom, 18)
+    }
+
+    /// Screen 17's compact dark selection row — no radio circle on the
+    /// unselected state; the artifact marks selection purely through
+    /// background/border/weight, with a trailing checkmark appearing
+    /// only once something IS selected.
     private func goalOptionRow(_ type: GoalType) -> some View {
-        Button {
+        let isSelected = viewModel.selectedGoalType == type
+        return Button {
             viewModel.selectedGoalType = type
         } label: {
-            HStack {
+            HStack(spacing: 14) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(PlanPresentation.mainGoalLabel(type))
-                        .font(Theme.body)
+                        .font(Theme.body.weight(isSelected ? .bold : .medium))
                         .foregroundStyle(Theme.textPrimary)
                     Text(goalTypeDescription(type))
-                        .font(Theme.label)
-                        .foregroundStyle(Theme.textSecondary)
+                        .font(.system(size: 12.5, weight: .light, design: .default))
+                        .foregroundStyle(isSelected ? Theme.textMuted : Theme.textSecondary)
                 }
-                Spacer()
-                Image(systemName: viewModel.selectedGoalType == type ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(viewModel.selectedGoalType == type ? Theme.primary : Theme.textSecondary)
+                Spacer(minLength: 8)
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(Theme.primary)
+                }
             }
-            .trainingOSCard()
+            .padding(.vertical, 16)
+            .padding(.horizontal, 17)
+            .background(isSelected ? Theme.primary.opacity(0.12) : Color.clear, in: RoundedRectangle(cornerRadius: 13))
+            .overlay(
+                RoundedRectangle(cornerRadius: 13)
+                    .strokeBorder(isSelected ? Theme.primary : Color.primary.opacity(0.10), lineWidth: 1)
+            )
         }
         .buttonStyle(.plain)
     }
@@ -148,6 +199,18 @@ struct OnboardingFlowView: View {
     /// in-progress edit finishes).
     private var isEditingAnyObjective: Bool { isAddingWorkingToward || isAddingRunningEvent }
 
+    /// Design Fidelity Correction 01: relocated from the Goal screen
+    /// (`goalStep`) to render at the end of `preferencesStep`
+    /// (Availability) instead — Screen 17 in the approved artifact does
+    /// not place this interaction inside the primary goal-selection
+    /// composition, and this checkpoint's own explicit instruction was to
+    /// move it off that screen without deleting the feature. This is a
+    /// pure View-composition/call-site move: zero change to
+    /// `OnboardingViewModel.Step` (still 4 cases, matching the artifact's
+    /// own "Step 1 of 4" progress indicator, so no new step was added
+    /// purely to give this its own dedicated screen), zero change to any
+    /// binding/validation logic below, zero change to `Goal
+    /// .datedObjectives` domain semantics.
     private var workingTowardSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Anything you're working toward?")
@@ -368,71 +431,119 @@ struct OnboardingFlowView: View {
     /// `VarietyPreference` itself is not deleted (still read by
     /// `rankCandidateMixes`'s preset-ranking path), simply no longer
     /// athlete-editable from this primary flow.
-    /// Visual Design checkpoint (continuation): rebuilt off the native
-    /// `Form` this step had used since Checkpoint 1 — the artifact's own
-    /// "How much week do you have?" Availability screen shows exactly
-    /// this "big number + capacity" card shape for the days-per-week
-    /// question. Zero behavior change: same `$viewModel
-    /// .availableTrainingDaysPerWeek`/`$viewModel.allowsDoubleSessions`
-    /// bindings as before.
+    /// R6 Visual Correction Pass: rebuilt against Screen 23 ("Availability
+    /// · revised — Days and opportunities," Design Pass 04, the file's
+    /// own explicitly-labeled FINAL pass — supersedes the earlier Screen
+    /// 18 this step was previously modeled on) — "AVAILABILITY = TRAINING
+    /// DAYS, NOT SESSIONS" is that pass's own stated thesis, word for
+    /// word. Same `$viewModel.availableTrainingDaysPerWeek`/
+    /// `$viewModel.allowsDoubleSessions` bindings as before.
+    ///
+    /// R6 Final User-Visual Correction: the artifact's own literal
+    /// supporting-copy sentence ("Describe the opportunities. The
+    /// planner decides how many sessions fit inside them.") read as
+    /// internal planner terminology to an athlete — replaced with a
+    /// plainer athlete-facing sentence conveying the same real thesis,
+    /// per explicit product feedback. Same underlying meaning, no new
+    /// promise about fields this screen doesn't collect.
+    ///
+    /// R6 Visual Correction Pass — FINAL TRUTHFULNESS GATE: a "Time
+    /// available per training day" duration control (backed by the real,
+    /// pre-existing `GoalPreferences.typicalSessionDurationMinutes`) was
+    /// added to this screen in the prior round of this same pass, then
+    /// REMOVED here after independent verification confirmed zero
+    /// scheduling/planning engine reads that field (confirmed fresh by
+    /// direct search of `TrainingOS/Engines/`/`TrainingOS/Application/
+    /// UseCases/` — no hits outside this ViewModel/View pair and the
+    /// domain declaration itself). Presenting it on this planning-
+    /// critical screen, next to "Training days per week" (which DOES
+    /// drive real scheduling), would have implied session length shapes
+    /// the plan today — it doesn't. The field itself, its ViewModel
+    /// property, and its persistence round-trip are UNTOUCHED (not
+    /// deleted); this is a presentation-only removal.
+    ///
+    /// DESIGN CAPABILITY GAP (follow-up, not fixed here): the approved
+    /// design expects time-per-day to matter to planning; the current
+    /// planner does not yet consume it. Re-introduce the control once a
+    /// real planner/scheduler consumer exists — never before.
+    ///
+    /// Two further Screen-23 fields remain DELIBERATELY NOT implemented —
+    /// reported per this checkpoint's own STOP conditions rather than
+    /// faked:
+    /// - "Preferred days": the artifact shows one grid of 7 weekdays at
+    ///   Availability time, but the current domain has no such athlete-
+    ///   level field — `preferredDays` exists only on
+    ///   `TrainingMixComponent` (`TrainingMixComponent.swift`), set PER
+    ///   COMPONENT once a real `TrainingMix` exists (i.e. after
+    ///   recommendation, an architecturally later moment), never as a
+    ///   single top-level preference collectible here.
+    /// - "Occasional longer session": zero real persisted concept
+    ///   anywhere in the domain (confirmed by direct search across
+    ///   `TrainingOS/Domain/`/`Application/`) — nothing to expose.
     private var preferencesStep: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("How much week do you have?")
-                        .font(Theme.headingXL)
-                        .foregroundStyle(Theme.textPrimary)
-                    Text("This sets frequency and session length. It can change later without rebuilding the plan.")
-                        .font(Theme.body)
-                        .foregroundStyle(Theme.textSecondary)
-                }
+        VStack(spacing: 0) {
+            topChrome
 
-                VStack(alignment: .leading, spacing: 12) {
-                    SectionHeader(title: "Training days per week")
-                    HStack {
-                        Text("\(viewModel.availableTrainingDaysPerWeek)")
-                            .font(Theme.numeric.weight(.bold))
-                            .foregroundStyle(Theme.primary)
-                        Spacer()
-                        Stepper("", value: $viewModel.availableTrainingDaysPerWeek, in: 1...7)
-                            .labelsHidden()
-                    }
-                }
-                .trainingOSCard()
-
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Two sessions in one day")
-                            .font(Theme.body)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("When can you train?")
+                            .font(Theme.headingXL)
                             .foregroundStyle(Theme.textPrimary)
-                        Text("Lets a busy week fit more training")
-                            .font(Theme.label)
+                        Text("Tell us how many days you can train. TrainingOS will build your week around them.")
+                            .font(Theme.body)
                             .foregroundStyle(Theme.textSecondary)
                     }
-                    Spacer()
-                    Toggle("", isOn: $viewModel.allowsDoubleSessions)
-                        .labelsHidden()
-                        .tint(Theme.primary)
-                }
-                .trainingOSCard()
 
-                Button("Continue") { viewModel.advance(from: .preferences, modelContext: modelContext) }
-                    .buttonStyle(.trainingOSPrimary)
-                    .frame(maxWidth: .infinity)
+                    VStack(alignment: .leading, spacing: 13) {
+                        HStack {
+                            SectionHeader(title: "Training days per week")
+                            Spacer()
+                            Text("\(viewModel.availableTrainingDaysPerWeek)")
+                                .font(.system(size: 20, weight: .bold, design: .monospaced))
+                                .foregroundStyle(Theme.primary)
+                        }
+                        TrainingOSCapacityBar(value: viewModel.availableTrainingDaysPerWeek, range: 1...7) { newValue in
+                            viewModel.availableTrainingDaysPerWeek = newValue
+                        }
+                    }
+                    .trainingOSCard()
+
+                    HStack {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("Two sessions in a day")
+                                .font(Theme.body)
+                                .foregroundStyle(Theme.textPrimary)
+                            Text("Lets more sessions fit into fewer days")
+                                .font(Theme.label)
+                                .foregroundStyle(Theme.textSecondary)
+                        }
+                        Spacer()
+                        Toggle("", isOn: $viewModel.allowsDoubleSessions)
+                            .labelsHidden()
+                            .tint(Theme.primary)
+                    }
+                    .trainingOSCard()
+
+                    Button("Continue") { viewModel.advance(from: .preferences, modelContext: modelContext) }
+                        .buttonStyle(.trainingOSPrimary)
+                        .frame(maxWidth: .infinity)
+                }
+                .padding(Theme.screenPadding)
             }
-            .padding(Theme.screenPadding)
         }
         .background(Theme.ground)
-        .navigationTitle("Training Preferences")
-        .navigationBarTitleDisplayMode(.inline)
     }
 
     private var environmentStep: some View {
         VStack(spacing: 0) {
+            topChrome
+
             Text("Set up where you'll train — this controls what TrainingOS can prescribe you.")
                 .font(Theme.body)
                 .foregroundStyle(Theme.textSecondary)
-                .padding()
+                .padding(.horizontal, Theme.screenPadding)
+                .padding(.bottom, 12)
             TrainingEnvironmentSettingsView()
             Button("Continue") { viewModel.advance(from: .environment, modelContext: modelContext) }
                 .buttonStyle(.trainingOSPrimary)
@@ -441,94 +552,129 @@ struct OnboardingFlowView: View {
                 .padding()
         }
         .background(Theme.ground)
-        .navigationTitle("Training Environment")
-        .navigationBarTitleDisplayMode(.inline)
     }
 
-    /// V1 "Explicit Weekly Composition" checkpoint: TRAINING STYLES
-    /// (Especially want/Rather avoid) and Variety are REMOVED from Review
-    /// — neither is collected by this primary flow anymore. The athlete's
-    /// actual WEEKLY TRAINING composition is chosen next, on the Plan
-    /// screen (where a real `TrainingPhase` exists to build a real
-    /// `TrainingMix` against — see `StrategicPlanSelectionView`'s "Build
-    /// My Own Mix"), so this Review intentionally shows only what IS
-    /// already decided at this point: MAIN GOAL, weekly TRAINING capacity,
-    /// WORKING TOWARD (when present), and TRAINING ENVIRONMENT — never a
-    /// fabricated composition summary for a choice not made yet.
+    /// R6 Visual Correction Pass: RECOMPOSED, not restyled — the previous
+    /// hierarchy (MAIN GOAL/TRAINING/WORKING TOWARD/TRAINING ENVIRONMENT,
+    /// each a label-over-field-value settings row) read as an account
+    /// summary. The artifact itself has no dedicated "Review" screen —
+    /// Path A's own 5-step list (Screen 22, Design Pass 04) goes straight
+    /// from Availability to the proposed route/recommendation — so this
+    /// screen is composed from the SAME established visual grammar
+    /// (the goal screen's own selected-row treatment for the primary
+    /// outcome; Screen 23/24's plain card-with-sentence shape for
+    /// everything else) rather than copying a literal artifact surface
+    /// that doesn't exist. Purpose stated in-screen, per this pass's own
+    /// brief: "Here's what TrainingOS understood," not a field grid.
+    ///
+    /// TRAINING STYLES (Especially want/Rather avoid) and Variety remain
+    /// excluded — unchanged reasoning from the prior checkpoint (explicit
+    /// Weekly Composition, chosen later, is the one authority for
+    /// composition). WORKING TOWARD's editable interaction
+    /// (`workingTowardSection`) has moved here from Availability — see
+    /// its own doc comment for why; this is where the current 4-step
+    /// `OnboardingViewModel.Step` model already places the "everything
+    /// I've told you" checkpoint, and no new Step/domain model was added
+    /// to give it a separate screen.
     private var reviewStep: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            Text("Review")
-                .font(Theme.headingXL)
-                .foregroundStyle(Theme.textPrimary)
+        VStack(spacing: 0) {
+            topChrome
 
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    reviewSection("MAIN GOAL") {
-                        reviewRow("Goal", PlanPresentation.mainGoalLabel(viewModel.selectedGoalType))
+                VStack(alignment: .leading, spacing: 20) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Here's what we understood")
+                            .font(Theme.headingXL)
+                            .foregroundStyle(Theme.textPrimary)
+                        Text("Before TrainingOS proposes how you should train, confirm these are right.")
+                            .font(Theme.body)
+                            .foregroundStyle(Theme.textSecondary)
                     }
 
-                    reviewSection("TRAINING") {
-                        reviewRow("Days/week", "\(viewModel.availableTrainingDaysPerWeek)")
+                    // Primary outcome — the one decision everything else
+                    // is subordinate to, given the same emphasized
+                    // treatment the Goal screen itself gives a selection.
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("PRIMARY OUTCOME")
+                            .font(Theme.eyebrow)
+                            .tracking(1.2)
+                            .foregroundStyle(Theme.primary)
+                        Text(PlanPresentation.mainGoalLabel(viewModel.selectedGoalType))
+                            .font(Theme.heading.weight(.bold))
+                            .foregroundStyle(Theme.textPrimary)
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .trainingOSCard(emphasized: true)
 
-                    if viewModel.hasMilestone || viewModel.hasRunningEvent {
-                        reviewSection("WORKING TOWARD") {
-                            if viewModel.hasMilestone {
-                                reviewRow("Summer Shape", viewModel.milestoneDate.formatted(date: .abbreviated, time: .omitted))
-                            }
-                            if viewModel.hasRunningEvent {
-                                reviewRow("10K Race", viewModel.runningEventDate.formatted(date: .abbreviated, time: .omitted))
-                            }
+                    VStack(alignment: .leading, spacing: 6) {
+                        SectionHeader(title: "Training availability")
+                        Text(availabilitySummary)
+                            .font(Theme.body)
+                            .foregroundStyle(Theme.textPrimary)
+                        if viewModel.allowsDoubleSessions {
+                            Text("Open to two sessions in one day.")
+                                .font(Theme.label)
+                                .foregroundStyle(Theme.textSecondary)
                         }
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .trainingOSCard()
 
-                    reviewSection("TRAINING ENVIRONMENT") {
-                        reviewRow("Environment", viewModel.user?.profile?.defaultTrainingEnvironment?.name ?? "Not set")
+                    // WORKING TOWARD's real add/edit interaction, relocated
+                    // here from Availability (see its own doc comment).
+                    VStack(alignment: .leading, spacing: 12) {
+                        SectionHeader(title: "Dated objectives")
+                        workingTowardSection
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .trainingOSCard()
+
+                    // R5 Full Gym zero-config: a default, un-customized
+                    // environment changed nothing the athlete decided, so
+                    // it is OMITTED from the Review summary entirely
+                    // (R6 Final User-Visual Correction — a muted
+                    // "Training in: Full Gym" line read as implementation/
+                    // debug text and broke the "real decisions only"
+                    // hierarchy every other row here follows). A real
+                    // custom/restricted environment IS a real decision —
+                    // it can gate what the recommendation can prescribe —
+                    // so it keeps the same card treatment as everything
+                    // else here.
+                    if let environment = viewModel.user?.profile?.defaultTrainingEnvironment, !environment.isBuiltIn {
+                        VStack(alignment: .leading, spacing: 6) {
+                            SectionHeader(title: "Training environment")
+                            Text(environment.name)
+                                .font(Theme.body)
+                                .foregroundStyle(Theme.textPrimary)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .trainingOSCard()
+                    }
+
+                    Button("See My Recommended Plan") { onComplete() }
+                        .buttonStyle(.trainingOSPrimary)
+                        .frame(maxWidth: .infinity)
                 }
+                .padding(Theme.screenPadding)
             }
-
-            Button("Start Training with TrainingOS") { onComplete() }
-                .buttonStyle(.trainingOSPrimary)
-                .frame(maxWidth: .infinity)
         }
-        .padding(20)
         .background(Theme.ground)
-        .navigationTitle("Review")
-        .navigationBarTitleDisplayMode(.inline)
     }
 
-    private func reviewSection<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            SectionHeader(title: title)
-            VStack(alignment: .leading, spacing: 10) {
-                content()
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .trainingOSCard()
+    /// One real sentence from `availableTrainingDaysPerWeek`/
+    /// `typicalSessionDurationMinutes` — replaces the previous bare
+    /// "Days/week: 5" settings row. Omits the duration clause entirely
+    /// when unset (`nil` is a real, valid state — never defaulted to a
+    /// fabricated number here).
+    private var availabilitySummary: String {
+        let days = viewModel.availableTrainingDaysPerWeek
+        let dayWord = days == 1 ? "day" : "days"
+        guard let minutes = viewModel.typicalSessionDurationMinutes else {
+            return "\(days) \(dayWord) a week"
         }
+        return "\(days) \(dayWord) a week, about \(minutes) minutes each"
     }
 
-    /// V1 "Goal ≠ Training Method" checkpoint UX fix (real-device
-    /// truncation bug): `.fixedSize(horizontal: false, vertical: true)`
-    /// forces the value to wrap onto additional lines instead of being
-    /// compressed/truncated when it's long (e.g. several joined Training
-    /// Style names) — the standard SwiftUI fix for a trailing `Text` in an
-    /// `HStack` that would otherwise clip.
-    private func reviewRow(_ label: String, _ value: String) -> some View {
-        HStack(alignment: .top) {
-            Text(label)
-                .font(Theme.label)
-                .foregroundStyle(Theme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-            Spacer(minLength: 12)
-            Text(value)
-                .font(Theme.body)
-                .foregroundStyle(Theme.textPrimary)
-                .multilineTextAlignment(.trailing)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-    }
 }
 
 #Preview {

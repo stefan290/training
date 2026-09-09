@@ -86,6 +86,15 @@ final class OnboardingViewModel {
     var varietyPreference: VarietyPreference = .moderate
     var availableTrainingDaysPerWeek: Int = 4
     var allowsDoubleSessions = false
+    /// R6 Visual Correction Pass: `GoalPreferences.typicalSessionDurationMinutes`
+    /// is real, already-persisted state (`LongTermGoalTypes.swift`) that
+    /// had no onboarding surface before this pass — round-trips correctly
+    /// (`LongTermPlannerPersistenceTests`) but is not yet READ by any
+    /// scheduling/planning engine. Exposed here as real state exposure,
+    /// never fabricated; the artifact's own "Time available per training
+    /// day" chips (45/60/75/90+) map directly onto it. `nil` (unset) is a
+    /// real, valid state — no discrete option is force-selected.
+    var typicalSessionDurationMinutes: Int?
     /// V1 "Goal ≠ Training Method" checkpoint: the athlete-facing Training
     /// Style vocabulary (`TrainingStyle`) — replaces the previous raw
     /// `ProgrammingSystemKind` checkboxes (which leaked "Powerlifting"/
@@ -125,6 +134,7 @@ final class OnboardingViewModel {
                 varietyPreference = preferences.varietyPreference
                 availableTrainingDaysPerWeek = preferences.availableTrainingDaysPerWeek ?? 4
                 allowsDoubleSessions = preferences.allowsDoubleSessions ?? false
+                typicalSessionDurationMinutes = preferences.typicalSessionDurationMinutes
                 preferredTrainingStyles = trainingStyles(matching: preferences.preferredModalities)
                 dislikedTrainingStyles = trainingStyles(matching: preferences.dislikedModalities)
             }
@@ -239,6 +249,7 @@ final class OnboardingViewModel {
             dislikedModalities: dislikedModalities,
             varietyPreference: varietyPreference,
             availableTrainingDaysPerWeek: availableTrainingDaysPerWeek,
+            typicalSessionDurationMinutes: typicalSessionDurationMinutes,
             allowsDoubleSessions: allowsDoubleSessions
         )
         // Dated Objectives + 10K Strategic Reconciliation V1: Summer Shape

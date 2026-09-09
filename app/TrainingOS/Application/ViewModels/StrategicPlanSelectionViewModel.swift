@@ -89,6 +89,18 @@ final class StrategicPlanSelectionViewModel {
     /// The athlete's real weekly training-day capacity — the one number
     /// the "Build My Own Mix" editor must never let a composition exceed.
     var weeklyCapacity: Int { goal?.preferences?.availableTrainingDaysPerWeek ?? 4 }
+    /// R6 Visual Correction Pass ("What It Needs"): whether fitting
+    /// `reviewedMix`'s real total weekly session count inside
+    /// `weeklyCapacity` requires at least one double session day — pure
+    /// arithmetic over two already-real fields (`TrainingMixComponent
+    /// .frequency.target` sums, `weeklyCapacity`), never a new persisted
+    /// flag and never re-deriving what `StartPhaseUseCase`/
+    /// `ConcurrentScheduler` will actually do with `allowsDoubleSessions`.
+    var reviewedMixRequiresDoubles: Bool {
+        guard let mix = reviewedMix else { return false }
+        let totalSessions = mix.orderedComponents.reduce(0) { $0 + $1.frequency.target }
+        return totalSessions > weeklyCapacity
+    }
     /// TE.1's own existing equipment-compatibility rule, unmodified —
     /// Cycling stays gated on a real bike being available, exactly like
     /// every other TE.1-gated activity in this app.
@@ -121,9 +133,19 @@ final class StrategicPlanSelectionViewModel {
     /// reason code is present, i.e. a stated preference genuinely changed
     /// which candidate was recommended (CLAUDE.md rule 16's discipline:
     /// read the typed reason code, never re-derive/guess at intent).
+    ///
+    /// R6 Visual Correction Pass: extended with two more real, already-
+    /// available clauses — `weeklyCapacity` (the exact number the "What
+    /// It Needs" card also shows, never a second computation) and the
+    /// nearest still-`.planned` `Goal.datedObjectives` entry, using the
+    /// same `PlanPresentation.datedObjectiveLabel` vocabulary the Review
+    /// screen and this same view's `datedObjectivesSection` already use.
+    /// Still a plain deterministic string over real fields — no new
+    /// persisted state, no new reason-code taxonomy.
     var recommendationExplanation: String? {
         guard let goal, let mix = recommendedMix else { return nil }
         var text = "Recommended because your goal is to \(PlanPresentation.mainGoalLabel(goal.primaryType).lowercased())"
+        text += ", you have \(weeklyCapacity) training day\(weeklyCapacity == 1 ? "" : "s") a week"
 
         let wasPreferencePromoted = candidates.first { $0.mix.id == mix.id }?
             .reasonCodes.contains(.adherencePreferencePromotedAlternative) ?? false
@@ -137,6 +159,9 @@ final class StrategicPlanSelectionViewModel {
                 let names = matchedStyles.map(PlanPresentation.trainingStyleLabel).sorted().joined(separator: " and ")
                 text += ", and you said you enjoy \(names)"
             }
+        }
+        if let nearestObjective = goal.datedObjectives.filter({ $0.status == .planned }).sorted(by: { $0.date < $1.date }).first {
+            text += ", working toward \(PlanPresentation.datedObjectiveLabel(nearestObjective))"
         }
         text += "."
         return text

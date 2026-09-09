@@ -67,9 +67,18 @@ struct StrategicPlanSelectionView: View {
                         }
 
                         datedObjectivesSection
-                        trainingAvailabilitySection
+                        whatItNeedsSection
 
-                        if !viewModel.phaseTypeLabels.isEmpty {
+                        // R6 Visual Correction Pass: only ever a full card
+                        // when the route actually carries information —
+                        // `proposeForwardOnlyPhases`'s own open-ended,
+                        // no-target-date case (the common Build Muscle
+                        // path) returns exactly ONE phase, and a single-
+                        // entry "route" added nothing but visual weight
+                        // ("1. Muscle Gain" as its own card). Real,
+                        // multi-phase routes (a dated objective, a stated
+                        // target date) still show in full.
+                        if viewModel.phaseTypeLabels.count > 1 {
                             InfoSection(title: "Strategic Route") {
                                 ForEach(Array(viewModel.phaseTypeLabels.enumerated()), id: \.offset) { index, label in
                                     Text("\(index + 1). \(label)")
@@ -85,30 +94,21 @@ struct StrategicPlanSelectionView: View {
                             }
                         }
 
-                        startDateSection
-
-                        if !viewModel.alternatives.isEmpty {
-                            InfoSection(title: "Other Compatible Options") {
-                                ForEach(Array(viewModel.alternatives.enumerated()), id: \.element.mix.id) { index, candidate in
-                                    Button {
-                                        viewModel.selectAlternative(candidate)
-                                    } label: {
-                                        VStack(alignment: .leading, spacing: 2) {
-                                            Text(PlanPresentation.mixSummary(candidate.mix))
-                                                .font(Theme.body)
-                                                .foregroundStyle(Theme.textPrimary)
-                                            Text(alternativeReason(candidate))
-                                                .font(Theme.label)
-                                                .foregroundStyle(Theme.textSecondary)
-                                        }
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                    }
-                                    .buttonStyle(.plain)
-                                    .padding(.vertical, index == 0 ? 0 : 4)
-                                }
-                            }
-                        }
-
+                        // R6 First-Run Journey Design Completion: the prior
+                        // round's low-emphasis alternative-mix link STILL
+                        // recreated a second, competing path alongside
+                        // "Build My Own Mix" — two ways to deviate from the
+                        // recommendation on the same screen. Screen 24's
+                        // real hierarchy is exactly two actions: "Use
+                        // recommended" (primary) and "Choose another
+                        // program" (ONE secondary path) — never a specific
+                        // passive candidate highlighted on the primary
+                        // recommendation screen itself. Real candidate
+                        // data + `selectAlternative` are UNCHANGED (still
+                        // real, still reachable — just not surfaced here);
+                        // "Build My Own Mix" is now the one, unambiguous
+                        // secondary action ("no planner prison").
+                        //
                         // V1 "Explicit Weekly Composition" checkpoint: the
                         // athlete is never restricted to the
                         // `CandidateTrainingMix` preset catalog — "no
@@ -157,8 +157,16 @@ struct StrategicPlanSelectionView: View {
                 .padding(Theme.screenPadding)
             }
             .background(Theme.ground)
-            .navigationTitle("Your Plan")
-            .navigationBarTitleDisplayMode(.inline)
+            // R6 Visual Correction Pass — FINAL TRUTHFULNESS GATE: removed
+            // the redundant native centered "Your Plan" nav-title bar —
+            // the real editorial "Your Plan" heading already renders
+            // inside `header`, and this screen is presented as a root
+            // state by `AppRootView` (a `switch` over `AppRootState`,
+            // never pushed onto a stack), so there is no back
+            // button/back-swipe behavior to preserve. Matches the same
+            // `.toolbar(.hidden, for: .navigationBar)` treatment already
+            // applied to every `OnboardingFlowView` step.
+            .toolbar(.hidden, for: .navigationBar)
         }
         .task { viewModel.load(modelContext: modelContext) }
         .sheet(isPresented: $showingTrainingEnvironmentSettings) {
@@ -187,18 +195,35 @@ struct StrategicPlanSelectionView: View {
         }
     }
 
+    /// R6 Visual Correction Pass: reproduces Screen 24's ("Program ·
+    /// recommended," Design Pass 04) own "Recommended for this phase" →
+    /// big headline → divider → "Why this one" hierarchy, all inside ONE
+    /// card — the exact shape this pass's own brief asks for
+    /// ("the recommendation must dominate"). `PlanPresentation
+    /// .mixSummary` already gives the real current TrainingMix
+    /// composition (e.g. "4× Hypertrophy + 1× Zone 2 Conditioning") —
+    /// this never collapses it back to the old Program-only concept.
     private func recommendationCard(_ summary: String, emphasized: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(emphasized ? "TrainingOS Recommends" : "TrainingOS Recommends")
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Recommended For This Phase")
                 .font(Theme.eyebrow)
                 .tracking(1.2)
                 .foregroundStyle(emphasized ? Theme.primary : Theme.textSecondary)
             Text(summary)
-                .font(Theme.heading)
+                .font(Theme.heading.weight(.heavy))
                 .foregroundStyle(emphasized ? Theme.textPrimary : Theme.textSecondary)
-            Text(viewModel.recommendationExplanation ?? "Chosen for your goal, training availability, and preferences.")
-                .font(Theme.label)
-                .foregroundStyle(Theme.textSecondary)
+            if emphasized {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("WHY THIS ONE")
+                        .font(Theme.eyebrow)
+                        .tracking(1.2)
+                        .foregroundStyle(Theme.primary)
+                    Text(viewModel.recommendationExplanation ?? "Chosen for your goal, training availability, and preferences.")
+                        .font(Theme.body)
+                        .foregroundStyle(Theme.textPrimary)
+                }
+                .padding(.top, 6)
+            }
         }
         .trainingOSCard(emphasized: emphasized)
     }
@@ -210,7 +235,7 @@ struct StrategicPlanSelectionView: View {
                 .tracking(1.2)
                 .foregroundStyle(Theme.primary)
             Text(summary)
-                .font(Theme.heading)
+                .font(Theme.heading.weight(.heavy))
                 .foregroundStyle(Theme.textPrimary)
             Text("This is the exact mix TrainingOS will build and schedule for you.")
                 .font(Theme.label)
@@ -260,45 +285,62 @@ struct StrategicPlanSelectionView: View {
         .padding(.top, isFirst ? 0 : 4)
     }
 
-    /// V1 R6: real `GoalPreferences.availableTrainingDaysPerWeek`/
-    /// `.allowsDoubleSessions` — training DAYS, never exact modality
-    /// allocation (that's the Weekly Composition section above).
-    @ViewBuilder private var trainingAvailabilitySection: some View {
-        if let preferences = viewModel.goal?.preferences {
-            InfoSection(title: "Training Availability") {
-                Text("\(preferences.availableTrainingDaysPerWeek ?? 4) days a week")
-                    .font(Theme.body)
-                    .foregroundStyle(Theme.textPrimary)
-                if preferences.allowsDoubleSessions == true {
-                    Text("Open to two sessions in one day")
-                        .font(Theme.label)
-                        .foregroundStyle(Theme.textSecondary)
-                }
+    /// R6 Visual Correction Pass: Screen 24's "What it needs from you"
+    /// card — replaces the two separate settings-style "Training
+    /// Availability"/"Start Date" cards with ONE compact summary. The
+    /// artifact's own example row (Exercises/Already known/To calibrate)
+    /// isn't reproduced verbatim — `componentsAwaitingCalibrationCount`
+    /// only becomes real AFTER acceptance (`acceptAndStart`), so showing
+    /// it here pre-commit would be fabricated. Uses only fields already
+    /// real and available at this point: `weeklyCapacity`, the real
+    /// default environment (name low-emphasis when `isBuiltIn`, per R5
+    /// zero-config), whether the reviewed mix's total sessions exceed
+    /// capacity (so doubles are genuinely required to fit it), and the
+    /// real R0-resolved start date.
+    /// R6 First-Run Journey Design Completion: replaces the previous
+    /// label/value table (Training days / Environment / Doubles / Start —
+    /// exactly the "settings-style key/value" shape this round's brief
+    /// flags) with ONE real sentence, matching the same "sentences, not
+    /// fields" treatment Review already uses for its own Training
+    /// Availability card. "Doubles: Not required" is gone entirely — it
+    /// told the athlete about scheduling mechanics that don't change
+    /// their decision (`reviewedMixRequiresDoubles` itself is untouched,
+    /// still real, just no longer surfaced here). A default, un-
+    /// customized Full Gym environment is omitted completely (R5 zero-
+    /// config — it changed nothing the athlete decided, same precedent
+    /// Review already sets); a genuine custom/restricted environment
+    /// still appears, as a real requirement. The truthful, not-yet-
+    /// accepted start-date disclosure is UNCHANGED — still real, still
+    /// subordinate (a quiet line below the summary sentence, never
+    /// competing with the recommendation above it).
+    @ViewBuilder private var whatItNeedsSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            SectionHeader(title: "What It Needs")
+            Text(whatItNeedsSummary)
+                .font(Theme.body)
+                .foregroundStyle(Theme.textPrimary)
+            if !viewModel.hasCompressedObjectivePrep, let startDate = viewModel.resolvedStartDate, !Calendar.current.isDateInToday(startDate) {
+                Text("Your first real training week begins then.")
+                    .font(Theme.label)
+                    .foregroundStyle(Theme.textMuted)
+                    .padding(.top, 4)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .trainingOSCard()
     }
 
-    /// V1 R6 (R0 START DATE requirement): the real, truthful start —
-    /// never "Starts today" for a Tuesday-Sunday acceptance when R0
-    /// resolves the first source-backed week to the following Monday.
-    @ViewBuilder private var startDateSection: some View {
-        if let startDate = viewModel.resolvedStartDate {
-            let isToday = Calendar.current.isDateInToday(startDate)
-            InfoSection(title: "Start Date") {
-                Text(isToday ? "Starts Today" : "Starts \(startDate.formatted(.dateTime.weekday(.wide)))")
-                    .font(Theme.body)
-                    .foregroundStyle(Theme.textPrimary)
-                Text(startDate.formatted(date: .long, time: .omitted))
-                    .font(Theme.label)
-                    .foregroundStyle(Theme.textSecondary)
-                if !isToday {
-                    Text("Your plan is accepted now; your first real training week begins then.")
-                        .font(Theme.label)
-                        .foregroundStyle(Theme.textMuted)
-                        .padding(.top, 2)
-                }
-            }
+    private var whatItNeedsSummary: String {
+        let days = viewModel.weeklyCapacity
+        let dayWord = days == 1 ? "day" : "days"
+        let environmentClause = viewModel.goal?.user?.profile?.defaultTrainingEnvironment
+            .flatMap { $0.isBuiltIn ? nil : ", using your \($0.name)" } ?? ""
+        guard let startDate = viewModel.resolvedStartDate else {
+            return "\(days) training \(dayWord) a week\(environmentClause)."
         }
+        let isToday = Calendar.current.isDateInToday(startDate)
+        let startPhrase = isToday ? "starting today" : "starting \(startDate.formatted(.dateTime.weekday(.wide).day().month(.wide).year()))"
+        return "\(days) training \(dayWord) a week\(environmentClause), \(startPhrase)."
     }
 
     /// Stage V1 dogfooding fix (Part 4): athlete-facing "why this fits,"
