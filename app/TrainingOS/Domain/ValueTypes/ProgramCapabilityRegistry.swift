@@ -212,6 +212,27 @@ enum ProgramCapabilityRegistry {
         (dayCount == 3 || dayCount == 4 || dayCount == 5 || dayCount == 6) && split == .fullBody
     }
 
+    /// Powerlifting Source Authority Repair: whether a curated
+    /// `PowerliftingFamily`'s per-day exercise-category CONTENT has been
+    /// verified against the real, original source workbook — mirrors
+    /// `isHypertrophySourceVerified`'s exact fail-closed, explicit-match
+    /// discipline. `true` for BOTH `.b` and `.c` as of this pass — both
+    /// families were migrated to their complete real row/day structure
+    /// (Family B: 15 rows/4 days; Family C: 16 rows/5 days) and proven
+    /// via `PowerliftingSourceFidelityTests.swift` this same pass. Blank,
+    /// never-populated Family D derivatives
+    /// (`Strength_Program_1.xlsx`/`Strength_Program_2.xlsx`) are never
+    /// shipped as a curated `PowerliftingBuiltInConfiguration` at all, so
+    /// they have no `family` value to ever report `true` for here.
+    /// **Still purely declarative** — not yet read by `LongTermPlanner`,
+    /// exactly like Hypertrophy's own equivalent gate stayed inert for a
+    /// full checkpoint after being built.
+    static func isPowerliftingSourceVerified(family: PowerliftingFamily) -> Bool {
+        switch family {
+        case .b, .c: return true
+        }
+    }
+
     /// Structural validity of the parameters themselves — "can a real
     /// `ProgramDefinition` be produced from this, right now" — never a
     /// scheduling-feasibility check (that's `ConcurrentScheduler`'s own,

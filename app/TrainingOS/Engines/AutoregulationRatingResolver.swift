@@ -10,13 +10,23 @@ import Foundation
 /// anything, never itself decides a set count.
 enum AutoregulationRatingResolver {
     /// The rating collected against whichever materialized
-    /// `ExercisePrescription` is `template`'s own `pairedSlot`'s most
-    /// recently completed instance — `nil` if there's no paired slot, or
+    /// `ExercisePrescription` is `template`'s own rating-source slot's most
+    /// recently completed instance — `nil` if there's no such slot, or
     /// nothing's been rated for it yet (a legitimate "not available"
     /// state, never a guessed value).
+    ///
+    /// Powerlifting Family C dual-reference fix: prefers the EXPLICIT
+    /// `autoregulationReferenceSlot` when the generator set one (the one
+    /// confirmed real-source case where the rating source genuinely
+    /// differs from the load-reference `pairedSlot` — Family C's Friday
+    /// backoff row), falling back to `pairedSlot` otherwise — the
+    /// identical behavior this function always had. Every existing
+    /// caller/row (Family A, Family B, every Family C row but one) never
+    /// sets `autoregulationReferenceSlot`, so this fallback reproduces
+    /// their exact prior resolution unchanged.
     static func rating(for template: PrescriptionTemplate, in instance: ProgramInstance) -> Int? {
-        guard let pairedTemplate = template.pairedSlot else { return nil }
-        return mostRecentlyCompletedPrescription(for: pairedTemplate, in: instance)?.autoregulationRating
+        guard let ratingSourceTemplate = template.autoregulationReferenceSlot ?? template.pairedSlot else { return nil }
+        return mostRecentlyCompletedPrescription(for: ratingSourceTemplate, in: instance)?.autoregulationRating
     }
 
     /// The same slot's own most recent previously-materialized set count

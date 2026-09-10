@@ -26,6 +26,7 @@
 		0484B30D94234F6C9962B13D /* ThresholdPaceEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A359497F700F4C7195F5B67C /* ThresholdPaceEngineTests.swift */; };
 		C5BA8EA682064274BC65B070 /* RunningProgramMaterializerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50F6EE78B056459D88113FEA /* RunningProgramMaterializerTests.swift */; };
 		73D7AFB33F124123B491B9AB /* RunningCapabilityGateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6768B5035AAE48ECB2B0B6E1 /* RunningCapabilityGateTests.swift */; };
+		A266BE0DB9024806B3EFF34E /* PowerliftingSourceFidelityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92A23ACCF10D4C5DA4DDE2DE /* PowerliftingSourceFidelityTests.swift */; };
 		91FE283E31E945DFAD5BCEF1 /* RunningProgramGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2728130C3AA14A3DAD57610D /* RunningProgramGeneratorTests.swift */; };
 		E7D1D4AFB00248A384F100C6 /* RunningExecutionOverrideEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3580A2B4A6894377A8BFDAA1 /* RunningExecutionOverrideEngineTests.swift */; };
 		A78AE5CF9A76463988275892 /* RunningPrescriptionRepresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D9842E342114131ABEF7AAD /* RunningPrescriptionRepresentationTests.swift */; };
@@ -466,6 +467,7 @@
 		A359497F700F4C7195F5B67C /* ThresholdPaceEngineTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ThresholdPaceEngineTests.swift; sourceTree = "<group>"; };
 		50F6EE78B056459D88113FEA /* RunningProgramMaterializerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RunningProgramMaterializerTests.swift; sourceTree = "<group>"; };
 		6768B5035AAE48ECB2B0B6E1 /* RunningCapabilityGateTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RunningCapabilityGateTests.swift; sourceTree = "<group>"; };
+		92A23ACCF10D4C5DA4DDE2DE /* PowerliftingSourceFidelityTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PowerliftingSourceFidelityTests.swift; sourceTree = "<group>"; };
 		2728130C3AA14A3DAD57610D /* RunningProgramGeneratorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RunningProgramGeneratorTests.swift; sourceTree = "<group>"; };
 		3580A2B4A6894377A8BFDAA1 /* RunningExecutionOverrideEngineTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RunningExecutionOverrideEngineTests.swift; sourceTree = "<group>"; };
 		0D9842E342114131ABEF7AAD /* RunningPrescriptionRepresentationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RunningPrescriptionRepresentationTests.swift; sourceTree = "<group>"; };
@@ -1233,6 +1235,7 @@
 				A359497F700F4C7195F5B67C /* ThresholdPaceEngineTests.swift */,
 				50F6EE78B056459D88113FEA /* RunningProgramMaterializerTests.swift */,
 				6768B5035AAE48ECB2B0B6E1 /* RunningCapabilityGateTests.swift */,
+				92A23ACCF10D4C5DA4DDE2DE /* PowerliftingSourceFidelityTests.swift */,
 				2728130C3AA14A3DAD57610D /* RunningProgramGeneratorTests.swift */,
 				3580A2B4A6894377A8BFDAA1 /* RunningExecutionOverrideEngineTests.swift */,
 				0D9842E342114131ABEF7AAD /* RunningPrescriptionRepresentationTests.swift */,
@@ -1621,6 +1624,7 @@
 				0484B30D94234F6C9962B13D /* ThresholdPaceEngineTests.swift in Sources */,
 				C5BA8EA682064274BC65B070 /* RunningProgramMaterializerTests.swift in Sources */,
 				73D7AFB33F124123B491B9AB /* RunningCapabilityGateTests.swift in Sources */,
+				A266BE0DB9024806B3EFF34E /* PowerliftingSourceFidelityTests.swift in Sources */,
 				91FE283E31E945DFAD5BCEF1 /* RunningProgramGeneratorTests.swift in Sources */,
 				E7D1D4AFB00248A384F100C6 /* RunningExecutionOverrideEngineTests.swift in Sources */,
 				A78AE5CF9A76463988275892 /* RunningPrescriptionRepresentationTests.swift in Sources */,

@@ -126,6 +126,32 @@ final class PrescriptionTemplate {
     @Relationship(deleteRule: .nullify, inverse: \PrescriptionTemplate.pairedSlot)
     var referencedAsPairedSlotBy: [PrescriptionTemplate] = []
 
+    /// Powerlifting Family C dual-reference fix: an EXPLICIT, separate
+    /// autoregulation-rating source, distinct from `pairedSlot`. Every
+    /// row implemented so far (Family A, Family B, and every Family C row
+    /// except one) uses the SAME slot for both its load reference and its
+    /// autoregulation-rating source, which `pairedSlot` alone already
+    /// expresses correctly — this field exists only for the one confirmed
+    /// case where the real source genuinely wires the two to DIFFERENT
+    /// slots: Family C's Friday Push1 backoff row, whose LOAD is
+    /// `0.85×` Monday-Push1 (`pairedSlot`) but whose SET-COUNT
+    /// autoregulation rating is sourced from Wednesday-Push2's own rating
+    /// (`D42`/`H42` in `RP-PowerliftingHyp-5-Day.xlsx`, re-verified
+    /// directly against the live workbook — see
+    /// `POWERLIFTING_SOURCE_AUTHORITY_REPAIR_V1.md` §12). `nil` (every
+    /// pre-existing row) means "no separate rating source — use
+    /// `pairedSlot` for both, exactly as before this field existed";
+    /// `AutoregulationRatingResolver.rating(for:in:)` reads
+    /// `autoregulationReferenceSlot ?? pairedSlot`, so this is purely
+    /// additive and changes zero existing resolved behavior anywhere
+    /// this field is left `nil`.
+    var autoregulationReferenceSlot: PrescriptionTemplate?
+
+    /// `autoregulationReferenceSlot`'s required inverse — same reasoning
+    /// as `referencedAsPairedSlotBy` above.
+    @Relationship(deleteRule: .nullify, inverse: \PrescriptionTemplate.autoregulationReferenceSlot)
+    var referencedAsAutoregulationReferenceBy: [PrescriptionTemplate] = []
+
     /// Stage 6D addition: `ExercisePrescription.sourcePrescriptionTemplate`'s
     /// required inverse — nothing reads this collection directly (the
     /// resolver walks it via a fetch, not this relationship, since it
