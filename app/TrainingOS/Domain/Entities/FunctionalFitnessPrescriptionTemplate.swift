@@ -9,20 +9,23 @@ import SwiftData
 /// Functional Fitness quarter of the gap `WorkoutBlockTemplate`'s Stage
 /// 4A doc comment originally deferred.
 ///
-/// **`stimulus`/`format` are stored as direct top-level properties, not
-/// flattened.** Unlike `StrengthProgressionRules`/`SteadyStateProgressionRules`/
-/// `IntervalProgressionRules` (all flattened after Stage 4A's Bug 2/3),
-/// `Stimulus` (which contains `movementModalityMix: [ModalityCount]`, an
-/// array of a multi-field struct) and `WorkoutFormat` (an enum with
-/// associated values) have **already been round-tripping safely through
-/// SwiftData since Stage 3C** — `FunctionalFitnessPrescription.stimulus`/
-/// `.format` and `BenchmarkDefinition.stimulus`/`.format` store them this
-/// exact way today, exercised by
-/// `ModalityPersistenceRoundTripTests.testFunctionalFitnessPrescriptionAndScaledResultSurviveRoundTrip`/
-/// `.testBenchmarkDefinitionAndPerformanceProfileSurviveRoundTrip`, both
-/// part of the pre-Stage-4E passing suite. This is real, existing
-/// evidence a multi-field-struct array *can* round-trip safely in this
-/// codebase — not a new, untested assumption.
+/// **`stimulus` is stored as a direct top-level property; `format` is
+/// NOT (FF WorkoutFormat SwiftData fix, this pass).** `Stimulus` (which
+/// contains `movementModalityMix: [ModalityCount]`, an array of a multi-
+/// field struct) has round-tripped safely through SwiftData since Stage
+/// 3C and remains a direct property. `WorkoutFormat` (an enum with
+/// associated values, several optional) was ALSO believed safe on this
+/// same evidence — but a real crash (`Could not cast value of type
+/// 'Swift.Optional<Any>' to 'TrainingOS.WorkoutFormat'`) was reproduced
+/// this pass for a real, multi-week materialized graph with several
+/// sibling `FunctionalFitnessPrescription` rows carrying different cases
+/// (at least one with a `nil` optional payload), fetched from a fresh
+/// context — the pre-existing `ModalityPersistenceRoundTripTests` never
+/// exercised that combination. `format` is now a computed property
+/// backed by a manually flattened tagged union
+/// (`WorkoutFormatKind`/`WorkoutFormatCoding`, `WorkoutFormat.swift`),
+/// mirroring `StrengthProgressionRules`' own `LoadRule`/`SetCountRule`
+/// fix for the identical class of bug.
 @Model
 final class FunctionalFitnessPrescriptionTemplate {
     @Attribute(.unique) var id: UUID
@@ -33,7 +36,41 @@ final class FunctionalFitnessPrescriptionTemplate {
     /// generation time; see `FunctionalFitnessMaterializer` for where
     /// exposure-informed variance actually applies.
     var stimulus: Stimulus
-    var format: WorkoutFormat
+
+    // MARK: - `format` — flattened tagged union (see this file's own doc
+    // comment above and `WorkoutFormat.swift`'s doc comment for why).
+    var workoutFormatKind: WorkoutFormatKind = WorkoutFormatKind.maxLoad
+    var workoutFormatCapSeconds: Int?
+    var workoutFormatRounds: Int?
+    var workoutFormatIntervalSeconds: Int?
+    var workoutFormatTotalSeconds: Int?
+    var workoutFormatDirection: LadderDirection?
+    var workoutFormatCount: Int?
+    var workoutFormatWorkSeconds: Int?
+    var workoutFormatRestSeconds: Int?
+
+    var format: WorkoutFormat {
+        get {
+            WorkoutFormatCoding.reconstruct(WorkoutFormatCoding.Flat(
+                kind: workoutFormatKind, capSeconds: workoutFormatCapSeconds, rounds: workoutFormatRounds,
+                intervalSeconds: workoutFormatIntervalSeconds, totalSeconds: workoutFormatTotalSeconds,
+                direction: workoutFormatDirection, count: workoutFormatCount,
+                workSeconds: workoutFormatWorkSeconds, restSeconds: workoutFormatRestSeconds
+            ))
+        }
+        set {
+            let flat = WorkoutFormatCoding.flatten(newValue)
+            workoutFormatKind = flat.kind
+            workoutFormatCapSeconds = flat.capSeconds
+            workoutFormatRounds = flat.rounds
+            workoutFormatIntervalSeconds = flat.intervalSeconds
+            workoutFormatTotalSeconds = flat.totalSeconds
+            workoutFormatDirection = flat.direction
+            workoutFormatCount = flat.count
+            workoutFormatWorkSeconds = flat.workSeconds
+            workoutFormatRestSeconds = flat.restSeconds
+        }
+    }
 
     @Relationship(deleteRule: .cascade, inverse: \FunctionalFitnessMovementSlotTemplate.functionalFitnessPrescriptionTemplate)
     var movementSlots: [FunctionalFitnessMovementSlotTemplate] = []
@@ -71,10 +108,10 @@ final class FunctionalFitnessPrescriptionTemplate {
     ) {
         self.id = id
         self.stimulus = stimulus
-        self.format = format
         self.requiresRecentExposureToProgress = requiresRecentExposureToProgress
         self.varianceConstraints = varianceConstraints
         self.isDynamicallyComposed = isDynamicallyComposed
+        self.format = format
     }
 
     /// The only way application code should attach a movement slot.

@@ -80,7 +80,17 @@ enum FunctionalFitnessMaterializer {
     ) throws -> [Session] {
         var sessions: [Session] = []
         let weekStartDate = Calendar.current.date(byAdding: .day, value: weekIndex * 7, to: startDate) ?? startDate
-        let orderedTemplateSessions = definition.orderedTemplateSessions.filter { $0.activeFromWeek <= weekIndex }
+        // FF Multi-Week V1: an authored `weeklyPlan` pins each
+        // `TemplateSession` to EXACTLY one relative week (a literal,
+        // one-off week, never a recurring shape) — read with exact
+        // equality, mirroring `RunningProgramMaterializer`'s identical,
+        // already-shipped precedent exactly. Every pre-existing FF
+        // configuration (`weeklyPlan == nil`) keeps the original generic
+        // recurring `<=` filter, completely unchanged.
+        let usesAuthoredWeeklyPlan = definition.functionalFitnessConfiguration?.weeklyPlan != nil
+        let orderedTemplateSessions = definition.orderedTemplateSessions.filter {
+            usesAuthoredWeeklyPlan ? $0.activeFromWeek == weekIndex : $0.activeFromWeek <= weekIndex
+        }
 
         // Stage CP.2: every real `LongTermPlanner`-built `TrainingMix` has
         // at most ONE Functional Fitness `TrainingMixComponent` (confirmed

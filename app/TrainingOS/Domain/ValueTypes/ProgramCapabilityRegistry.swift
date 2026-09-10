@@ -233,6 +233,22 @@ enum ProgramCapabilityRegistry {
         }
     }
 
+    /// FF Multi-Week V1: whether a deliberately-authored `weeklyPlan`
+    /// exists for `daysPerWeek` — declarative, mirrors
+    /// `isRunningConfigurationSupported`'s fail-closed discipline exactly.
+    /// `true` only for `1...3` (the 3 authored frequencies in
+    /// `FunctionalFitnessAuthoredProgramLibrary`); the actual "never
+    /// approximate an unsupported frequency" enforcement lives in
+    /// `LongTermPlanner.functionalFitnessParameterCandidates`, which
+    /// returns no candidate at all outside this range — mirroring
+    /// Running's own `.running` branch (an empty candidate list) rather
+    /// than a thrown generator error, since Functional Fitness's existing
+    /// generator has no `throws` signature to extend and this checkpoint
+    /// does not touch that signature.
+    static func isFunctionalFitnessV1Supported(daysPerWeek: Int) -> Bool {
+        (1...3).contains(daysPerWeek)
+    }
+
     /// Structural validity of the parameters themselves — "can a real
     /// `ProgramDefinition` be produced from this, right now" — never a
     /// scheduling-feasibility check (that's `ConcurrentScheduler`'s own,

@@ -56,6 +56,43 @@ enum FunctionalFitnessProgramGenerator {
             definition.addWeek(week)
         }
 
+        // FF Multi-Week V1: an authored `weeklyPlan` builds one distinct,
+        // week-pinned `TemplateSession` per intent instead of the
+        // recurring-single-stimulus path below — see
+        // `FunctionalFitnessSessionIntent`'s own doc comment and
+        // `FunctionalFitnessMaterializer`'s matching exact-equality
+        // filter branch.
+        if let weeklyPlan = configuration.weeklyPlan {
+            for intent in weeklyPlan {
+                let session = TemplateSession(
+                    name: "Week \(intent.relativeWeek + 1) — Session \(intent.sessionIndexInWeek + 1)",
+                    role: intent.sessionRole,
+                    activeFromWeek: intent.relativeWeek
+                )
+                context.insert(session)
+                definition.addTemplateSession(session)
+
+                if intent.includeStrengthBlock {
+                    addStrengthBlock(to: session, context: context)
+                }
+
+                let ffBlock = WorkoutBlockTemplate(type: .functionalFitness)
+                context.insert(ffBlock)
+                session.addBlockTemplate(ffBlock)
+
+                let prescriptionTemplate = FunctionalFitnessPrescriptionTemplate(
+                    stimulus: intent.stimulus,
+                    format: intent.format,
+                    requiresRecentExposureToProgress: false,
+                    varianceConstraints: intent.varianceConstraints,
+                    isDynamicallyComposed: true
+                )
+                context.insert(prescriptionTemplate)
+                ffBlock.attachFunctionalFitnessPrescriptionTemplate(prescriptionTemplate)
+            }
+            return definition
+        }
+
         for dayIndex in 0..<configuration.daysPerWeek {
             let session = TemplateSession(name: "Day \(dayIndex + 1)", role: configuration.sessionRole)
             context.insert(session)

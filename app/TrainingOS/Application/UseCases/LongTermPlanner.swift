@@ -1856,8 +1856,49 @@ enum LongTermPlanner {
         return [("Generated \(days)-Day \(activity.rawValue.capitalized) Intervals", .interval(configuration))]
     }
 
+    /// FF Multi-Week V1: surfaces the real, deliberately-authored 4-week
+    /// `weeklyPlan` for exactly the 3 curated V1 frequencies
+    /// (`ProgramCapabilityRegistry.isFunctionalFitnessV1Supported`, 1-3).
+    ///
+    /// **Disclosed regression-safety decision, not a literal "fail
+    /// outside 1-3" reading:** an EXISTING, pre-V1 test
+    /// (`ExplicitWeeklyCompositionTests.testCaseE_FiveFunctionalFitness`)
+    /// proves 5 FF sessions/week already worked, structurally, through
+    /// the original single-recurring-stimulus path, before this
+    /// checkpoint — a real, relied-upon capability, not a candidate for
+    /// silent removal. Returning an empty candidate list for every
+    /// frequency outside 1-3 (mirroring Running's own `.running` branch
+    /// literally) would regress that real, passing test, which the
+    /// regression-safety section of this same checkpoint's directive
+    /// forbids ("zero new failures allowed," "existing Functional Fitness
+    /// tests" explicitly listed). The reconciliation: 1-3 get the new,
+    /// deliberately-authored, deliberately-varied 4-week V1 content;
+    /// every other frequency keeps the EXACT prior single-stimulus
+    /// candidate, byte-for-byte unchanged — never approximated to the
+    /// nearest V1 frequency, never silently dropped. This is the
+    /// smallest change that adds real V1 coherence for 1-3 without
+    /// removing already-working, already-tested capability outside it.
     private static func functionalFitnessParameterCandidates(component: TrainingMixComponent) -> [(name: String, parameters: GeneratorParameters)] {
         let days = max(1, component.frequency.target)
+
+        if ProgramCapabilityRegistry.isFunctionalFitnessV1Supported(daysPerWeek: days),
+           let weeklyPlan = FunctionalFitnessAuthoredProgramLibrary.weeklyPlan(forSessionsPerWeek: days) {
+            // Placeholder single-stimulus fields below are structurally
+            // required by `FunctionalFitnessProgramConfiguration`'s
+            // existing shape but are IGNORED by the generator whenever
+            // `weeklyPlan` is non-nil (see that type's own doc comment).
+            let configuration = FunctionalFitnessProgramConfiguration(
+                daysPerWeek: days, lengthWeeks: 4,
+                targetStimulus: weeklyPlan[0].stimulus, format: weeklyPlan[0].format, sessionRole: .functionalFitness,
+                varianceConstraints: VarianceConstraints(), requiresRecentExposureToProgress: false,
+                includeStrengthBlock: false, weeklyPlan: weeklyPlan
+            )
+            return [("Generated \(days)-Day Functional Fitness (4-Week V1)", .functionalFitness(configuration))]
+        }
+
+        // Pre-V1 fallback, completely unchanged — every frequency this
+        // checkpoint does not author real content for keeps working
+        // exactly as it did before this checkpoint.
         let stimulus = Stimulus(
             targetDurationDomain: .medium, intensity: .moderate, loading: .moderate,
             movementFunctions: [.squatLoaded, .gymnasticsPull, .monostructural],
@@ -1866,12 +1907,6 @@ enum LongTermPlanner {
                 ModalityCount(modality: .gymnastics, count: 1),
                 ModalityCount(modality: .metabolicConditioning, count: 1),
             ],
-            // `.roundsForTime`'s own natural score type is `.time`
-            // (`FunctionalFitnessStimulusValidator.defaultScoreType`) —
-            // `scoreType` must agree with whatever `format` below actually
-            // is, or Stage E validation always fails (this pass's own
-            // Slice 3 discovery: nothing had ever exercised this specific
-            // candidate through a real materializer before).
             skillDemand: .moderate, systemicDemand: .moderate, scoreType: .time
         )
         let configuration = FunctionalFitnessProgramConfiguration(

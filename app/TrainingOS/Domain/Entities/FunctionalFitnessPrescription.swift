@@ -37,7 +37,43 @@ final class FunctionalFitnessPrescription {
     /// final; representing that historical fact as genuinely unknown
     /// (`nil`) is the honest choice, never a fabricated guess.
     var intendedStimulus: Stimulus?
-    var format: WorkoutFormat
+
+    // MARK: - `format` — flattened tagged union (FF WorkoutFormat SwiftData
+    // fix, this pass). See `FunctionalFitnessPrescriptionTemplate.swift`'s
+    // doc comment for the real crash this fixes and `WorkoutFormat.swift`
+    // for the shared coding logic.
+    var workoutFormatKind: WorkoutFormatKind = WorkoutFormatKind.maxLoad
+    var workoutFormatCapSeconds: Int?
+    var workoutFormatRounds: Int?
+    var workoutFormatIntervalSeconds: Int?
+    var workoutFormatTotalSeconds: Int?
+    var workoutFormatDirection: LadderDirection?
+    var workoutFormatCount: Int?
+    var workoutFormatWorkSeconds: Int?
+    var workoutFormatRestSeconds: Int?
+
+    var format: WorkoutFormat {
+        get {
+            WorkoutFormatCoding.reconstruct(WorkoutFormatCoding.Flat(
+                kind: workoutFormatKind, capSeconds: workoutFormatCapSeconds, rounds: workoutFormatRounds,
+                intervalSeconds: workoutFormatIntervalSeconds, totalSeconds: workoutFormatTotalSeconds,
+                direction: workoutFormatDirection, count: workoutFormatCount,
+                workSeconds: workoutFormatWorkSeconds, restSeconds: workoutFormatRestSeconds
+            ))
+        }
+        set {
+            let flat = WorkoutFormatCoding.flatten(newValue)
+            workoutFormatKind = flat.kind
+            workoutFormatCapSeconds = flat.capSeconds
+            workoutFormatRounds = flat.rounds
+            workoutFormatIntervalSeconds = flat.intervalSeconds
+            workoutFormatTotalSeconds = flat.totalSeconds
+            workoutFormatDirection = flat.direction
+            workoutFormatCount = flat.count
+            workoutFormatWorkSeconds = flat.workSeconds
+            workoutFormatRestSeconds = flat.restSeconds
+        }
+    }
 
     @Relationship(deleteRule: .cascade, inverse: \FunctionalFitnessMovement.functionalFitnessPrescription)
     var movements: [FunctionalFitnessMovement] = []
