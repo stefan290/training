@@ -16,11 +16,17 @@ enum TacticalWindowPolicy {
     /// `TrainingWeek.isDeload` marking week 4 — a real, already-tested
     /// structural fact, not a new guess. SteadyState/Interval/Functional
     /// Fitness have no such fixed block (a single repeating week) and
-    /// fall back to the configurable default instead.
+    /// fall back to the configurable default instead. Running R3: joins
+    /// this fallback group too — it has no repeating weekly block at all
+    /// (every one of its 25 sessions is a one-off week,
+    /// `RunningProgramMaterializer`'s own doc comment), and it
+    /// materializes its whole 13-relative-week program upfront exactly
+    /// like Steady State, so this policy's window length is irrelevant to
+    /// it in practice.
     static func naturalBlockWeeks(for system: ProgrammingSystemKind?) -> Int? {
         switch system {
         case .hypertrophy, .powerlifting: return 4
-        case .steadyState, .interval, .functionalFitness, .none: return nil
+        case .steadyState, .interval, .functionalFitness, .running, .none: return nil
         }
     }
 

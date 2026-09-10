@@ -43,7 +43,7 @@ enum HypertrophyFeedbackCopy {
                 Option(rating: 0, label: "Moved at a normal pace"),
                 Option(rating: -1, label: "Moved slowly and felt heavy"),
             ]
-        case .hypertrophy, .steadyState, .interval, .functionalFitness, nil:
+        case .hypertrophy, .steadyState, .interval, .functionalFitness, .running, nil:
             return [
                 Option(rating: 1, label: "Wasn't very sore"),
                 Option(rating: 0, label: "Noticeably sore, tough but manageable"),

@@ -115,6 +115,7 @@ enum PlanPresentation {
         case .steadyState: "Steady State"
         case .interval: "Intervals"
         case .functionalFitness: "Functional Fitness"
+        case .running: "Running"
         case nil: "Unresolved"
         }
     }

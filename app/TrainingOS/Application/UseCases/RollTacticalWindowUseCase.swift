@@ -64,6 +64,15 @@ enum RollTacticalWindowUseCase {
                 definition: definition, instance: instance, startDate: startDate, ownerUserID: ownerUserID,
                 environment: materializationContext.trainingEnvironment, context: context
             )
+        case .running:
+            // Running R3: materializes its whole 13-relative-week block in
+            // one call, exactly like Steady State and for the identical
+            // reason — nothing in this program depends on a live per-week
+            // result (`RunningProgramMaterializer`'s own doc comment).
+            return try RunningProgramMaterializer.materializeAllWeeks(
+                definition: definition, instance: instance, startDate: startDate, ownerUserID: ownerUserID,
+                environment: materializationContext.trainingEnvironment, context: context
+            )
         case .interval:
             return try IntervalMaterializer.materializeWeek(
                 definition: definition, instance: instance, weekIndex: 0, startDate: startDate, ownerUserID: ownerUserID,
@@ -174,7 +183,10 @@ enum RollTacticalWindowUseCase {
                     weekContext: IntervalWeekContextBuilder.build(instance: instance, weekIndex: weekIndex),
                     environment: materializationContext.trainingEnvironment, context: context
                 )
-            case .steadyState, .functionalFitness:
+            case .steadyState, .functionalFitness, .running:
+                // Running R3: already fully materialized upfront in
+                // `materializeFirstWindow`, exactly like Steady State —
+                // nothing left to roll within the same `ProgramInstance`.
                 continue
             }
 

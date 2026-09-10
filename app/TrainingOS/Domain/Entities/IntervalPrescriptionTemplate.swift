@@ -53,6 +53,16 @@ final class IntervalPrescriptionTemplate: ActivitySubstitutionTemplate {
     var intensityZoneProgressionMaxZone: HeartRateZone?
     var weekOneRecoveryDurationSeconds: Int?
     var recoveryDurationFloorSeconds: Int = 0
+    /// Running R3 addition — see `IntervalProgressionRules
+    /// .weekOneRecoveryDistanceMeters`'s own doc comment.
+    var weekOneRecoveryDistanceMeters: Double?
+
+    /// Running R3 addition: the source `Repeat Group`'s own work-leg
+    /// label (e.g. `"Hard"`) — mirrors `SteadyStatePrescriptionTemplate
+    /// .sourceLabel`'s exact rationale. `nil` for every non-source-tagged
+    /// interval template.
+    var sourceLabel: RunningSourceLabel?
+    var executionNotes: String?
 
     var completionCriteriaMaxRpeAllowed: Int?
     var completionCriteriaMinimumFractionForProgress: Double = 1.0
@@ -108,6 +118,7 @@ final class IntervalPrescriptionTemplate: ActivitySubstitutionTemplate {
                 intensityZoneProgression: zoneProgression,
                 weekOneRecoveryDurationSeconds: weekOneRecoveryDurationSeconds,
                 recoveryDurationFloorSeconds: recoveryDurationFloorSeconds,
+                weekOneRecoveryDistanceMeters: weekOneRecoveryDistanceMeters,
                 completionCriteria: criteria,
                 requiresSuccessfulCompletionToProgress: requiresSuccessfulCompletionToProgress
             )
@@ -124,6 +135,7 @@ final class IntervalPrescriptionTemplate: ActivitySubstitutionTemplate {
             intensityZoneProgressionMaxZone = newValue?.intensityZoneProgression?.maxZone
             weekOneRecoveryDurationSeconds = newValue?.weekOneRecoveryDurationSeconds
             recoveryDurationFloorSeconds = newValue?.recoveryDurationFloorSeconds ?? 0
+            weekOneRecoveryDistanceMeters = newValue?.weekOneRecoveryDistanceMeters
             completionCriteriaMaxRpeAllowed = newValue?.completionCriteria.maxRpeAllowed
             completionCriteriaMinimumFractionForProgress = newValue?.completionCriteria.minimumCompletionFractionForProgress ?? 1.0
             completionCriteriaMinimumFractionForHold = newValue?.completionCriteria.minimumCompletionFractionForHold ?? 0.75

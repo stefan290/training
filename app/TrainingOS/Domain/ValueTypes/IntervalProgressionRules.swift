@@ -155,6 +155,16 @@ struct IntervalProgressionRules: Codable, Equatable {
     /// Recovery duration is never reduced below this floor, regardless of
     /// how many weeks of `.recoveryDuration` progression have elapsed.
     var recoveryDurationFloorSeconds: Int
+    /// Running R3 addition: a literal, unprogressed recovery-leg distance
+    /// (e.g. the ".25 mi Easy" partner of a "Hard" work rep) — no existing
+    /// configuration before Running ever prescribed recovery by distance
+    /// (only by duration, `weekOneRecoveryDurationSeconds` above), and
+    /// there is no `.recoveryDistance` case in `IntervalProgressionVariable`
+    /// to progress it by — this field is always either `nil` or a fixed,
+    /// non-progressing value for the whole program (`IntervalProgressionEngine
+    /// .resolveRecoveryDistance` never applies a rate to it, deliberately —
+    /// see that function's own doc comment).
+    var weekOneRecoveryDistanceMeters: Double?
 
     var completionCriteria: IntervalCompletionCriteria
     /// §15/§33: when `true`, the next week's progression must not be
@@ -174,6 +184,7 @@ struct IntervalProgressionRules: Codable, Equatable {
         intensityZoneProgression: IntensityZoneProgression? = nil,
         weekOneRecoveryDurationSeconds: Int? = nil,
         recoveryDurationFloorSeconds: Int = 0,
+        weekOneRecoveryDistanceMeters: Double? = nil,
         completionCriteria: IntervalCompletionCriteria = IntervalCompletionCriteria(),
         requiresSuccessfulCompletionToProgress: Bool = false
     ) {
@@ -184,6 +195,7 @@ struct IntervalProgressionRules: Codable, Equatable {
         self.intensityZoneProgression = intensityZoneProgression
         self.weekOneRecoveryDurationSeconds = weekOneRecoveryDurationSeconds
         self.recoveryDurationFloorSeconds = recoveryDurationFloorSeconds
+        self.weekOneRecoveryDistanceMeters = weekOneRecoveryDistanceMeters
         self.completionCriteria = completionCriteria
         self.requiresSuccessfulCompletionToProgress = requiresSuccessfulCompletionToProgress
     }

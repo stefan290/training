@@ -41,7 +41,16 @@ enum TacticalAdvancementPreflight {
             guard
                 let instance = component.programInstance,
                 let definition = instance.programDefinition,
-                let system = component.programmingSystem, system != .steadyState,
+                // Running R3: excluded for the identical reason
+                // `.steadyState` already is — its whole 13-relative-week
+                // block materializes upfront (`RunningProgramMaterializer`),
+                // so it never has a "next week" this preflight needs to
+                // check, and (unlike every other system here) its
+                // `TemplateSession.activeFromWeek` means "exactly this
+                // week," not "recurring from this week onward" — the
+                // `activeFromWeek <= weekIndex` filter below would be
+                // wrong if ever reached for a Running component.
+                let system = component.programmingSystem, system != .steadyState, system != .running,
                 !TacticalWeekCompletion.isInstanceExhausted(for: instance)
             else { continue }
 
@@ -75,7 +84,7 @@ enum TacticalAdvancementPreflight {
                         return .intervalWeekContextUnresolvable(componentID: component.id)
                     }
                 }
-            case .hypertrophy, .powerlifting, .steadyState:
+            case .hypertrophy, .powerlifting, .steadyState, .running:
                 continue
             }
         }

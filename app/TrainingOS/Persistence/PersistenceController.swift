@@ -75,6 +75,8 @@ enum PersistenceController {
         WarmupSequenceItem.self,
         // Stage TE.1 addition — see TE1_TRAINING_ENVIRONMENT_FOUNDATION_DESIGN.md.
         TrainingEnvironment.self,
+        // Running R2 addition — see RUNNING_FOUNDATION_R2.md.
+        RunningThresholdCalibration.self,
     ])
 
     /// The app's on-disk, offline-first store. Local storage is

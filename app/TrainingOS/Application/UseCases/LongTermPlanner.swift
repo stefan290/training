@@ -1352,7 +1352,7 @@ enum LongTermPlanner {
     private static func isResistanceSystem(_ system: ProgrammingSystemKind?) -> Bool {
         switch system {
         case .hypertrophy, .powerlifting: return true
-        case .steadyState, .interval, .functionalFitness, nil: return false
+        case .steadyState, .interval, .functionalFitness, .running, nil: return false
         }
     }
 
@@ -1635,7 +1635,7 @@ enum LongTermPlanner {
         switch system {
         case .hypertrophy: return .hypertrophy
         case .powerlifting: return .strength
-        case .steadyState, .interval: return .conditioning
+        case .steadyState, .interval, .running: return .conditioning
         case .functionalFitness: return .functionalFitness
         case nil: return .hybrid
         }
@@ -1721,6 +1721,18 @@ enum LongTermPlanner {
             rawCandidates = intervalParameterCandidates(component: component, goal: goal)
         case .functionalFitness:
             rawCandidates = functionalFitnessParameterCandidates(component: component)
+        case .running:
+            // Running R3: this checkpoint's own explicit scope exclusion
+            // — "no LongTermPlanner recommendation changes." Running
+            // never produces a recommendation candidate through this
+            // planner; `RunningProgramGenerator`/`RunningBuiltInLibrary`
+            // are invoked directly by whatever future flow starts a
+            // Running program, not through this recommendation path. An
+            // empty candidate list here preserves that boundary exactly
+            // (never silently begins recommending Running), while still
+            // letting this switch compile exhaustively now that `.running`
+            // is a real `ProgrammingSystemKind` case.
+            rawCandidates = []
         }
 
         guard !rawCandidates.isEmpty else {
@@ -1935,6 +1947,15 @@ enum LongTermPlanner {
             return IntervalProgramGenerator.generate(configuration: configuration, provenance: provenance, context: context)
         case .functionalFitness(let configuration):
             return FunctionalFitnessProgramGenerator.generate(configuration: configuration, provenance: provenance, context: context)
+        case .running(let configuration):
+            // Unreachable today (rawCandidates is always empty for
+            // `.running`, above) — implemented correctly rather than as a
+            // dead-end `fatalError`/`throw`, for the same reason every
+            // other case is a real call: a future caller that explicitly
+            // constructs `.running` parameters (outside this planner's
+            // own recommendation surface) gets the real generator, not a
+            // crash.
+            return try RunningProgramGenerator.generate(configuration: configuration, provenance: provenance, context: context)
         }
     }
 
@@ -1990,6 +2011,7 @@ enum LongTermPlanner {
         case .steadyState(let c): return c.daysPerWeek
         case .interval(let c): return c.daysPerWeek
         case .functionalFitness(let c): return c.daysPerWeek
+        case .running(let c): return c.daysPerWeek
         }
     }
 
@@ -2003,7 +2025,7 @@ enum LongTermPlanner {
         switch system {
         case .hypertrophy, .powerlifting:
             return profile.exerciseProfiles.contains { $0.confidence >= 0.5 }
-        case .steadyState, .interval:
+        case .steadyState, .interval, .running:
             return !profile.activityProfiles.isEmpty
         case .functionalFitness:
             return !profile.benchmarkProfiles.isEmpty

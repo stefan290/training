@@ -59,6 +59,19 @@ final class SteadyStatePrescriptionTemplate: ActivitySubstitutionTemplate {
     var recoveryWeekDistanceFraction: Double = 1.0
     var recoveryWeekIntensityZoneStepDown: Int = 0
 
+    /// Running R3 addition: the exact source workout-family label this
+    /// block template was transcribed from (`RunningSourceLabel`), when
+    /// the template originates from a source-provenanced program — `nil`
+    /// for every non-source-tagged template (Bike/Row/SkiErg content, or
+    /// any steady-state template authored without a source citation).
+    /// Additive, optional; no migration/behavior change for existing rows.
+    var sourceLabel: RunningSourceLabel?
+    /// Running R3 addition: free-text execution guidance carried verbatim
+    /// from the source (e.g. the observed race's pacing-strategy note) —
+    /// display-only, never parsed by business logic, mirroring
+    /// `SteadyStatePrescription.executionNotes`'s exact rationale.
+    var executionNotes: String?
+
     init(
         id: UUID = UUID(),
         preferredActivityType: ActivityType,

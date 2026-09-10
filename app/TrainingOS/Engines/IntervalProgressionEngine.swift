@@ -228,6 +228,25 @@ enum IntervalProgressionEngine {
         return (reduced, changed(current: reduced, previous: previousReduced) ? .recoveryReduced : .noProgressionConfigured)
     }
 
+    // MARK: - Recovery distance (Running R3 addition)
+
+    /// Always a pure pass-through of `rules.weekOneRecoveryDistanceMeters`
+    /// — deliberately never progressed. There is no
+    /// `.recoveryDistance` case in `IntervalProgressionVariable` (no
+    /// existing or planned configuration reduces a recovery leg's
+    /// *distance* week over week the way `.recoveryDuration` reduces
+    /// seconds), so unlike every other `resolve*` function in this file,
+    /// this one has no `priority`/`weeksActive` logic to run — Running's
+    /// recovery-leg distances are literal, source-recovered numbers for
+    /// their own specific week already (`RunningProgramMaterializer`'s own
+    /// doc comment), never a rate applied from a week-one baseline.
+    static func resolveRecoveryDistance(rules: IntervalProgressionRules) -> (distanceMeters: Double?, reasonCode: IntervalReasonCode) {
+        guard let weekOne = rules.weekOneRecoveryDistanceMeters else {
+            return (nil, .noProgressionConfigured)
+        }
+        return (weekOne, .noProgressionConfigured)
+    }
+
     // MARK: - Session outcome evaluation (§16-17)
 
     /// `totalCount == 0` (no reps attempted/logged at all) always yields

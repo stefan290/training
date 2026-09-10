@@ -48,6 +48,20 @@ final class SteadyStatePrescription {
     /// `ActivitySelectionOverride.templateBlock`.
     var sourceWorkoutBlockTemplate: WorkoutBlockTemplate?
 
+    /// Running R2 addition: the exact source workout-family label this
+    /// block was transcribed from (`RunningSourceLabel`), when the block
+    /// originates from a source-provenanced program — `nil` for every
+    /// non-source-tagged prescription (Bike/Row/SkiErg content, or any
+    /// steady-state block authored without a source citation). Additive,
+    /// optional field; no migration/behavior change for existing rows.
+    var sourceLabel: RunningSourceLabel?
+    /// Running R2 addition: free-text execution guidance carried verbatim
+    /// from the source (e.g. the observed race's pacing-strategy note) —
+    /// display-only, never parsed by business logic (CLAUDE.md rule 16
+    /// concerns typed *decision* fields; this is provenance text, exactly
+    /// like `Recommendation.inputsSummary`'s own precedent).
+    var executionNotes: String?
+
     init(
         id: UUID = UUID(),
         activityType: ActivityType,
@@ -56,7 +70,9 @@ final class SteadyStatePrescription {
         primaryIntensity: IntensityTarget? = nil,
         secondaryIntensity: IntensityTarget? = nil,
         substitutionUsed: Bool = false,
-        substitutionReason: SubstitutionReason? = nil
+        substitutionReason: SubstitutionReason? = nil,
+        sourceLabel: RunningSourceLabel? = nil,
+        executionNotes: String? = nil
     ) {
         self.id = id
         self.activityType = activityType
@@ -66,5 +82,7 @@ final class SteadyStatePrescription {
         self.secondaryIntensity = secondaryIntensity
         self.substitutionUsed = substitutionUsed
         self.substitutionReason = substitutionReason
+        self.sourceLabel = sourceLabel
+        self.executionNotes = executionNotes
     }
 }

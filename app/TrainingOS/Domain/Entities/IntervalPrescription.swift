@@ -35,6 +35,13 @@ final class IntervalPrescription {
     /// `WorkoutBlockTemplate.materializedIntervalPrescriptions`.
     var sourceWorkoutBlockTemplate: WorkoutBlockTemplate?
 
+    /// Running R2 addition: the source `Repeat Group`'s own work-leg
+    /// label (e.g. "Hard") — see `SteadyStatePrescription.sourceLabel`'s
+    /// doc comment for the full rationale. `nil` for non-source-tagged
+    /// interval content.
+    var sourceLabel: RunningSourceLabel?
+    var executionNotes: String?
+
     init(
         id: UUID = UUID(),
         activityType: ActivityType,
@@ -46,7 +53,9 @@ final class IntervalPrescription {
         recoveryDistanceMeters: Double? = nil,
         recoveryIntensity: IntensityTarget? = nil,
         substitutionUsed: Bool = false,
-        substitutionReason: SubstitutionReason? = nil
+        substitutionReason: SubstitutionReason? = nil,
+        sourceLabel: RunningSourceLabel? = nil,
+        executionNotes: String? = nil
     ) {
         self.id = id
         self.activityType = activityType
@@ -59,5 +68,7 @@ final class IntervalPrescription {
         self.recoveryIntensity = recoveryIntensity
         self.substitutionUsed = substitutionUsed
         self.substitutionReason = substitutionReason
+        self.sourceLabel = sourceLabel
+        self.executionNotes = executionNotes
     }
 }

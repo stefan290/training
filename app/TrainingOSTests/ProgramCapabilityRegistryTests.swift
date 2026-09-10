@@ -4,12 +4,21 @@ import XCTest
 /// Stage 5B: proves the planner distinguishes "conceptually appropriate"
 /// from "currently executable" — `PROGRAM_RECOMMENDATION_MODEL.md` §5.
 final class ProgramCapabilityRegistryTests: XCTestCase {
-    func testAllFiveProgrammingSystemsAreAvailable() {
+    func testAllSixProgrammingSystemsAreAvailable() {
+        // Running R3: a 6th system, added to this project's own
+        // `ProgrammingSystemKind` — this test's name/count is corrected
+        // accordingly (was "AllFive" through R2).
         let available = ProgramCapabilityRegistry.availableProgrammingSystems()
         XCTAssertEqual(available, Set(ProgrammingSystemKind.allCases))
+        XCTAssertEqual(available.count, 6)
     }
 
-    func testOnlyHypertrophyAndPowerliftingHaveCuratedConfigurations() {
+    func testCuratedConfigurationCoverageAcrossAllSixSystems() {
+        // Running R3: `RunningBuiltInLibrary` adds exactly 1 curated
+        // configuration (5K + 2 days/week) — this test's name/body is
+        // corrected from "Only Hypertrophy and Powerlifting" (true
+        // through R2, no longer true today) rather than silently leaving
+        // a now-false test name in place.
         for system in ProgrammingSystemKind.allCases {
             let capability = ProgramCapabilityRegistry.capability(for: system)
             switch system {
@@ -19,6 +28,9 @@ final class ProgramCapabilityRegistryTests: XCTestCase {
             case .powerlifting:
                 XCTAssertTrue(capability.hasCuratedConfigurations)
                 XCTAssertEqual(capability.curatedConfigurationCount, 2)
+            case .running:
+                XCTAssertTrue(capability.hasCuratedConfigurations)
+                XCTAssertEqual(capability.curatedConfigurationCount, 1)
             case .steadyState, .interval, .functionalFitness:
                 XCTAssertFalse(capability.hasCuratedConfigurations)
                 XCTAssertEqual(capability.curatedConfigurationCount, 0)

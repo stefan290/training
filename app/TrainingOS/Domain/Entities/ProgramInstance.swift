@@ -101,6 +101,13 @@ final class ProgramInstance {
     @Relationship(deleteRule: .cascade, inverse: \SourceRMCalibration.programInstance)
     var sourceRMCalibrations: [SourceRMCalibration] = []
 
+    /// Running R2 addition: the running sibling of `sourceRMCalibrations` —
+    /// see `RunningThresholdCalibration`'s own doc comment. Cascade, same
+    /// reasoning: instance-specific setup state, not permanent
+    /// performance history.
+    @Relationship(deleteRule: .cascade, inverse: \RunningThresholdCalibration.programInstance)
+    var runningThresholdCalibrations: [RunningThresholdCalibration] = []
+
     init(
         id: UUID = UUID(),
         ownerUserID: UUID,
@@ -180,6 +187,13 @@ final class ProgramInstance {
     /// maintains the declared inverse.
     func addSourceRMCalibration(_ calibration: SourceRMCalibration) {
         sourceRMCalibrations.append(calibration)
+    }
+
+    /// Running R2 addition: the only way application code should attach a
+    /// `RunningThresholdCalibration`. Mutates exactly one side; SwiftData
+    /// maintains the declared inverse.
+    func addRunningThresholdCalibration(_ calibration: RunningThresholdCalibration) {
+        runningThresholdCalibrations.append(calibration)
     }
 
     /// This instance's calibration for `(exercise, rmType)`, if one has

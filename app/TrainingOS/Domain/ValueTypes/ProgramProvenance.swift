@@ -10,6 +10,14 @@ enum ProgrammingSystemKind: String, Codable, CaseIterable {
     case steadyState
     case interval
     case functionalFitness
+    /// Running R3: a named methodology-level system per
+    /// `ENDURANCE_PROGRAMMING_MODEL.md` §9's own validated conclusion
+    /// ("no competing `ProgressionRule` vocabulary, no competing
+    /// `WorkoutBlock` type, no competing prescription/result shape" — a
+    /// thin named composer over `.steadyState`/`.interval` content, worth
+    /// surfacing by name for the same reason Hypertrophy/Powerlifting are
+    /// named separately despite sharing one `ProgressionRule` vocabulary).
+    case running
 }
 
 /// Where a `ProgramDefinition`'s generated numbers trace back to — mirrors

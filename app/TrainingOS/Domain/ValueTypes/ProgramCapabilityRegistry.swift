@@ -12,6 +12,7 @@ enum GeneratorParameters {
     case steadyState(SteadyStateProgramConfiguration)
     case interval(IntervalProgramConfiguration)
     case functionalFitness(FunctionalFitnessProgramConfiguration)
+    case running(RunningProgramConfiguration)
 
     var system: ProgrammingSystemKind {
         switch self {
@@ -20,6 +21,7 @@ enum GeneratorParameters {
         case .steadyState: return .steadyState
         case .interval: return .interval
         case .functionalFitness: return .functionalFitness
+        case .running: return .running
         }
     }
 }
@@ -108,6 +110,7 @@ enum ProgramCapabilityRegistry {
         switch system {
         case .hypertrophy: curatedCount = 6
         case .powerlifting: curatedCount = 2
+        case .running: curatedCount = RunningBuiltInLibrary.all.count
         case .steadyState, .interval, .functionalFitness: curatedCount = 0
         }
         return ProgramSystemCapability(
@@ -140,8 +143,32 @@ enum ProgramCapabilityRegistry {
             return Array(Set(HypertrophyBuiltInLibrary.all.map(\.dayCount))).sorted()
         case .powerlifting:
             return Array(Set(PowerliftingBuiltInLibrary.all.map(\.configuration.dayCount))).sorted()
+        case .running:
+            return Array(Set(RunningBuiltInLibrary.all.map(\.configuration.daysPerWeek))).sorted()
         case .steadyState, .interval, .functionalFitness:
             return nil
+        }
+    }
+
+    /// Running R3 CAPABILITY GATE: whether TrainingOS can materialize the
+    /// exact `(distance, daysPerWeek)` combination requested — deliberately
+    /// its OWN function, not folded into `isFrequencySupported` (that
+    /// query is frequency-only and would silently ignore `distance`,
+    /// which is exactly the "silently approximate an unsupported
+    /// configuration" failure mode this gate exists to prevent). V1
+    /// supports exactly one combination — 5K + 2 days/week — read
+    /// directly from `RunningBuiltInLibrary.all`, never a second
+    /// hand-maintained allowlist, mirroring `isHypertrophySourceVerified`'s
+    /// own fail-closed, explicit-match discipline: a newly-added
+    /// `RunningBuiltInLibrary` entry becomes supported automatically (this
+    /// reads the library, not a separate list), but nothing is ever
+    /// approximated to the nearest curated combination. Callers (the
+    /// generator, any future recommendation surface) must treat a `false`
+    /// result as "refuse outright," never as "fall back to the nearest
+    /// supported entry."
+    static func isRunningConfigurationSupported(distance: RunningDistance, daysPerWeek: Int) -> Bool {
+        RunningBuiltInLibrary.all.contains {
+            $0.configuration.distance == distance && $0.configuration.daysPerWeek == daysPerWeek
         }
     }
 
@@ -202,6 +229,14 @@ enum ProgramCapabilityRegistry {
             return configuration.daysPerWeek > 0 && configuration.lengthWeeks > 0
         case .functionalFitness(let configuration):
             return configuration.daysPerWeek > 0 && configuration.lengthWeeks > 0
+        case .running(let configuration):
+            // Structural validity only (mirrors every other case) — the
+            // narrower "is this EXACT combination the one V1 supports"
+            // question is `isRunningConfigurationSupported`'s job, checked
+            // separately by `RunningProgramGenerator.generate` itself,
+            // exactly like `isHypertrophySourceVerified` stays a distinct
+            // query from `canInstantiate`.
+            return configuration.daysPerWeek > 0
         }
     }
 }
