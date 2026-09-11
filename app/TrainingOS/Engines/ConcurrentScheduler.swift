@@ -75,6 +75,8 @@ enum ConcurrentScheduler {
             }
         }
 
+        applyRunningFirstSameDayOrdering(&placements)
+
         let placedCountByLabel = Dictionary(grouping: placements, by: \.componentLabel).mapValues(\.count)
         let conflicts = unplaced.keys.sorted().map { label in
             buildConflict(label: label, items: unplaced[label] ?? [], placedCountByLabel: placedCountByLabel, constraints: constraints)
@@ -480,6 +482,22 @@ enum ConcurrentScheduler {
     private struct PlacementScore: Comparable {
         var isDouble: Int
         var interferenceViolated: Int
+        /// Concurrent V1 — RP Running pairing rule 1 ("hard Running should
+        /// be as recovered as possible"): 1 when `item` is a hard/quality
+        /// Running session and the immediately PRECEDING day already holds
+        /// a different component's session with high lower-body/recovery
+        /// stress. Deliberately its own field, not folded into
+        /// `interferenceViolated` — that rule is generic/symmetric (both
+        /// sessions must share the same high dimension); this one is
+        /// directional (preceding day only) and Running-specific
+        /// (triggers regardless of the Running session's own stress
+        /// profile, since a hard run's own `lowerBodyLoad` need not itself
+        /// read `.high` for the concern to be real). A pure SOFT
+        /// preference: ranked after the generic interference check and
+        /// before day-of-week preference, and never removes a day from
+        /// `hardValidOffsets` — an otherwise-valid exact mix is never made
+        /// infeasible by this field alone.
+        var runningRecoveryViolated: Int
         var notPreferredDay: Int
         var partnerStressOrdinal: Int
         var dayOffset: Int
@@ -487,9 +505,26 @@ enum ConcurrentScheduler {
         static func < (lhs: PlacementScore, rhs: PlacementScore) -> Bool {
             if lhs.isDouble != rhs.isDouble { return lhs.isDouble < rhs.isDouble }
             if lhs.interferenceViolated != rhs.interferenceViolated { return lhs.interferenceViolated < rhs.interferenceViolated }
+            if lhs.runningRecoveryViolated != rhs.runningRecoveryViolated { return lhs.runningRecoveryViolated < rhs.runningRecoveryViolated }
             if lhs.notPreferredDay != rhs.notPreferredDay { return lhs.notPreferredDay < rhs.notPreferredDay }
             if lhs.partnerStressOrdinal != rhs.partnerStressOrdinal { return lhs.partnerStressOrdinal < rhs.partnerStressOrdinal }
             return lhs.dayOffset < rhs.dayOffset
+        }
+    }
+
+    /// `RunningOrchestrationContract.qualityClassification` reused directly
+    /// — no parallel Running-intensity vocabulary. `nil`
+    /// `Session.role` (e.g. the race week) never counts as "hard."
+    private static func isHardRunningSession(_ item: SchedulableSession) -> Bool {
+        guard item.component.programmingSystem == .running, let role = item.session.role else { return false }
+        return RunningOrchestrationContract.qualityClassification(for: role) == .quality
+    }
+
+    private static func hasHighPrecedingStress(_ occupants: [SchedulableSession], excluding component: TrainingMixComponent) -> Bool {
+        occupants.contains { occupant in
+            guard ObjectIdentifier(occupant.component) != ObjectIdentifier(component) else { return false }
+            guard let profile = occupant.stressProfile else { return false }
+            return profile.lowerBodyLoad.ordinal >= LoadLevel.high.ordinal || profile.recoveryDemand.ordinal >= LoadLevel.high.ordinal
         }
     }
 
@@ -510,11 +545,15 @@ enum ConcurrentScheduler {
             return constraints.interferenceRules.contains { $0.triggers(mine, theirs) }
         }
 
+        let precedingOccupants = dayOccupants[offset - 1] ?? []
+        let runningRecoveryViolated = isHardRunningSession(item) && hasHighPrecedingStress(precedingOccupants, excluding: item.component)
+
         let partnerStressOrdinal = occupants.compactMap { $0.stressProfile.map(maxOrdinal) }.max() ?? 0
 
         return PlacementScore(
             isDouble: isDouble ? 1 : 0,
             interferenceViolated: interferenceViolated ? 1 : 0,
+            runningRecoveryViolated: runningRecoveryViolated ? 1 : 0,
             notPreferredDay: isPreferredDay ? 0 : 1,
             partnerStressOrdinal: partnerStressOrdinal,
             dayOffset: offset
@@ -526,6 +565,60 @@ enum ConcurrentScheduler {
             profile.overallIntensity, profile.systemicDemand, profile.lowerBodyLoad,
             profile.upperBodyLoad, profile.impactLoading, profile.metabolicDemand, profile.recoveryDemand,
         ].map(\.ordinal).max() ?? 0
+    }
+
+    // MARK: - Running pairing rule 2: same-day ordering
+
+    /// Concurrent V1 — RP Running pairing rule 2: "if Running and
+    /// strength-oriented training occur on the same day, Running
+    /// generally comes first." Pure WITHIN-DAY reordering
+    /// (`sortIndexInDay` only) — never changes which day anything lands
+    /// on, never touches cross-day scoring/feasibility. Runs once, after
+    /// every day's occupants are final. Always applies for Hypertrophy/
+    /// Powerlifting partners; for Functional Fitness, only applies when
+    /// THAT session's own real, composed `TrainingStressProfile` is
+    /// itself high on a strength/structural dimension (lower/upper-body
+    /// load or systemic demand) — never a blanket "all FF is strength"
+    /// assumption. Every other same-day pairing (e.g. Running + Running
+    /// on a double, or Running + a non-strength-classified FF session)
+    /// keeps its existing deterministic order untouched.
+    private static func applyRunningFirstSameDayOrdering(_ placements: inout [SessionPlacement]) {
+        let byDate = Dictionary(grouping: placements.indices) { placements[$0].date }
+        for (_, indices) in byDate where indices.count > 1 {
+            guard let runningIndex = indices.first(where: { isRunningPlacement(placements[$0]) }) else { continue }
+            let qualifyingPartners = indices.filter { $0 != runningIndex && shouldRunningPrecede(placements[$0]) }
+            guard !qualifyingPartners.isEmpty else { continue }
+
+            let ordered = indices.sorted { a, b in
+                if a == runningIndex { return true }
+                if b == runningIndex { return false }
+                return placements[a].sortIndexInDay < placements[b].sortIndexInDay
+            }
+            for (newSortIndex, idx) in ordered.enumerated() {
+                placements[idx].sortIndexInDay = newSortIndex
+            }
+        }
+    }
+
+    private static func isRunningPlacement(_ placement: SessionPlacement) -> Bool {
+        placement.session.programInstance?.trainingMixComponents.first?.programmingSystem == .running
+    }
+
+    private static func shouldRunningPrecede(_ placement: SessionPlacement) -> Bool {
+        guard let system = placement.session.programInstance?.trainingMixComponents.first?.programmingSystem else { return false }
+        switch system {
+        case .hypertrophy, .powerlifting:
+            return true
+        case .functionalFitness:
+            // Only when THIS session's own composed profile is itself
+            // strength/structural — reuses the exact same
+            // `SessionStressComposer` output the rest of the scheduler
+            // already trusts, never a new FF classification.
+            guard let profile = SessionStressComposer.compose(placement.session) else { return false }
+            return profile.lowerBodyLoad == .high || profile.upperBodyLoad == .high || profile.systemicDemand == .high
+        case .running, .steadyState, .interval:
+            return false
+        }
     }
 
     // MARK: - Conflicts and component-level issues

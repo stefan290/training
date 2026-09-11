@@ -686,7 +686,25 @@ enum LongTermPlanner {
         case .hypertrophy: return .hypertrophy
         case .strengthTraining: return .powerlifting
         case .functionalFitness: return .functionalFitness
-        case .running, .cycling: return .steadyState
+        // Concurrent V1 fix: `.running` now resolves to the real,
+        // source-backed `.running` system (5K/2-Day V1), not generic
+        // `.steadyState` — an athlete selecting "Running" in the real
+        // "Build My Own Mix" flow must reach the real closed capability,
+        // never a silent substitute (CLAUDE.md rule 14). `.cycling` is
+        // UNCHANGED — it still has no real closed source-backed system of
+        // its own, so it correctly keeps resolving to generic
+        // `.steadyState`. This is the one and only call-site change:
+        // `underlyingSystem` has exactly 3 call sites in the whole
+        // codebase (both inside `buildCustomMix`, one display-only read
+        // in `WeeklyCompositionEditorView.swift`) — none of them are part
+        // of `proposeTrainingMix`/`candidateMixTemplates`'s scored-
+        // recommendation path, which uses the separate
+        // `TrainingStyle.modalityPreferences` computed property instead
+        // (deliberately unchanged — it still expands Running to
+        // `[.steadyState, .interval]` for soft preference-matching, a
+        // different concern from exact construction here).
+        case .running: return .running
+        case .cycling: return .steadyState
         }
     }
 
@@ -702,16 +720,29 @@ enum LongTermPlanner {
         /// the nearest curated definition, always rejected outright.
         case unsupportedFrequency(style: TrainingStyle, frequency: Int)
         case exceedsCapacity(totalSelected: Int, capacity: Int)
-        /// Running and Cycling both resolve to the same underlying
-        /// `.steadyState` system (see `underlyingSystem(for:)`), and
-        /// `TrainingMixComponent` carries no per-component `ActivityType`
-        /// of its own — only `Goal.preferences` resolves which activity a
-        /// Steady State/Interval component actually means
-        /// (`preferredActivityType`). Selecting both in the same
-        /// composition is a real, honest architectural gap (not a policy
-        /// choice) — disclosed and rejected here rather than silently
-        /// resolving both components to whichever activity preference
-        /// happens to be looked up first.
+        /// Historically: Running and Cycling both resolved to the same
+        /// underlying `.steadyState` system, and `TrainingMixComponent`
+        /// carries no per-component `ActivityType` of its own — only
+        /// `Goal.preferences` resolves which activity a Steady State/
+        /// Interval component actually means (`preferredActivityType`).
+        /// Selecting both in the same composition was a real, honest
+        /// architectural gap — disclosed and rejected here rather than
+        /// silently resolving both to whichever activity happened to be
+        /// looked up first.
+        ///
+        /// **Concurrent V1 disclosure**: now that `.running` resolves to
+        /// its own real, distinct `ProgrammingSystemKind.running`
+        /// (5K/2-Day V1) rather than `.steadyState`, Running no longer
+        /// contributes to this specific ambiguity — Running + Cycling
+        /// together would no longer collide on one shared activity slot.
+        /// This rejection is LEFT IN PLACE anyway, deliberately: Cycling
+        /// still has no real closed source-backed system of its own
+        /// (still generic `.steadyState`), building one is out of this
+        /// checkpoint's scope, and narrowing/removing this check was not
+        /// requested — a conservative reject-both is harmless (the
+        /// athlete can still select either style alone) and never
+        /// silently substitutes anything. Revisit only if/when Cycling
+        /// gets its own real system.
         case conflictingEnduranceStyles
     }
 
@@ -1722,17 +1753,23 @@ enum LongTermPlanner {
         case .functionalFitness:
             rawCandidates = functionalFitnessParameterCandidates(component: component)
         case .running:
-            // Running R3: this checkpoint's own explicit scope exclusion
-            // — "no LongTermPlanner recommendation changes." Running
-            // never produces a recommendation candidate through this
-            // planner; `RunningProgramGenerator`/`RunningBuiltInLibrary`
-            // are invoked directly by whatever future flow starts a
-            // Running program, not through this recommendation path. An
-            // empty candidate list here preserves that boundary exactly
-            // (never silently begins recommending Running), while still
-            // letting this switch compile exhaustively now that `.running`
-            // is a real `ProgrammingSystemKind` case.
-            rawCandidates = []
+            // Concurrent V1: this IS "the future flow that starts a
+            // Running program" R3's own comment (preserved above in
+            // spirit, corrected here) anticipated — `StartPhaseUseCase`
+            // calls this exact function to turn ANY already-selected
+            // `TrainingMixComponent` into a real candidate, for every
+            // other system. Building the one real, exact-frequency
+            // `RunningBuiltInLibrary` candidate here does NOT touch
+            // recommendation RANKING policy: `proposeTrainingMix`/
+            // `candidateMixTemplates` (the scored-preset path this
+            // checkpoint's own DO-NOT-TOUCH list protects) never calls
+            // this branch — only an athlete's own explicit `.selected`
+            // mix (via `buildCustomMix`, already frequency-gated to
+            // exactly 2 for Running) reaches `proposeProgram` for a
+            // Running component. Never approximates: exactly one
+            // candidate exists (5K, 2 days/week) and only ever matches a
+            // component whose own frequency already equals it.
+            rawCandidates = runningParameterCandidates(component: component)
         }
 
         guard !rawCandidates.isEmpty else {
@@ -1878,6 +1915,18 @@ enum LongTermPlanner {
     /// nearest V1 frequency, never silently dropped. This is the
     /// smallest change that adds real V1 coherence for 1-3 without
     /// removing already-working, already-tested capability outside it.
+    /// Concurrent V1: surfaces the one real, curated `RunningBuiltInLibrary`
+    /// configuration whose `daysPerWeek` exactly matches the component's
+    /// own requested frequency — never the nearest one. `buildCustomMix`
+    /// already rejects any frequency but 2 before a `.running` component
+    /// can exist at all, so in practice this always matches; the exact
+    /// filter (rather than `.first`) is defensive, not load-bearing.
+    private static func runningParameterCandidates(component: TrainingMixComponent) -> [(name: String, parameters: GeneratorParameters)] {
+        RunningBuiltInLibrary.all
+            .filter { $0.configuration.daysPerWeek == component.frequency.target }
+            .map { (name: $0.name, parameters: .running($0.configuration)) }
+    }
+
     private static func functionalFitnessParameterCandidates(component: TrainingMixComponent) -> [(name: String, parameters: GeneratorParameters)] {
         let days = max(1, component.frequency.target)
 

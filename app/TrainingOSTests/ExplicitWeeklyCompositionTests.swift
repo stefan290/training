@@ -212,11 +212,18 @@ final class ExplicitWeeklyCompositionTests: XCTestCase {
     // MARK: Case D — 3H + 1FF + 1Running, no dated objective required
 
     func testCaseD_ThreeHypertrophyOneFunctionalFitnessOneRunning_NoEventRequired() throws {
-        let (_, goal) = try makeOnboardedAthlete(goalType: .muscleGain, trainingDays: 5)
+        // Concurrent V1 correction: `.running` now resolves to the real,
+        // source-backed 5K/2-Day V1 system (previously silently resolved
+        // to generic `.steadyState`, which accepted any frequency) — its
+        // real capability gate supports EXACTLY 2 sessions/week, never 1.
+        // `trainingDays` raised from 5 to 6 to keep 3H+1FF+2Run within
+        // capacity; this is a corrected pre-existing example, not a new
+        // capability.
+        let (_, goal) = try makeOnboardedAthlete(goalType: .muscleGain, trainingDays: 6)
         XCTAssertTrue(goal.datedObjectives.isEmpty, "Running must be selectable without any dated objective/event")
 
         let viewModel = loadedViewModel()
-        XCTAssertTrue(viewModel.buildCustomMix(selections: [(.hypertrophy, 3), (.functionalFitness, 1), (.running, 1)]))
+        XCTAssertTrue(viewModel.buildCustomMix(selections: [(.hypertrophy, 3), (.functionalFitness, 1), (.running, 2)]))
         let mix = try XCTUnwrap(viewModel.reviewedMix)
         XCTAssertEqual(mix.orderedComponents.count, 3)
 
