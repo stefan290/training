@@ -63,6 +63,19 @@ enum PowerliftingProgramGenerator {
     /// cross-family proof table.
     static let laterWeekMultipliers: [Double] = [1.05, 1.075, 1.1]
 
+    /// LTP-DURATION-1: every Powerlifting family (B/C/D/E alike) produces
+    /// exactly this many real source weeks (4 progressive + 1 deload) —
+    /// the SAME single source of truth `generate(configuration:...)` uses
+    /// below, now named and exposed so `StrategicPeriodizationPolicy` can
+    /// read the real executable mesocycle length instead of retyping the
+    /// literal `5` as a disconnected, potentially-drifting copy of this
+    /// fact. No family currently has a within-strategic-phase succession
+    /// mechanism (unlike Hypertrophy's `.basicHypertrophy ->
+    /// .metaboliteFocus -> .resensitization`, `HypertrophyProgramJourney
+    /// .orderedPhaseTypes`) — a `.strength`-typed strategic phase's
+    /// currently executable capacity is exactly this many weeks.
+    static let mesocycleLengthWeeks = 5
+
     @discardableResult
     static func generate(
         configuration: PowerliftingProgramConfiguration,
@@ -71,7 +84,7 @@ enum PowerliftingProgramGenerator {
     ) -> ProgramDefinition {
         let definition = ProgramDefinition(
             name: definitionName(for: configuration),
-            lengthWeeks: 5,
+            lengthWeeks: mesocycleLengthWeeks,
             intent: definitionIntent(for: configuration),
             programmingSystem: .powerlifting,
             generatorVersion: currentVersion,

@@ -19,6 +19,17 @@ enum PlannerReasonCode: String, Codable, CaseIterable {
     /// semantics, never a blocked plan. Never means the objective was
     /// dropped; it still gets a real phase, just a compressed one.
     case objectivePrepCompressed
+    /// Long-Term Planner Intelligence (Vertical Completion V2): this phase
+    /// uses a DIFFERENT `PhaseType` than the goal's own primary type
+    /// (e.g. a `.muscleGain`-typed phase inside a `GoalType.generalStrength`
+    /// plan) as a deliberate TrainingOS strategic-policy choice — the
+    /// phase's own adaptation emphasis (e.g. hypertrophy-oriented capacity
+    /// building) is judged to legitimately support the athlete's primary
+    /// goal later in the same long-term cycle. Never means the athlete's
+    /// Goal changed — `Goal.primaryType` is never touched by any phase
+    /// carrying this code (`StrategicPeriodizationPolicy`'s own doc
+    /// comment has the full reasoning).
+    case developmentPhaseSupportsPrimaryGoal
 
     // MARK: Mix/program recommendation
     case varietyPreferenceApplied

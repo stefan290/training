@@ -65,12 +65,24 @@ final class ProgramInstanceExerciseSlotResolutionTests: XCTestCase {
         )
     }
 
+    /// Long-Term Planner Intelligence (Vertical Completion V2): a
+    /// `.generalStrength` goal's plan no longer opens directly on a
+    /// `.strength`-typed phase — `StrategicPeriodizationPolicy` now
+    /// inserts a `.muscleGain`-typed "development" phase first (a real,
+    /// deliberate strategic-policy choice: a capacity-building block
+    /// legitimately supporting the strength goal before direct strength
+    /// work begins — see `LONG_TERM_PLANNER_INTELLIGENCE_COMPLETION.md`).
+    /// This helper's own contract (every test in this section relies on
+    /// it) is "the real, Powerlifting-resolving Direct Strength phase,"
+    /// so it now looks up the first `.strength`-typed phase specifically
+    /// rather than assuming position 0 — the fixture's real intent is
+    /// unchanged, only which index satisfies it.
     private func makeAcceptedPlan(asOf: Date) throws -> (goal: Goal, phase: TrainingPhase) {
         let goal = Goal(ownerUserID: ownerUserID, primaryType: .generalStrength, targetDate: Calendar.current.date(byAdding: .year, value: 1, to: asOf), createdAt: asOf)
         context.insert(goal)
         let proposal = LongTermPlanner.proposeStrategicPlan(goal: goal, asOf: asOf)
         let plan = try AcceptStrategicPlanUseCase.accept(proposal, context: context, decidedAt: asOf)
-        let phase = try XCTUnwrap(plan.orderedPhases.first)
+        let phase = try XCTUnwrap(plan.orderedPhases.first { $0.type == .strength })
         return (goal, phase)
     }
 
@@ -312,8 +324,11 @@ final class ProgramInstanceExerciseSlotResolutionTests: XCTestCase {
     //
     // `testRealGeneratedProgramInstanceResolvesEverySlotToAValidConcreteExercise`
     // above already proves the shared pipeline end-to-end for a `.generalStrength`
-    // goal — whose first phase type is `.strength`, whose ONLY candidate mix
-    // template is `LongTermPlanner`'s private `strengthFocusedMix()` (a single
+    // goal — `makeAcceptedPlan` resolves to its first `.strength`-typed phase
+    // (Long-Term Planner Intelligence V2: no longer necessarily position 0 —
+    // `StrategicPeriodizationPolicy` now inserts a `.muscleGain`-typed
+    // development phase first; see that helper's own doc comment), whose ONLY
+    // candidate mix template is `LongTermPlanner`'s private `strengthFocusedMix()` (a single
     // Powerlifting-only component; `LongTermPlanner.candidateMixTemplates`
     // `case .strength: return [(strengthFocusedMix(), ...)]`) — so every test
     // in this section using a `.generalStrength` goal is already exercising the

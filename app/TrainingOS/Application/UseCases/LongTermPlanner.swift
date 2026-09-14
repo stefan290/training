@@ -65,7 +65,7 @@ enum LongTermPlanner {
     /// one. Never reads the system clock — `asOf` is the caller's only
     /// notion of "now" (CLAUDE.md rule 4, extended to planning).
     static func proposeStrategicPlan(goal: Goal, asOf: Date) -> StrategicPlanProposal {
-        let (phases, feasibility, explanation) = proposePhases(PlanningParameters(goal: goal), asOf: asOf)
+        let (phases, feasibility, explanation) = proposePhases(PlanningParameters(goal: goal), asOf: asOf, goal: goal)
         return StrategicPlanProposal(goal: goal, phases: phases, feasibility: feasibility, explanation: explanation)
     }
 
@@ -99,7 +99,7 @@ enum LongTermPlanner {
     }
 
     private static func proposePhases(
-        _ params: PlanningParameters, asOf: Date
+        _ params: PlanningParameters, asOf: Date, goal: Goal
     ) -> (phases: [ProposedPhase], feasibility: StrategicPlanFeasibility, explanation: String) {
         let plannedObjectives = params.datedObjectives.filter { $0.status == .planned }
         if !params.datedObjectives.isEmpty {
@@ -107,17 +107,17 @@ enum LongTermPlanner {
             // if every objective in it has since been completed/cancelled
             // — the legacy `milestoneDate` pair is never resurrected once
             // this array is real.
-            guard !plannedObjectives.isEmpty else { return proposeForwardOnlyPhases(params, asOf: asOf) }
-            return proposeReconciledPhases(params, objectives: plannedObjectives, asOf: asOf)
+            guard !plannedObjectives.isEmpty else { return proposeForwardOnlyPhases(params, asOf: asOf, goal: goal) }
+            return proposeReconciledPhases(params, objectives: plannedObjectives, asOf: asOf, goal: goal)
         }
         guard let milestoneDate = params.milestoneDate else {
-            return proposeForwardOnlyPhases(params, asOf: asOf)
+            return proposeForwardOnlyPhases(params, asOf: asOf, goal: goal)
         }
-        return proposeMilestoneAnchoredPhases(params, asOf: asOf, milestoneDate: milestoneDate)
+        return proposeMilestoneAnchoredPhases(params, asOf: asOf, milestoneDate: milestoneDate, goal: goal)
     }
 
     private static func proposeForwardOnlyPhases(
-        _ params: PlanningParameters, asOf: Date
+        _ params: PlanningParameters, asOf: Date, goal: Goal
     ) -> (phases: [ProposedPhase], feasibility: StrategicPlanFeasibility, explanation: String) {
         let primaryType = params.primaryType
         guard let targetDate = params.targetDate else {
@@ -128,7 +128,7 @@ enum LongTermPlanner {
         }
 
         let (phases, feasible) = fillForwardPhases(
-            from: asOf, to: targetDate, primaryType: primaryType, baseReasonCodes: [.phaseSelectedForGoal]
+            from: asOf, to: targetDate, primaryType: primaryType, baseReasonCodes: [.phaseSelectedForGoal], goal: goal
         )
         guard feasible else {
             return ([], .infeasible, "The stated timeframe is too short to fit even one \(primaryType.rawValue) phase's minimum duration.")
@@ -137,7 +137,7 @@ enum LongTermPlanner {
     }
 
     private static func proposeMilestoneAnchoredPhases(
-        _ params: PlanningParameters, asOf: Date, milestoneDate: Date
+        _ params: PlanningParameters, asOf: Date, milestoneDate: Date, goal: Goal
     ) -> (phases: [ProposedPhase], feasibility: StrategicPlanFeasibility, explanation: String) {
         let primaryType = params.primaryType
         let milestoneType = milestonePhaseType(direction: params.bodyCompositionDirection, primaryType: primaryType)
@@ -168,7 +168,7 @@ enum LongTermPlanner {
         }
 
         let (fillPhases, fillFeasible) = fillForwardPhases(
-            from: asOf, to: fillEnd, primaryType: primaryType, baseReasonCodes: [.phaseSelectedForGoal]
+            from: asOf, to: fillEnd, primaryType: primaryType, baseReasonCodes: [.phaseSelectedForGoal], goal: goal
         )
         guard fillFeasible else {
             return ([], .infeasible, "Not enough lead time before the milestone to fit even one \(primaryType.rawValue) phase's minimum duration.")
@@ -198,7 +198,7 @@ enum LongTermPlanner {
         let effectiveTargetDate = params.targetDate ?? addingWeeks(12, to: milestoneDate)
         if effectiveTargetDate > milestoneDate {
             let (afterPhases, afterFeasible) = fillForwardPhases(
-                from: milestoneDate, to: effectiveTargetDate, primaryType: primaryType, baseReasonCodes: [.phaseSelectedForGoal]
+                from: milestoneDate, to: effectiveTargetDate, primaryType: primaryType, baseReasonCodes: [.phaseSelectedForGoal], goal: goal
             )
             // A too-short post-milestone remainder does not invalidate the
             // whole plan (the milestone itself is still fully honored) —
@@ -230,7 +230,7 @@ enum LongTermPlanner {
     /// since no single `ProposedPhase` can honor both without fabricating
     /// a blended type.
     private static func proposeReconciledPhases(
-        _ params: PlanningParameters, objectives rawObjectives: [DatedObjective], asOf: Date
+        _ params: PlanningParameters, objectives rawObjectives: [DatedObjective], asOf: Date, goal: Goal
     ) -> (phases: [ProposedPhase], feasibility: StrategicPlanFeasibility, explanation: String) {
         let primaryType = params.primaryType
         let objectives = rawObjectives.sorted { $0.date < $1.date }
@@ -283,7 +283,7 @@ enum LongTermPlanner {
             let fillEnd = transitionPhase?.startDate ?? actualStart
             if fillEnd > cursor {
                 let (fillPhases, fillFeasible) = fillForwardPhases(
-                    from: cursor, to: fillEnd, primaryType: primaryType, baseReasonCodes: [.phaseSelectedForGoal]
+                    from: cursor, to: fillEnd, primaryType: primaryType, baseReasonCodes: [.phaseSelectedForGoal], goal: goal
                 )
                 // A too-short forward gap simply produces zero primary-goal
                 // phases there — it never blocks the objective itself
@@ -312,7 +312,7 @@ enum LongTermPlanner {
         let effectiveTargetDate = params.targetDate ?? addingWeeks(12, to: cursor)
         if effectiveTargetDate > cursor {
             let (afterPhases, afterFeasible) = fillForwardPhases(
-                from: cursor, to: effectiveTargetDate, primaryType: primaryType, baseReasonCodes: [.phaseSelectedForGoal]
+                from: cursor, to: effectiveTargetDate, primaryType: primaryType, baseReasonCodes: [.phaseSelectedForGoal], goal: goal
             )
             if afterFeasible { allPhases.append(contentsOf: afterPhases) }
         }
@@ -440,7 +440,7 @@ enum LongTermPlanner {
         // and already-active phases are untouched and never appear in
         // this proposal at all (`PLAN_REVISION_MODEL.md` §4a).
         let anchor = current.orderedPhases.last { $0.status != .planned }?.endDate ?? asOf
-        let (phases, feasibility, explanation) = proposePhases(params, asOf: anchor)
+        let (phases, feasibility, explanation) = proposePhases(params, asOf: anchor, goal: goal)
         return StrategicPlanProposal(goal: goal, phases: phases, feasibility: feasibility, explanation: explanation)
     }
 
@@ -461,7 +461,7 @@ enum LongTermPlanner {
     /// transition sits immediately at `start`); `start > end` means there
     /// is no lead time left at all — infeasible.
     private static func fillForwardPhases(
-        from start: Date, to end: Date, primaryType: PhaseType, baseReasonCodes: [PlannerReasonCode]
+        from start: Date, to end: Date, primaryType: PhaseType, baseReasonCodes: [PlannerReasonCode], goal: Goal
     ) -> (phases: [ProposedPhase], feasible: Bool) {
         guard start <= end else { return ([], false) }
         guard start != end else { return ([], true) }
@@ -471,15 +471,20 @@ enum LongTermPlanner {
         guard case .range(_, let primaryMinimum, _) = primaryDuration else { return ([], false) }
         let primaryMinimumWeeks = primaryMinimum ?? primaryTypicalWeeks
 
-        let maintenanceDuration = PhaseDurationDefaults.range(for: .maintenance)
-        let maintenanceTypicalWeeks = maintenanceDuration.planningWeeks ?? 4
-
         let totalWeeks = wholeWeeksBetween(start, end)
         guard totalWeeks >= primaryMinimumWeeks else { return ([], false) }
 
         var phases: [ProposedPhase] = []
         var current = start
-        var consecutivePrimary = 0
+        // Long-Term Planner Intelligence (Vertical Completion V2): this
+        // index feeds `StrategicPeriodizationPolicy.nextPhaseIntent` —
+        // incremented once per phase produced, regardless of type,
+        // replacing the old `consecutivePrimary >= 2` mechanical counter.
+        // The policy itself (not this loop) decides which `PhaseType`/
+        // reason each position gets — this loop's only job is horizon
+        // filling: how many phases fit before `end`, and where each one's
+        // own start/end dates fall.
+        var cyclePosition = 0
         // Safety bound only — real inputs terminate far sooner; guards
         // against a pathological zero-length step.
         for _ in 0..<52 {
@@ -509,21 +514,52 @@ enum LongTermPlanner {
                 break
             }
 
-            let useMaintenance = consecutivePrimary >= 2
-            let phaseType: PhaseType = useMaintenance ? .maintenance : primaryType
-            let phaseDurationKind = useMaintenance ? maintenanceDuration : primaryDuration
-            let phaseTypicalWeeks = useMaintenance ? maintenanceTypicalWeeks : primaryTypicalWeeks
+            let intent = StrategicPeriodizationPolicy.nextPhaseIntent(primaryType: primaryType, cyclePosition: cyclePosition)
+            // Long-Term Planner Intelligence — Final Duration Fix: duration
+            // must come from the ACTUAL recommended TrainingMix for this
+            // phase, never from `PhaseType` alone (`PhaseType.strength`
+            // can resolve to either Family D/E, 5wk/no-succession, or a
+            // Hypertrophy-engine alternate with real succession — proven
+            // by the Final Pre-Commit Semantic Check). Only ever previews
+            // a mix for phase types `ExecutablePhaseDurationResolver`
+            // could actually return a stricter bound for (today: exactly
+            // `.strength`) — every other type always resolves to `nil`
+            // regardless of which mix is recommended, so previewing one
+            // would be both wasted real-scheduling computation AND unsafe:
+            // `candidateMixTemplates(.maintenance/.recovery/.transition)`
+            // routes through `planningContext(for:)`, which reads
+            // `phase.plan` — a relationship SwiftData cannot safely fault
+            // on a `TrainingPhase` that was never inserted into any
+            // `ModelContext` (confirmed empirically: previewing every
+            // phase type here hung the test runner indefinitely; scoping
+            // the preview to `.strength` only, whose own
+            // `candidateMixTemplates` case never touches `phase.plan` at
+            // all, resolved it). `previewPhase` itself is still pure and
+            // never persisted.
+            let phaseDurationKind: PhaseDurationKind
+            if intent.type == .strength {
+                let previewPhase = TrainingPhase(
+                    type: intent.type, startDate: current, priorityRule: priorityRule(for: intent.type), status: .planned
+                )
+                let recommendedMix = proposeTrainingMix(phase: previewPhase, goal: goal)
+                    .first { $0.roles.contains(.recommended) }?.mix
+                phaseDurationKind = recommendedMix.flatMap { ExecutablePhaseDurationResolver.executablePlanningDuration(for: $0) }
+                    ?? PhaseDurationDefaults.range(for: intent.type)
+            } else {
+                phaseDurationKind = PhaseDurationDefaults.range(for: intent.type)
+            }
+            let phaseTypicalWeeks = phaseDurationKind.planningWeeks ?? primaryTypicalWeeks
             let weeksToUse = min(phaseTypicalWeeks, remainingWeeks)
             guard weeksToUse > 0 else { break }
 
             let phaseEnd = addingWeeks(weeksToUse, to: current)
             phases.append(ProposedPhase(
-                type: phaseType, priorityRule: priorityRule(for: phaseType),
+                type: intent.type, priorityRule: priorityRule(for: intent.type),
                 startDate: current, endDate: phaseEnd,
-                durationKind: phaseDurationKind, reasonCodes: baseReasonCodes
+                durationKind: phaseDurationKind, reasonCodes: baseReasonCodes + intent.reasonCodes
             ))
             current = phaseEnd
-            consecutivePrimary = useMaintenance ? 0 : consecutivePrimary + 1
+            cyclePosition += 1
         }
 
         return (phases, true)
