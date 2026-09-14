@@ -227,10 +227,35 @@ enum ProgramCapabilityRegistry {
     /// **Still purely declarative** — not yet read by `LongTermPlanner`,
     /// exactly like Hypertrophy's own equivalent gate stayed inert for a
     /// full checkpoint after being built.
+    ///
+    /// Strength Source Content V1: `.d`/`.e` (`Strength_Program_1.xlsx`/
+    /// `Strength_Program_2.xlsx`) are now `true` too — both migrated to
+    /// their complete real row/day structure and proven via
+    /// `StrengthSourceFidelityTests.swift` this checkpoint. They are
+    /// real, distinct, athlete-facing Strength Training content (never
+    /// exposed as "Powerlifting" — see `PowerliftingProgramGenerator
+    /// .definitionName`), reachable only via `StrengthSourceContentLibrary`
+    /// (deliberately NOT `PowerliftingBuiltInLibrary.all` — see that
+    /// file's own doc comment for why).
     static func isPowerliftingSourceVerified(family: PowerliftingFamily) -> Bool {
         switch family {
-        case .b, .c: return true
+        case .b, .c, .d, .e: return true
         }
+    }
+
+    /// Strength Source Content V1 completion pass: the Strength-specific
+    /// content-selection capability gate — deliberately SEPARATE from
+    /// `supportedFrequencies(for: .powerlifting)` (which must stay `{4, 5}`,
+    /// derived only from `PowerliftingBuiltInLibrary.all`, unaffected by
+    /// this). General Strength source content (`StrengthSourceContentLibrary`,
+    /// Family D/E) is exactly 4 days/week — never inferred from the
+    /// broader Powerlifting engine's own capability, which would silently
+    /// let an unsupported frequency (e.g. 5, valid for Powerlifting Family
+    /// C but not for either Strength program) through. Fail-closed: reads
+    /// the library directly, never a second hand-maintained allowlist.
+    static func isStrengthSourceContentFrequencySupported(_ frequency: Int) -> Bool {
+        guard frequency > 0 else { return false }
+        return Set(StrengthSourceContentLibrary.all.map { $0.configuration.dayCount }).contains(frequency)
     }
 
     /// FF Multi-Week V1: whether a deliberately-authored `weeklyPlan`

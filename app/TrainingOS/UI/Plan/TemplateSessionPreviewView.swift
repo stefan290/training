@@ -71,6 +71,7 @@ struct TemplateSessionPreviewView: View {
                     switch repGoal.prescription {
                     case .fixedReps(let n): return "\(n) reps"
                     case .rir(let n): return "RIR \(n)"
+                    case .priorSlotActualResultRelative: return "½ of prior actual reps"
                     }
                 }()
                 Text(text)

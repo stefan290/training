@@ -265,7 +265,15 @@ enum StrengthMaterializer {
                         resolvedRepRangeLow = nil
                         resolvedRepRangeHigh = nil
                         resolvedTargetRir = n
-                    case nil:
+                    case .priorSlotActualResultRelative, nil:
+                        // `.priorSlotActualResultRelative` never actually
+                        // reaches here as a real case — `resolveRepGoal`
+                        // already reports it as `nil` with
+                        // `.repGoalRequiresPriorSlotActualResult` (honest,
+                        // unresolved at week-materialization time; see
+                        // that function's own doc comment). Handled here
+                        // only for switch exhaustiveness, identically to
+                        // the `nil` branch.
                         resolvedRepRangeLow = nil
                         resolvedRepRangeHigh = nil
                         resolvedTargetRir = nil

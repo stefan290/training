@@ -139,7 +139,7 @@ final class GoalTrainingStyleProductModelTests: XCTestCase {
         viewModel.load(modelContext: context)
 
         let allCandidateNames = Set(viewModel.candidates.map(\.mix.name))
-        XCTAssertEqual(allCandidateNames, ["Focused Powerlifting", "Strength Plus Variety"], "no fabricated mix — only real, pre-existing LongTermPlanner templates")
+        XCTAssertEqual(allCandidateNames, ["Focused Strength Training", "Strength Plus Variety"], "no fabricated mix — only real, pre-existing LongTermPlanner templates")
 
         let recommended = try XCTUnwrap(viewModel.reviewedMix, "a real recommendation must be produced")
         let recommendedSystems = Set(recommended.orderedComponents.compactMap(\.programmingSystem))
@@ -149,24 +149,87 @@ final class GoalTrainingStyleProductModelTests: XCTestCase {
         )
 
         XCTAssertTrue(
-            viewModel.candidates.contains { $0.mix.name == "Focused Powerlifting" },
+            viewModel.candidates.contains { $0.mix.name == "Focused Strength Training" },
             "the highest-goal-alignment candidate must still be shown, never hidden, when a preference promotes an alternative (CLAUDE.md rule 17)"
         )
     }
 
     /// Backward-compatibility regression: with NO stated preference, a
-    /// General Strength goal must still recommend the real Powerlifting
-    /// path exactly as before this checkpoint (matches
-    /// `ProgramInstanceExerciseSlotResolutionTests`'s own documented
-    /// assumption) — adding a second `.strength` candidate must never
-    /// change the no-preference outcome.
-    func testGeneralStrengthWithNoPreferenceStillRecommendsFocusedPowerliftingRegression() throws {
+    /// General Strength goal must still recommend the real
+    /// `.powerlifting`-engine path exactly as before this checkpoint
+    /// (matches `ProgramInstanceExerciseSlotResolutionTests`'s own
+    /// documented assumption) — adding a second `.strength` candidate must
+    /// never change the no-preference outcome. Product Model Alignment V1
+    /// renamed the athlete-facing mix/component from "Focused
+    /// Powerlifting"/"Powerlifting" to "Focused Strength Training"/
+    /// "Strength Training" (GET STRONGER is an outcome, Powerlifting is a
+    /// discipline the athlete never asked for) — the underlying engine
+    /// (`.powerlifting`) is unchanged, only the label.
+    func testGeneralStrengthWithNoPreferenceStillRecommendsFocusedStrengthTrainingRegression() throws {
         try makeOnboardedAthlete(goalType: .generalStrength, trainingDays: 4)
         let viewModel = StrategicPlanSelectionViewModel()
         viewModel.load(modelContext: context)
         let recommended = try XCTUnwrap(viewModel.reviewedMix)
-        XCTAssertEqual(recommended.name, "Focused Powerlifting")
+        XCTAssertEqual(recommended.name, "Focused Strength Training")
         XCTAssertEqual(recommended.orderedComponents.first?.programmingSystem, .powerlifting)
+    }
+
+    /// Strength Source Content V1 completion pass — Blocker 2, full chain,
+    /// not stopping at the label: `Goal.generalStrength` (no preference)
+    /// -> `.strength` phase -> real recommended `TrainingMix` -> its real
+    /// `TrainingMixComponent` -> `LongTermPlanner.proposeProgram` (the same
+    /// function `StartPhaseUseCase` calls in production) -> resolved
+    /// candidates. Proves the athlete-facing "Strength Training"
+    /// recommendation actually MATERIALIZES as `StrengthSourceContentLibrary`
+    /// content (Family D/E), never silently falling back to
+    /// `PowerliftingBuiltInLibrary` (Family B/C) merely because the shared
+    /// engine identity is `.powerlifting` — the exact defect this
+    /// completion pass fixes.
+    func testGeneralStrengthRecommendationResolvesToStrengthSourceContentNotPowerlifting() throws {
+        try makeOnboardedAthlete(goalType: .generalStrength, trainingDays: 4)
+        let viewModel = StrategicPlanSelectionViewModel()
+        viewModel.load(modelContext: context)
+        let recommended = try XCTUnwrap(viewModel.reviewedMix)
+        let component = try XCTUnwrap(recommended.orderedComponents.first)
+        XCTAssertEqual(component.strengthContentSelector, .sourceBackedGeneralStrength, "the real recommended component must carry the content selector, not just the display label")
+
+        let availability = UserAvailability(trainingDaysPerWeek: 4)
+        let profile = try XCTUnwrap(try context.fetch(FetchDescriptor<PerformanceProfile>()).first)
+        let (candidates, gaps) = LongTermPlanner.proposeProgram(component: component, profile: profile, availability: availability, context: context)
+        XCTAssertTrue(gaps.isEmpty, "4/week is Strength content's own supported frequency — no capability gap expected")
+        XCTAssertFalse(candidates.isEmpty, "must produce at least one real candidate")
+        for candidate in candidates {
+            XCTAssertFalse(candidate.programDefinition.name.contains("Powerlifting"), "must never resolve to RP Powerlifting Family B/C content — got \(candidate.programDefinition.name)")
+            XCTAssertTrue(candidate.programDefinition.name.contains("Strength Training"), "must resolve to real Strength source content — got \(candidate.programDefinition.name)")
+        }
+        let resolvedFamilies = Set(candidates.compactMap { $0.programDefinition.powerliftingConfiguration?.family })
+        XCTAssertEqual(resolvedFamilies, [.d, .e], "must resolve to exactly Family D/E, never Family B/C")
+    }
+
+    /// Negative control for the test above: an existing, unrelated
+    /// `.powerlifting` component (no `strengthContentSelector`, exactly
+    /// what every pre-existing caller already produces) must keep
+    /// resolving through `PowerliftingBuiltInLibrary` exactly as before —
+    /// the new content-selection branch must never affect it.
+    func testPowerliftingComponentWithoutSelectorStillResolvesToPowerliftingBuiltInLibrary() throws {
+        try makeOnboardedAthlete(goalType: .generalStrength, trainingDays: 4)
+        let profile = try XCTUnwrap(try context.fetch(FetchDescriptor<PerformanceProfile>()).first)
+        let component = TrainingMixComponent(
+            label: "Powerlifting", programmingSystem: .powerlifting, priority: .primary,
+            adaptationObjectives: [.maxStrength], frequency: SessionFrequency(target: 4)
+        )
+        let availability = UserAvailability(trainingDaysPerWeek: 4)
+        let (candidates, _) = LongTermPlanner.proposeProgram(component: component, profile: profile, availability: availability, context: context)
+        XCTAssertFalse(candidates.isEmpty)
+        // `closestByDayCount` has always returned best + one runner-up
+        // (`PowerliftingBuiltInLibrary` has exactly 2 entries — Family B
+        // at 4 days, Family C at 5 — so a 4-day request already, and
+        // always, surfaces both as candidates; unrelated to this
+        // checkpoint). The only thing this checkpoint must prove is that
+        // NEITHER Family D nor E ever appears here.
+        let resolvedFamilies = Set(candidates.compactMap { $0.programDefinition.powerliftingConfiguration?.family })
+        XCTAssertEqual(resolvedFamilies, [.b, .c], "nil selector must resolve exactly as before this checkpoint")
+        XCTAssertTrue(resolvedFamilies.isDisjoint(with: [.d, .e]), "must never resolve to Family D/E without the content selector")
     }
 
     // MARK: 6 — Running preference for a Build Muscle goal (no event)

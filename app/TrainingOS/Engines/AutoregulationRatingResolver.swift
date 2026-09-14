@@ -82,7 +82,11 @@ enum AutoregulationRatingResolver {
     /// rating recorded before the session is ever formally completed
     /// (`HypertrophyFeedbackTests` fixtures) still resolves correctly when
     /// it is the only candidate.
-    private static func mostRecentlyCompletedPrescription(
+    /// Internal (not `private`) so `ActualResultRelativeRepGoalResolver`
+    /// can reuse the exact same "most recent, completed-preferred"
+    /// selection logic for a different cross-slot lookup (actual reps
+    /// instead of autoregulation rating) — never duplicated.
+    static func mostRecentlyCompletedPrescription(
         for template: PrescriptionTemplate, in instance: ProgramInstance
     ) -> ExercisePrescription? {
         let candidates = instance.sessions

@@ -148,6 +148,20 @@ enum StrengthProgressionEngine {
     /// schedule lookup (`repGoalSchedule`), never computed.
     static func resolveRepGoal(rules: StrengthProgressionRules, weekIndex: Int) -> (repGoal: RepGoal?, reasonCode: StrengthReasonCode) {
         guard rules.repGoalSchedule.indices.contains(weekIndex) else { return (nil, .calibrationRequired) }
-        return (rules.repGoalSchedule[weekIndex], .repGoalSchedule)
+        let goal = rules.repGoalSchedule[weekIndex]
+        // Strength Source Content V1: this week's rep goal is genuinely
+        // defined relative to another slot's ACTUAL logged reps this same
+        // week (Family E's Friday-Legs2 backoff) — never resolvable here,
+        // since week materialization happens for the whole week at once,
+        // before any of that week's own sessions (including the
+        // referenced earlier-in-week slot) have been performed. Honestly
+        // unresolved at this call site, mirroring `resolveDeloadRepGoal`'s
+        // own "nil, never fabricated" discipline —
+        // `PriorSlotActualResultRepGoalBackfillUseCase` resolves the real
+        // value later, once the referenced slot's session completes.
+        if case .priorSlotActualResultRelative = goal.prescription {
+            return (nil, .repGoalRequiresPriorSlotActualResult)
+        }
+        return (goal, .repGoalSchedule)
     }
 }

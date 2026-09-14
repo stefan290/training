@@ -90,6 +90,14 @@ final class PrescriptionTemplate {
     /// migrated.
     var repGoalIsFixedReps: [Bool] = []
     var repGoalPrescriptionValue: [Int] = []
+    /// Strength Source Content V1 addition — purely additive, same
+    /// flattening discipline: `true` at index `i` OVERRIDES whatever
+    /// `repGoalIsFixedReps[i]`/`repGoalPrescriptionValue[i]` say for that
+    /// week, meaning `.priorSlotActualResultRelative`
+    /// (`RepPrescriptionKind`'s 3rd case) rather than either of the
+    /// original two. `false` for every pre-existing row (Family A/B/C/D),
+    /// byte-for-byte unchanged behavior.
+    var repGoalIsPriorSlotActualResultRelative: [Bool] = []
     /// Stage 10B.6 additions — parallel to `repGoalReps`/`repGoalToFailure`,
     /// same flattening discipline. `-1` is the "not set" sentinel (a real
     /// rep-range-high or RIR is never negative); every pre-existing row
@@ -151,6 +159,25 @@ final class PrescriptionTemplate {
     /// as `referencedAsPairedSlotBy` above.
     @Relationship(deleteRule: .nullify, inverse: \PrescriptionTemplate.autoregulationReferenceSlot)
     var referencedAsAutoregulationReferenceBy: [PrescriptionTemplate] = []
+
+    /// Strength Source Content V1: the slot whose ACTUAL logged reps this
+    /// row's rep goal is defined relative to (`RepPrescriptionKind
+    /// .priorSlotActualResultRelative`) — a third, independent cross-slot
+    /// reference, distinct from both `pairedSlot` (load/rating) and
+    /// `autoregulationReferenceSlot` (an alternate rating source). Family
+    /// E's Friday-Legs2 backoff is the one confirmed real-source case:
+    /// its RATING pairing is to Thursday-Legs1 (`pairedSlot`), but its
+    /// REP-GOAL relationship ("1/2 Tuesday's") is to Tuesday-Legs2 — a
+    /// third, different slot again, re-verified directly against
+    /// `Strength_Program_2.xlsx`'s own footnote. `nil` for every other
+    /// row in every family — purely additive, resolved only by
+    /// `ActualResultRelativeRepGoalResolver`/`PriorSlotActualResultRepGoalBackfillUseCase`.
+    var actualResultReferenceSlot: PrescriptionTemplate?
+
+    /// `actualResultReferenceSlot`'s required inverse — same reasoning as
+    /// `referencedAsPairedSlotBy` above.
+    @Relationship(deleteRule: .nullify, inverse: \PrescriptionTemplate.actualResultReferenceSlot)
+    var referencedAsActualResultReferenceBy: [PrescriptionTemplate] = []
 
     /// Stage 6D addition: `ExercisePrescription.sourcePrescriptionTemplate`'s
     /// required inverse — nothing reads this collection directly (the
@@ -266,10 +293,13 @@ final class PrescriptionTemplate {
     var repGoalSchedule: [RepGoal] {
         get {
             (0..<repGoalIsFixedReps.count).map { i in
-                let value = repGoalPrescriptionValue.indices.contains(i) ? repGoalPrescriptionValue[i] : 0
-                let prescription: RepPrescriptionKind = repGoalIsFixedReps[i] ? .fixedReps(value) : .rir(value)
                 let high = (repGoalRepRangeHigh.indices.contains(i) && repGoalRepRangeHigh[i] >= 0) ? repGoalRepRangeHigh[i] : nil
                 let rir = (repGoalTargetRir.indices.contains(i) && repGoalTargetRir[i] >= 0) ? repGoalTargetRir[i] : nil
+                if repGoalIsPriorSlotActualResultRelative.indices.contains(i), repGoalIsPriorSlotActualResultRelative[i] {
+                    return RepGoal(prescription: .priorSlotActualResultRelative, repRangeHigh: high, targetRir: rir)
+                }
+                let value = repGoalPrescriptionValue.indices.contains(i) ? repGoalPrescriptionValue[i] : 0
+                let prescription: RepPrescriptionKind = repGoalIsFixedReps[i] ? .fixedReps(value) : .rir(value)
                 return RepGoal(prescription: prescription, repRangeHigh: high, targetRir: rir)
             }
         }
@@ -281,7 +311,11 @@ final class PrescriptionTemplate {
                 switch $0.prescription {
                 case .fixedReps(let n): return n
                 case .rir(let n): return n
+                case .priorSlotActualResultRelative: return 0
                 }
+            }
+            repGoalIsPriorSlotActualResultRelative = newValue.map {
+                if case .priorSlotActualResultRelative = $0.prescription { return true } else { return false }
             }
             repGoalRepRangeHigh = newValue.map { $0.repRangeHigh ?? -1 }
             repGoalTargetRir = newValue.map { $0.targetRir ?? -1 }

@@ -777,6 +777,16 @@ enum LongTermPlanner {
             guard ProgramCapabilityRegistry.isFrequencySupported(selection.frequency, for: system) else {
                 return .failure(.unsupportedFrequency(style: selection.style, frequency: selection.frequency))
             }
+            // Strength Source Content V1 completion pass: General Strength
+            // source content's own capability is exactly 4/week — a
+            // strictly narrower gate than `.powerlifting`'s own `{4, 5}`
+            // (Family C's own 5-day content is real and valid, just not
+            // for this style). Checked separately so this style's real
+            // capability is never silently widened by the shared engine's
+            // broader one.
+            if selection.style == .strengthTraining, !ProgramCapabilityRegistry.isStrengthSourceContentFrequencySupported(selection.frequency) {
+                return .failure(.unsupportedFrequency(style: selection.style, frequency: selection.frequency))
+            }
         }
 
         let total = nonZero.reduce(0) { $0 + $1.frequency }
@@ -792,7 +802,11 @@ enum LongTermPlanner {
                 programmingSystem: system,
                 priority: index == 0 ? .primary : .supporting,
                 adaptationObjectives: defaultAdaptationObjectives(for: selection.style),
-                frequency: SessionFrequency(target: selection.frequency)
+                frequency: SessionFrequency(target: selection.frequency),
+                // Strength Source Content V1 completion pass: content
+                // selection only, mirrors `strengthFocusedMix()`'s own
+                // wiring — `nil` (every other style) is unaffected.
+                strengthContentSelector: selection.style == .strengthTraining ? .sourceBackedGeneralStrength : nil
             ))
         }
         return .success(mix)
@@ -814,7 +828,15 @@ enum LongTermPlanner {
     /// `candidateMixTemplates`'s own factory functions above.
     private static func defaultAdaptationObjectives(for style: TrainingStyle) -> [AdaptationObjective] {
         switch style {
-        case .hypertrophy, .strengthTraining: return [.muscleGain]
+        case .hypertrophy: return [.muscleGain]
+        // Product Model Alignment V1 fix: this previously shared
+        // `.hypertrophy`'s `[.muscleGain]` case, disagreeing with
+        // `strengthFocusedMix()`'s own `[.maxStrength]` for the exact same
+        // athlete-facing style (`TRAININGOS_PRODUCT_MODEL_ALIGNMENT.md`
+        // §21 Mismatch 2) — an athlete explicitly building "4x Strength
+        // Training" via Build My Own Mix must get the same adaptation
+        // semantics as the equivalent recommended mix.
+        case .strengthTraining: return [.maxStrength]
         case .functionalFitness: return [.workCapacity, .aerobicCapacity]
         case .running, .cycling: return [.aerobicCapacity]
         }
@@ -1558,12 +1580,28 @@ enum LongTermPlanner {
         return mix
     }
 
+    /// Product Model Alignment V1 fix: GET STRONGER is an athlete outcome,
+    /// Powerlifting is a training discipline — they are not synonymous
+    /// (`TRAININGOS_PRODUCT_MODEL_ALIGNMENT.md` §21 Mismatch 1). This is
+    /// the default *recommended* mix for `.strength`-type phases (i.e. a
+    /// `GoalType.generalStrength` athlete with no stated discipline
+    /// preference), so its name/label must never say "Powerlifting" —
+    /// only an athlete who explicitly prefers Powerlifting should ever see
+    /// that word. The underlying engine stays `.powerlifting` unchanged
+    /// (shared-engine reuse is fine; it must never dictate athlete-facing
+    /// taxonomy).
     private static func strengthFocusedMix() -> TrainingMix {
-        let mix = TrainingMix(kind: .recommended, name: "Focused Powerlifting")
+        let mix = TrainingMix(kind: .recommended, name: "Focused Strength Training")
         mix.addComponent(TrainingMixComponent(
-            label: "Powerlifting", programmingSystem: .powerlifting, priority: .primary,
+            label: "Strength Training", programmingSystem: .powerlifting, priority: .primary,
             adaptationObjectives: [.maxStrength],
-            frequency: SessionFrequency(target: 4)
+            frequency: SessionFrequency(target: 4),
+            // Strength Source Content V1 completion pass: CONTENT
+            // selection only — resolves this component against
+            // `StrengthSourceContentLibrary` (Strength Program 1/2)
+            // instead of `PowerliftingBuiltInLibrary` (Family B/C).
+            // `programmingSystem` stays `.powerlifting` unchanged.
+            strengthContentSelector: .sourceBackedGeneralStrength
         ))
         return mix
     }
@@ -1860,8 +1898,33 @@ enum LongTermPlanner {
             }
     }
 
+    /// Strength Source Content V1 completion pass: CONTENT selection, not
+    /// engine identity — `component.strengthContentSelector` (nil for
+    /// every pre-existing caller) decides which curated library this
+    /// resolves against. `nil` reproduces the exact prior behavior
+    /// byte-for-byte (`PowerliftingBuiltInLibrary.all` only — Family B/C,
+    /// unchanged); `.sourceBackedGeneralStrength` resolves against
+    /// `StrengthSourceContentLibrary.all` (Family D/E) instead —
+    /// `PowerliftingBuiltInLibrary.all` is never consulted for this case,
+    /// so existing Powerlifting recommendation behavior can never be
+    /// affected by the new content
+    /// (`TRAININGOS_PRODUCT_MODEL_ALIGNMENT.md`/`STRENGTH_SOURCE_CONTENT_V1.md`).
+    /// Reuses `closestByDayCount`'s exact existing tie-break (alphabetical
+    /// by name, best + one runner-up) — never a new selection heuristic:
+    /// with `StrengthSourceContentLibrary`'s 2 same-day-count entries,
+    /// this deterministically surfaces "Strength Program 1 (General
+    /// Strength)" as primary and "...Program 2..." as the visible
+    /// alternative, exactly like every other system's existing "more than
+    /// one legitimate option" handling.
     private static func powerliftingParameterCandidates(component: TrainingMixComponent) -> [(name: String, parameters: GeneratorParameters)] {
-        closestByDayCount(component: component, library: PowerliftingBuiltInLibrary.all.map { ($0.name, $0.configuration.dayCount) })
+        if component.strengthContentSelector == .sourceBackedGeneralStrength {
+            return closestByDayCount(component: component, library: StrengthSourceContentLibrary.all.map { ($0.name, $0.configuration.dayCount) })
+                .map { name, _ in
+                    let entry = StrengthSourceContentLibrary.all.first { $0.name == name }!
+                    return (name, GeneratorParameters.powerlifting(entry.configuration))
+                }
+        }
+        return closestByDayCount(component: component, library: PowerliftingBuiltInLibrary.all.map { ($0.name, $0.configuration.dayCount) })
             .map { name, _ in
                 let entry = PowerliftingBuiltInLibrary.all.first { $0.name == name }!
                 return (name, GeneratorParameters.powerlifting(entry.configuration))

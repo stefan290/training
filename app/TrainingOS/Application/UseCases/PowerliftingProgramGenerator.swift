@@ -70,9 +70,9 @@ enum PowerliftingProgramGenerator {
         context: ModelContext
     ) -> ProgramDefinition {
         let definition = ProgramDefinition(
-            name: "\(configuration.dayCount)-Day Powerlifting \(familyDisplayName(configuration.family))",
+            name: definitionName(for: configuration),
             lengthWeeks: 5,
-            intent: "RP Powerlifting \(familyDisplayName(configuration.family)), \(configuration.dayCount)-day",
+            intent: definitionIntent(for: configuration),
             programmingSystem: .powerlifting,
             generatorVersion: currentVersion,
             provenance: provenance,
@@ -92,6 +92,8 @@ enum PowerliftingProgramGenerator {
         switch configuration.family {
         case .b: generateFamilyB(definition: definition, context: context)
         case .c: generateFamilyC(definition: definition, context: context)
+        case .d: generateFamilyD(definition: definition, context: context)
+        case .e: generateFamilyE(definition: definition, context: context)
         }
 
         return definition
@@ -400,10 +402,327 @@ enum PowerliftingProgramGenerator {
         friLegs2.pairedSlot = tueLegs1         // H41 = C41+(L14) — NOT Monday-Legs1
     }
 
+    // MARK: - Family D: complete 16-row/4-day structure, re-verified
+    // directly against `Strength_Program_1.xlsx` this checkpoint
+    // (`STRENGTH_SOURCE_CONTENT_V1.md`). A real, distinct derivative of
+    // Family B's own engine shape (mixed 5RM/8RM basis) — NOT stock
+    // Family B content, never exposed as "Powerlifting" athlete-facing.
+    //
+    // Monday: Deadlift, Legs1, Push1, Hamstring (all ordinary factor).
+    // Tuesday: Legs2, Push2, UpperPull1, Shoulder1.
+    // Thursday: Deadlift, Legs1 (both frozen wk4), UpperPull2, Shoulder2.
+    // Friday: Push1 (frozen wk4), Legs2-Triples (0.7x, frozen wk4,
+    // relocated here from stock Family B's own Monday/Thursday slots),
+    // UpperPull1, Shoulder1.
+    //
+    // The relocated Triples row's own deload rep text is "Same reps as
+    // Week 1" (verified directly — Family-C-style phrasing on a
+    // Family-B-shaped file, a genuine, disclosed cross-family borrow),
+    // NOT the day-position 2/3-vs-1/2 split every other row uses.
+
+    private static func generateFamilyD(definition: ProgramDefinition, context: ModelContext) {
+        let ordinaryRepGoal: [RepGoal] = [.rir(2), .rir(2), .rir(2), .rir(1)]
+        // Same established Triples convention as stock Family B — the
+        // source cell reads the literal word "Triples" every week, never
+        // a numeric rep count; `.fixedReps(3)` reuses Family B's own
+        // confirmed reading of that exact same convention.
+        let triplesRepGoal: [RepGoal] = Array(repeating: .fixedReps(3), count: 4)
+        let fixedAccessorySets: [Int] = [2, 2, 3, 3]
+        let deloadWeightSplit = DeloadPositionOverride(boundaryDayIndex: 2, fullPositionFactor: 0.7, halfPositionFactor: 0.5)
+        let deloadRepSplit = DeloadPositionOverride(boundaryDayIndex: 2, fullPositionFactor: 2.0 / 3.0, halfPositionFactor: 0.5)
+
+        let categoryTargets: [String: [MuscleGroup]] = [
+            "Legs Move 1": [.quadriceps, .glutes], "Legs Move 2": [.quadriceps, .glutes],
+            "Pushing Move 1": [.chest, .triceps], "Pushing Move 2": [.chest, .triceps],
+            "Deadlift Move": [.back, .hamstrings], "Hamstring Move": [.hamstrings, .back],
+            "Upper Body Pulling Move 1": [.back, .biceps], "Upper Body Pulling Move 2": [.back, .biceps],
+            "Shoulder Move 1": [.shoulders, .lateralDelt], "Shoulder Move 2": [.shoulders, .lateralDelt],
+        ]
+
+        var blocksByDay: [String: WorkoutBlockTemplate] = [:]
+        func dayBlock(_ dayName: String) -> WorkoutBlockTemplate {
+            if let existing = blocksByDay[dayName] { return existing }
+            let session = TemplateSession(name: dayName, role: .strength)
+            context.insert(session)
+            definition.addTemplateSession(session)
+            let block = WorkoutBlockTemplate(type: .strength)
+            context.insert(block)
+            session.addBlockTemplate(block)
+            blocksByDay[dayName] = block
+            return block
+        }
+
+        // `deloadRepFractionOverride`, when non-nil, bypasses the uniform
+        // day-position split entirely for that one row — the relocated
+        // Triples row's own "Same reps as Week 1" exception.
+        @discardableResult
+        func addRow(
+            day: String, category: String, rmType: RMType, weekOneFactor: Double,
+            repGoal: [RepGoal], setCount: SetCountRule, deloadRepFractionOverride: Double? = nil
+        ) -> PrescriptionTemplate {
+            let block = dayBlock(day)
+            let rules: StrengthProgressionRules
+            if let deloadRepFractionOverride {
+                rules = StrengthProgressionRules(
+                    loadRule: .rmBased(RMBasedLoad(rmType: rmType, weekOneFactor: weekOneFactor, laterWeekMultipliers: laterWeekMultipliers)),
+                    setCountRule: setCount,
+                    repGoalSchedule: repGoal,
+                    deloadRepFraction: deloadRepFractionOverride,
+                    deloadWeightPositionOverride: deloadWeightSplit
+                )
+            } else {
+                rules = StrengthProgressionRules(
+                    loadRule: .rmBased(RMBasedLoad(rmType: rmType, weekOneFactor: weekOneFactor, laterWeekMultipliers: laterWeekMultipliers)),
+                    setCountRule: setCount,
+                    repGoalSchedule: repGoal,
+                    deloadRepPositionOverride: deloadRepSplit,
+                    deloadWeightPositionOverride: deloadWeightSplit
+                )
+            }
+            let template = PrescriptionTemplate(rules: rules)
+            context.insert(template)
+            let slot = ExerciseSlot(name: category, allowedTargets: categoryTargets[category] ?? [])
+            context.insert(slot)
+            template.attachExerciseSlot(slot)
+            block.addPrescriptionTemplate(template)
+            return template
+        }
+
+        // Pass 1: create every row (real Week-1 baseline sets, re-verified
+        // directly against `Strength_Program_1.xlsx` this checkpoint).
+        let monDeadlift = addRow(day: "Monday", category: "Deadlift Move", rmType: .rm5, weekOneFactor: 0.95, repGoal: ordinaryRepGoal,
+            setCount: .autoregulated(AutoregulatedSetCount(baselineSets: 2, applyRatingOnFinalWeek: true)))
+        let monLegs1 = addRow(day: "Monday", category: "Legs Move 1", rmType: .rm5, weekOneFactor: 0.95, repGoal: ordinaryRepGoal,
+            setCount: .autoregulated(AutoregulatedSetCount(baselineSets: 2, applyRatingOnFinalWeek: true)))
+        let monPush1 = addRow(day: "Monday", category: "Pushing Move 1", rmType: .rm5, weekOneFactor: 0.95, repGoal: ordinaryRepGoal,
+            setCount: .autoregulated(AutoregulatedSetCount(baselineSets: 2, applyRatingOnFinalWeek: true)))
+        addRow(day: "Monday", category: "Hamstring Move", rmType: .rm8, weekOneFactor: 0.95, repGoal: ordinaryRepGoal, setCount: .fixed(setsByWeek: fixedAccessorySets))
+
+        let tueLegs2 = addRow(day: "Tuesday", category: "Legs Move 2", rmType: .rm5, weekOneFactor: 0.95, repGoal: ordinaryRepGoal,
+            setCount: .autoregulated(AutoregulatedSetCount(baselineSets: 5, applyRatingOnFinalWeek: true)))
+        let tuePush2 = addRow(day: "Tuesday", category: "Pushing Move 2", rmType: .rm5, weekOneFactor: 0.95, repGoal: ordinaryRepGoal,
+            setCount: .autoregulated(AutoregulatedSetCount(baselineSets: 2, applyRatingOnFinalWeek: true)))
+        addRow(day: "Tuesday", category: "Upper Body Pulling Move 1", rmType: .rm8, weekOneFactor: 0.95, repGoal: ordinaryRepGoal, setCount: .fixed(setsByWeek: fixedAccessorySets))
+        addRow(day: "Tuesday", category: "Shoulder Move 1", rmType: .rm8, weekOneFactor: 0.95, repGoal: ordinaryRepGoal, setCount: .fixed(setsByWeek: fixedAccessorySets))
+
+        let thuDeadlift = addRow(day: "Thursday", category: "Deadlift Move", rmType: .rm5, weekOneFactor: 0.95, repGoal: ordinaryRepGoal,
+            setCount: .autoregulated(AutoregulatedSetCount(baselineSets: 3, applyRatingOnFinalWeek: false)))
+        let thuLegs1 = addRow(day: "Thursday", category: "Legs Move 1", rmType: .rm5, weekOneFactor: 0.95, repGoal: ordinaryRepGoal,
+            setCount: .autoregulated(AutoregulatedSetCount(baselineSets: 3, applyRatingOnFinalWeek: false)))
+        addRow(day: "Thursday", category: "Upper Body Pulling Move 2", rmType: .rm8, weekOneFactor: 0.95, repGoal: ordinaryRepGoal, setCount: .fixed(setsByWeek: fixedAccessorySets))
+        addRow(day: "Thursday", category: "Shoulder Move 2", rmType: .rm8, weekOneFactor: 0.95, repGoal: ordinaryRepGoal, setCount: .fixed(setsByWeek: fixedAccessorySets))
+
+        let friPush1 = addRow(day: "Friday", category: "Pushing Move 1", rmType: .rm5, weekOneFactor: 0.95, repGoal: ordinaryRepGoal,
+            setCount: .autoregulated(AutoregulatedSetCount(baselineSets: 4, applyRatingOnFinalWeek: false)))
+        let friLegs2Triples = addRow(day: "Friday", category: "Legs Move 2", rmType: .rm5, weekOneFactor: 0.7, repGoal: triplesRepGoal,
+            setCount: .autoregulated(AutoregulatedSetCount(baselineSets: 2, applyRatingOnFinalWeek: false)), deloadRepFractionOverride: 1.0)
+        addRow(day: "Friday", category: "Upper Body Pulling Move 1", rmType: .rm8, weekOneFactor: 0.95, repGoal: ordinaryRepGoal, setCount: .fixed(setsByWeek: fixedAccessorySets))
+        addRow(day: "Friday", category: "Shoulder Move 1", rmType: .rm8, weekOneFactor: 0.95, repGoal: ordinaryRepGoal, setCount: .fixed(setsByWeek: fixedAccessorySets))
+
+        // Pass 2: wire the cross-day autoregulation graph — re-verified
+        // directly against the live workbook's own formulas this
+        // checkpoint. Every load rule above is `.rmBased`, so
+        // `pairedSlot` here is rating-only, exactly like stock Family B.
+        monDeadlift.pairedSlot = thuDeadlift   // H5  = C5+(G25)
+        thuDeadlift.pairedSlot = monDeadlift   // H25 = C25+(L5)
+        monLegs1.pairedSlot = thuLegs1         // H6  = C6+(G26)
+        thuLegs1.pairedSlot = tueLegs2         // H26 = C26+(L15)
+        tueLegs2.pairedSlot = thuLegs1         // H15 = C15+(G26)
+        monPush1.pairedSlot = friPush1         // H7  = C7+(G35)
+        tuePush2.pairedSlot = friPush1         // H16 = C16+(G35)
+        friPush1.pairedSlot = tuePush2         // H35 = C35+(L16)
+        friLegs2Triples.pairedSlot = thuLegs1  // H36 = C36+(L26)
+    }
+
+    // MARK: - Family E: complete 16-row/4-day structure, re-verified
+    // directly against `Strength_Program_2.xlsx` this checkpoint
+    // (`STRENGTH_SOURCE_CONTENT_V1.md`). A real, distinct derivative of
+    // Family C's own engine shape (uniform 10RM basis) — Wednesday is
+    // genuinely removed (4 days, not stock Family C's 5), working-week
+    // rounding is 2.5 (not stock Family C's 5 — a materialization-time
+    // equipment-profile concern, not a generator-level one; see
+    // `StrengthProgressionRules`'s own doc comment).
+    //
+    // Monday: Deadlift, Legs1, Push1, Hamstring.
+    // Tuesday: Legs2, Push2, UpperPull1, Shoulder1.
+    // Thursday: Deadlift, Legs1 (both frozen wk4), UpperPull2, Shoulder2.
+    // Friday: Push1 (frozen wk4), Legs2-backoff (0.85x, frozen wk4),
+    // UpperPull1, Shoulder1.
+    //
+    // The Friday backoff is a plain `.rmBased` row sharing "Legs Move 2"'s
+    // category name with Tuesday's row — re-verified directly this
+    // checkpoint that the source formula (`D36 = MROUND(G4*0.85,2.5)`)
+    // reads the RM cell directly, NOT Tuesday's resolved result — so this
+    // is NOT `.linkedToPairedSlot` (unlike stock Family C's own Friday
+    // backoff, which genuinely is). Its rep-goal relationship ("1/2
+    // Tuesday's" — stop at half of Tuesday's actual logged reps) is real
+    // and now modeled exactly, via `RepPrescriptionKind
+    // .priorSlotActualResultRelative` + `actualResultReferenceSlot` →
+    // Tuesday-Legs2 (`ActualResultRelativeRepGoalResolver`,
+    // `PriorSlotActualResultRepGoalBackfillUseCase`) — corrected from this
+    // checkpoint's own earlier, premature placeholder-RIR substitution.
+    // Stock Family C's own analogous "1/2 Monday's" relationship is left
+    // UNCHANGED/unmigrated in this same pass — deliberately, not silently:
+    // see `STRENGTH_SOURCE_CONTENT_V1.md`'s "Family C deferred source
+    // debt" section for why touching it now was judged out of scope.
+
+    private static func generateFamilyE(definition: ProgramDefinition, context: ModelContext) {
+        // Matches stock Family C's own effort ramp exactly (3/3/2/1) —
+        // re-verified directly this checkpoint, not a new ramp.
+        let ordinaryRepGoal: [RepGoal] = [.rir(3), .rir(3), .rir(2), .rir(1)]
+        let fixedAccessorySets: [Int] = [2, 2, 3, 3]
+        // Monday/Tuesday deload weight UNCHANGED (factor 1.0 — the
+        // source's literal `=D_`, no reduction at all), Thursday/Friday
+        // halved — genuinely different from Family D's 0.7/0.5 split,
+        // matches stock Family C's own Mon/Tue-unchanged convention.
+        let deloadWeightSplit = DeloadPositionOverride(boundaryDayIndex: 2, fullPositionFactor: 1.0, halfPositionFactor: 0.5)
+
+        let categoryTargets: [String: [MuscleGroup]] = [
+            "Legs Move 1": [.quadriceps, .glutes], "Legs Move 2": [.quadriceps, .glutes],
+            "Pushing Move 1": [.chest, .triceps], "Pushing Move 2": [.chest, .triceps],
+            "Deadlift Move": [.back, .hamstrings], "Hamstring Move": [.hamstrings, .back],
+            "Upper Body Pulling Move 1": [.back, .biceps], "Upper Body Pulling Move 2": [.back, .biceps],
+            "Shoulder Move 1": [.shoulders, .lateralDelt], "Shoulder Move 2": [.shoulders, .lateralDelt],
+        ]
+
+        var blocksByDay: [String: WorkoutBlockTemplate] = [:]
+        func dayBlock(_ dayName: String) -> WorkoutBlockTemplate {
+            if let existing = blocksByDay[dayName] { return existing }
+            let session = TemplateSession(name: dayName, role: .strength)
+            context.insert(session)
+            definition.addTemplateSession(session)
+            let block = WorkoutBlockTemplate(type: .strength)
+            context.insert(block)
+            session.addBlockTemplate(block)
+            blocksByDay[dayName] = block
+            return block
+        }
+
+        @discardableResult
+        func addRow(day: String, category: String, weekOneFactor: Double, setCount: SetCountRule, deloadRepFraction: Double = 0.5, repGoalSchedule: [RepGoal]? = nil) -> PrescriptionTemplate {
+            let block = dayBlock(day)
+            let template = PrescriptionTemplate(rules: StrengthProgressionRules(
+                loadRule: .rmBased(RMBasedLoad(rmType: .rm10, weekOneFactor: weekOneFactor, laterWeekMultipliers: laterWeekMultipliers)),
+                setCountRule: setCount,
+                repGoalSchedule: repGoalSchedule ?? ordinaryRepGoal,
+                deloadRepFraction: deloadRepFraction,
+                deloadWeightPositionOverride: deloadWeightSplit
+            ))
+            context.insert(template)
+            let slot = ExerciseSlot(name: category, allowedTargets: categoryTargets[category] ?? [])
+            context.insert(slot)
+            template.attachExerciseSlot(slot)
+            block.addPrescriptionTemplate(template)
+            return template
+        }
+
+        // Pass 1: create every row (real Week-1 baseline sets, re-verified
+        // directly against `Strength_Program_2.xlsx` this checkpoint).
+        let monDeadlift = addRow(day: "Monday", category: "Deadlift Move", weekOneFactor: 0.95,
+            setCount: .autoregulated(AutoregulatedSetCount(baselineSets: 2, applyRatingOnFinalWeek: true)))
+        let monLegs1 = addRow(day: "Monday", category: "Legs Move 1", weekOneFactor: 0.95,
+            setCount: .autoregulated(AutoregulatedSetCount(baselineSets: 2, applyRatingOnFinalWeek: true)))
+        let monPush1 = addRow(day: "Monday", category: "Pushing Move 1", weekOneFactor: 0.95,
+            setCount: .autoregulated(AutoregulatedSetCount(baselineSets: 2, applyRatingOnFinalWeek: true)))
+        addRow(day: "Monday", category: "Hamstring Move", weekOneFactor: 0.95, setCount: .fixed(setsByWeek: fixedAccessorySets))
+
+        let tueLegs2 = addRow(day: "Tuesday", category: "Legs Move 2", weekOneFactor: 0.95,
+            setCount: .autoregulated(AutoregulatedSetCount(baselineSets: 6, applyRatingOnFinalWeek: true)))
+        let tuePush2 = addRow(day: "Tuesday", category: "Pushing Move 2", weekOneFactor: 0.95,
+            setCount: .autoregulated(AutoregulatedSetCount(baselineSets: 3, applyRatingOnFinalWeek: true)))
+        addRow(day: "Tuesday", category: "Upper Body Pulling Move 1", weekOneFactor: 0.95, setCount: .fixed(setsByWeek: fixedAccessorySets))
+        addRow(day: "Tuesday", category: "Shoulder Move 1", weekOneFactor: 0.95, setCount: .fixed(setsByWeek: fixedAccessorySets))
+
+        let thuDeadlift = addRow(day: "Thursday", category: "Deadlift Move", weekOneFactor: 0.95,
+            setCount: .autoregulated(AutoregulatedSetCount(baselineSets: 3, applyRatingOnFinalWeek: false)))
+        let thuLegs1 = addRow(day: "Thursday", category: "Legs Move 1", weekOneFactor: 0.95,
+            setCount: .autoregulated(AutoregulatedSetCount(baselineSets: 4, applyRatingOnFinalWeek: false)))
+        addRow(day: "Thursday", category: "Upper Body Pulling Move 2", weekOneFactor: 0.95, setCount: .fixed(setsByWeek: fixedAccessorySets))
+        addRow(day: "Thursday", category: "Shoulder Move 2", weekOneFactor: 0.95, setCount: .fixed(setsByWeek: fixedAccessorySets))
+
+        let friPush1 = addRow(day: "Friday", category: "Pushing Move 1", weekOneFactor: 0.95,
+            setCount: .autoregulated(AutoregulatedSetCount(baselineSets: 5, applyRatingOnFinalWeek: false)))
+        // Friday backoff: plain `.rmBased` at 0.85x, sharing "Legs Move 2"
+        // with Tuesday's row (real exercise/RM identity shared via
+        // `SubstituteExerciseUseCase`'s name-matching, not a separate
+        // slot) — deliberately distinct from stock Family C's
+        // `.linkedToPairedSlot` backoff mechanism; see this function's own
+        // doc comment above. Deload rep fraction 1.0 ("Same reps as Week
+        // 1"), bypassing the uniform 0.5 every other row here uses.
+        //
+        // Strength Source Content V1 completion pass: the rep-goal cell
+        // literally reads "1/2 Tuesday's" for all 4 working weeks — a
+        // genuine source rule (floor(Tuesday-Legs2's actual reps at the
+        // same set index / 2)), not a placeholder. `.priorSlotActualResultRelative`
+        // preserves this exactly; `actualResultReferenceSlot` (wired
+        // below, once `tueLegs2` exists) points it at Tuesday-Legs2 — a
+        // THIRD reference, distinct from this row's own `pairedSlot`
+        // (rating, → Thursday-Legs1).
+        let friLegs2Backoff = addRow(day: "Friday", category: "Legs Move 2", weekOneFactor: 0.85,
+            setCount: .autoregulated(AutoregulatedSetCount(baselineSets: 2, applyRatingOnFinalWeek: false)), deloadRepFraction: 1.0,
+            repGoalSchedule: Array(repeating: .priorSlotActualResultRelative, count: 4))
+        addRow(day: "Friday", category: "Upper Body Pulling Move 1", weekOneFactor: 0.95, setCount: .fixed(setsByWeek: fixedAccessorySets))
+        addRow(day: "Friday", category: "Shoulder Move 1", weekOneFactor: 0.95, setCount: .fixed(setsByWeek: fixedAccessorySets))
+
+        // Pass 2: wire the cross-day autoregulation graph — re-verified
+        // directly against the live workbook's own formulas this
+        // checkpoint. Every load rule above is `.rmBased`, so
+        // `pairedSlot` here is rating-only (the backoff's REP-COUNT
+        // relationship to Tuesday, "1/2 Tuesday's", is a separate
+        // relationship, modeled via `actualResultReferenceSlot` below —
+        // see this function's own doc comment; its rating pairing below
+        // is to Thursday-Legs1, a DIFFERENT row).
+        monDeadlift.pairedSlot = thuDeadlift    // H5  = C5+(G25)
+        thuDeadlift.pairedSlot = monDeadlift    // H25 = C25+(L5)
+        monLegs1.pairedSlot = thuLegs1          // H6  = C6+(G26)
+        thuLegs1.pairedSlot = tueLegs2          // H26 = C26+(L15)
+        tueLegs2.pairedSlot = thuLegs1          // H15 = C15+(G26)
+        monPush1.pairedSlot = friPush1          // H7  = C7+(G35)
+        tuePush2.pairedSlot = friPush1          // H16 = C16+(G35)
+        friPush1.pairedSlot = tuePush2          // H35 = C35+(L16)
+        friLegs2Backoff.pairedSlot = thuLegs1   // H36 = C36+(L26) — RATING only
+        // Strength Source Content V1 completion pass: the REP-GOAL
+        // relationship ("1/2 Tuesday's") is to Tuesday-Legs2 — a
+        // different slot than the rating pairing above. Re-verified
+        // directly: `Strength_Program_2.xlsx`'s own footnote (B48/B49).
+        friLegs2Backoff.actualResultReferenceSlot = tueLegs2
+    }
+
     private static func familyDisplayName(_ family: PowerliftingFamily) -> String {
         switch family {
         case .b: return "Strength"
         case .c: return "Hypertrophy-block"
+        case .d, .e: return ""
+        }
+    }
+
+    /// Content identity (`STRENGTH_SOURCE_CONTENT_V1.md` §7,
+    /// `TRAININGOS_PRODUCT_MODEL_ALIGNMENT.md` §9/§18): Family B/C's
+    /// output is unchanged (still "Powerlifting"-branded — that IS what
+    /// they are). Family D/E are real, distinct, source-backed general
+    /// Strength Training content that merely reuses the Powerlifting
+    /// engine internally — their `ProgramDefinition.name` must never say
+    /// "Powerlifting" or "RP," exactly like `strengthFocusedMix()`'s own
+    /// athlete-facing label was corrected this same checkpoint.
+    private static func definitionName(for configuration: PowerliftingProgramConfiguration) -> String {
+        switch configuration.family {
+        case .b, .c:
+            return "\(configuration.dayCount)-Day Powerlifting \(familyDisplayName(configuration.family))"
+        case .d:
+            return "\(configuration.dayCount)-Day Strength Training (Program 1)"
+        case .e:
+            return "\(configuration.dayCount)-Day Strength Training (Program 2)"
+        }
+    }
+
+    private static func definitionIntent(for configuration: PowerliftingProgramConfiguration) -> String {
+        switch configuration.family {
+        case .b, .c:
+            return "RP Powerlifting \(familyDisplayName(configuration.family)), \(configuration.dayCount)-day"
+        case .d:
+            return "Source-backed general Strength Training, \(configuration.dayCount)-day (Strength Program 1)"
+        case .e:
+            return "Source-backed general Strength Training, \(configuration.dayCount)-day (Strength Program 2)"
         }
     }
 }

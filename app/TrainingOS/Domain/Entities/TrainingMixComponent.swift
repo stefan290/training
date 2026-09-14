@@ -65,6 +65,20 @@ final class TrainingMixComponent {
     /// Stable position among a mix's components, assigned by
     /// `TrainingMix.addComponent(_:)`.
     var sortIndex: Int
+    /// Strength Source Content V1: CONTENT SELECTION, never execution-
+    /// engine identity — `programmingSystem` stays `.powerlifting` for
+    /// every component below regardless of this field (shared-engine
+    /// reuse is fine; it must never dictate athlete-facing taxonomy,
+    /// `TRAININGOS_PRODUCT_MODEL_ALIGNMENT.md` I10). `nil` (every existing
+    /// component, every other system) means "resolve via
+    /// `PowerliftingBuiltInLibrary` exactly as before this field existed"
+    /// — zero behavior change. `.sourceBackedGeneralStrength` means
+    /// "resolve via `StrengthSourceContentLibrary` instead" — set only by
+    /// `strengthFocusedMix()` and `buildCustomMix`'s `.strengthTraining`
+    /// case. A proper typed field, deliberately never inferred from the
+    /// display `label` string (CLAUDE.md rule 16's general principle:
+    /// business logic never string-parses display text).
+    var strengthContentSelector: StrengthContentSelector?
 
     init(
         id: UUID = UUID(),
@@ -76,7 +90,8 @@ final class TrainingMixComponent {
         flexibility: ComponentFlexibility = .preferred,
         allowsDoubleSessionPairing: Bool = true,
         preferredDays: [Weekday] = [],
-        requiredSpacingDays: Int? = nil
+        requiredSpacingDays: Int? = nil,
+        strengthContentSelector: StrengthContentSelector? = nil
     ) {
         self.id = id
         self.label = label
@@ -89,5 +104,16 @@ final class TrainingMixComponent {
         self.preferredDays = preferredDays
         self.requiredSpacingDays = requiredSpacingDays
         self.sortIndex = 0
+        self.strengthContentSelector = strengthContentSelector
     }
+}
+
+/// Strength Source Content V1: which curated content library a
+/// `.powerlifting`-engine `TrainingMixComponent` resolves against — a
+/// content-selection discriminator, deliberately NOT a new
+/// `ProgrammingSystemKind` (the engine identity stays `.powerlifting`
+/// either way; see `TrainingMixComponent.strengthContentSelector`'s own
+/// doc comment).
+enum StrengthContentSelector: String, Codable, CaseIterable {
+    case sourceBackedGeneralStrength
 }

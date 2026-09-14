@@ -644,7 +644,7 @@ enum SeedScenarios {
                 resolvedRepRangeLow = nil
                 resolvedRepRangeHigh = nil
                 resolvedTargetRir = n
-            case nil:
+            case .priorSlotActualResultRelative, nil:
                 resolvedRepRangeLow = nil
                 resolvedRepRangeHigh = nil
                 resolvedTargetRir = nil

@@ -45,6 +45,23 @@ enum StrengthReasonCode: String, Codable, CaseIterable {
     /// halving the template's rep goal (the pre-Stage-10R.1D defect this
     /// code corrects).
     case deloadRepsRequireLoggedPerformanceData
+    /// Strength Source Content V1 (Family E's Friday-Legs2 backoff, "1/2
+    /// Tuesday's"): a NON-deload week's rep goal that is genuinely defined
+    /// relative to another slot's ACTUAL logged reps this same week
+    /// (`RepPrescriptionKind.priorSlotActualResultRelative`) — distinct
+    /// from `.deloadRepsRequireLoggedPerformanceData` (that one is a
+    /// deload-week ambiguity with no source-provided answer at all; this
+    /// one has an exact, unambiguous source formula — floor(referenced
+    /// slot's actual reps at the same set index / 2) — but genuinely
+    /// cannot be resolved at week-materialization time, since the
+    /// referenced slot (earlier in the same week) has not been performed
+    /// yet when this row's own `SetPrescription`s are created;
+    /// `PriorSlotActualResultRepGoalBackfillUseCase` resolves it once the
+    /// referenced slot's session actually completes). Returned instead of
+    /// fabricating a number, and instead of silently falling back to the
+    /// generic RIR placeholder schedule other rows use — the pre-this-
+    /// checkpoint defect this code corrects.
+    case repGoalRequiresPriorSlotActualResult
 }
 
 /// Which 1RM-family basis a `rmBasedWeekOneLoad` rule is anchored to.
@@ -85,6 +102,18 @@ enum RepPrescriptionKind: Codable, Equatable {
     /// performs to reach that RIR are both separate concerns — see
     /// `RepGoal.repRangeHigh` and `SetResult.reps` respectively.
     case rir(Int)
+    /// Strength Source Content V1: a rep goal genuinely defined relative
+    /// to ANOTHER slot's ACTUAL logged reps this same week (Family E's
+    /// Friday-Legs2 backoff, source text "1/2 Tuesday's" — floor(referenced
+    /// slot's actual reps at the same set index / 2)). No payload here —
+    /// exactly like `LoadRuleKind.doubleProgression`, resolution reads
+    /// real logged history externally (`ActualResultRelativeRepGoalResolver`,
+    /// via `PrescriptionTemplate.actualResultReferenceSlot`), never baked
+    /// into the template itself. The one fixed fraction this source
+    /// relationship ever uses (one-half) is a resolver-level constant, not
+    /// a per-row parameter — this case exists for exactly one recovered
+    /// source relationship, not a generalized "result-relative" framework.
+    case priorSlotActualResultRelative
 }
 
 /// One week's rep target. Never itself stored directly on an `@Model`
@@ -118,6 +147,7 @@ struct RepGoal: Codable, Equatable {
 
     static func fixedReps(_ reps: Int) -> RepGoal { RepGoal(prescription: .fixedReps(reps)) }
     static func rir(_ rir: Int) -> RepGoal { RepGoal(prescription: .rir(rir)) }
+    static let priorSlotActualResultRelative = RepGoal(prescription: .priorSlotActualResultRelative)
 }
 
 /// How a slot's weight is progressed week to week. Deliberately does not

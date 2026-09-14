@@ -34,6 +34,17 @@ enum CompleteSessionUseCase {
             session.completionContext = context
             session.completedAt = asOf
             try modelContext.save()
+
+            // Strength Source Content V1: this session may be the
+            // referenced slot (e.g. Tuesday) some other, not-yet-executed
+            // same-week sibling row (e.g. Friday's Legs2 backoff) is
+            // waiting on — see `PriorSlotActualResultRepGoalBackfillUseCase`'s
+            // own doc comment for why this can't resolve any earlier than
+            // now. A no-op for every session that has no such dependent
+            // sibling (every existing family/system, unchanged).
+            if let instance = session.programInstance {
+                PriorSlotActualResultRepGoalBackfillUseCase.backfillPendingRepGoals(in: instance, modelContext: modelContext)
+            }
         }
 
         // Stage 10B.6: the same real, exercise-scoped history

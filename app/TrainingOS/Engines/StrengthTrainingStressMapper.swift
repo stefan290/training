@@ -94,7 +94,7 @@ enum StrengthTrainingStressMapper {
         switch prescription.repGoal?.prescription {
         case .rir(let n):
             return n <= 1 ? .high : .moderate
-        case .fixedReps, nil:
+        case .fixedReps, .priorSlotActualResultRelative, nil:
             return prescription.weightKg != nil ? .moderate : .low
         }
     }
