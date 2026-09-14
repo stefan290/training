@@ -368,6 +368,7 @@
 		C011B0B353471B0D40C38814 /* StrengthSourceFidelityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B53320B5F4125FB74FB6A73 /* StrengthSourceFidelityTests.swift */; };
 		8223D9F4A279FF879BC13166 /* RunningAthleteJourneyCompletionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB1CDFD03AECC8C392FBCF16 /* RunningAthleteJourneyCompletionTests.swift */; };
 		5CF5C7E668B94B7887360E70 /* LongTermPlannerIntelligenceCompletionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25D61B240A8B4F4A860BE82E /* LongTermPlannerIntelligenceCompletionTests.swift */; };
+		A1B2C3D4E5F60708192A3B4C /* DogfoodReleaseReadinessJourneyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F60718293A4B5C6D /* DogfoodReleaseReadinessJourneyTests.swift */; };
 		C6654285BE5C49C320C03953 /* WorkoutBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7B64E2D860E385FC7EDCB1B /* WorkoutBlock.swift */; };
 		C6B8D69219A74DDDADB844AF /* ExecutionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4353CBFA8A542709F50A390 /* ExecutionState.swift */; };
 		C941457B8BEE324C10EF160C /* DomainModelScenarioTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 781B494FA06A7F0745ACDE8B /* DomainModelScenarioTests.swift */; };
@@ -744,6 +745,7 @@
 		9B53320B5F4125FB74FB6A73 /* StrengthSourceFidelityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = StrengthSourceFidelityTests.swift; path = StrengthSourceFidelityTests.swift; sourceTree = "<group>"; };
 		FB1CDFD03AECC8C392FBCF16 /* RunningAthleteJourneyCompletionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RunningAthleteJourneyCompletionTests.swift; path = RunningAthleteJourneyCompletionTests.swift; sourceTree = "<group>"; };
 		25D61B240A8B4F4A860BE82E /* LongTermPlannerIntelligenceCompletionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LongTermPlannerIntelligenceCompletionTests.swift; path = LongTermPlannerIntelligenceCompletionTests.swift; sourceTree = "<group>"; };
+		B2C3D4E5F60718293A4B5C6D /* DogfoodReleaseReadinessJourneyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DogfoodReleaseReadinessJourneyTests.swift; path = DogfoodReleaseReadinessJourneyTests.swift; sourceTree = "<group>"; };
 		AB82DBCDD253473389BB814B /* CompletionSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CompletionSummary.swift; path = CompletionSummary.swift; sourceTree = "<group>"; };
 		AE384D888B58F59FF03553CA /* WorkoutFormat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WorkoutFormat.swift; path = WorkoutFormat.swift; sourceTree = "<group>"; };
 		AE9174AC152341C0862DF128 /* FunctionalFitnessMaterializer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FunctionalFitnessMaterializer.swift; path = FunctionalFitnessMaterializer.swift; sourceTree = "<group>"; };
@@ -1299,6 +1301,7 @@
 				9B53320B5F4125FB74FB6A73 /* StrengthSourceFidelityTests.swift */,
 				FB1CDFD03AECC8C392FBCF16 /* RunningAthleteJourneyCompletionTests.swift */,
 				25D61B240A8B4F4A860BE82E /* LongTermPlannerIntelligenceCompletionTests.swift */,
+				B2C3D4E5F60718293A4B5C6D /* DogfoodReleaseReadinessJourneyTests.swift */,
 				23B34D84FA7E4117942595D2 /* PowerliftingProgramGeneratorTests.swift */,
 				60D9C8CDB6574111B7F814E3 /* PowerliftingRegressionTests.swift */,
 				A75340A521B34E13B963971E /* FunctionalFitnessPersistenceTests.swift */,
@@ -1785,6 +1788,7 @@
 				C011B0B353471B0D40C38814 /* StrengthSourceFidelityTests.swift in Sources */,
 				8223D9F4A279FF879BC13166 /* RunningAthleteJourneyCompletionTests.swift in Sources */,
 				5CF5C7E668B94B7887360E70 /* LongTermPlannerIntelligenceCompletionTests.swift in Sources */,
+				A1B2C3D4E5F60708192A3B4C /* DogfoodReleaseReadinessJourneyTests.swift in Sources */,
 				3551ADA6C410935FE55EAE34 /* ReadinessAdaptationTests.swift in Sources */,
 				570471E6EE162793157F65EA /* DebugAcceptanceFixturesUseCaseTests.swift in Sources */,
 				34AB0BEDB996AD3881AB0B1E /* WarmupGenerationTests.swift in Sources */,

@@ -106,6 +106,10 @@ struct OnboardingFlowView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.horizontal, 22)
                 .padding(.bottom, 26)
+                // DF-BUG-1: no Goal is pre-selected on a genuinely new
+                // athlete's first run — Continue must stay disabled until
+                // a real tap selects one.
+                .disabled(viewModel.selectedGoalType == nil)
         }
         .background(Theme.ground)
     }
@@ -599,7 +603,12 @@ struct OnboardingFlowView: View {
                             .font(Theme.eyebrow)
                             .tracking(1.2)
                             .foregroundStyle(Theme.primary)
-                        Text(PlanPresentation.mainGoalLabel(viewModel.selectedGoalType))
+                        // DF-BUG-1: Review is only reachable after passing
+                        // the Goal step's own Continue gate, which never
+                        // permits a `nil` selection — this fallback is
+                        // unreachable in practice, not a reintroduced
+                        // silent default.
+                        Text(PlanPresentation.mainGoalLabel(viewModel.selectedGoalType ?? .generalStrength))
                             .font(Theme.heading.weight(.bold))
                             .foregroundStyle(Theme.textPrimary)
                     }

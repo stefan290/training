@@ -24,6 +24,29 @@ final class OnboardingTests: XCTestCase {
         XCTAssertTrue((try context.fetch(FetchDescriptor<TrainingPlan>())).isEmpty, "no fake Plan exists on a fresh store")
     }
 
+    // MARK: DF-BUG-1 (Dogfood Release Readiness V1): no Goal pre-selected on a genuinely new athlete
+
+    /// The exact defect a real, live screenshot of the first-run Goal
+    /// screen caught: a brand-new athlete (no active Goal yet) must see
+    /// NO Goal pre-checkmarked, and must not be able to advance past the
+    /// Goal step until they actually choose one. A RETURNING athlete
+    /// (`start()`'s existing resume branch, exercised elsewhere in this
+    /// file) is unaffected — this test is specifically the "no active
+    /// Goal yet" path.
+    func testFreshOnboardingHasNoPreSelectedGoalAndCannotAdvanceUntilOneIsChosen() throws {
+        let viewModel = OnboardingViewModel()
+        viewModel.start(modelContext: context)
+
+        XCTAssertNil(viewModel.selectedGoalType, "a genuinely new athlete must see no Goal pre-selected")
+
+        viewModel.advance(from: .goal, modelContext: context)
+        XCTAssertEqual(viewModel.step, .goal, "must not advance past Goal with nothing selected")
+
+        viewModel.selectedGoalType = .muscleGain
+        viewModel.advance(from: .goal, modelContext: context)
+        XCTAssertEqual(viewModel.step, .preferences, "a real tap selecting a Goal must unblock Continue")
+    }
+
     // MARK: 2/11 — existing valid athlete/Goal state does not restart onboarding; relaunch is stable
 
     func testExistingActiveGoalAndEnvironmentDoesNotRestartOnboarding() throws {
@@ -574,6 +597,12 @@ final class OnboardingTests: XCTestCase {
     func testRelaunchAfterEnvironmentStepPreservesTheValidStateAndDoesNotRestartOnboarding() throws {
         let viewModel = OnboardingViewModel()
         viewModel.start(modelContext: context)
+        // DF-BUG-1 fix: a real athlete must actually select a Goal before
+        // Continue advances past it — this test's own intent is relaunch
+        // persistence, not Goal-selection behavior, so simulate the real
+        // tap explicitly rather than relying on the old (incorrect)
+        // pre-selected default.
+        viewModel.selectedGoalType = .muscleGain
         viewModel.advance(from: .goal, modelContext: context)
         viewModel.advance(from: .preferences, modelContext: context)
 

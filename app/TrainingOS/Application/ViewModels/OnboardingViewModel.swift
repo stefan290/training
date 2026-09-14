@@ -48,7 +48,16 @@ final class OnboardingViewModel {
     /// enablement is driven by a property SwiftUI is guaranteed to observe.
     private(set) var hasDefaultTrainingEnvironment = false
 
-    var selectedGoalType: GoalType = .generalStrength
+    /// DF-BUG-1 fix (Dogfood Release Readiness V1): a genuinely new
+    /// athlete must see NO Goal pre-selected — the athlete-facing
+    /// screenshot review this checkpoint performed found "Get Stronger"
+    /// pre-checkmarked before any real tap, a real first-run defect (the
+    /// screen is asking the athlete to choose, not confirming a choice
+    /// already made for them). `nil` means "no selection yet"; `start()`'s
+    /// existing resume branch (below) still sets this to the real,
+    /// persisted `activeGoal.primaryType` for a returning athlete — this
+    /// change only affects the brand-new, no-active-goal case.
+    var selectedGoalType: GoalType?
     var hasTargetDate = false
     var targetDate = Date()
     /// Stage V1 "Milestone Onboarding": the athlete-facing surface for the
@@ -200,6 +209,12 @@ final class OnboardingViewModel {
     func advance(from currentStep: Step, modelContext: ModelContext) {
         switch currentStep {
         case .goal:
+            // DF-BUG-1: defense in depth alongside the real UI's own
+            // `.disabled(viewModel.selectedGoalType == nil)` Continue
+            // button — the ViewModel, not the View, is the one place
+            // that must actually enforce "no advancing with no Goal
+            // chosen."
+            guard selectedGoalType != nil else { return }
             step = .preferences
         case .preferences:
             createOrUpdateGoal(modelContext: modelContext)
@@ -237,7 +252,11 @@ final class OnboardingViewModel {
     /// is the only stated intent this checkpoint ever needs; nothing else
     /// reads a "draft" Goal state.
     private func createOrUpdateGoal(modelContext: ModelContext) {
-        guard let user else { return }
+        // DF-BUG-1: unreachable in practice — `advance(from: .goal, ...)`
+        // and the real Continue button's own `.disabled` already refuse to
+        // leave the Goal step with no selection — but this function owns
+        // its own correctness rather than trusting an upstream UI gate.
+        guard let user, let selectedGoalType else { return }
         // V1 "Goal ≠ Training Method" checkpoint: each selected
         // `TrainingStyle` expands to its own real `ModalityPreference`(s) —
         // the single, shared mapping used for both "especially want" and
