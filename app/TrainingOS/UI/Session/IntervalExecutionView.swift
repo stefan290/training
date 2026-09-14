@@ -91,12 +91,20 @@ struct IntervalExecutionView: View {
             Text("\(prescription.intervalCount) intervals")
                 .font(Theme.numeric)
                 .foregroundStyle(Theme.textSecondary)
-            if let label = IntensityPresentation.label(prescription.workIntensity) {
+            if let label = IntensityPresentation.resolvedLabel(prescription.workIntensity, thresholdPaceSecondsPerKilometer: currentThresholdPaceSecondsPerKilometer) {
                 Text(label)
                     .font(Theme.numeric)
                     .foregroundStyle(Theme.primary)
             }
         }
+    }
+
+    /// Running Athlete Journey Completion (Vertical Completion V1): see
+    /// `SteadyStateExecutionView`'s identical property for the full
+    /// rationale.
+    private var currentThresholdPaceSecondsPerKilometer: Double? {
+        guard let instance = session.programInstance else { return nil }
+        return RecordRunningThresholdCalibrationUseCase.currentThreshold(for: instance)?.thresholdPaceSecondsPerKilometer
     }
 
     @ViewBuilder

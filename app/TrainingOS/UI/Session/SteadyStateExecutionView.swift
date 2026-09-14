@@ -95,12 +95,22 @@ struct SteadyStateExecutionView: View {
             }
             .font(Theme.numeric)
             .foregroundStyle(Theme.textSecondary)
-            if let label = IntensityPresentation.label(prescription.primaryIntensity) {
+            if let label = IntensityPresentation.resolvedLabel(prescription.primaryIntensity, thresholdPaceSecondsPerKilometer: currentThresholdPaceSecondsPerKilometer) {
                 Text(label)
                     .font(Theme.numeric)
                     .foregroundStyle(Theme.primary)
             }
         }
+    }
+
+    /// Running Athlete Journey Completion (Vertical Completion V1): the
+    /// athlete's real, currently-calibrated Threshold Pace for this
+    /// session's own program instance — `nil` when genuinely never
+    /// calibrated (never a guessed default). Read fresh each time rather
+    /// than cached, since it's a cheap, already-loaded relationship walk.
+    private var currentThresholdPaceSecondsPerKilometer: Double? {
+        guard let instance = session.programInstance else { return nil }
+        return RecordRunningThresholdCalibrationUseCase.currentThreshold(for: instance)?.thresholdPaceSecondsPerKilometer
     }
 
     /// The same centered eyebrow + massive monospace-value shape

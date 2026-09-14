@@ -10,15 +10,34 @@ import SwiftUI
 /// presents "Set your starting weights" instead — the user cannot reach
 /// Today with a source-dependent Session materialized-but-blank; it
 /// simply isn't materialized yet (`STAGE10R1C_SOURCE_RM_CALIBRATION_DESIGN.md`).
+///
+/// Running Athlete Journey Completion (Vertical Completion V1): a second,
+/// analogous gate for Running's own Threshold Pace requirement
+/// (`RunningThresholdCalibrationViewModel`). Checked AFTER the Strength/
+/// Hypertrophy gate — an athlete with both outstanding simultaneously
+/// (a genuinely rare concurrent-mix edge case) resolves the RM gate
+/// first, matching the pre-existing precedence this file already had for
+/// its one gate; Running's own gate then naturally appears on the very
+/// next `load()` once the first is satisfied, never skipped. Unlike the
+/// RM gate, this one never blocks materialization — Running's own
+/// `RunningProgramMaterializer.materializeAllWeeks` already runs
+/// regardless of calibration (nothing in that program depends on a live
+/// per-week result); this gate exists purely so the athlete never reaches
+/// Today staring at an unresolved percentage.
 struct RootTabView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var calibrationViewModel = SourceRMCalibrationViewModel()
+    @State private var runningCalibrationViewModel = RunningThresholdCalibrationViewModel()
 
     var body: some View {
         Group {
             if calibrationViewModel.hasPendingCalibration {
                 SourceRMCalibrationView(viewModel: calibrationViewModel) {
                     calibrationViewModel.load(modelContext: modelContext)
+                }
+            } else if runningCalibrationViewModel.hasPendingCalibration {
+                RunningThresholdCalibrationView(viewModel: runningCalibrationViewModel) {
+                    runningCalibrationViewModel.load(modelContext: modelContext)
                 }
             } else {
                 TabView {
@@ -34,7 +53,10 @@ struct RootTabView: View {
                 .tint(Theme.primary)
             }
         }
-        .onAppear { calibrationViewModel.load(modelContext: modelContext) }
+        .onAppear {
+            calibrationViewModel.load(modelContext: modelContext)
+            runningCalibrationViewModel.load(modelContext: modelContext)
+        }
         // Stage 10R.7B (D-10R7B-7): a successful strategic transition can
         // legitimately leave a component awaiting fresh source RM
         // calibration — this re-runs the exact same, already-existing
@@ -43,6 +65,7 @@ struct RootTabView: View {
         // comment) — safe to call again even when nothing changed.
         .onReceive(NotificationCenter.default.publisher(for: .strategicPhaseTransitionCompleted)) { _ in
             calibrationViewModel.load(modelContext: modelContext)
+            runningCalibrationViewModel.load(modelContext: modelContext)
         }
     }
 }

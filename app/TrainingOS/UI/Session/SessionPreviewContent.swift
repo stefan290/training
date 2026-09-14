@@ -18,6 +18,15 @@ struct SessionPreviewContent: View {
         }
     }
 
+    /// Running Athlete Journey Completion (Vertical Completion V1): see
+    /// `SteadyStateExecutionView`'s identical property for the full
+    /// rationale — this preview (shown before the athlete taps into
+    /// execution) must be just as actionable as execution itself.
+    private var currentThresholdPaceSecondsPerKilometer: Double? {
+        guard let instance = session.programInstance else { return nil }
+        return RecordRunningThresholdCalibrationUseCase.currentThreshold(for: instance)?.thresholdPaceSecondsPerKilometer
+    }
+
     @ViewBuilder
     private func blockSection(_ block: WorkoutBlock) -> some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -91,7 +100,7 @@ struct SessionPreviewContent: View {
                 if let distance = prescription.distanceMeters {
                     Text("\(Int(distance)) m")
                 }
-                if let label = IntensityPresentation.label(prescription.primaryIntensity) {
+                if let label = IntensityPresentation.resolvedLabel(prescription.primaryIntensity, thresholdPaceSecondsPerKilometer: currentThresholdPaceSecondsPerKilometer) {
                     Text(label)
                 }
             }
@@ -109,7 +118,7 @@ struct SessionPreviewContent: View {
                 Text("Work:")
                 if let duration = prescription.workDurationSeconds { Text("\(duration)s") }
                 if let distance = prescription.workDistanceMeters { Text("\(Int(distance)) m") }
-                if let label = IntensityPresentation.label(prescription.workIntensity) { Text(label) }
+                if let label = IntensityPresentation.resolvedLabel(prescription.workIntensity, thresholdPaceSecondsPerKilometer: currentThresholdPaceSecondsPerKilometer) { Text(label) }
             }
             .font(Theme.label)
             .foregroundStyle(Theme.textSecondary)
@@ -117,7 +126,7 @@ struct SessionPreviewContent: View {
                 Text("Recovery:")
                 if let duration = prescription.recoveryDurationSeconds { Text("\(duration)s") }
                 if let distance = prescription.recoveryDistanceMeters { Text("\(Int(distance)) m") }
-                if let label = IntensityPresentation.label(prescription.recoveryIntensity) { Text(label) }
+                if let label = IntensityPresentation.resolvedLabel(prescription.recoveryIntensity, thresholdPaceSecondsPerKilometer: currentThresholdPaceSecondsPerKilometer) { Text(label) }
             }
             .font(Theme.label)
             .foregroundStyle(Theme.textSecondary)
