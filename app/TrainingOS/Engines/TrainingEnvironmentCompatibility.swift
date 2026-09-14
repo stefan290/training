@@ -88,7 +88,11 @@ extension FunctionalFitnessMaterializationError: TrainingEnvironmentRecoverableE
     var needsTrainingEnvironmentConfiguration: Bool {
         switch self {
         case .trainingEnvironmentRequired, .environmentIncompatible: return true
-        case .previousExposureRequired, .stimulusValidationFailed: return false
+        // Dogfood Round 1 — Final Close (Finding 3C correction):
+        // `.capabilityUnknown` is never a Training Environment/equipment
+        // problem — reconfiguring equipment cannot fix it, so it is never
+        // TE-recoverable.
+        case .previousExposureRequired, .stimulusValidationFailed, .capabilityUnknown: return false
         }
     }
 }
@@ -131,6 +135,12 @@ func trainingEnvironmentRecoveryMessage(for error: Error) -> String? {
         case .trainingEnvironmentRequired: return "A Training Environment is required before this can continue."
         case .environmentIncompatible(_, let missingEquipment): return missingEquipmentMessage(missingEquipment)
         case .previousExposureRequired, .stimulusValidationFailed: return nil
+        // Dogfood Round 1 — Final Close (Finding 3C correction): not a
+        // Training Environment message — this function's own contract is
+        // TE-recovery text only (see its doc comment); a real capability
+        // message belongs to whatever real UI eventually surfaces this
+        // error, not invented here.
+        case .capabilityUnknown: return nil
         }
     }
     if let error = error as? SteadyStateMaterializationError {

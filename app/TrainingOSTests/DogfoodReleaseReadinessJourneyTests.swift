@@ -107,6 +107,16 @@ final class DogfoodReleaseReadinessJourneyTests: XCTestCase {
         // actually matches one of his stated lifts; a single representative
         // fallback (60kg) for any other slot, never a fabricated per-lift
         // precision the source data doesn't ask for.
+        //
+        // Dogfood Round 1 (Finding 1): missing calibration no longer defers
+        // materialization — `StartPhaseUseCase.start` (called above via
+        // `startPhase`) already materialized every component's real
+        // Sessions, leaving any `.rmBased` slot without a calibration
+        // honestly unresolved (`.calibrationRequired`). This step now only
+        // records the calibration and resolves those already-materialized
+        // dependent prescriptions (`ResolveCalibrationDependentPrescriptionsUseCase`)
+        // — the same mechanism the real "Set your starting weights"
+        // screen and the in-session prompt both use.
         var calibrationRequired = false
         for component in mix.orderedComponents {
             guard let instance = component.programInstance, let definition = instance.programDefinition else { continue }
@@ -120,17 +130,12 @@ final class DogfoodReleaseReadinessJourneyTests: XCTestCase {
                 else if name.contains("squat") { kg = 70 }
                 else if name.contains("overhead press") || (name.contains("press") && name.contains("shoulder")) { kg = 35 }
                 else { kg = 60 }
-                RecordSourceRMCalibrationUseCase.record(
+                try ResolveCalibrationDependentPrescriptionsUseCase.resolve(
                     exercise: requirement.exercise, rmType: requirement.rmType, kilograms: kg,
-                    for: instance, modelContext: context
+                    instance: instance, userProfile: user.profile,
+                    enteredAt: monday, modelContext: context
                 )
             }
-            try context.save()
-            _ = try StartPhaseUseCase.materializeOnceCalibrationComplete(
-                component: component, instance: instance, phase: phase, mix: mix, asOf: monday,
-                ownerUserID: instance.ownerUserID, performanceProfile: user.performanceProfile,
-                availability: availability, materializationContext: materializationContext, context: context
-            )
         }
         XCTAssertTrue(calibrationRequired, "Hypertrophy content must require real RM calibration before it can execute")
 

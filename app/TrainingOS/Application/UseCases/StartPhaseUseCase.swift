@@ -138,7 +138,21 @@ enum StartPhaseUseCase {
         let windowWeeks = max(1, windowDays / 7)
 
         var instancesByComponent: [UUID: ProgramInstance] = [:]
-        var inputs: [ScheduledProgramInput] = []
+        // Dogfood Round 1 (Finding 1): materialization no longer waits on
+        // calibration, but SCHEDULING still happens in the same two-pass
+        // shape it always did (non-`.rmBased` components first, `.rmBased`
+        // ones second against the first pass's own accepted days via
+        // `preOccupiedDates`) — never a behavior change to the scheduler's
+        // real placement/capacity characteristics, only to whether
+        // calibration gates anything. Splitting these into separate
+        // `inputs` arrays (rather than one combined scheduling call)
+        // preserves the exact scheduling outcomes already proven by the
+        // Concurrent Programming golden scenarios (tight-week doubles/
+        // no-doubles capacity tests) — a single combined pass can produce
+        // a strictly worse packing than staged passes, since
+        // `ConcurrentScheduler` is a greedy, non-backtracking placer.
+        var otherInputs: [ScheduledProgramInput] = []
+        var rmBasedInputs: [ScheduledProgramInput] = []
         var componentsAwaitingCalibration: Set<UUID> = []
 
         for component in mix.orderedComponents {
@@ -177,19 +191,30 @@ enum StartPhaseUseCase {
             )
             context.insert(decision)
 
-            // Stage 10R.1C: a `.rmBased` program's Week-1 load can only be
-            // honestly materialized once every slot's required source RM
-            // calibration exists — never derived, never estimated (see
-            // `STAGE10R1C_SOURCE_RM_CALIBRATION_DESIGN.md`). Instance
-            // creation and exercise-slot resolution above already happened
-            // (both user-independent of calibration); only the actual
-            // materialization call is deferred. This check is generic
-            // across every `.rmBased` family (Hypertrophy/Powerlifting),
-            // never Hypertrophy-specific.
+            // Dogfood Round 1 (Finding 1): materialization is no longer
+            // deferred while a `.rmBased` slot's source RM calibration is
+            // missing — never derived, never estimated, but no longer a
+            // reason to withhold the whole component's Sessions either.
+            // `StrengthProgressionEngine.resolveWeight` already produces
+            // exactly the right honest state for this
+            // (`SetPrescription.targetWeight == nil`,
+            // `ExercisePrescription.appliedLoadReasonCode ==
+            // .calibrationRequired`) — real Sessions/blocks/prescriptions
+            // materialize immediately, with reps/sets fully resolved and
+            // only the affected slot's WEIGHT left honestly blank. The
+            // athlete calibrates either up front (the existing "estimate
+            // now" screen, now optional/non-blocking) or in the first
+            // Session containing that exercise, before its working sets
+            // (`StrengthExecutionView`'s calibration prompt) —
+            // `ResolveCalibrationDependentPrescriptionsUseCase` resolves
+            // the real value into every already-materialized dependent
+            // prescription once it's entered, via the exact same formula.
+            // Still tracked here (informational only, no gating behavior
+            // depends on it) so a caller can choose to surface an
+            // "estimate now" prompt proactively.
             if (system == .hypertrophy || system == .powerlifting),
                !RequiredSourceCalibrationsUseCase.stillRequired(for: chosen.programDefinition, instance: instance).isEmpty {
                 componentsAwaitingCalibration.insert(component.id)
-                continue
             }
 
             let sessions = try RollTacticalWindowUseCase.materializeFirstWindow(
@@ -198,17 +223,48 @@ enum StartPhaseUseCase {
                 performanceProfile: performanceProfile, componentAdaptationObjectives: component.adaptationObjectives,
                 materializationContext: materializationContext, context: context
             )
-            inputs.append(ScheduledProgramInput(component: component, sessions: sessions))
+            let input = ScheduledProgramInput(component: component, sessions: sessions)
+            if system == .hypertrophy || system == .powerlifting {
+                rmBasedInputs.append(input)
+            } else {
+                otherInputs.append(input)
+            }
         }
 
-        guard !inputs.isEmpty || !componentsAwaitingCalibration.isEmpty else {
+        guard !otherInputs.isEmpty || !rmBasedInputs.isEmpty else {
             throw StartPhaseError.noExecutableComponents
         }
 
-        let scheduled = try scheduleAndAccept(
-            phase: phase, mix: mix, inputs: inputs, windowDays: windowDays,
+        // Pass 1: every non-`.rmBased` component, exactly as before.
+        var scheduled = try scheduleAndAccept(
+            phase: phase, mix: mix, inputs: otherInputs, windowDays: windowDays,
             ownerUserID: ownerUserID, availability: availability, context: context
         )
+
+        // Pass 2: `.rmBased` components, scheduled around pass 1's own
+        // now-accepted days — identical mechanism (and identical
+        // real-world capacity behavior) to the pre-existing
+        // `materializeOnceCalibrationComplete` second pass; the only
+        // thing that changed is this no longer waits for a separate,
+        // later calibration-completion call to run it.
+        if !rmBasedInputs.isEmpty {
+            let preOccupiedDates = Set(
+                otherInputs.flatMap(\.sessions).compactMap { $0.day?.date }.map { Calendar.current.startOfDay(for: $0) }
+            )
+            let rmBasedScheduled = try scheduleAndAccept(
+                phase: phase, mix: mix, inputs: rmBasedInputs, windowDays: windowDays,
+                ownerUserID: ownerUserID, availability: availability, context: context,
+                preOccupiedDates: preOccupiedDates
+            )
+            scheduled.placements.append(contentsOf: rmBasedScheduled.placements)
+            scheduled.conflicts.append(contentsOf: rmBasedScheduled.conflicts)
+            scheduled.issues.append(contentsOf: rmBasedScheduled.issues)
+            if rmBasedScheduled.feasibility == .infeasible {
+                scheduled.feasibility = .infeasible
+            } else if rmBasedScheduled.feasibility == .feasibleWithSoftViolations, scheduled.feasibility == .feasible {
+                scheduled.feasibility = .feasibleWithSoftViolations
+            }
+        }
 
         return Result(
             phase: phase, mix: mix, instancesByComponent: instancesByComponent,

@@ -281,7 +281,14 @@ final class ProgramInstanceExerciseSlotResolutionTests: XCTestCase {
     /// before Week 1 can be honestly materialized at all — slot
     /// resolution itself (independent of any RM input) still happens
     /// immediately, exactly as before; only the deferred half changed.
-    func testMissingCalibrationDefersMaterializationRatherThanFabricatingAWeight() throws {
+    /// Dogfood Round 1 (Finding 1): replaces the old "defers materialization
+    /// rather than fabricating a weight" behavior this test previously
+    /// proved — that WAS the real product bug ("I'd rather test this
+    /// properly first" could never actually let the athlete proceed).
+    /// Materialization must now succeed immediately regardless of missing
+    /// calibration; only the affected slot's WEIGHT stays honestly
+    /// unresolved, never fabricated.
+    func testMissingCalibrationNeverBlocksMaterializationOnlyTheWeightStaysUnresolved() throws {
         let asOf = date(2026, 1, 5)
         let fixture = try makeAcceptedPlan(asOf: asOf)
         let candidates = makeCandidates()
@@ -297,8 +304,8 @@ final class ProgramInstanceExerciseSlotResolutionTests: XCTestCase {
         )
 
         let instance = try XCTUnwrap(fixture.phase.primaryInstance)
-        XCTAssertTrue(instance.sessions.isEmpty, "no PerformanceProfile and no SourceRMCalibration -> materialization must be deferred, never fabricated")
-        XCTAssertFalse(result.componentsAwaitingCalibration.isEmpty, "the component must be reported as awaiting calibration")
+        XCTAssertFalse(instance.sessions.isEmpty, "missing calibration must never block materialization")
+        XCTAssertFalse(result.componentsAwaitingCalibration.isEmpty, "still tracked informationally")
 
         // Slot resolution itself is unaffected — it already happened at
         // instance creation, independent of any RM input.
@@ -308,16 +315,20 @@ final class ProgramInstanceExerciseSlotResolutionTests: XCTestCase {
             .compactMap(\.exerciseSlot).filter { $0.resolvedExercise == nil }
         XCTAssertTrue(unresolvedSlots.isEmpty, "every slot must still resolve to a concrete exercise even with zero calibration")
 
+        let prescriptionsBefore = instance.sessions.flatMap(\.orderedBlocks).flatMap(\.orderedPrescriptions)
+        let primaryBefore = try XCTUnwrap(prescriptionsBefore.first { $0.appliedSetCountReasonCode == .fixedSetSchedule && $0.orderedSetPrescriptions.count == 3 })
+        XCTAssertEqual(primaryBefore.appliedLoadReasonCode, .calibrationRequired, "sets/reps are prescribed, but the weight is honestly unresolved")
+        XCTAssertNil(primaryBefore.orderedSetPrescriptions.first?.targetWeight)
+
         // Completing calibration (the real user's "Set your starting
-        // weights" step) performs the one, deferred materialization.
+        // weights" step, or the in-session prompt) resolves the real
+        // weight in place — never a second materialization.
         try CalibrationTestSupport.completeAnyPendingCalibrationAndMaterialize(
             phase: fixture.phase, ownerUserID: ownerUserID, performanceProfile: nil,
             availability: availability(), materializationContext: materializationContext, asOf: asOf, context: context
         )
-        let prescriptions = instance.sessions.flatMap(\.orderedBlocks).flatMap(\.orderedPrescriptions)
-        XCTAssertFalse(prescriptions.isEmpty, "materialization must succeed once calibration is complete")
-        let primary = try XCTUnwrap(prescriptions.first { $0.appliedSetCountReasonCode == .fixedSetSchedule && $0.orderedSetPrescriptions.count == 3 })
-        XCTAssertEqual(primary.appliedLoadReasonCode, .rmBasedLoad, "a real SourceRMCalibration was just entered -> a real resolved load, never calibrationRequired")
+        XCTAssertEqual(primaryBefore.appliedLoadReasonCode, .rmBasedLoad, "a real SourceRMCalibration was just entered -> a real resolved load, never calibrationRequired")
+        XCTAssertNotNil(primaryBefore.orderedSetPrescriptions.first?.targetWeight)
     }
 
     // MARK: TE.1 closure — higher-level production-path proof through StartPhaseUseCase

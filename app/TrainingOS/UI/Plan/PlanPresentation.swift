@@ -151,4 +151,18 @@ enum PlanPresentation {
         case .runningEvent: "10K Race"
         }
     }
+
+    /// Dogfood Round 1 — Final Close (Finding 1 correction): the one
+    /// shared athlete-facing label for a source-required RM type —
+    /// extracted here so `SourceRMCalibrationView`'s "estimate now"
+    /// screen and `StrengthExecutionView`'s in-session calibration prompt
+    /// both name the SAME real tested value, never two independently
+    /// worded copies of the same concept.
+    static func rmTypeLabel(_ rmType: RMType) -> String {
+        switch rmType {
+        case .rm10: "10RM"
+        case .rm8: "8RM"
+        case .rm5: "5RM"
+        }
+    }
 }

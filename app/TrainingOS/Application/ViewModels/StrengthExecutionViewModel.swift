@@ -113,6 +113,61 @@ final class StrengthExecutionViewModel {
         !movements.isEmpty && movements.allSatisfy(StrengthExecutionViewModel.isComplete)
     }
 
+    // MARK: - Dogfood Round 1 (Finding 1): in-session calibration
+
+    /// `true` only when the CURRENT movement's prescription was left
+    /// honestly unresolved at materialization time because its required
+    /// source RM calibration didn't exist yet — never true for a
+    /// genuinely no-load prescription (`.none`) or a Hypertrophy V2
+    /// double-progression slot, which never carries this reason code.
+    var currentMovementNeedsCalibration: Bool {
+        currentMovement?.appliedLoadReasonCode == .calibrationRequired
+    }
+
+    /// The exact `(exercise, rmType)` this movement is awaiting — read
+    /// directly from the same `PrescriptionTemplate.rules.loadRule` the
+    /// materializer itself used, never guessed. `nil` whenever
+    /// `currentMovementNeedsCalibration` is false.
+    var currentMovementCalibrationRequirement: (exercise: Exercise, rmType: RMType)? {
+        guard currentMovementNeedsCalibration, let movement = currentMovement, let exercise = movement.exercise else { return nil }
+        guard let loadRule = movement.sourcePrescriptionTemplate?.rules?.loadRule, case .rmBased(let payload) = loadRule else { return nil }
+        return (exercise, payload.rmType)
+    }
+
+    /// Records the athlete's real, directly-entered starting weight for
+    /// this movement and resolves every already-materialized prescription
+    /// this week that depended on it — never a fabricated placeholder,
+    /// never a silent estimate, and never a second formula: this is the
+    /// exact same `StrengthProgressionEngine.resolveWeight` call the
+    /// materializer itself uses, via
+    /// `ResolveCalibrationDependentPrescriptionsUseCase`. Returns whether
+    /// it actually resolved anything, so the caller knows whether to
+    /// refresh its own cached display state.
+    @discardableResult
+    func submitCalibration(kilograms: Double, modelContext: ModelContext) -> Bool {
+        guard kilograms > 0, let requirement = currentMovementCalibrationRequirement,
+              let instance = currentMovement?.workoutBlock?.session?.programInstance
+        else { return false }
+        do {
+            // Dogfood Round 1 — Final Close (Finding 1 correction): the
+            // real per-exercise equipment/increment authority
+            // (`EquipmentProfile.resolved(for:userProfile:)`), never a
+            // blanket barbell assumption — resolved per prescription
+            // inside the use case itself from each slot's own real
+            // `Exercise`, using this athlete's own real
+            // `UserProfile.equipmentIncrements` where a preference exists.
+            let users = (try? modelContext.fetch(FetchDescriptor<User>())) ?? []
+            try ResolveCalibrationDependentPrescriptionsUseCase.resolve(
+                exercise: requirement.exercise, rmType: requirement.rmType, kilograms: kilograms, instance: instance,
+                userProfile: users.first?.profile,
+                modelContext: modelContext
+            )
+            return true
+        } catch {
+            return false
+        }
+    }
+
     var hasPreviousMovement: Bool { movementIndex > 0 }
     var hasNextMovement: Bool { movementIndex + 1 < movements.count }
 

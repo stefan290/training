@@ -59,6 +59,19 @@ enum SubstituteFunctionalFitnessMovementUseCase {
             )
             if template.reps == nil { movement.reps = target.reps }
             if template.distanceMeters == nil { movement.distanceMeters = target.distanceMeters }
+            // Dogfood Round 1 — Final Close (Finding 3D): the relative
+            // load/intensity guidance is exercise-specific (Wall Ball's
+            // guidance is real guidance for Wall Ball, not for whatever
+            // this movement is substituted TO) — recomputed for the NEW
+            // exercise under the identical precedence: never touched when
+            // a real hand-authored numeric load exists, in which case
+            // that number stays authoritative and no relative guidance is
+            // needed alongside it.
+            if template.loadKilograms == nil {
+                movement.relativeLoadTier = target.loadGuidance?.tier
+                movement.relativeLoadTargetReserveRepsOpeningRound = target.loadGuidance?.targetReserveRepsOpeningRound
+                movement.relativeLoadSustainableUnbrokenIntent = target.loadGuidance?.sustainableUnbrokenIntent
+            }
         }
 
         return movement

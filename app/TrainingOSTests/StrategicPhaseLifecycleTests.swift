@@ -448,13 +448,18 @@ final class StrategicPhaseLifecycleTests: XCTestCase {
 
         // Phase 2's Hypertrophy component is `.rmBased` and genuinely
         // requires fresh calibration — a coherent, successfully-committed
-        // transition, not a failure.
+        // transition, not a failure. Dogfood Round 1 (Finding 1): missing
+        // calibration no longer defers materialization — real Sessions
+        // exist immediately, with only the affected weight unresolved.
         XCTAssertFalse(transitionResult.startResult.componentsAwaitingCalibration.isEmpty, "the Hypertrophy component of Phase 2's mix genuinely awaits calibration")
         XCTAssertEqual(transitionResult.nextPhase.status, .active, "the phase itself is fully active despite one component awaiting calibration")
         let hypertrophyInstance = try XCTUnwrap(transitionResult.startResult.instancesByComponent.values.first {
             $0.programDefinition?.programmingSystem == .hypertrophy
         })
-        XCTAssertTrue(hypertrophyInstance.sessions.isEmpty, "no fabricated tactical content for the awaiting-calibration component")
+        XCTAssertFalse(hypertrophyInstance.sessions.isEmpty, "missing calibration must never block materialization, even across a phase transition")
+        let unresolvedPrescription = hypertrophyInstance.sessions.flatMap(\.orderedBlocks).flatMap(\.orderedPrescriptions)
+            .first { $0.appliedLoadReasonCode == .calibrationRequired }
+        XCTAssertNotNil(unresolvedPrescription, "the awaiting-calibration exercise's weight must be honestly unresolved, never fabricated")
         XCTAssertFalse(RequiredSourceCalibrationsUseCase.stillRequired(for: try XCTUnwrap(hypertrophyInstance.programDefinition), instance: hypertrophyInstance).isEmpty)
     }
 

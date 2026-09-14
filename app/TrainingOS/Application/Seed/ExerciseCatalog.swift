@@ -126,7 +126,8 @@ struct ExerciseCatalog {
             movementFunctions: [MovementFunction] = [],
             functionalModality: FunctionalModality? = nil,
             requiredEquipment: [EquipmentRequirement] = [],
-            isExplosiveExpression: Bool = false
+            isExplosiveExpression: Bool = false,
+            requiresDemonstratedCapability: Bool = false
         ) -> Exercise {
             if let existing = try? context.fetch(FetchDescriptor<Exercise>(predicate: #Predicate { $0.canonicalName == name })).first {
                 return existing
@@ -134,7 +135,8 @@ struct ExerciseCatalog {
             let exercise = Exercise(
                 canonicalName: name, modality: modality, equipment: equipment, movementPattern: pattern,
                 primaryTargets: primaryTargets, movementFunctions: movementFunctions, functionalModality: functionalModality,
-                requiredEquipment: requiredEquipment, isExplosiveExpression: isExplosiveExpression
+                requiredEquipment: requiredEquipment, isExplosiveExpression: isExplosiveExpression,
+                requiresDemonstratedCapability: requiresDemonstratedCapability
             )
             context.insert(exercise)
             return exercise
@@ -260,7 +262,7 @@ struct ExerciseCatalog {
         let handstandPushUp = make(
             "Handstand Push-up", .functionalFitness, "bodyweight", "verticalPush",
             primaryTargets: [.shoulders, .triceps], movementFunctions: [.gymnasticsPush], functionalModality: .gymnastics,
-            requiredEquipment: [.bodyweight]
+            requiredEquipment: [.bodyweight], requiresDemonstratedCapability: true
         )
 
         // Weightlifting.
@@ -536,7 +538,7 @@ struct ExerciseCatalog {
         let chestToBarPullUp = make(
             "Chest-to-Bar Pull-up", .functionalFitness, "bodyweight", "verticalPull",
             primaryTargets: [.back, .biceps], movementFunctions: [.gymnasticsPull, .verticalPullLoaded], functionalModality: .gymnastics,
-            requiredEquipment: [.pullUpBar]
+            requiredEquipment: [.pullUpBar], requiresDemonstratedCapability: true
         )
         let doubleUnders = make(
             "Double-Unders", .functionalFitness, "bodyweight", "jumpRope",

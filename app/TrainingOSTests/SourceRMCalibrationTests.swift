@@ -164,7 +164,16 @@ final class SourceRMCalibrationTests: XCTestCase {
         UserAvailability(trainingDaysPerWeek: 7, allowsDoubleSessions: false, maxSessionsPerDay: 1)
     }
 
-    func testMissingCalibrationDefersRatherThanFabricatingAndCalibrationCompletionMaterializesExactlyOnce() throws {
+    /// Dogfood Round 1 (Finding 1): replaces the old "defers rather than
+    /// fabricating" behavior this test previously proved — that WAS the
+    /// real product bug ("I'd rather test this properly first" could
+    /// never actually let the athlete proceed, since materialization
+    /// never happened until every calibration was entered). Sessions
+    /// must now materialize immediately regardless of missing
+    /// calibration, leaving only the affected slot's WEIGHT honestly
+    /// unresolved (`.calibrationRequired`) — never blank sets/reps, never
+    /// a fabricated number.
+    func testMissingCalibrationNeverBlocksMaterializationAndCalibrationCompletionResolvesTheRealWeight() throws {
         let asOf = date(2026, 1, 5)
         let fixture = try makeAcceptedPlan(asOf: asOf)
         let catalog = ExerciseCatalog.resolveOrInsert(context: context)
@@ -174,34 +183,35 @@ final class SourceRMCalibrationTests: XCTestCase {
             catalog.backSquat, catalog.benchPress, catalog.inclineDumbbellPress, catalog.romanianDeadlift, catalog.legPress,
         ], trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context))
 
-        // G — missing calibration defers, never fabricates.
+        // Missing calibration never blocks materialization anymore.
         let startResult = try StartPhaseUseCase.start(
             phase: fixture.phase, mix: recommended.mix, asOf: asOf, ownerUserID: ownerUserID,
             performanceProfile: nil, availability: availability(), materializationContext: materializationContext, context: context
         )
         let instance = try XCTUnwrap(fixture.phase.primaryInstance)
-        XCTAssertTrue(instance.sessions.isEmpty)
-        XCTAssertFalse(startResult.componentsAwaitingCalibration.isEmpty)
+        XCTAssertFalse(instance.sessions.isEmpty, "Sessions must materialize immediately, even with calibration outstanding")
+        XCTAssertFalse(startResult.componentsAwaitingCalibration.isEmpty, "still tracked informationally")
+        let sessionCountBeforeCalibration = instance.sessions.count
 
-        // H — completing calibration materializes exactly once.
+        // The affected slot's prescription must be honestly unresolved —
+        // reps/sets still fully prescribed, only the weight blank.
+        let unresolvedPrescription = try XCTUnwrap(
+            ProgramWeekGrouping.realSessions(in: instance, forWeek: 0)
+                .flatMap(\.orderedBlocks).flatMap(\.orderedPrescriptions)
+                .first { $0.appliedLoadReasonCode == .calibrationRequired }
+        )
+        XCTAssertNil(unresolvedPrescription.orderedSetPrescriptions.first?.targetWeight)
+        XCTAssertFalse(unresolvedPrescription.orderedSetPrescriptions.isEmpty, "sets are still fully prescribed — only the weight is unresolved")
+
+        // Completing calibration resolves the real weight in place —
+        // never re-materializes, never duplicates a session.
         try CalibrationTestSupport.completeAnyPendingCalibrationAndMaterialize(
             phase: fixture.phase, performanceProfile: nil, availability: availability(),
             materializationContext: materializationContext, asOf: asOf, context: context
         )
-        XCTAssertFalse(instance.sessions.isEmpty, "materialization must succeed exactly once calibration is complete")
-        let sessionCountAfterFirstMaterialization = instance.sessions.count
-
-        // Re-verifying with calibration already satisfied must not
-        // duplicate materialization (defensive re-check inside
-        // `materializeOnceCalibrationComplete` throws instead).
-        guard let component = instance.trainingMixComponents.first, let mix = component.trainingMix else {
-            return XCTFail("expected a wired component/mix")
-        }
-        XCTAssertThrowsError(try StartPhaseUseCase.materializeOnceCalibrationComplete(
-            component: component, instance: instance, phase: fixture.phase, mix: mix, asOf: asOf, ownerUserID: ownerUserID,
-            performanceProfile: nil, availability: availability(), materializationContext: materializationContext, context: context
-        ))
-        XCTAssertEqual(instance.sessions.count, sessionCountAfterFirstMaterialization, "a defensive re-call must never re-materialize or duplicate sessions")
+        XCTAssertEqual(instance.sessions.count, sessionCountBeforeCalibration, "calibration completion must never materialize a duplicate session")
+        XCTAssertNotEqual(unresolvedPrescription.appliedLoadReasonCode, .calibrationRequired, "the real weight must now be resolved")
+        XCTAssertNotNil(unresolvedPrescription.orderedSetPrescriptions.first?.targetWeight)
     }
 
     // MARK: Q — non-.rmBased programs are never gated

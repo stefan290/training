@@ -40,8 +40,15 @@ final class YearOverviewTests: XCTestCase {
         let phases = viewModel.yearOverviewPhases
         XCTAssertFalse(phases.isEmpty, "a real recommendation must always produce at least the current phase")
         XCTAssertEqual(phases.map(\.type), viewModel.phaseTypeLabels.count == phases.count ? phases.map(\.type) : phases.map(\.type), "sanity: phases exist")
-        // No dated objectives -> the common case is exactly one real phase.
-        XCTAssertEqual(phases.count, 1, "a no-target-date, no-objective Build Muscle goal must never be split into a fabricated multi-phase route")
+        // Dogfood Round 1 (Finding 2): no dated objectives no longer means
+        // "exactly one phase, forever" — that WAS the real product bug
+        // ("No later phase is planned yet" for a completely ordinary
+        // Build Muscle goal). A real rolling horizon is now expected,
+        // matching `StrategicPeriodizationPolicy`'s own Build Muscle cycle
+        // — never fabricated beyond it, and the final phase stays
+        // open-ended (lower precision, strategic intent only).
+        XCTAssertEqual(phases.map(\.type), [.muscleGain, .muscleGain, .maintenance])
+        XCTAssertNil(phases.last?.endDate, "the horizon's final phase stays open-ended, never a fabricated exact future date")
     }
 
     // MARK: B — Build Muscle + Summer Shape

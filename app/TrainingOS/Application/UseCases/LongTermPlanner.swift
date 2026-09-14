@@ -121,10 +121,20 @@ enum LongTermPlanner {
     ) -> (phases: [ProposedPhase], feasibility: StrategicPlanFeasibility, explanation: String) {
         let primaryType = params.primaryType
         guard let targetDate = params.targetDate else {
-            // No target date at all — a single open-ended phase, never a
-            // guessed horizon.
-            let phase = openEndedPhase(type: primaryType, startDate: asOf)
-            return ([phase], .feasible, "Open-ended \(primaryType.rawValue) phase — no target date was stated.")
+            // Dogfood Round 1 (Finding 2): no target date at all no longer
+            // means "one phase, forever, then silence" — that produced a
+            // real, traced product bug ("No later phase is planned yet"
+            // shown for a completely normal, no-milestone Build Muscle
+            // goal). `Plan = Direction` still requires a rolling horizon:
+            // the CURRENT phase (precise) plus real NEAR-FUTURE phases
+            // (typed/duration-estimated via the exact same
+            // `StrategicPeriodizationPolicy`/`fillForwardPhases` machinery
+            // the milestone-anchored path already uses), with the final
+            // phase in that horizon left open-ended — LATER DIRECTION,
+            // intentionally lower precision, never a fabricated exact
+            // future mix. See `rollingOpenEndedHorizon`'s own doc comment.
+            let phases = rollingOpenEndedHorizon(from: asOf, primaryType: primaryType, goal: goal)
+            return (phases, .feasible, "Plan follows \(primaryType.rawValue) with a rolling strategic horizon — no target date was stated.")
         }
 
         let (phases, feasible) = fillForwardPhases(
@@ -453,6 +463,46 @@ enum LongTermPlanner {
         )
     }
 
+    /// Dogfood Round 1 (Finding 2): the no-target-date branch's own
+    /// rolling, NEAR-FUTURE horizon — never an unbounded/infinite fill
+    /// (`Plan = Direction`, not "every future workout planned"). Fills
+    /// exactly one full `StrategicPeriodizationPolicy` cycle's worth of
+    /// phases — the natural, already-designed boundary for "how far ahead
+    /// this policy has a real strategic opinion" — using the identical
+    /// per-phase construction `fillForwardPhases` uses for the
+    /// milestone-anchored/reconciled paths (`nextProposedPhase` below),
+    /// never a second/duplicated planner. The LAST phase in this horizon
+    /// is deliberately left open-ended (`endDate: nil`) rather than
+    /// clipped to a fabricated far-future date: an open `endDate` is
+    /// already, everywhere else in this app, the honest representation of
+    /// "strategic intent only, no committed date yet" — exactly the
+    /// meaning this branch's own prior single-phase fallback carried, now
+    /// simply placed one cycle further out instead of immediately.
+    private static func rollingOpenEndedHorizon(from start: Date, primaryType: PhaseType, goal: Goal) -> [ProposedPhase] {
+        let cycleLength = StrategicPeriodizationPolicy.cycleLength(for: primaryType)
+        guard cycleLength > 0 else { return [openEndedPhase(type: primaryType, startDate: start)] }
+
+        var phases: [ProposedPhase] = []
+        var current = start
+        for cyclePosition in 0..<cycleLength {
+            guard let step = nextProposedPhase(
+                current: current, cyclePosition: cyclePosition, primaryType: primaryType,
+                remainingWeeksCap: nil, baseReasonCodes: [.phaseSelectedForGoal], goal: goal
+            ) else { break }
+            phases.append(step.phase)
+            current = step.phase.endDate ?? current
+        }
+        guard !phases.isEmpty else { return [openEndedPhase(type: primaryType, startDate: start)] }
+
+        if let last = phases.popLast() {
+            phases.append(ProposedPhase(
+                type: last.type, priorityRule: last.priorityRule, startDate: last.startDate, endDate: nil,
+                durationKind: last.durationKind, reasonCodes: last.reasonCodes
+            ))
+        }
+        return phases
+    }
+
     /// Forward-fills `primaryType` phases from `start` to `end`, inserting
     /// one Maintenance phase after every 2 consecutive `primaryType`
     /// phases (`PHASE_PLANNING_RULES.md` §7's "inserted when the
@@ -514,55 +564,81 @@ enum LongTermPlanner {
                 break
             }
 
-            let intent = StrategicPeriodizationPolicy.nextPhaseIntent(primaryType: primaryType, cyclePosition: cyclePosition)
-            // Long-Term Planner Intelligence — Final Duration Fix: duration
-            // must come from the ACTUAL recommended TrainingMix for this
-            // phase, never from `PhaseType` alone (`PhaseType.strength`
-            // can resolve to either Family D/E, 5wk/no-succession, or a
-            // Hypertrophy-engine alternate with real succession — proven
-            // by the Final Pre-Commit Semantic Check). Only ever previews
-            // a mix for phase types `ExecutablePhaseDurationResolver`
-            // could actually return a stricter bound for (today: exactly
-            // `.strength`) — every other type always resolves to `nil`
-            // regardless of which mix is recommended, so previewing one
-            // would be both wasted real-scheduling computation AND unsafe:
-            // `candidateMixTemplates(.maintenance/.recovery/.transition)`
-            // routes through `planningContext(for:)`, which reads
-            // `phase.plan` — a relationship SwiftData cannot safely fault
-            // on a `TrainingPhase` that was never inserted into any
-            // `ModelContext` (confirmed empirically: previewing every
-            // phase type here hung the test runner indefinitely; scoping
-            // the preview to `.strength` only, whose own
-            // `candidateMixTemplates` case never touches `phase.plan` at
-            // all, resolved it). `previewPhase` itself is still pure and
-            // never persisted.
-            let phaseDurationKind: PhaseDurationKind
-            if intent.type == .strength {
-                let previewPhase = TrainingPhase(
-                    type: intent.type, startDate: current, priorityRule: priorityRule(for: intent.type), status: .planned
-                )
-                let recommendedMix = proposeTrainingMix(phase: previewPhase, goal: goal)
-                    .first { $0.roles.contains(.recommended) }?.mix
-                phaseDurationKind = recommendedMix.flatMap { ExecutablePhaseDurationResolver.executablePlanningDuration(for: $0) }
-                    ?? PhaseDurationDefaults.range(for: intent.type)
-            } else {
-                phaseDurationKind = PhaseDurationDefaults.range(for: intent.type)
-            }
-            let phaseTypicalWeeks = phaseDurationKind.planningWeeks ?? primaryTypicalWeeks
-            let weeksToUse = min(phaseTypicalWeeks, remainingWeeks)
-            guard weeksToUse > 0 else { break }
-
-            let phaseEnd = addingWeeks(weeksToUse, to: current)
-            phases.append(ProposedPhase(
-                type: intent.type, priorityRule: priorityRule(for: intent.type),
-                startDate: current, endDate: phaseEnd,
-                durationKind: phaseDurationKind, reasonCodes: baseReasonCodes + intent.reasonCodes
-            ))
-            current = phaseEnd
+            guard let step = nextProposedPhase(
+                current: current, cyclePosition: cyclePosition, primaryType: primaryType,
+                remainingWeeksCap: remainingWeeks, baseReasonCodes: baseReasonCodes, goal: goal
+            ) else { break }
+            phases.append(step.phase)
+            current = step.phase.endDate ?? current
             cyclePosition += 1
         }
 
         return (phases, true)
+    }
+
+    private struct PhaseStep {
+        var phase: ProposedPhase
+    }
+
+    /// The single, shared per-phase construction site for every forward
+    /// fill — `fillForwardPhases` (date-bounded: milestone-anchored,
+    /// reconciled) and `rollingOpenEndedHorizon` (Dogfood Round 1, Finding
+    /// 2 — count-bounded, no target date) both call this rather than
+    /// duplicating it. Asks `StrategicPeriodizationPolicy` what comes next
+    /// and why, then resolves that phase's real duration exactly as
+    /// before this extraction (see the Final Duration Fix's own reasoning,
+    /// preserved verbatim below) — behavior for every existing
+    /// date-bounded caller is unchanged by this refactor.
+    private static func nextProposedPhase(
+        current: Date, cyclePosition: Int, primaryType: PhaseType, remainingWeeksCap: Int?,
+        baseReasonCodes: [PlannerReasonCode], goal: Goal
+    ) -> PhaseStep? {
+        let intent = StrategicPeriodizationPolicy.nextPhaseIntent(primaryType: primaryType, cyclePosition: cyclePosition)
+        // Long-Term Planner Intelligence — Final Duration Fix: duration
+        // must come from the ACTUAL recommended TrainingMix for this
+        // phase, never from `PhaseType` alone (`PhaseType.strength`
+        // can resolve to either Family D/E, 5wk/no-succession, or a
+        // Hypertrophy-engine alternate with real succession — proven
+        // by the Final Pre-Commit Semantic Check). Only ever previews
+        // a mix for phase types `ExecutablePhaseDurationResolver`
+        // could actually return a stricter bound for (today: exactly
+        // `.strength`) — every other type always resolves to `nil`
+        // regardless of which mix is recommended, so previewing one
+        // would be both wasted real-scheduling computation AND unsafe:
+        // `candidateMixTemplates(.maintenance/.recovery/.transition)`
+        // routes through `planningContext(for:)`, which reads
+        // `phase.plan` — a relationship SwiftData cannot safely fault
+        // on a `TrainingPhase` that was never inserted into any
+        // `ModelContext` (confirmed empirically: previewing every
+        // phase type here hung the test runner indefinitely; scoping
+        // the preview to `.strength` only, whose own
+        // `candidateMixTemplates` case never touches `phase.plan` at
+        // all, resolved it). `previewPhase` itself is still pure and
+        // never persisted.
+        let phaseDurationKind: PhaseDurationKind
+        if intent.type == .strength {
+            let previewPhase = TrainingPhase(
+                type: intent.type, startDate: current, priorityRule: priorityRule(for: intent.type), status: .planned
+            )
+            let recommendedMix = proposeTrainingMix(phase: previewPhase, goal: goal)
+                .first { $0.roles.contains(.recommended) }?.mix
+            phaseDurationKind = recommendedMix.flatMap { ExecutablePhaseDurationResolver.executablePlanningDuration(for: $0) }
+                ?? PhaseDurationDefaults.range(for: intent.type)
+        } else {
+            phaseDurationKind = PhaseDurationDefaults.range(for: intent.type)
+        }
+        let primaryTypicalWeeks = PhaseDurationDefaults.range(for: primaryType).planningWeeks ?? 8
+        let phaseTypicalWeeks = phaseDurationKind.planningWeeks ?? primaryTypicalWeeks
+        let weeksToUse = remainingWeeksCap.map { min(phaseTypicalWeeks, $0) } ?? phaseTypicalWeeks
+        guard weeksToUse > 0 else { return nil }
+
+        let phaseEnd = addingWeeks(weeksToUse, to: current)
+        let phase = ProposedPhase(
+            type: intent.type, priorityRule: priorityRule(for: intent.type),
+            startDate: current, endDate: phaseEnd,
+            durationKind: phaseDurationKind, reasonCodes: baseReasonCodes + intent.reasonCodes
+        )
+        return PhaseStep(phase: phase)
     }
 
     private static func phaseType(for goalType: GoalType) -> PhaseType {
@@ -589,6 +665,25 @@ enum LongTermPlanner {
         case .gainMuscle: return .muscleGain
         case .maintain, .none: return primaryType
         }
+    }
+
+    /// Dogfood Round 1 (Finding 2): "Goal != Phase" made athlete-visible —
+    /// a real, connective explanation for a phase whose type genuinely
+    /// diverges from the goal's own primary type, so the athlete never
+    /// wonders why (say) a "Get Stronger" goal opened with a Muscle
+    /// Development phase. Consumed by `AcceptStrategicPlanUseCase` to
+    /// populate the per-phase `PlannerDecision` `PhaseDetailView` already
+    /// reads (`PhaseDetailViewModel.phaseExplanation`). Returns `nil` for
+    /// any ordinary phase whose type already matches what the athlete
+    /// would expect — never a manufactured explanation for a phase that
+    /// needs none. Applies identically whether or not the goal has a
+    /// target date (`StrategicPeriodizationPolicy`'s cycle is the same
+    /// either way — no separate no-target-date periodization model).
+    static func phaseGoalRelationshipExplanation(reasonCodes: [PlannerReasonCode], phaseType: PhaseType, goal: Goal) -> String? {
+        guard reasonCodes.contains(.developmentPhaseSupportsPrimaryGoal) else { return nil }
+        let goalLabel = PlanPresentation.mainGoalLabel(goal.primaryType)
+        return "Build additional muscle and training capacity now, creating a stronger base for the "
+            + "direct Strength phases that follow — in service of your \(goalLabel) goal."
     }
 
     /// Dated Objectives + 10K Strategic Reconciliation V1: which
@@ -2030,7 +2125,18 @@ enum LongTermPlanner {
         let days = max(1, component.frequency.target)
 
         if ProgramCapabilityRegistry.isFunctionalFitnessV1Supported(daysPerWeek: days),
-           let weeklyPlan = FunctionalFitnessAuthoredProgramLibrary.weeklyPlan(forSessionsPerWeek: days) {
+           let authoredPlan = FunctionalFitnessAuthoredProgramLibrary.weeklyPlan(forSessionsPerWeek: days) {
+            // Dogfood Round 1 (Finding 3A): the current phase's own
+            // adaptation priority biases which of the already-authored
+            // FF Multi-Week V1 levers apply — never a second content
+            // library, never new FF vocabulary. `component.trainingMix?
+            // .phase` is `nil` only for a disposable preview component
+            // never attached to a real phase, in which case the
+            // authored plan is used completely unbiased (today's exact
+            // behavior).
+            let weeklyPlan = FunctionalFitnessPhaseBiasPolicy.apply(
+                authoredPlan, phaseType: component.trainingMix?.phase?.type
+            )
             // Placeholder single-stimulus fields below are structurally
             // required by `FunctionalFitnessProgramConfiguration`'s
             // existing shape but are IGNORED by the generator whenever

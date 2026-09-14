@@ -98,6 +98,31 @@ enum AcceptStrategicPlanUseCase {
             )
             context.insert(phase)
             plan.addPhase(phase)
+
+            // Dogfood Round 1 (Finding 2, per-phase "why" requirement):
+            // Goal != Phase — a phase whose type diverges from the goal's
+            // own primary type (most notably `StrategicPeriodizationPolicy`'s
+            // `.developmentPhaseSupportsPrimaryGoal` reason, e.g. a Get
+            // Stronger goal's own Muscle Development phase) must make that
+            // relationship explicit to the athlete, never leave them
+            // wondering why their "Get Stronger" goal opened with a
+            // Hypertrophy phase. Reuses the EXISTING per-phase
+            // `PlannerDecision`/`PhaseDetailViewModel.phaseExplanation`
+            // hook (already wired into `PhaseDetailView`'s header, simply
+            // never populated for a phase before this) — never a new
+            // presentation mechanism. Only created when there's a real,
+            // meaningful connective reason to explain; an ordinary
+            // primary-type phase needs no such row.
+            if let explanation = LongTermPlanner.phaseGoalRelationshipExplanation(
+                reasonCodes: proposedPhase.reasonCodes, phaseType: proposedPhase.type, goal: proposal.goal
+            ) {
+                let phaseDecision = PlannerDecision(
+                    decidedAt: decidedAt, decisionType: .phaseSelected, source: .systemRecommended,
+                    reasonCode: proposedPhase.reasonCodes.first ?? decisionReasonCode,
+                    explanation: explanation, goal: proposal.goal, phase: phase
+                )
+                context.insert(phaseDecision)
+            }
         }
 
         let decision = PlannerDecision(

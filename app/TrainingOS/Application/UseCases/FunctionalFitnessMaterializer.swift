@@ -26,6 +26,16 @@ enum FunctionalFitnessMaterializationError: Error, Equatable {
     /// thrown rather than leaving the slot unresolved or silently
     /// substituting an unrelated movement.
     case environmentIncompatible(slot: String, missingEquipment: [EquipmentRequirement])
+    /// Dogfood Round 1 — Final Close (Finding 3C correction): the only
+    /// otherwise-eligible candidate(s) for this slot all carry
+    /// `Exercise.requiresDemonstratedCapability` — TrainingOS has no real
+    /// athlete-capability state to confirm the athlete can perform them,
+    /// so this is thrown rather than silently auto-prescribing an
+    /// unscaled advanced movement. Never blocks a real, already-chosen
+    /// GOING FORWARD preference (an athlete's own explicit prior choice
+    /// always wins, unaffected by this case) and never blocks manual
+    /// Change Exercise selection — only TrainingOS's own automatic pick.
+    case capabilityUnknown(slot: String, exercise: String)
 }
 
 /// Turns a Functional Fitness `ProgramDefinition`'s template graph into
@@ -287,7 +297,7 @@ enum FunctionalFitnessMaterializer {
             let preferredExercise = instance.functionalFitnessMovementFunctionOverride(for: function)?.selectedExercise
             let thisWeekExposureForFunction = thisWeekExerciseExposure[function] ?? [:]
             let priorExposureForFunction = priorWeekExerciseExposure[function] ?? [:]
-            let resolvedExercise = preferredExercise.flatMap { preferred in eligible.first { $0.id == preferred.id } } ?? eligible.min { a, b in
+            let leastExposedFirst: (Exercise, Exercise) -> Bool = { a, b in
                 let thisWeekA = thisWeekExposureForFunction[a.id] ?? 0
                 let thisWeekB = thisWeekExposureForFunction[b.id] ?? 0
                 if thisWeekA != thisWeekB { return thisWeekA < thisWeekB }
@@ -295,6 +305,31 @@ enum FunctionalFitnessMaterializer {
                 let priorB = priorExposureForFunction[b.id] ?? 0
                 if priorA != priorB { return priorA < priorB }
                 return a.canonicalName < b.canonicalName
+            }
+
+            // Dogfood Round 1 — Final Close (Finding 3C correction): a
+            // real, already-recorded GOING FORWARD preference is an
+            // informed athlete choice and always wins outright, regardless
+            // of capability — checked first, unchanged. Otherwise, the
+            // AUTOMATIC least-exposed rotation must never land on an
+            // exercise flagged `requiresDemonstratedCapability` while a
+            // real ordinary alternative is eligible this round; only when
+            // EVERY remaining eligible candidate requires demonstrated
+            // capability does this fail honestly (typed, thrown) rather
+            // than silently auto-prescribing an unscaled advanced
+            // movement.
+            let resolvedExercise: Exercise?
+            if let preferredExercise, let overridden = eligible.first(where: { $0.id == preferredExercise.id }) {
+                resolvedExercise = overridden
+            } else {
+                let ordinaryEligible = eligible.filter { !$0.requiresDemonstratedCapability }
+                if let picked = ordinaryEligible.min(by: leastExposedFirst) {
+                    resolvedExercise = picked
+                } else if let advancedOnly = eligible.min(by: leastExposedFirst) {
+                    throw FunctionalFitnessMaterializationError.capabilityUnknown(slot: slot.name, exercise: advancedOnly.canonicalName)
+                } else {
+                    resolvedExercise = nil
+                }
             }
             if let resolvedExercise {
                 usedExerciseIDsThisSession.insert(resolvedExercise.id)
@@ -307,7 +342,10 @@ enum FunctionalFitnessMaterializer {
 
             let movement = FunctionalFitnessMovement(
                 exercise: resolvedExercise, reps: generatedTarget.reps, calories: nil,
-                distanceMeters: generatedTarget.distanceMeters, loadKilograms: nil, minuteSlot: nil
+                distanceMeters: generatedTarget.distanceMeters, loadKilograms: nil, minuteSlot: nil,
+                relativeLoadTier: generatedTarget.loadGuidance?.tier,
+                relativeLoadTargetReserveRepsOpeningRound: generatedTarget.loadGuidance?.targetReserveRepsOpeningRound,
+                relativeLoadSustainableUnbrokenIntent: generatedTarget.loadGuidance?.sustainableUnbrokenIntent
             )
             context.insert(movement)
             movement.sourceExerciseSlot = slot
@@ -472,8 +510,40 @@ enum FunctionalFitnessMaterializer {
             // the first candidate satisfying the slot's typed
             // constraints — deterministic, never a name-parsed or
             // random pick (§9/§29).
-            let resolvedExercise = SubstituteExerciseUseCase.resolvedExercise(for: exerciseSlot, in: instance)
-                ?? candidateExercises.first { SubstitutionValidator.isValid(candidate: $0, for: exerciseSlot, environment: environment) }
+            //
+            // Dogfood Round 1 — Final Close (Finding 3C correction):
+            // `requiresDemonstratedCapability` describes only the
+            // EXERCISE, never whether THIS athlete has demonstrated that
+            // capability — no real athlete-capability state exists
+            // anywhere in this app today, so "unknown" is the only honest
+            // reading. UNKNOWN CAPABILITY must never become an AUTOMATIC
+            // unscaled advanced prescription: an exercise carrying this
+            // flag is now completely excluded from the ordinary automatic
+            // pick, even when it is the sole otherwise-eligible candidate
+            // — this throws a precise, typed error instead of silently
+            // falling back to it (mirroring this same function's existing
+            // `.environmentIncompatible` "fail honestly" precedent). A
+            // real, already-recorded GOING FORWARD preference (the
+            // athlete's own explicit prior choice) still wins outright,
+            // completely unaffected by this check — and manual Change
+            // Exercise substitution remains available regardless.
+            let resolvedExercise: Exercise?
+            if let goingForward = SubstituteExerciseUseCase.resolvedExercise(for: exerciseSlot, in: instance) {
+                resolvedExercise = goingForward
+            } else if let ordinary = candidateExercises.first(where: {
+                SubstitutionValidator.isValid(candidate: $0, for: exerciseSlot, environment: environment) && !$0.requiresDemonstratedCapability
+            }) {
+                resolvedExercise = ordinary
+            } else if let advancedOnly = candidateExercises.first(where: {
+                SubstitutionValidator.isValid(candidate: $0, for: exerciseSlot, environment: environment)
+            }) {
+                throw FunctionalFitnessMaterializationError.capabilityUnknown(slot: exerciseSlot.name, exercise: advancedOnly.canonicalName)
+            } else {
+                // Truly zero eligible candidates at all — pre-existing,
+                // unrelated behavior (never reached by capability alone),
+                // unchanged by this fix.
+                resolvedExercise = nil
+            }
 
             // Stage FF.P1: a real, non-nil structural target,
             // resolved AFTER Stage D above has already picked the
@@ -489,13 +559,22 @@ enum FunctionalFitnessMaterializer {
                 movementFunctions: exerciseSlot.allowedMovementFunctions, exercise: resolvedExercise
             )
 
+            // Dogfood Round 1 — Final Close (Finding 3D): a real
+            // hand-authored numeric `loadKilograms` always wins outright
+            // — relative guidance is only ever the fallback for a loaded
+            // movement that has no legitimate numeric target, never
+            // layered on top of one that already does.
+            let resolvedLoadKilograms = slotTemplate.loadKilograms
             let movement = FunctionalFitnessMovement(
                 exercise: resolvedExercise,
                 reps: slotTemplate.reps ?? generatedTarget.reps,
                 calories: slotTemplate.calories,
                 distanceMeters: slotTemplate.distanceMeters ?? generatedTarget.distanceMeters,
-                loadKilograms: slotTemplate.loadKilograms,
-                minuteSlot: slotTemplate.minuteSlot
+                loadKilograms: resolvedLoadKilograms,
+                minuteSlot: slotTemplate.minuteSlot,
+                relativeLoadTier: resolvedLoadKilograms == nil ? generatedTarget.loadGuidance?.tier : nil,
+                relativeLoadTargetReserveRepsOpeningRound: resolvedLoadKilograms == nil ? generatedTarget.loadGuidance?.targetReserveRepsOpeningRound : nil,
+                relativeLoadSustainableUnbrokenIntent: resolvedLoadKilograms == nil ? generatedTarget.loadGuidance?.sustainableUnbrokenIntent : nil
             )
             context.insert(movement)
             // Stage FF.P1: a real, pre-existing gap this stage

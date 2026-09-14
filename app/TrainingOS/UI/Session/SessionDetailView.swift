@@ -58,6 +58,14 @@ struct SessionDetailView: View {
         SessionDisplayMode.mode(for: session.status, readOnly: readOnly)
     }
 
+    /// Dogfood Round 1 (Finding 4): whether this session's own currently-
+    /// scheduled Day is already today — when true, "Start Today Instead"
+    /// has nothing to override.
+    private var isScheduledForToday: Bool {
+        guard let date = session.day?.date else { return false }
+        return Calendar.current.isDate(date, inSameDayAs: Date())
+    }
+
     var body: some View {
         Group {
             if displayMode == .completedHistory {
@@ -74,6 +82,21 @@ struct SessionDetailView: View {
                             // Session used to jump straight into execution
                             // from.
                             SessionPreviewContent(session: session)
+
+                            // Dogfood Round 1 (Finding 4): "PLAN =
+                            // RECOMMENDATION, ATHLETE APPROVAL/ACTION =
+                            // AUTHORITATIVE" — the athlete could inspect
+                            // this session but never actually start it
+                            // unless it happened to fall on today. Never
+                            // shown for a session already scheduled for
+                            // today (nothing to override).
+                            if !isScheduledForToday {
+                                Button("Start Today Instead") {
+                                    startToday()
+                                }
+                                .buttonStyle(.trainingOSPrimary)
+                                .frame(maxWidth: .infinity)
+                            }
                         } else {
                             ForEach(session.orderedBlocks) { block in
                                 NavigationLink {
@@ -221,6 +244,18 @@ struct SessionDetailView: View {
             session, context: context, asOf: Date(), highlights: executionState.highlights, modelContext: modelContext
         ) else { return }
         completionSummary = summary
+    }
+
+    /// Dogfood Round 1 (Finding 4): re-parents this exact Session onto
+    /// today and starts it — see `StartSessionOnDifferentDayUseCase`'s
+    /// own doc comment for the full reasoning. `onChange()` lets Today
+    /// reload immediately (this session now belongs to it); `dismiss()`
+    /// because this screen was pushed from a future-week view that no
+    /// longer shows this session at all once it moves.
+    private func startToday() {
+        guard (try? StartSessionOnDifferentDayUseCase.startToday(session, asOf: Date(), modelContext: modelContext)) != nil else { return }
+        onChange()
+        dismiss()
     }
 }
 

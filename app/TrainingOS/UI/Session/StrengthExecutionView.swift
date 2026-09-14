@@ -43,6 +43,10 @@ struct StrengthExecutionView: View {
     /// it has a real side effect (freezing the recommendation onto
     /// `ExercisePrescription` the first time, D-10R5-19).
     @State private var effectiveTargetWeight: Double?
+    /// Dogfood Round 1 (Finding 1): the athlete's in-session calibration
+    /// entry — cleared whenever a new movement loads, never carried over
+    /// between exercises.
+    @State private var calibrationText: String = ""
 
     init(block: WorkoutBlock, session: Session, executionState: SessionExecutionState) {
         _viewModel = State(initialValue: StrengthExecutionViewModel(block: block))
@@ -60,20 +64,29 @@ struct StrengthExecutionView: View {
                 } else if let movement = viewModel.currentMovement, let exercise = movement.exercise {
                     header(exercise: exercise)
 
-                    if effectiveTargetWeight != nil || !viewModel.previousResults.isEmpty {
-                        suggestedLoadCard(movement: movement)
-                    }
-
-                    if let highlight = lastHighlight {
-                        highlightBanner(highlight)
-                    }
-
-                    if viewModel.isMovementComplete {
-                        exerciseCompleteContent
+                    if viewModel.currentMovementNeedsCalibration, let requirement = viewModel.currentMovementCalibrationRequirement {
+                        // Dogfood Round 1 (Finding 1): "test in first
+                        // session" — this exercise's working sets stay
+                        // hidden until the athlete supplies a real
+                        // starting weight, right here, before them. Never
+                        // a fabricated placeholder in the meantime.
+                        calibrationPromptCard(exercise: exercise, rmType: requirement.rmType)
                     } else {
-                        currentSetCard
+                        if effectiveTargetWeight != nil || !viewModel.previousResults.isEmpty {
+                            suggestedLoadCard(movement: movement)
+                        }
 
-                        RestTimerView(block: viewModel.block)
+                        if let highlight = lastHighlight {
+                            highlightBanner(highlight)
+                        }
+
+                        if viewModel.isMovementComplete {
+                            exerciseCompleteContent
+                        } else {
+                            currentSetCard
+
+                            RestTimerView(block: viewModel.block)
+                        }
                     }
 
                     navigationBar
@@ -256,6 +269,50 @@ struct StrengthExecutionView: View {
                 }
             }
         }
+    }
+
+    /// Dogfood Round 1 (Finding 1): "test in first session" — shown
+    /// instead of any working-set UI for a movement whose weight is still
+    /// honestly unresolved. Never fabricates a placeholder; the working
+    /// sets stay hidden until a real value is entered here.
+    ///
+    /// Final Close correction: names the SPECIFIC source-required RM type
+    /// (e.g. "10RM"), never a generic "starting weight" — an athlete who
+    /// deliberately chose "test this properly first" is being asked for
+    /// their real tested value, not waved toward a vague estimate.
+    /// Estimating is still explicitly offered as a fallback (the source's
+    /// own instruction, unchanged), never presented as the primary framing.
+    private func calibrationPromptCard(exercise: Exercise, rmType: RMType) -> some View {
+        let rmLabel = PlanPresentation.rmTypeLabel(rmType)
+        return VStack(alignment: .leading, spacing: 12) {
+            Text("What's your \(rmLabel)?")
+                .font(Theme.heading)
+                .foregroundStyle(Theme.textPrimary)
+            Text("This program calls for a real \(rmLabel) for \(exercise.canonicalName) — the heaviest weight you can lift for exactly that many reps. Enter your tested value, or your best estimate if you haven't tested it.")
+                .font(Theme.body)
+                .foregroundStyle(Theme.textSecondary)
+            HStack(spacing: 10) {
+                TextField("Enter value", text: $calibrationText)
+                    .keyboardType(.decimalPad)
+                    .font(Theme.numeric)
+                    .foregroundStyle(Theme.textPrimary)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
+                    .background(Theme.ground, in: RoundedRectangle(cornerRadius: 10))
+                Text("kg")
+                    .font(Theme.body)
+                    .foregroundStyle(Theme.textSecondary)
+            }
+            Button("Confirm & Continue") {
+                guard let value = Double(calibrationText), value > 0 else { return }
+                guard viewModel.submitCalibration(kilograms: value, modelContext: modelContext) else { return }
+                resetInputsForCurrentSet()
+            }
+            .buttonStyle(.trainingOSPrimary)
+            .frame(maxWidth: .infinity)
+            .disabled(Double(calibrationText).map { $0 > 0 } != true)
+        }
+        .trainingOSCard(emphasized: true)
     }
 
     /// The artifact's own accent-tinted "Suggested" callout, paired with
@@ -446,6 +503,7 @@ struct StrengthExecutionView: View {
     }
 
     private func resetInputsForCurrentSet() {
+        calibrationText = ""
         guard let setPrescription = viewModel.currentSetPrescription else { return }
         effectiveTargetWeight = viewModel.effectiveTargetWeight(modelContext: modelContext)
         weightText = (effectiveTargetWeight ?? setPrescription.targetWeight).map { $0.formattedWeight } ?? ""

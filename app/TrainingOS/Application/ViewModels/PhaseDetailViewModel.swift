@@ -143,7 +143,10 @@ final class PhaseDetailViewModel {
         }
 
         if phase.status == .active, let primaryInstance = phase.primaryInstance {
-            currentWeekIndex = ProgramWeekGrouping.nextWeekIndex(for: primaryInstance)
+            // Dogfood Round 1 (Finding 2B) — see `PlanViewModel.weekPosition`'s
+            // identical fix and doc comment: `nextWeekIndex` is "next week
+            // to materialize," not "current week for display."
+            currentWeekIndex = TacticalWeekCompletion.currentMaterializedWeekIndex(for: primaryInstance) ?? 0
             let primarySystem = activeComponents.first { $0.priority == .primary }?.programmingSystem
             let policyWindowDays = TacticalWindowPolicy.windowLengthInDays(
                 primarySystem: primarySystem, asOf: phase.startDate, phaseEndDate: phase.endDate

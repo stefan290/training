@@ -152,6 +152,25 @@ enum BlockPresentation {
         return parts.joined(separator: " \u{b7} ")
     }
 
+    /// Dogfood Round 1 — Final Close (Finding 3D): the athlete-facing
+    /// rendering of a loaded movement's authored RELATIVE load/intensity
+    /// guidance — `nil` whenever there's nothing to show (a genuinely
+    /// unloaded movement, or one that already has a real numeric
+    /// `loadKilograms`, in which case `prescribedMovementLine` above
+    /// already shows the real number and no relative guidance is needed
+    /// alongside it).
+    static func loadGuidanceLine(_ movement: FunctionalFitnessMovement) -> String? {
+        guard movement.loadKilograms == nil, let tier = movement.relativeLoadTier else { return nil }
+        var parts: [String] = [tier.displayLabel]
+        if let reserve = movement.relativeLoadTargetReserveRepsOpeningRound {
+            parts.append("~\(reserve) reps in reserve, opening round")
+        }
+        if movement.relativeLoadSustainableUnbrokenIntent == true {
+            parts.append("sustainable, unbroken pace")
+        }
+        return parts.joined(separator: " · ")
+    }
+
     static func formatLabel(_ format: WorkoutFormat) -> String {
         switch format {
         case .amrap(let capSeconds): "AMRAP \(capSeconds / 60)min"

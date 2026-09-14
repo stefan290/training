@@ -69,6 +69,21 @@ final class Exercise {
     /// `SubstitutionValidator`, which has no access to "the exercise
     /// being replaced" at all) — see that function's own doc comment.
     var isExplosiveExpression: Bool = false
+    /// Dogfood Round 1 (Finding 3C): a real, minimal capability signal —
+    /// `true` only for a handful of genuinely advanced gymnastics
+    /// expressions (Chest-to-Bar Pull-up, Handstand Push-up) that must
+    /// never be TrainingOS's own automatic, unscaled pick for an
+    /// otherwise-ordinary movement slot (e.g. plain `.gymnasticsPull`)
+    /// merely because they happen to share the same `movementFunctions`
+    /// as their standard counterpart. Default `false` (the common case)
+    /// — purely additive, zero migration risk. This is never a blanket
+    /// exclusion: an athlete may still explicitly choose one of these via
+    /// the existing Change Exercise/substitution flow (informed athlete
+    /// choice, never a silent TrainingOS assignment) — only the AUTOMATIC
+    /// first-eligible-candidate pick treats it as lower priority. The
+    /// deliberately minimal alternative to a full skill/capability
+    /// questionnaire.
+    var requiresDemonstratedCapability: Bool = false
 
     @Relationship(deleteRule: .cascade, inverse: \ExerciseAlias.exercise)
     var aliases: [ExerciseAlias] = []
@@ -99,11 +114,13 @@ final class Exercise {
         movementFunctions: [MovementFunction] = [],
         functionalModality: FunctionalModality? = nil,
         requiredEquipment: [EquipmentRequirement] = [],
-        isExplosiveExpression: Bool = false
+        isExplosiveExpression: Bool = false,
+        requiresDemonstratedCapability: Bool = false
     ) {
         self.id = id
         self.canonicalName = canonicalName
         self.isExplosiveExpression = isExplosiveExpression
+        self.requiresDemonstratedCapability = requiresDemonstratedCapability
         self.modality = modality
         self.equipment = equipment
         self.movementPattern = movementPattern

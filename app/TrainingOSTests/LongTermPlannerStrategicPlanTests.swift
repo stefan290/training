@@ -39,15 +39,23 @@ final class LongTermPlannerStrategicPlanTests: XCTestCase {
         }
     }
 
-    func testNoTargetDateProducesASingleOpenEndedPhase() {
+    /// Dogfood Round 1 (Finding 2): replaces the old single-open-ended-
+    /// phase behavior this test previously proved — that WAS the real
+    /// product bug ("No later phase is planned yet" for a completely
+    /// ordinary no-target-date goal). A rolling horizon (one full
+    /// `StrategicPeriodizationPolicy` cycle) is now expected, with only
+    /// the LAST phase left open-ended.
+    func testNoTargetDateProducesARollingHorizonWithOnlyTheLastPhaseOpenEnded() {
         let goal = Goal(ownerUserID: UUID(), primaryType: .functionalFitness, createdAt: date(2026, 8, 14))
 
         let proposal = LongTermPlanner.proposeStrategicPlan(goal: goal, asOf: date(2026, 8, 14))
 
         XCTAssertEqual(proposal.feasibility, .feasible)
-        XCTAssertEqual(proposal.phases.count, 1)
-        XCTAssertEqual(proposal.phases.first?.type, .functionalFitness)
-        XCTAssertNil(proposal.phases.first?.endDate)
+        XCTAssertEqual(proposal.phases.map(\.type), [.functionalFitness, .functionalFitness, .maintenance])
+        for phase in proposal.phases.dropLast() {
+            XCTAssertNotNil(phase.endDate, "every near-future phase must have a real estimated end date")
+        }
+        XCTAssertNil(proposal.phases.last?.endDate, "only the horizon's final phase stays open-ended")
     }
 
     /// §44's required annual proof case: an August start, 12-month

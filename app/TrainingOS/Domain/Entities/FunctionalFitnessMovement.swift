@@ -25,6 +25,18 @@ final class FunctionalFitnessMovement {
     var distanceMeters: Double?
     var loadKilograms: Double?
     var minuteSlot: Int?
+    /// Dogfood Round 1 — Final Close (Finding 3D): the authored RELATIVE
+    /// load/intensity prescription for a loaded movement —
+    /// `FunctionalFitnessLoadGuidance`'s own doc comment has the full
+    /// reasoning. `nil` for a movement that either isn't a loaded
+    /// movement at all (gymnastics/monostructural) or genuinely has a
+    /// real numeric `loadKilograms` instead (never both at once — a
+    /// numeric target is always the more precise, authoritative one when
+    /// it legitimately exists). Flat scalar fields, matching every other
+    /// field on this type, rather than a nested stored struct.
+    var relativeLoadTier: RelativeLoadTier?
+    var relativeLoadTargetReserveRepsOpeningRound: Int?
+    var relativeLoadSustainableUnbrokenIntent: Bool?
 
     /// Stage 8B addition, mirroring `ExercisePrescription.substitutionUsed`/
     /// `.substitutionReason` exactly: whether the user (or the readiness
@@ -71,7 +83,10 @@ final class FunctionalFitnessMovement {
         loadKilograms: Double? = nil,
         minuteSlot: Int? = nil,
         substitutionUsed: Bool = false,
-        substitutionReason: SubstitutionReason? = nil
+        substitutionReason: SubstitutionReason? = nil,
+        relativeLoadTier: RelativeLoadTier? = nil,
+        relativeLoadTargetReserveRepsOpeningRound: Int? = nil,
+        relativeLoadSustainableUnbrokenIntent: Bool? = nil
     ) {
         self.id = id
         self.exercise = exercise
@@ -83,5 +98,8 @@ final class FunctionalFitnessMovement {
         self.minuteSlot = minuteSlot
         self.substitutionUsed = substitutionUsed
         self.substitutionReason = substitutionReason
+        self.relativeLoadTier = relativeLoadTier
+        self.relativeLoadTargetReserveRepsOpeningRound = relativeLoadTargetReserveRepsOpeningRound
+        self.relativeLoadSustainableUnbrokenIntent = relativeLoadSustainableUnbrokenIntent
     }
 }

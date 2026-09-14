@@ -43,7 +43,13 @@ struct SourceRMCalibrationView: View {
                         Text("Set your starting weights")
                             .font(Theme.headingXL)
                             .foregroundStyle(Theme.textPrimary)
-                        Text("Enter your current weight for each exercise below. If you don't know the exact value, do your best to estimate it — you can always adjust it later.")
+                        // Dogfood Round 1 (Finding 1): this is now
+                        // genuinely optional — skipping it (or leaving
+                        // some rows blank) never blocks training. Any
+                        // exercise left unresolved here simply asks once
+                        // more, in its own first real session, before its
+                        // working sets.
+                        Text("Enter your current weight for each exercise below, or skip any of them — we'll ask again the first time you reach that exercise in a real session. If you don't know the exact value, do your best to estimate it.")
                             .font(Theme.body)
                             .foregroundStyle(Theme.textSecondary)
                     }
@@ -68,13 +74,18 @@ struct SourceRMCalibrationView: View {
                         }
                     }
 
-                    Button("Start Program") {
+                    // Dogfood Round 1 (Finding 1): never gated on every
+                    // row being filled — this is the optional "estimate
+                    // now" path. Whatever's filled in gets recorded now;
+                    // anything left blank (or marked "test this properly
+                    // first") is simply resolved later, in the first real
+                    // session that reaches it.
+                    Button("Continue") {
                         viewModel.completeCalibrationAndStart(modelContext: modelContext)
                         onCompleted()
                     }
                     .buttonStyle(.trainingOSPrimary)
                     .frame(maxWidth: .infinity)
-                    .disabled(!viewModel.allSatisfied)
                 }
                 .padding(Theme.screenPadding)
             }
@@ -89,7 +100,7 @@ struct SourceRMCalibrationView: View {
     /// answers items 5A/5B (context + purpose) in one place.
     private var contextCard: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("ONE LAST STEP")
+            Text("OPTIONAL")
                 .font(Theme.eyebrow)
                 .tracking(1.2)
                 .foregroundStyle(Theme.primary)
@@ -109,7 +120,7 @@ struct SourceRMCalibrationView: View {
                     .font(Theme.body.weight(.bold))
                     .foregroundStyle(Theme.textPrimary)
                 Spacer()
-                Text(rmTypeLabel(row.wrappedValue.rmType))
+                Text(PlanPresentation.rmTypeLabel(row.wrappedValue.rmType))
                     .font(Theme.eyebrow)
                     .foregroundStyle(Theme.textSecondary)
             }
@@ -144,20 +155,12 @@ struct SourceRMCalibrationView: View {
             .buttonStyle(.plain)
             .foregroundStyle(Theme.primary)
             if row.wrappedValue.needsTesting {
-                Text("Come back and enter your \(rmTypeLabel(row.wrappedValue.rmType)) once you have it — an estimate is fine if you'd rather not test it formally.")
+                Text("Come back and enter your \(PlanPresentation.rmTypeLabel(row.wrappedValue.rmType)) once you have it — an estimate is fine if you'd rather not test it formally.")
                     .font(Theme.body)
                     .foregroundStyle(Theme.textSecondary)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .trainingOSCard()
-    }
-
-    private func rmTypeLabel(_ rmType: RMType) -> String {
-        switch rmType {
-        case .rm10: return "10RM"
-        case .rm8: return "8RM"
-        case .rm5: return "5RM"
-        }
     }
 }

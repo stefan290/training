@@ -324,13 +324,15 @@ final class OnboardingTests: XCTestCase {
         XCTAssertEqual((try context.fetch(FetchDescriptor<Goal>())).count, 1, "removal must never create a second Goal")
 
         // The 12-week default is milestone-anchored — with no milestone at
-        // all, the real planner must fall back to the existing, unchanged
-        // nil-targetDate open-ended-phase behavior, never apply the
-        // default horizon to a Goal that has no milestone to anchor it to.
+        // all, the real planner must fall back to the nil-targetDate
+        // rolling-horizon behavior (Dogfood Round 1, Finding 2), never
+        // apply the default horizon to a Goal that has no milestone to
+        // anchor it to.
         let proposal = LongTermPlanner.proposeStrategicPlan(goal: goal, asOf: Date())
         XCTAssertEqual(proposal.feasibility, .feasible)
-        XCTAssertEqual(proposal.phases.count, 1, "no milestone + nil targetDate must restore the existing single open-ended phase behavior")
+        XCTAssertGreaterThan(proposal.phases.count, 1, "no milestone + nil targetDate must still produce a real rolling horizon, not a single dead-end phase")
         XCTAssertEqual(proposal.phases.first?.type, .muscleGain)
+        XCTAssertNil(proposal.phases.last?.endDate, "the horizon's final phase stays open-ended")
     }
 
     /// Proof — a Goal with no milestone and no targetDate at all (the
@@ -351,8 +353,13 @@ final class OnboardingTests: XCTestCase {
 
         let proposal = LongTermPlanner.proposeStrategicPlan(goal: goal, asOf: Date())
         XCTAssertEqual(proposal.feasibility, .feasible)
-        XCTAssertEqual(proposal.phases.count, 1, "the existing single open-ended phase behavior must be completely unchanged")
+        // Dogfood Round 1 (Finding 2): a rolling horizon, not a single
+        // dead-end phase — see `LongTermPlannerStrategicPlanTests
+        // .testNoTargetDateProducesARollingHorizonWithOnlyTheLastPhaseOpenEnded`
+        // for the full precision-hierarchy proof.
+        XCTAssertGreaterThan(proposal.phases.count, 1)
         XCTAssertEqual(proposal.phases.first?.type, .muscleGain)
+        XCTAssertNil(proposal.phases.last?.endDate)
     }
 
     /// Proof 6 — a past/present milestone date must never be accepted; this

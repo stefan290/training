@@ -48,6 +48,24 @@ final class GoalTrainingStyleProductModelTests: XCTestCase {
         return (user, goal)
     }
 
+    /// Dogfood Round 1 (Finding 2, "unify" decision): under the now-unified
+    /// `StrategicPeriodizationPolicy`, a `.generalStrength` goal's own
+    /// CURRENT/first phase legitimately opens with a Muscle Development
+    /// phase (`StrategicPeriodizationPolicy.cycle(for: .strength)`'s own
+    /// `cyclePosition == 0` — the same, already-accepted behavior Golden A
+    /// proved for the target-date path, applied consistently regardless of
+    /// whether a target date exists at all). The tests below that
+    /// specifically probe STRENGTH-phase candidate-mix ranking/preference
+    /// logic therefore build a `.strength`-typed preview phase directly
+    /// (never persisted — the exact same disposable-preview pattern
+    /// `StrategicPlanSelectionViewModel`/`PhaseDetailViewModel` already use
+    /// for a phase that isn't current yet) rather than relying on
+    /// onboarding's own current-phase selection to reach one.
+    private func strengthPhaseCandidates(goal: Goal) -> [CandidateTrainingMix] {
+        let previewPhase = TrainingPhase(type: .strength, startDate: Date(), priorityRule: .strength, status: .planned)
+        return LongTermPlanner.proposeTrainingMix(phase: previewPhase, goal: goal)
+    }
+
     // MARK: 1 — Main Goal vocabulary is outcomes only
 
     func testMainGoalOptionsExcludeFunctionalFitnessAndUseOutcomePhrasing() {
@@ -131,17 +149,16 @@ final class GoalTrainingStyleProductModelTests: XCTestCase {
     /// highest-goal-alignment candidate is still shown, never hidden
     /// (CLAUDE.md rule 17).
     func testGeneralStrengthWithHypertrophyAndFunctionalFitnessPreferenceReachesRealRecommendation() throws {
-        try makeOnboardedAthlete(
+        let (_, goal) = try makeOnboardedAthlete(
             goalType: .generalStrength, trainingDays: 4, allowsDoubles: false,
             preferredModalities: TrainingStyle.hypertrophy.modalityPreferences + TrainingStyle.functionalFitness.modalityPreferences
         )
-        let viewModel = StrategicPlanSelectionViewModel()
-        viewModel.load(modelContext: context)
+        let candidates = strengthPhaseCandidates(goal: goal)
 
-        let allCandidateNames = Set(viewModel.candidates.map(\.mix.name))
+        let allCandidateNames = Set(candidates.map(\.mix.name))
         XCTAssertEqual(allCandidateNames, ["Focused Strength Training", "Strength Plus Variety"], "no fabricated mix — only real, pre-existing LongTermPlanner templates")
 
-        let recommended = try XCTUnwrap(viewModel.reviewedMix, "a real recommendation must be produced")
+        let recommended = try XCTUnwrap(candidates.first { $0.roles.contains(.recommended) }?.mix, "a real recommendation must be produced")
         let recommendedSystems = Set(recommended.orderedComponents.compactMap(\.programmingSystem))
         XCTAssertFalse(
             recommendedSystems.isDisjoint(with: [.hypertrophy, .functionalFitness]),
@@ -149,7 +166,7 @@ final class GoalTrainingStyleProductModelTests: XCTestCase {
         )
 
         XCTAssertTrue(
-            viewModel.candidates.contains { $0.mix.name == "Focused Strength Training" },
+            candidates.contains { $0.mix.name == "Focused Strength Training" },
             "the highest-goal-alignment candidate must still be shown, never hidden, when a preference promotes an alternative (CLAUDE.md rule 17)"
         )
     }
@@ -166,10 +183,9 @@ final class GoalTrainingStyleProductModelTests: XCTestCase {
     /// discipline the athlete never asked for) — the underlying engine
     /// (`.powerlifting`) is unchanged, only the label.
     func testGeneralStrengthWithNoPreferenceStillRecommendsFocusedStrengthTrainingRegression() throws {
-        try makeOnboardedAthlete(goalType: .generalStrength, trainingDays: 4)
-        let viewModel = StrategicPlanSelectionViewModel()
-        viewModel.load(modelContext: context)
-        let recommended = try XCTUnwrap(viewModel.reviewedMix)
+        let (_, goal) = try makeOnboardedAthlete(goalType: .generalStrength, trainingDays: 4)
+        let candidates = strengthPhaseCandidates(goal: goal)
+        let recommended = try XCTUnwrap(candidates.first { $0.roles.contains(.recommended) }?.mix)
         XCTAssertEqual(recommended.name, "Focused Strength Training")
         XCTAssertEqual(recommended.orderedComponents.first?.programmingSystem, .powerlifting)
     }
@@ -186,10 +202,9 @@ final class GoalTrainingStyleProductModelTests: XCTestCase {
     /// engine identity is `.powerlifting` — the exact defect this
     /// completion pass fixes.
     func testGeneralStrengthRecommendationResolvesToStrengthSourceContentNotPowerlifting() throws {
-        try makeOnboardedAthlete(goalType: .generalStrength, trainingDays: 4)
-        let viewModel = StrategicPlanSelectionViewModel()
-        viewModel.load(modelContext: context)
-        let recommended = try XCTUnwrap(viewModel.reviewedMix)
+        let (_, goal) = try makeOnboardedAthlete(goalType: .generalStrength, trainingDays: 4)
+        let mixCandidates = strengthPhaseCandidates(goal: goal)
+        let recommended = try XCTUnwrap(mixCandidates.first { $0.roles.contains(.recommended) }?.mix)
         let component = try XCTUnwrap(recommended.orderedComponents.first)
         XCTAssertEqual(component.strengthContentSelector, .sourceBackedGeneralStrength, "the real recommended component must carry the content selector, not just the display label")
 

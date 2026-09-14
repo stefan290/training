@@ -89,4 +89,56 @@ struct EquipmentProfile: Codable, Equatable {
             return steps.rounded(.up) * increment
         }
     }
+
+    /// Dogfood Round 1 — Final Close (Finding 1 correction): the real,
+    /// per-exercise equipment/increment authority — never a blanket
+    /// barbell assumption applied to every exercise regardless of what it
+    /// actually is. `equipmentType` is derived from this exact `Exercise`'s
+    /// own already-canonical `equipment` field (Exercise Library V1 —
+    /// the same identity every other real domain read already trusts);
+    /// the increment comes from `UserProfile.equipmentIncrements[exercise
+    /// .equipment]` when a real per-user value exists — the exact same
+    /// increment authority `RollTacticalWindowUseCase.strengthSlotContext`/
+    /// `HypertrophyV2ProgressionEngine` already consult for this same
+    /// user. Falls back to this codebase's own existing TRAININGOS_DESIGNED
+    /// default (barbell, 2.5 kg) only when neither is resolvable — the
+    /// identical fallback every other real call site already used before
+    /// this fix, never a new/different one. This is not a second
+    /// equipment model: only the pre-existing `EquipmentType`/
+    /// `EquipmentProfile` vocabulary, now actually driven by the real
+    /// exercise instead of a hardcoded guess.
+    static func resolved(for exercise: Exercise, userProfile: UserProfile?) -> EquipmentProfile {
+        let equipmentType = EquipmentType.resolved(fromExerciseEquipment: exercise.equipment)
+        let increment = userProfile?.equipmentIncrements[exercise.equipment] ?? 2.5
+        // No persisted athlete-bodyweight field exists anywhere in this
+        // app yet (a separate, unbuilt feature — confirmed by direct
+        // search) — `bodyweightKg` stays `nil` here exactly as every
+        // other real caller already leaves it; `resolve(_:)`'s own
+        // documented `bodyweightKg ?? 0` handling degrades gracefully,
+        // never crashes, for the rare `.bodyweightPlusExternal` case.
+        return EquipmentProfile(equipmentType: equipmentType, smallestIncrementKg: increment)
+    }
+}
+
+extension EquipmentType {
+    /// Maps `Exercise.equipment`'s existing free-text identity (already
+    /// real, already populated by `ExerciseCatalog` for every strength
+    /// exercise — "barbell"/"dumbbell"/"machine"/"cable"/"bodyweight") to
+    /// this domain's own `EquipmentType` — never a guess invented here,
+    /// just a direct correspondence between two already-existing
+    /// vocabularies. An unrecognized/not-yet-mapped equipment string degrades to
+    /// `.barbell` — the exact same TRAININGOS_DESIGNED default this
+    /// codebase's every other real call site already used unconditionally
+    /// before this fix, so an exercise this mapping doesn't yet cover is
+    /// never worse off than before.
+    static func resolved(fromExerciseEquipment equipment: String) -> EquipmentType {
+        switch equipment {
+        case "barbell": return .barbell
+        case "dumbbell": return .dumbbell
+        case "machine": return .machine
+        case "cable": return .cable
+        case "bodyweight": return .bodyweightPlusExternal
+        default: return .barbell
+        }
+    }
 }

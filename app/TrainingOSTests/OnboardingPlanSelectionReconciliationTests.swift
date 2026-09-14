@@ -291,8 +291,15 @@ final class OnboardingPlanSelectionReconciliationTests: XCTestCase {
         viewModel.load(modelContext: context, referenceDate: asOf)
         let firstSummary = viewModel.recommendedMixSummary
 
-        // The athlete goes back and changes their main goal.
-        goal.primaryType = .generalStrength
+        // The athlete goes back and changes their main goal. Dogfood Round
+        // 1 (Finding 2, "unify" decision): `.generalStrength`'s own
+        // current phase now legitimately opens with the SAME Muscle Gain
+        // development phase `.muscleGain` itself uses
+        // (`StrategicPeriodizationPolicy.cycle`, applied uniformly
+        // regardless of target date) — no longer a genuinely different
+        // recommendation to switch to, so this real regression guard
+        // needs a goal type whose own current phase actually differs.
+        goal.primaryType = .fatLoss
         try context.save()
         viewModel.load(modelContext: context, referenceDate: asOf)
         let secondSummary = viewModel.recommendedMixSummary

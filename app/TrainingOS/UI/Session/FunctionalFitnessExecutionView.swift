@@ -157,9 +157,20 @@ struct FunctionalFitnessExecutionView: View {
         VStack(alignment: .leading, spacing: 12) {
             SectionHeader(title: "Each round")
             ForEach(Array(prescription.orderedMovements.enumerated()), id: \.offset) { _, movement in
-                Text(BlockPresentation.prescribedMovementLine(movement))
-                    .font(Theme.body)
-                    .foregroundStyle(Theme.textPrimary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(BlockPresentation.prescribedMovementLine(movement))
+                        .font(Theme.body)
+                        .foregroundStyle(Theme.textPrimary)
+                    // Dogfood Round 1 — Final Close (Finding 3D): every
+                    // loaded movement shows either a real numeric load
+                    // (already part of the line above) or this authored
+                    // relative load/intensity guidance — never neither.
+                    if let guidance = BlockPresentation.loadGuidanceLine(movement) {
+                        Text(guidance)
+                            .font(Theme.label)
+                            .foregroundStyle(Theme.textSecondary)
+                    }
+                }
             }
         }
         .trainingOSCard()

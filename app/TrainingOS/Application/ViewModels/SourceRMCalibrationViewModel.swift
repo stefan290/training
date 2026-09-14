@@ -1,12 +1,26 @@
 import Foundation
 import SwiftData
 
-/// Stage 10R.1C: drives the "Set your starting weights" screen — the
-/// minimum UI necessary for a real user to supply the literal, source-
-/// required RM values `RequiredSourceCalibrationsUseCase` finds missing,
-/// before the first tactical window for a `.rmBased` program can
-/// materialize. Never estimates, converts, or pre-fills a value; every
-/// row starts blank.
+/// Stage 10R.1C, revised by Dogfood Round 1 (Finding 1): drives the "Set
+/// your starting weights" screen — an OPTIONAL, non-blocking early
+/// opportunity to supply the literal, source-required RM values
+/// `RequiredSourceCalibrationsUseCase` finds missing. Never estimates,
+/// converts, or pre-fills a value; every row starts blank.
+///
+/// **No longer blocks Plan/Session creation.** Before Dogfood Round 1,
+/// `StartPhaseUseCase` deferred materializing an entire `.rmBased`
+/// component until every required calibration existed, and `RootTabView`
+/// blocked the whole app behind this screen in the meantime — so "I'd
+/// rather test this properly first" was a lie: choosing it could never
+/// actually let the athlete proceed. `StartPhaseUseCase` now always
+/// materializes real Sessions immediately, leaving an affected slot's
+/// WEIGHT (never its reps/sets) honestly unresolved
+/// (`ExercisePrescription.appliedLoadReasonCode == .calibrationRequired`).
+/// This screen is now purely the "estimate now" path (per-exercise, at
+/// the athlete's option) — the "test in first session" path is
+/// `StrengthExecutionView`'s own in-session calibration prompt,
+/// completely independent of whether the athlete ever opens this screen
+/// at all.
 @Observable
 final class SourceRMCalibrationViewModel {
     struct Row: Identifiable {
@@ -30,10 +44,11 @@ final class SourceRMCalibrationViewModel {
     /// in the first place.
     var hasPendingCalibration: Bool { pendingInstance != nil && !rows.isEmpty }
 
-    /// Every row has a real, parseable, positive value entered — "I need
-    /// to test this first" never satisfies this, by design (Decision 2:
-    /// "do not start the source program until required calibration is
-    /// complete").
+    /// Every row has a real, parseable, positive value entered. No longer
+    /// gates whether the athlete can proceed (Dogfood Round 1, Finding 1
+    /// — this screen is optional and non-blocking now); kept as a simple
+    /// "did I fill in everything" signal a caller may still use for its
+    /// own display purposes.
     var allSatisfied: Bool {
         !rows.isEmpty && rows.allSatisfy { Double($0.enteredText).map { $0 > 0 } ?? false }
     }
@@ -101,39 +116,34 @@ final class SourceRMCalibrationViewModel {
         rows[index].enteredText = ""
     }
 
-    /// Records every entered value, saves that whole batch in one
-    /// explicit transaction, then attempts the one, deferred
-    /// materialization for this instance. Never called until
-    /// `allSatisfied`.
-    ///
-    /// **Persistence ordering (a real manual-acceptance crash found this
-    /// missing):** every calibration value is recorded AND saved — as one
-    /// batch — before materialization is ever attempted, so a failure or
-    /// crash during materialization can never erase already-entered RM
-    /// values — "user calibration data must not be lost." (An earlier
-    /// version saved once per row instead of once per batch; that caused
-    /// a *different* regression — spurious scheduling `infeasible`
-    /// failures from saving mid-construction of the larger phase-start
-    /// object graph — see `RecordSourceRMCalibrationUseCase.record`'s own
-    /// doc comment.) `rows`/`pendingInstance` are cleared only once
-    /// materialization actually succeeds; if it fails, this screen simply
-    /// stays put with the already-saved values still satisfied, and
-    /// `load()`'s own recovery path (see its doc comment) will retry
-    /// materialization on the next app launch/reappear without ever
-    /// re-asking the user for RM values again.
+    /// Dogfood Round 1 (Finding 1): the "estimate now" path — Sessions
+    /// already exist by the time this screen can even appear (materialization
+    /// is never deferred anymore), so this no longer "starts" anything; it
+    /// records whatever the athlete filled in and resolves every dependent
+    /// prescription this week that was waiting on it
+    /// (`ResolveCalibrationDependentPrescriptionsUseCase`, the exact same
+    /// per-exercise mechanism `StrengthExecutionView`'s in-session prompt
+    /// uses). Never gated on every row being filled — a row left blank (or
+    /// marked "test this properly first") simply stays unresolved until
+    /// the athlete reaches that exercise in a real session; this is the
+    /// per-exercise independence Finding 1 requires, not an all-or-nothing
+    /// gate.
     func completeCalibrationAndStart(modelContext: ModelContext) {
-        guard let instance = pendingInstance, allSatisfied else { return }
+        guard let instance = pendingInstance else { return }
+        // Dogfood Round 1 — Final Close (Finding 1 correction): the real
+        // per-exercise equipment/increment authority, never a blanket
+        // barbell assumption — see `ResolveCalibrationDependentPrescriptionsUseCase`'s
+        // own doc comment.
+        let users = (try? modelContext.fetch(FetchDescriptor<User>())) ?? []
         for row in rows {
             guard let value = Double(row.enteredText), value > 0 else { continue }
-            RecordSourceRMCalibrationUseCase.record(
-                exercise: row.exercise, rmType: row.rmType, kilograms: value, for: instance, modelContext: modelContext
+            try? ResolveCalibrationDependentPrescriptionsUseCase.resolve(
+                exercise: row.exercise, rmType: row.rmType, kilograms: value,
+                instance: instance, userProfile: users.first?.profile, modelContext: modelContext
             )
         }
-        guard (try? modelContext.save()) != nil else { return }
-        if attemptMaterialization(for: instance, modelContext: modelContext) {
-            pendingInstance = nil
-            rows = []
-        }
+        pendingInstance = nil
+        rows = []
     }
 
     /// Attempts the deferred `materializeOnceCalibrationComplete` step for

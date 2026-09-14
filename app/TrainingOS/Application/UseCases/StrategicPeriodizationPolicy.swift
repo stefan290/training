@@ -193,4 +193,16 @@ enum StrategicPeriodizationPolicy {
         let pattern = cycle(for: primaryType)
         return pattern[cyclePosition % pattern.count]
     }
+
+    /// Dogfood Round 1 (Finding 2): how many phases this primary type's
+    /// own cycle defines before it repeats — the natural, already-designed
+    /// boundary for "how far ahead does this policy have real strategic
+    /// opinion," reused by `LongTermPlanner`'s no-target-date rolling
+    /// horizon to decide how many NEAR-FUTURE phases to show beyond the
+    /// current one. Exposes only the cycle's LENGTH, never its contents —
+    /// every phase's actual type/reason still comes from `nextPhaseIntent`
+    /// alone; this adds no new decision.
+    static func cycleLength(for primaryType: PhaseType) -> Int {
+        cycle(for: primaryType).count
+    }
 }

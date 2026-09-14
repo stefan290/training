@@ -236,17 +236,18 @@ final class ConcurrentProgrammingGoldenScenarioTests: XCTestCase {
     /// (`ScheduleAcceptanceError.infeasible`), never drop a session and
     /// never silently change the mix.
     ///
-    /// Hypertrophy is `.rmBased` and is deliberately DEFERRED by
-    /// `StartPhaseUseCase.start` itself until source RM calibration
-    /// exists (Stage 10R.1C, unmodified here) — so the FIRST `start()`
-    /// call only ever attempts to place FF(1) + Running(2) = 3 sessions,
-    /// which trivially fits 4 days and must NOT throw. The real
-    /// infeasibility only appears once calibration completes and
-    /// Hypertrophy's own 3 sessions are scheduled AROUND the 1-3 already-
-    /// occupied sibling days (`preOccupiedDates`) — with no doubles
-    /// allowed and only 1-3 free days left for 3 required sessions, that
-    /// second call is where `AcceptScheduleProposalUseCase.accept` must
-    /// throw.
+    /// Dogfood Round 1 (Finding 1): `StartPhaseUseCase.start` no longer
+    /// defers Hypertrophy's MATERIALIZATION pending calibration — but it
+    /// still SCHEDULES in the same two-pass shape as before (FF(1)+
+    /// Running(2) = 3 sessions first, then Hypertrophy's 3 sessions
+    /// against those already-accepted days via `preOccupiedDates`), now
+    /// both inside the SAME `start()` call. With no doubles allowed and
+    /// only 1-3 free days left for Hypertrophy's 3 required sessions,
+    /// pass 2 is where `AcceptScheduleProposalUseCase.accept` throws —
+    /// which now surfaces directly from `startDirectly` itself, not a
+    /// later separate calibration-completion call (there is no longer a
+    /// separate call — calibration and scheduling are independent
+    /// concerns).
     func testG4A_FewerDaysDoublesDisabled_ExplicitInfeasibility() throws {
         let monday = date(2026, 1, 5)
         let (user, _) = try makeOnboardedAthlete(trainingDays: 4, allowsDoubles: false)
@@ -264,21 +265,10 @@ final class ConcurrentProgrammingGoldenScenarioTests: XCTestCase {
         // entirely free of its siblings, masking the real fewer-days
         // conflict this scenario is meant to prove.
         let tightPhaseEnd = Calendar.current.date(byAdding: .day, value: 8, to: monday)
-        let result = try startDirectly(mix: mix, ownerUserID: user.id, trainingDays: 4, allowsDoubles: false, asOf: monday, phaseEndDate: tightPhaseEnd)
-        XCTAssertFalse(result.componentsAwaitingCalibration.isEmpty, "Hypertrophy must still be the deferred, awaiting-calibration component")
-
-        let exercises = try context.fetch(FetchDescriptor<Exercise>())
-        let environment = TrainingEnvironmentTestSupport.full(context: context)
-        XCTAssertThrowsError(try CalibrationTestSupport.completeAnyPendingCalibrationAndMaterialize(
-            phase: result.phase, ownerUserID: user.id, performanceProfile: nil,
-            availability: fewerDaysAvailability(trainingDays: 4, allowsDoubles: false),
-            materializationContext: TacticalMaterializationContext(
-                equipmentProfile: EquipmentProfile(equipmentType: .barbell, smallestIncrementKg: 2.5),
-                strengthCandidateExercises: exercises, functionalFitnessCandidateExercises: exercises, trainingEnvironment: environment
-            ),
-            asOf: monday, context: context
-        )) { error in
-            XCTAssertEqual(error as? ScheduleAcceptanceError, .infeasible, "Hypertrophy's 3 remaining sessions cannot fit the days left free by its already-scheduled siblings, with no doubles allowed — an explicit typed infeasibility, never a silent drop")
+        XCTAssertThrowsError(
+            try startDirectly(mix: mix, ownerUserID: user.id, trainingDays: 4, allowsDoubles: false, asOf: monday, phaseEndDate: tightPhaseEnd)
+        ) { error in
+            XCTAssertEqual(error as? ScheduleAcceptanceError, .infeasible, "Hypertrophy's 3 sessions cannot fit the days left free by its already-scheduled siblings, with no doubles allowed — an explicit typed infeasibility, never a silent drop")
         }
 
         // No component may have silently lost a session or changed
@@ -296,7 +286,7 @@ final class ConcurrentProgrammingGoldenScenarioTests: XCTestCase {
         // `accept()` (`Session.schedulerVersion`'s own doc comment) — its
         // absence is the real proof this attempt was never accepted.
         let hypertrophySessions = mix.orderedComponents.first { $0.programmingSystem == .hypertrophy }?.programInstance?.sessions ?? []
-        XCTAssertEqual(hypertrophySessions.count, 3, "the real 3 Hypertrophy sessions were still honestly generated")
+        XCTAssertEqual(hypertrophySessions.count, 3, "the real 3 Hypertrophy sessions were still honestly generated (materialization never deferred)")
         XCTAssertTrue(hypertrophySessions.allSatisfy { $0.schedulerVersion == nil }, "no Hypertrophy session may end up accepted/placed by the scheduler when the overall proposal was rejected as infeasible")
     }
 

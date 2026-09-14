@@ -94,7 +94,19 @@ final class PlanViewModel {
     /// genuinely-active, truthfully-started current phase.
     private static func weekPosition(for phase: TrainingPhase) -> (index: Int, total: Int)? {
         guard phase.status == .active, let primaryInstance = phase.primaryInstance else { return nil }
-        let currentWeekIndex = ProgramWeekGrouping.nextWeekIndex(for: primaryInstance)
+        // Dogfood Round 1 (Finding 2B): `nextWeekIndex` answers "which week
+        // still needs materializing" (correct for `rollForward`'s own use)
+        // — NOT "which week is the athlete currently in." Those coincide
+        // for every week after the first only because each later week's
+        // materialization happens in lockstep with the athlete's own
+        // "Start Week N" tap; week 0 is pre-materialized automatically at
+        // phase acceptance, one step ahead of that pattern, which is what
+        // produced "Week 2 of 4" on the very first day. The real current,
+        // 0-indexed week is one less — the same value
+        // `TacticalWeekCompletion.currentMaterializedWeekIndex` already
+        // computes and tests (`nextWeekIndex - 1`); `?? 0` only covers a
+        // primary instance with zero materialized sessions yet.
+        let currentWeekIndex = TacticalWeekCompletion.currentMaterializedWeekIndex(for: primaryInstance) ?? 0
         let activeComponents = (phase.selectedTrainingMix ?? phase.recommendedTrainingMix)?.orderedComponents ?? []
         let primarySystem = activeComponents.first { $0.priority == .primary }?.programmingSystem
         let policyWindowDays = TacticalWindowPolicy.windowLengthInDays(

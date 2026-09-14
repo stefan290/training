@@ -26,6 +26,16 @@ enum FunctionalFitnessMovementTargetRule {
     struct Target: Equatable {
         var reps: Int?
         var distanceMeters: Double?
+        /// Dogfood Round 1 — Final Close (Finding 3D): a real, authored
+        /// RELATIVE load/intensity prescription for a loaded movement —
+        /// `nil` for every non-loaded (gymnastics/monostructural) target,
+        /// and for a loaded movement this rule doesn't cover (never
+        /// invented for the "not production reachable" default case
+        /// either). Locked PRODUCT VALUES, exactly like the reps table
+        /// below — never a %1RM formula (CLAUDE.md rule 10; no validated
+        /// one exists — see `FunctionalFitnessLoadGuidance`'s own doc
+        /// comment).
+        var loadGuidance: FunctionalFitnessLoadGuidance? = nil
     }
 
     /// Resolves this slot's concrete structural target given the ACTUAL
@@ -41,7 +51,28 @@ enum FunctionalFitnessMovementTargetRule {
         guard case .roundsForTime = format, let modality else { return Target(reps: nil, distanceMeters: nil) }
 
         if modality == .weightlifting, movementFunctions.contains(.squatLoaded) {
-            return Target(reps: 12, distanceMeters: nil)
+            // Stage FF.M1 / Dogfood Round 1 (Finding 3D): a squatLoaded
+            // slot can resolve to Back Squat (barbell, genuinely heavier
+            // relative to a metcon rep scheme) or Wall Ball/Thruster (both
+            // squat+press expressions, lighter/moderate in this rep
+            // range) — the SAME per-exercise-name distinction the
+          // hinge/press branches below already make, applied here too so
+            // this branch is never a single flat guess across exercises
+            // that legitimately differ.
+            switch exercise?.canonicalName {
+            case "Wall Ball":
+                return Target(reps: 12, distanceMeters: nil, loadGuidance: FunctionalFitnessLoadGuidance(
+                    tier: .light, targetReserveRepsOpeningRound: 4, sustainableUnbrokenIntent: true
+                ))
+            case "Thruster":
+                return Target(reps: 12, distanceMeters: nil, loadGuidance: FunctionalFitnessLoadGuidance(
+                    tier: .moderate, targetReserveRepsOpeningRound: 3, sustainableUnbrokenIntent: false
+                ))
+            default:
+                return Target(reps: 12, distanceMeters: nil, loadGuidance: FunctionalFitnessLoadGuidance(
+                    tier: .moderate, targetReserveRepsOpeningRound: 3, sustainableUnbrokenIntent: true
+                ))
+            }
         }
         if modality == .gymnastics, movementFunctions.contains(.gymnasticsPull) {
             return Target(reps: 8, distanceMeters: nil)
@@ -54,26 +85,47 @@ enum FunctionalFitnessMovementTargetRule {
         // exactly like the Assault Bike exception above — these pools
         // each span too wide an honest rep range for one shared
         // family-level target (FF.M1 Numeric Dose Lock). Locked PRODUCT
-        // VALUES, not exercise-science formulas.
+        // VALUES, not exercise-science formulas. Dogfood Round 1 (Finding
+        // 3D) extends this same locked-value discipline one column
+        // further: a real, authored RELATIVE load/intensity guidance per
+        // exercise, never a numeric formula.
         if modality == .weightlifting, movementFunctions.contains(.hingeLoaded) {
             switch exercise?.canonicalName {
-            case "Kettlebell Swing": return Target(reps: 15, distanceMeters: nil)
-            case "Deadlift": return Target(reps: 8, distanceMeters: nil)
+            case "Kettlebell Swing":
+                return Target(reps: 15, distanceMeters: nil, loadGuidance: FunctionalFitnessLoadGuidance(
+                    tier: .light, targetReserveRepsOpeningRound: 5, sustainableUnbrokenIntent: true
+                ))
+            case "Deadlift":
+                return Target(reps: 8, distanceMeters: nil, loadGuidance: FunctionalFitnessLoadGuidance(
+                    tier: .heavy, targetReserveRepsOpeningRound: 3, sustainableUnbrokenIntent: false
+                ))
             // hingeLoaded-context branch — structurally distinct from the
             // pressLoaded-context branch below even though both currently
             // resolve to 10 reps; a future dose change to one must never
             // silently affect the other.
-            case "Dumbbell Snatch": return Target(reps: 10, distanceMeters: nil)
+            case "Dumbbell Snatch":
+                return Target(reps: 10, distanceMeters: nil, loadGuidance: FunctionalFitnessLoadGuidance(
+                    tier: .moderate, targetReserveRepsOpeningRound: 4, sustainableUnbrokenIntent: true
+                ))
             default: return Target(reps: nil, distanceMeters: nil)
             }
         }
         if modality == .weightlifting, movementFunctions.contains(.pressLoaded) {
             switch exercise?.canonicalName {
-            case "Wall Ball": return Target(reps: 15, distanceMeters: nil)
-            case "Thruster": return Target(reps: 8, distanceMeters: nil)
+            case "Wall Ball":
+                return Target(reps: 15, distanceMeters: nil, loadGuidance: FunctionalFitnessLoadGuidance(
+                    tier: .light, targetReserveRepsOpeningRound: 4, sustainableUnbrokenIntent: true
+                ))
+            case "Thruster":
+                return Target(reps: 8, distanceMeters: nil, loadGuidance: FunctionalFitnessLoadGuidance(
+                    tier: .heavy, targetReserveRepsOpeningRound: 2, sustainableUnbrokenIntent: false
+                ))
             // pressLoaded-context branch — structurally distinct from the
             // hingeLoaded-context branch above.
-            case "Dumbbell Snatch": return Target(reps: 10, distanceMeters: nil)
+            case "Dumbbell Snatch":
+                return Target(reps: 10, distanceMeters: nil, loadGuidance: FunctionalFitnessLoadGuidance(
+                    tier: .moderate, targetReserveRepsOpeningRound: 4, sustainableUnbrokenIntent: true
+                ))
             default: return Target(reps: nil, distanceMeters: nil)
             }
         }

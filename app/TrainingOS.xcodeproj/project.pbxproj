@@ -153,6 +153,9 @@
 		47264E36BFF303191C40D96C /* ExercisePerformanceProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95C24FF9B12AC7E08690FE82 /* ExercisePerformanceProfile.swift */; };
 		58AA79E09F685F7A2B9A4F0F /* SourceRMCalibration.swift in Sources */ = {isa = PBXBuildFile; fileRef = E417DC01D8D27AF850813ED8 /* SourceRMCalibration.swift */; };
 		4830DA1573124F4A89F80EB7 /* RollTacticalWindowUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06B0147E3A684A29BFEE7EBB /* RollTacticalWindowUseCase.swift */; };
+		05739B3B760947C8B0CF0ED3 /* FunctionalFitnessPhaseBiasPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D0D498F813D4900A87BDA83 /* FunctionalFitnessPhaseBiasPolicy.swift */; };
+		8496D87C27104F00993FFBC0 /* ResolveCalibrationDependentPrescriptionsUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7F43050F9B8446BAC6A2808 /* ResolveCalibrationDependentPrescriptionsUseCase.swift */; };
+		EEF4ADF231974FCAB996C6AC /* StartSessionOnDifferentDayUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD40C6A2CFF64DA1A2DE42C9 /* StartSessionOnDifferentDayUseCase.swift */; };
 		4A6242F1A3BF38EB6EF078B7 /* IntervalRepResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFCB4C9C8478C1027CF73484 /* IntervalRepResult.swift */; };
 		4A864F528D892B3E07C72AFA /* ProgramInstance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64E1458F8E3D57EF0174737D /* ProgramInstance.swift */; };
 		4BA4132761CF468AB3E530C4 /* SteadyStateProgressionRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF8AAF3929F04E18A3B06194 /* SteadyStateProgressionRules.swift */; };
@@ -243,6 +246,7 @@
 		8F02427B9D8F4522A5068F53 /* ConcurrentProgrammingGoldenScenarioTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDC66BCA34DB4C09942C1DEE /* ConcurrentProgrammingGoldenScenarioTests.swift */; };
 		7F61431D9F8A3FD958404965 /* DeleteRuleMatrixTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99B64954891D896FCB33CBF7 /* DeleteRuleMatrixTests.swift */; };
 		7FDC24AB4D844FAE8DB189EF /* EquipmentProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75C5B058B8E6411A897684E7 /* EquipmentProfile.swift */; };
+		35E463EEC151495EBBCBBB20 /* FunctionalFitnessLoadGuidance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 298DF04617A14EAD97C9C82A /* FunctionalFitnessLoadGuidance.swift */; };
 		C6B50A4FD8B1DB48344B5622 /* TrainingEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBFF16C93E4A3D69E3B68155 /* TrainingEnvironment.swift */; };
 		5061ADFF8AF0712DEC7BA589 /* TrainingEnvironmentSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 903BBAC5803D54DDB1E514F9 /* TrainingEnvironmentSettingsView.swift */; };
 		0F3403AB1A73AB00B581D821 /* TrainingEnvironmentCompatibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA4C76FFEFC3DC7CFA438394 /* TrainingEnvironmentCompatibility.swift */; };
@@ -368,6 +372,7 @@
 		C011B0B353471B0D40C38814 /* StrengthSourceFidelityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B53320B5F4125FB74FB6A73 /* StrengthSourceFidelityTests.swift */; };
 		8223D9F4A279FF879BC13166 /* RunningAthleteJourneyCompletionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB1CDFD03AECC8C392FBCF16 /* RunningAthleteJourneyCompletionTests.swift */; };
 		5CF5C7E668B94B7887360E70 /* LongTermPlannerIntelligenceCompletionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25D61B240A8B4F4A860BE82E /* LongTermPlannerIntelligenceCompletionTests.swift */; };
+		CB630953C7E845EA8BA371A2 /* DogfoodRound1CompletionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 522898AB452642A3AFF49940 /* DogfoodRound1CompletionTests.swift */; };
 		A1B2C3D4E5F60708192A3B4C /* DogfoodReleaseReadinessJourneyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F60718293A4B5C6D /* DogfoodReleaseReadinessJourneyTests.swift */; };
 		C6654285BE5C49C320C03953 /* WorkoutBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7B64E2D860E385FC7EDCB1B /* WorkoutBlock.swift */; };
 		C6B8D69219A74DDDADB844AF /* ExecutionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4353CBFA8A542709F50A390 /* ExecutionState.swift */; };
@@ -501,6 +506,9 @@
 		03294116BD89A6D5E88A078D /* Session.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Session.swift; path = Session.swift; sourceTree = "<group>"; };
 		0487F3B15F3F4F1BB8E61A49 /* IntervalConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = IntervalConfiguration.swift; path = IntervalConfiguration.swift; sourceTree = "<group>"; };
 		06B0147E3A684A29BFEE7EBB /* RollTacticalWindowUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RollTacticalWindowUseCase.swift; path = RollTacticalWindowUseCase.swift; sourceTree = "<group>"; };
+		4D0D498F813D4900A87BDA83 /* FunctionalFitnessPhaseBiasPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FunctionalFitnessPhaseBiasPolicy.swift; path = FunctionalFitnessPhaseBiasPolicy.swift; sourceTree = "<group>"; };
+		F7F43050F9B8446BAC6A2808 /* ResolveCalibrationDependentPrescriptionsUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ResolveCalibrationDependentPrescriptionsUseCase.swift; path = ResolveCalibrationDependentPrescriptionsUseCase.swift; sourceTree = "<group>"; };
+		DD40C6A2CFF64DA1A2DE42C9 /* StartSessionOnDifferentDayUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = StartSessionOnDifferentDayUseCase.swift; path = StartSessionOnDifferentDayUseCase.swift; sourceTree = "<group>"; };
 		08AE48DC9FD887472E7FA4BD /* IntervalPrescription.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = IntervalPrescription.swift; path = IntervalPrescription.swift; sourceTree = "<group>"; };
 		08BDCB71D7BCC99002871A76 /* EvaluateReadinessAdaptationUseCase.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EvaluateReadinessAdaptationUseCase.swift; sourceTree = "<group>"; };
 		0DD886531E7444D68549B9F1 /* HypertrophyProgramGeneratorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HypertrophyProgramGeneratorTests.swift; path = HypertrophyProgramGeneratorTests.swift; sourceTree = "<group>"; };
@@ -627,6 +635,7 @@
 		746B30C56378476785960AD9 /* ExecutionStatePersistenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExecutionStatePersistenceTests.swift; path = ExecutionStatePersistenceTests.swift; sourceTree = "<group>"; };
 		74B341C8944D07EB6D80553D /* ModalityPersistenceRoundTripTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ModalityPersistenceRoundTripTests.swift; path = ModalityPersistenceRoundTripTests.swift; sourceTree = "<group>"; };
 		75C5B058B8E6411A897684E7 /* EquipmentProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = EquipmentProfile.swift; path = EquipmentProfile.swift; sourceTree = "<group>"; };
+		298DF04617A14EAD97C9C82A /* FunctionalFitnessLoadGuidance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FunctionalFitnessLoadGuidance.swift; path = FunctionalFitnessLoadGuidance.swift; sourceTree = "<group>"; };
 		DBFF16C93E4A3D69E3B68155 /* TrainingEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TrainingEnvironment.swift; path = TrainingEnvironment.swift; sourceTree = "<group>"; };
 		903BBAC5803D54DDB1E514F9 /* TrainingEnvironmentSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TrainingEnvironmentSettingsView.swift; path = TrainingEnvironmentSettingsView.swift; sourceTree = "<group>"; };
 		9398773EC8A113A8DE0065D4 /* AppRootStateResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppRootStateResolver.swift; path = AppRootStateResolver.swift; sourceTree = "<group>"; };
@@ -745,6 +754,7 @@
 		9B53320B5F4125FB74FB6A73 /* StrengthSourceFidelityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = StrengthSourceFidelityTests.swift; path = StrengthSourceFidelityTests.swift; sourceTree = "<group>"; };
 		FB1CDFD03AECC8C392FBCF16 /* RunningAthleteJourneyCompletionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RunningAthleteJourneyCompletionTests.swift; path = RunningAthleteJourneyCompletionTests.swift; sourceTree = "<group>"; };
 		25D61B240A8B4F4A860BE82E /* LongTermPlannerIntelligenceCompletionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LongTermPlannerIntelligenceCompletionTests.swift; path = LongTermPlannerIntelligenceCompletionTests.swift; sourceTree = "<group>"; };
+		522898AB452642A3AFF49940 /* DogfoodRound1CompletionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DogfoodRound1CompletionTests.swift; path = DogfoodRound1CompletionTests.swift; sourceTree = "<group>"; };
 		B2C3D4E5F60718293A4B5C6D /* DogfoodReleaseReadinessJourneyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DogfoodReleaseReadinessJourneyTests.swift; path = DogfoodReleaseReadinessJourneyTests.swift; sourceTree = "<group>"; };
 		AB82DBCDD253473389BB814B /* CompletionSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CompletionSummary.swift; path = CompletionSummary.swift; sourceTree = "<group>"; };
 		AE384D888B58F59FF03553CA /* WorkoutFormat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WorkoutFormat.swift; path = WorkoutFormat.swift; sourceTree = "<group>"; };
@@ -1044,6 +1054,7 @@
 				3D3D37D834944F9FACAF4B03 /* CandidateTrainingMix.swift */,
 				D4B08F99A1E54BA59B002A11 /* PlannerDecisionTypes.swift */,
 				75C5B058B8E6411A897684E7 /* EquipmentProfile.swift */,
+				298DF04617A14EAD97C9C82A /* FunctionalFitnessLoadGuidance.swift */,
 				202CFFCBB78E416EB4FE77FB /* PowerliftingConfiguration.swift */,
 				9BF27DB9181B4400806F660F /* StimulusValidation.swift */,
 				D8896073C2BF4F3B9727A580 /* FunctionalFitnessConfiguration.swift */,
@@ -1301,6 +1312,7 @@
 				9B53320B5F4125FB74FB6A73 /* StrengthSourceFidelityTests.swift */,
 				FB1CDFD03AECC8C392FBCF16 /* RunningAthleteJourneyCompletionTests.swift */,
 				25D61B240A8B4F4A860BE82E /* LongTermPlannerIntelligenceCompletionTests.swift */,
+				522898AB452642A3AFF49940 /* DogfoodRound1CompletionTests.swift */,
 				B2C3D4E5F60718293A4B5C6D /* DogfoodReleaseReadinessJourneyTests.swift */,
 				23B34D84FA7E4117942595D2 /* PowerliftingProgramGeneratorTests.swift */,
 				60D9C8CDB6574111B7F814E3 /* PowerliftingRegressionTests.swift */,
@@ -1454,6 +1466,9 @@
 				007E9E88C8519C95FE83AE1D /* ResolveProgramInstanceExerciseSlotsUseCase.swift */,
 				F918DEE916BD1D1887C4A159 /* TransitionPhaseUseCase.swift */,
 				06B0147E3A684A29BFEE7EBB /* RollTacticalWindowUseCase.swift */,
+				4D0D498F813D4900A87BDA83 /* FunctionalFitnessPhaseBiasPolicy.swift */,
+				F7F43050F9B8446BAC6A2808 /* ResolveCalibrationDependentPrescriptionsUseCase.swift */,
+				DD40C6A2CFF64DA1A2DE42C9 /* StartSessionOnDifferentDayUseCase.swift */,
 				EF54CBE9E26A4258841BA2C4 /* IntervalProgramGenerator.swift */,
 				4640777D6C884B498DD14ACE /* IntervalMaterializer.swift */,
 				E3357B0E22BB4DAEB345D574 /* SubstituteExerciseUseCase.swift */,
@@ -1788,6 +1803,7 @@
 				C011B0B353471B0D40C38814 /* StrengthSourceFidelityTests.swift in Sources */,
 				8223D9F4A279FF879BC13166 /* RunningAthleteJourneyCompletionTests.swift in Sources */,
 				5CF5C7E668B94B7887360E70 /* LongTermPlannerIntelligenceCompletionTests.swift in Sources */,
+				CB630953C7E845EA8BA371A2 /* DogfoodRound1CompletionTests.swift in Sources */,
 				A1B2C3D4E5F60708192A3B4C /* DogfoodReleaseReadinessJourneyTests.swift in Sources */,
 				3551ADA6C410935FE55EAE34 /* ReadinessAdaptationTests.swift in Sources */,
 				570471E6EE162793157F65EA /* DebugAcceptanceFixturesUseCaseTests.swift in Sources */,
@@ -1971,6 +1987,9 @@
 				ED357995A908EC607179502D /* ResolveProgramInstanceExerciseSlotsUseCase.swift in Sources */,
 				883F56948B8F74975934F595 /* TransitionPhaseUseCase.swift in Sources */,
 				4830DA1573124F4A89F80EB7 /* RollTacticalWindowUseCase.swift in Sources */,
+				05739B3B760947C8B0CF0ED3 /* FunctionalFitnessPhaseBiasPolicy.swift in Sources */,
+				8496D87C27104F00993FFBC0 /* ResolveCalibrationDependentPrescriptionsUseCase.swift in Sources */,
+				EEF4ADF231974FCAB996C6AC /* StartSessionOnDifferentDayUseCase.swift in Sources */,
 				53BF188E79C74E57B147A6A0 /* ProgramWeekGrouping.swift in Sources */,
 				EC639F271F64590A41A3D323 /* TacticalWeekCompletion.swift in Sources */,
 				FE3870BA06796C082F2550A6 /* TrainingPhaseCompletion.swift in Sources */,
@@ -2033,6 +2052,7 @@
 				1E5E0A65A25AC0D4864FB70C /* AdaptationObjective.swift in Sources */,
 				95194261C717E0C614D494DB /* PrescriptionAdherence.swift in Sources */,
 				7FDC24AB4D844FAE8DB189EF /* EquipmentProfile.swift in Sources */,
+				35E463EEC151495EBBCBBB20 /* FunctionalFitnessLoadGuidance.swift in Sources */,
 				0F3403AB1A73AB00B581D821 /* TrainingEnvironmentCompatibility.swift in Sources */,
 				5BEBA2DA1E98481C8C7F38C9 /* PowerliftingConfiguration.swift in Sources */,
 				FFDD40D1BA4DFEA6FEB100AA /* README.swift in Sources */,

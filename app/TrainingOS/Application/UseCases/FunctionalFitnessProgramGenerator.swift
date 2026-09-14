@@ -73,7 +73,7 @@ enum FunctionalFitnessProgramGenerator {
                 definition.addTemplateSession(session)
 
                 if intent.includeStrengthBlock {
-                    addStrengthBlock(to: session, context: context)
+                    addStrengthBlock(to: session, relativeWeek: intent.relativeWeek, context: context)
                 }
 
                 let ffBlock = WorkoutBlockTemplate(type: .functionalFitness)
@@ -172,20 +172,52 @@ enum FunctionalFitnessProgramGenerator {
     /// `StrengthProgressionEngine`'s full autoregulation/deload machinery
     /// — that's out of scope for what this composition proof needs to
     /// demonstrate.
-    private static func addStrengthBlock(to session: TemplateSession, context: ModelContext) {
+    /// Dogfood Round 1 (Finding 3E), a **TrainingOS PRODUCT DECISION**:
+    /// Functional Bodybuilding as a distinct expression, not "a Hypertrophy
+    /// session with conditioning bolted on" — moderate rep range (10, not
+    /// a strength-test 5), a lighter %RM appropriate to accessory-style
+    /// work (never RP's/any source's own Hypertrophy or Powerlifting
+    /// rep/load scheme), and rotating through the 4 fundamental movement
+    /// patterns across the week index rather than always the same squat.
+    /// Still 100% pre-existing domain vocabulary (`RMType`/
+    /// `StrengthProgressionRules`/`ExerciseSlot`) — no new schema.
+    private enum FunctionalBodybuildingPattern: Int, CaseIterable {
+        case squat, hinge, press, pull
+
+        var slotName: String {
+            switch self {
+            case .squat: return "Functional Bodybuilding — Squat"
+            case .hinge: return "Functional Bodybuilding — Hinge"
+            case .press: return "Functional Bodybuilding — Press"
+            case .pull: return "Functional Bodybuilding — Pull"
+            }
+        }
+
+        var allowedTargets: [MuscleGroup] {
+            switch self {
+            case .squat: return [.quadriceps, .glutes]
+            case .hinge: return [.hamstrings, .glutes, .back]
+            case .press: return [.shoulders, .chest, .triceps]
+            case .pull: return [.back, .biceps]
+            }
+        }
+    }
+
+    private static func addStrengthBlock(to session: TemplateSession, relativeWeek: Int = 0, context: ModelContext) {
         let block = WorkoutBlockTemplate(type: .strength)
         context.insert(block)
         session.addBlockTemplate(block)
 
+        let pattern = FunctionalBodybuildingPattern.allCases[relativeWeek % FunctionalBodybuildingPattern.allCases.count]
         let template = PrescriptionTemplate(rules: StrengthProgressionRules(
-            loadRule: .rmBased(RMBasedLoad(rmType: .rm5, weekOneFactor: 0.8, laterWeekMultipliers: [1.0, 1.0, 1.0])),
-            setCountRule: .fixed(setsByWeek: [5, 5, 5, 5]),
-            repGoalSchedule: [.fixedReps(5)]
+            loadRule: .rmBased(RMBasedLoad(rmType: .rm10, weekOneFactor: 0.65, laterWeekMultipliers: [1.0, 1.0, 1.0])),
+            setCountRule: .fixed(setsByWeek: [4, 4, 4, 4]),
+            repGoalSchedule: [.fixedReps(10)]
         ))
         context.insert(template)
         block.addPrescriptionTemplate(template)
 
-        let slot = ExerciseSlot(name: "Squat", allowedTargets: [.quadriceps, .glutes])
+        let slot = ExerciseSlot(name: pattern.slotName, allowedTargets: pattern.allowedTargets)
         context.insert(slot)
         template.attachExerciseSlot(slot)
     }
