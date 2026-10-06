@@ -256,15 +256,25 @@ enum StrengthMaterializer {
                     let resolvedRepRangeLow: Int?
                     let resolvedRepRangeHigh: Int?
                     let resolvedTargetRir: Int?
+                    // GENERIC STRENGTH PRESCRIPTION AUTHORITY V1: `nil` for
+                    // every real Family A/B/C row today (none authors an
+                    // RIR range) — threaded through for completeness/
+                    // consistency with `repRangeHigh`'s own existing
+                    // general (not source-specific) mechanism, in case a
+                    // future source row or Hypertrophy V2 revision ever
+                    // authors one.
+                    let resolvedTargetRirHigh: Int?
                     switch repGoal?.prescription {
                     case .fixedReps(let n):
                         resolvedRepRangeLow = n
                         resolvedRepRangeHigh = repGoal?.repRangeHigh ?? n
                         resolvedTargetRir = repGoal?.targetRir
+                        resolvedTargetRirHigh = repGoal?.targetRirHigh
                     case .rir(let n):
                         resolvedRepRangeLow = nil
                         resolvedRepRangeHigh = nil
                         resolvedTargetRir = n
+                        resolvedTargetRirHigh = nil
                     case .priorSlotActualResultRelative, nil:
                         // `.priorSlotActualResultRelative` never actually
                         // reaches here as a real case — `resolveRepGoal`
@@ -277,13 +287,15 @@ enum StrengthMaterializer {
                         resolvedRepRangeLow = nil
                         resolvedRepRangeHigh = nil
                         resolvedTargetRir = nil
+                        resolvedTargetRirHigh = nil
                     }
                     for _ in 0..<finalSetCount {
                         let setPrescription = SetPrescription(
                             repRangeLow: resolvedRepRangeLow,
                             repRangeHigh: resolvedRepRangeHigh,
                             targetWeight: weightKg,
-                            targetRir: resolvedTargetRir
+                            targetRir: resolvedTargetRir,
+                            targetRirHigh: resolvedTargetRirHigh
                         )
                         context.insert(setPrescription)
                         prescription.addSetPrescription(setPrescription)

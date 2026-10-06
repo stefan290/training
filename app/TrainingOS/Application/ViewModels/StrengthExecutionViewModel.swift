@@ -23,10 +23,41 @@ final class StrengthExecutionViewModel {
     /// (fresh app launch included), never a separately persisted
     /// "current exercise" flag (Part H/Y: completed exercises stay
     /// completed and logically resumable without redundant state).
+    ///
+    /// Dogfood Round 2 Continuation 4 (Finding Q): now routed through the
+    /// SAME canonical `resolveMovementIndex` every calibration submission
+    /// also uses — see that function's own doc comment for why this
+    /// checkpoint replaced the previous two-mechanism design (a one-time
+    /// `init` computation plus a separate incremental "advance to next"
+    /// search that had to be kept in sync by hand) with one single,
+    /// idempotent source of truth.
     init(block: WorkoutBlock) {
         self.block = block
-        let ordered = block.orderedPrescriptions
-        self.movementIndex = ordered.firstIndex(where: { !StrengthExecutionViewModel.isComplete($0) }) ?? max(0, ordered.count - 1)
+        self.movementIndex = StrengthExecutionViewModel.resolveMovementIndex(for: block.orderedPrescriptions)
+    }
+
+    /// Dogfood Round 2 Continuation 4 (Finding Q): the ONE canonical
+    /// answer to "which movement should the athlete be looking at right
+    /// now," used identically by `init` and by `submitCalibration` — never
+    /// two separate mechanisms that can disagree. Calibration is
+    /// preparation, never performance (Finding O), so it takes priority
+    /// over completeness: while ANY movement in this block still needs
+    /// calibration, the athlete is always shown the FIRST such movement,
+    /// full stop — never wherever an incremental "advance from here"
+    /// search happened to leave off, which is fragile precisely because it
+    /// assumes forward-only progress through a fixed starting point rather
+    /// than recomputing fresh from real persisted state every time
+    /// (the same "always re-derive, never a separately-tracked flag"
+    /// discipline Stage 6C's own doc comment above already established).
+    /// Once NO movement needs calibration, this is identical to the
+    /// original Stage 6C behavior: the first genuinely not-yet-complete
+    /// movement (real execution entry point), or the last movement if the
+    /// whole block is already complete.
+    private static func resolveMovementIndex(for movements: [ExercisePrescription]) -> Int {
+        if let firstUnresolvedCalibration = movements.firstIndex(where: { $0.appliedLoadReasonCode == .calibrationRequired }) {
+            return firstUnresolvedCalibration
+        }
+        return movements.firstIndex(where: { !StrengthExecutionViewModel.isComplete($0) }) ?? max(0, movements.count - 1)
     }
 
     /// Canonical exercise order — `ExercisePrescription.sortIndex` via
@@ -162,10 +193,40 @@ final class StrengthExecutionViewModel {
                 userProfile: users.first?.profile,
                 modelContext: modelContext
             )
+            recomputeMovementIndexAfterCalibration(modelContext: modelContext)
             return true
         } catch {
             return false
         }
+    }
+
+    /// Dogfood Round 2 Continuation (Finding N), corrected by Continuation 4
+    /// (Finding Q): "Confirm & Continue" must actually continue, all the
+    /// way into real execution — not just between calibration screens.
+    ///
+    /// The ORIGINAL Finding N fix searched for "the next index, after
+    /// current, still needing calibration" and otherwise left
+    /// `movementIndex` untouched, on the unstated assumption that the
+    /// movement just resolved was always the correct thing to keep
+    /// showing. That assumption is exactly the kind of two-source-of-truth
+    /// fragility CLAUDE.md's own investigation discipline warns against:
+    /// `init` computed the starting index one way (first not-yet-complete),
+    /// while this function advanced it a DIFFERENT way (incremental
+    /// forward search) — two mechanisms that must independently agree for
+    /// every possible role count/ordering, rather than one canonical
+    /// answer recomputed fresh every time.
+    ///
+    /// This now simply calls the SAME `resolveMovementIndex` `init` uses —
+    /// idempotent, side-effect-free, and correct by construction: while
+    /// ANY movement in this block needs calibration, it always resolves to
+    /// the first one, so the flow can never "skip past" or "cycle back to"
+    /// a calibration screen out of step with real persisted state; once
+    /// every calibration is resolved, it resolves to the first genuinely
+    /// executable (not-yet-complete) movement — real execution, not
+    /// another calibration prompt and not a dead end.
+    private func recomputeMovementIndexAfterCalibration(modelContext: ModelContext) {
+        movementIndex = StrengthExecutionViewModel.resolveMovementIndex(for: movements)
+        loadPreviousPerformance(modelContext: modelContext)
     }
 
     var hasPreviousMovement: Bool { movementIndex > 0 }
@@ -209,12 +270,24 @@ final class StrengthExecutionViewModel {
     /// logged (no current movement/set, or no user/performance profile
     /// yet seeded).
     @discardableResult
-    func logCurrentSet(weight: Double, reps: Int, actualRir: Int?, modelContext: ModelContext) -> LoggedResultHighlight? {
+    func logCurrentSet(
+        weight: Double, reps: Int?, actualRir: Int?, modelContext: ModelContext,
+        distanceMeters: Double? = nil, durationSeconds: Int? = nil
+    ) -> LoggedResultHighlight? {
         guard let movement = currentMovement, let exercise = movement.exercise else { return nil }
         let setPrescription = currentSetPrescription
         let users = (try? modelContext.fetch(FetchDescriptor<User>())) ?? []
         guard let performanceProfile = users.first?.performanceProfile else { return nil }
-        let prBand = setPrescription.map { "\($0.repRangeLow)-\($0.repRangeHigh)" }
+        // Dogfood Round 2 Continuation (Finding J): only a genuinely
+        // fixed-rep prescription has a real rep band — this also
+        // incidentally closes the same Optional()-interpolation risk
+        // Finding F fixed elsewhere (an RIR-only or distance/duration
+        // prescription has `repRangeLow/High == nil`, so this now
+        // correctly yields `nil`, never a literal "nil-nil" string).
+        let prBand: String? = {
+            guard let low = setPrescription?.repRangeLow, let high = setPrescription?.repRangeHigh else { return nil }
+            return "\(low)-\(high)"
+        }()
 
         guard let outcome = try? LogSetUseCase.logSet(
             setIndex: currentSetIndex,
@@ -230,8 +303,18 @@ final class StrengthExecutionViewModel {
             exercise: exercise,
             performanceProfile: performanceProfile,
             completedAt: Date(),
-            modelContext: modelContext
+            modelContext: modelContext,
+            distanceMeters: distanceMeters,
+            durationSeconds: durationSeconds
         ) else { return nil }
+
+        // Dogfood Round 2 Continuation (Finding O): the block becomes
+        // `.active` the moment a REAL set is actually logged — never
+        // merely by viewing this screen or resolving a calibration
+        // prompt (see `StrengthExecutionView`'s own `.task`, which no
+        // longer calls this). Idempotent no-op once already `.active`/
+        // `.completed`.
+        try? CompleteBlockUseCase.start(block, modelContext: modelContext)
 
         // Part J: derived completion and persisted state must agree —
         // the moment every movement's required sets are all logged, the
@@ -242,9 +325,23 @@ final class StrengthExecutionViewModel {
             try? CompleteBlockUseCase.complete(block, context: .full, modelContext: modelContext)
         }
 
+        // Dogfood Round 2 Continuation (Finding J): the highlight's value
+        // string reflects whichever dimension was actually logged — never
+        // a fabricated rep count for a distance/duration-based set.
+        let valueLabel: String
+        if let reps {
+            valueLabel = "\(weight.formattedWeight) x \(reps)"
+        } else if let distanceMeters {
+            valueLabel = "\(Int(distanceMeters)) m"
+        } else if let durationSeconds {
+            valueLabel = "\(durationSeconds)s"
+        } else {
+            valueLabel = weight.formattedWeight
+        }
+
         return LoggedResultHighlight(
             label: exercise.canonicalName,
-            value: "\(weight.formattedWeight) x \(reps)",
+            value: valueLabel,
             isPersonalRecord: outcome.result.isPersonalRecord,
             isFirstEverEntry: outcome.isFirstEverEntry
         )

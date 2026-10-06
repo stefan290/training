@@ -62,16 +62,70 @@ enum StrengthReasonCode: String, Codable, CaseIterable {
     /// generic RIR placeholder schedule other rows use — the pre-this-
     /// checkpoint defect this code corrects.
     case repGoalRequiresPriorSlotActualResult
+    /// RESULT-DRIVEN RESISTANCE PROGRESSION V1, Section 31: the completed
+    /// exposure's actual performance (across all real, non-warmup working
+    /// sets, evaluated conservatively — see `ResultDrivenProgressionEngine`)
+    /// showed the load was clearly easier than the prescribed rep/RIR
+    /// target. Applies ONLY to a generic FF-owned exposure's NEXT
+    /// suggested load — never to a source-backed Hypertrophy/Strength/
+    /// Powerlifting prescription, whose own progression this checkpoint
+    /// never touches.
+    case performanceAboveTarget
+    /// The completed exposure matched the prescribed rep/RIR target.
+    case performanceOnTarget
+    /// The completed exposure showed the load exceeded what the
+    /// prescription asked for — reps below the prescribed minimum, or
+    /// actual RIR below the prescribed minimum, on at least one working
+    /// set. Deliberately outranks any `.performanceAboveTarget` evidence
+    /// from an earlier set in the SAME exposure (Section 11's conservative
+    /// priority) — never averaged away.
+    case performanceUnderTarget
+    /// Fewer real working-set results exist than the exposure's own
+    /// prescribed set count — never treated as `.performanceUnderTarget`
+    /// (Section 27: "do not confuse UNDER_TARGET with INCOMPLETE"). No
+    /// upward progression follows from this state.
+    case insufficientPerformanceEvidence
+    /// The next generic suggested load moved one real equipment increment
+    /// above the load the athlete actually performed (never the stale
+    /// suggestion — Section 29).
+    case loadIncreasedOneEquipmentStep
+    /// The next generic suggested load is held at the load the athlete
+    /// actually performed — successful completion is not itself
+    /// progression (Section 13).
+    case loadHeld
+    /// The next generic suggested load moved one real equipment increment
+    /// below the load the athlete actually performed.
+    case loadReducedOneEquipmentStep
 }
 
 /// Which 1RM-family basis a `rmBasedWeekOneLoad` rule is anchored to.
 /// `.rm10` covers Family A (Hypertrophy) and Family C (Powerlifting
 /// Hypertrophy-block); `.rm8`/`.rm5` cover Family B (Powerlifting
 /// Strength)'s per-slot mixed basis (`FAMILY_B_RM_BASIS`).
+///
+/// FUNCTIONAL FITNESS V2 — GENERIC STRENGTH AUTHORITY V1, Section 18:
+/// `.rm1` is a purely additive extension of this SAME generic
+/// calibration/resolution mechanism (`SourceRMCalibration`/
+/// `StrengthProgressionEngine.resolveWeight`, both already indifferent to
+/// what a given `rmType` physiologically means — they only ever multiply
+/// a literal, athlete-tested kilogram value by a factor) — never a new
+/// conversion formula. It exists so a real, literal, physically-tested
+/// 1RM (the athlete performs an actual 1-rep-max test and enters it,
+/// exactly as they already do for a 10RM/8RM/5RM) can drive a generic
+/// HIGH_LOAD_STRENGTH_EXPOSURE prescription (`weekOneFactor: 0.8` yields
+/// a truthful ">=80% 1RM" load, per the same `resolveWeight` arithmetic
+/// every other RM type already uses) without inventing an RM-to-RM
+/// conversion. Converting a KNOWN 10RM/8RM/5RM into an ESTIMATED 1RM
+/// remains explicitly unsupported (no such formula exists anywhere in
+/// this codebase, and CLAUDE.md rule 10 forbids inventing one) — when no
+/// `.rm1` calibration exists, the honest result is the same
+/// `.calibrationRequired` state every other missing calibration already
+/// produces, never a fabricated estimate.
 enum RMType: String, Codable, CaseIterable {
     case rm10
     case rm8
     case rm5
+    case rm1
 }
 
 /// `LoadRule.rmBased`'s payload, bundled into one struct rather than 3
@@ -138,11 +192,22 @@ struct RepGoal: Codable, Equatable {
     /// case on `prescription` above IS the effort target; this field
     /// stays `nil`.
     var targetRir: Int?
+    /// FUNCTIONAL FITNESS V2 — GENERIC STRENGTH PRESCRIPTION AUTHORITY V1,
+    /// Section 11: a genuine effort-target RANGE (e.g. "2-3 RIR"),
+    /// mirroring `repRangeHigh`'s exact existing precedent — `targetRir`
+    /// is the range's low bound when this is non-nil, or a single scalar
+    /// target when this stays `nil` (every pre-existing caller: Family
+    /// A/B/C's `.rir(_:)` rows, Hypertrophy V2's single-RIR deload/
+    /// progressive targets). A general resistance-training concept, not
+    /// Functional-Fitness-specific — added here, alongside `repRangeHigh`,
+    /// rather than as a parallel FF-only field.
+    var targetRirHigh: Int?
 
-    init(prescription: RepPrescriptionKind, repRangeHigh: Int? = nil, targetRir: Int? = nil) {
+    init(prescription: RepPrescriptionKind, repRangeHigh: Int? = nil, targetRir: Int? = nil, targetRirHigh: Int? = nil) {
         self.prescription = prescription
         self.repRangeHigh = repRangeHigh
         self.targetRir = targetRir
+        self.targetRirHigh = targetRirHigh
     }
 
     static func fixedReps(_ reps: Int) -> RepGoal { RepGoal(prescription: .fixedReps(reps)) }

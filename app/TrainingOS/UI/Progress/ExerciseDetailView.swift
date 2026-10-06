@@ -158,7 +158,10 @@ struct ExerciseDetailView: View {
             SectionHeader(title: "Recent sets").padding(.bottom, 10)
             ForEach(Array(recentSets.enumerated()), id: \.element.id) { index, set in
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("\(formattedWeight(set.weight)) × \(set.reps)")
+                    // Dogfood Round 2 Continuation (Finding J): the real
+                    // recorded dimension, never a fabricated rep count for
+                    // a distance/duration-based result.
+                    Text(recentSetLabel(set))
                         .font(Theme.numeric)
                         .foregroundStyle(Theme.textPrimary)
                     HStack(spacing: 6) {
@@ -179,5 +182,14 @@ struct ExerciseDetailView: View {
 
     private func formattedWeight(_ value: Double) -> String {
         value.truncatingRemainder(dividingBy: 1) == 0 ? String(format: "%.0f", value) : String(format: "%.1f", value)
+    }
+
+    /// Dogfood Round 2 Continuation (Finding J): whichever real dimension
+    /// this result recorded — never a fabricated rep count.
+    private func recentSetLabel(_ set: SetResult) -> String {
+        if let reps = set.reps { return "\(formattedWeight(set.weight)) × \(reps)" }
+        if let distance = set.distanceMeters { return "\(formattedWeight(set.weight)) × \(Int(distance)) m" }
+        if let duration = set.durationSeconds { return "\(formattedWeight(set.weight)) × \(duration)s" }
+        return formattedWeight(set.weight)
     }
 }

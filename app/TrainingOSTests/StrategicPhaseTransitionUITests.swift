@@ -57,7 +57,10 @@ final class StrategicPhaseTransitionUITests: XCTestCase {
         func exercise(
             _ name: String, _ targets: [MuscleGroup] = [], _ movementFunctions: [MovementFunction] = [], _ functionalModality: FunctionalModality? = nil
         ) -> Exercise {
-            let ex = Exercise(canonicalName: name, modality: .hypertrophy, equipment: "barbell", movementPattern: "test", primaryTargets: targets, movementFunctions: movementFunctions, functionalModality: functionalModality)
+            // FUNCTIONAL FITNESS PROGRAMMING AUTHORITY V2, Section 10/11:
+            // generic scheduling filler, not a target-content test —
+            // tagged `.distance` so it stays truthfully materializable.
+            let ex = Exercise(canonicalName: name, modality: .hypertrophy, equipment: "barbell", movementPattern: "test", primaryTargets: targets, movementFunctions: movementFunctions, functionalModality: functionalModality, measuredDimensions: movementFunctions.contains(.monostructural) ? [.distance] : [])
             context.insert(ex)
             return ex
         }
@@ -114,10 +117,18 @@ final class StrategicPhaseTransitionUITests: XCTestCase {
     }
 
     /// Walks Phase 1 (real "Focused Hypertrophy" mix) all the way through
-    /// Mesocycle 1 -> 2 -> 3 -> exhausted, plus its SteadyState sibling
-    /// component, until `TrainingPhaseCompletion.isPhaseTerminal` is
-    /// genuinely `true` — the shared setup every "phase terminal" test
-    /// below needs, factored once rather than repeated per test.
+    /// Mesocycle 1 -> 2 -> 3 -> exhausted, until
+    /// `TrainingPhaseCompletion.isPhaseTerminal` is genuinely `true` — the
+    /// shared setup every "phase terminal" test below needs, factored once
+    /// rather than repeated per test.
+    ///
+    /// MUSCLE VERTICAL SLICE REPAIR, Sections 2-3: "Focused Hypertrophy"
+    /// is now Hypertrophy-only — the removed "5H+2Zone2" worked example
+    /// never had a real, validated basis for its Zone 2 component (see
+    /// `muscleGainFocusedHypertrophyMix`) — so there is no longer a
+    /// SteadyState sibling component to also walk to exhaustion; the
+    /// phase becomes terminal as soon as the sole Hypertrophy component's
+    /// Mesocycle 3 is exhausted with no successor.
     private func makeTerminalPhase1(asOf: Date) throws -> (goal: Goal, plan: TrainingPlan, phase1: TrainingPhase, candidates: AllCandidates) {
         let fixture = try makeAcceptedPlan(asOf: asOf)
         let phase1 = fixture.plan.orderedPhases[0]
@@ -157,11 +168,6 @@ final class StrategicPhaseTransitionUITests: XCTestCase {
         let finalInstance = try XCTUnwrap(phase1.primaryInstance)
         try skipToExhaustion(phase: phase1, instance: finalInstance, startDate: asOf)
 
-        let steadyStateComponent = try XCTUnwrap((phase1.selectedTrainingMix ?? phase1.recommendedTrainingMix)?.orderedComponents.first { $0.programmingSystem == .steadyState })
-        let steadyStateInstance = try XCTUnwrap(steadyStateComponent.programInstance)
-        for weekIndex in 0..<(steadyStateInstance.programDefinition?.orderedWeeks.count ?? 0) {
-            try skipEveryRealSession(in: steadyStateInstance, weekIndex: weekIndex)
-        }
         XCTAssertTrue(TrainingPhaseCompletion.isPhaseTerminal(phase1), "precondition: Phase 1 must genuinely be terminal for these tests")
         return (fixture.goal, fixture.plan, phase1, candidates)
     }

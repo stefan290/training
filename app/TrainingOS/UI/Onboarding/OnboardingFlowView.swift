@@ -471,16 +471,18 @@ struct OnboardingFlowView: View {
     /// planner does not yet consume it. Re-introduce the control once a
     /// real planner/scheduler consumer exists — never before.
     ///
-    /// Two further Screen-23 fields remain DELIBERATELY NOT implemented —
+    /// Dogfood Round 2 Continuation (Finding A): "Preferred days" — the
+    /// artifact's own 7-weekday grid at Availability time — IS now
+    /// implemented here, superseding the note below that used to say the
+    /// domain had no such athlete-level field. `GoalPreferences
+    /// .availableWeekdays` (Dogfood Round 2 Correction 1) is that real
+    /// field; this screen is its first-run entry point, reusing the exact
+    /// same authority and toggle-row construct `TrainingPreferencesSettingsView`
+    /// exposes post-onboarding.
+    ///
+    /// One further Screen-23 field remains DELIBERATELY NOT implemented —
     /// reported per this checkpoint's own STOP conditions rather than
     /// faked:
-    /// - "Preferred days": the artifact shows one grid of 7 weekdays at
-    ///   Availability time, but the current domain has no such athlete-
-    ///   level field — `preferredDays` exists only on
-    ///   `TrainingMixComponent` (`TrainingMixComponent.swift`), set PER
-    ///   COMPONENT once a real `TrainingMix` exists (i.e. after
-    ///   recommendation, an architecturally later moment), never as a
-    ///   single top-level preference collectible here.
     /// - "Occasional longer session": zero real persisted concept
     ///   anywhere in the domain (confirmed by direct search across
     ///   `TrainingOS/Domain/`/`Application/`) — nothing to expose.
@@ -494,21 +496,46 @@ struct OnboardingFlowView: View {
                         Text("When can you train?")
                             .font(Theme.headingXL)
                             .foregroundStyle(Theme.textPrimary)
-                        Text("Tell us how many days you can train. TrainingOS will build your week around them.")
+                        Text("Tell us which days you can train. TrainingOS will build your week around them.")
                             .font(Theme.body)
                             .foregroundStyle(Theme.textSecondary)
                     }
 
+                    // Dogfood Round 2 Continuation (Finding A): the real
+                    // weekly-availability decision — WHICH weekdays, not
+                    // merely a count — captured at the moment it's first
+                    // made, reusing the exact same `Weekday`/
+                    // `PlanPresentation.weekdayLabel`/toggle-row construct
+                    // `TrainingPreferencesSettingsView.weekdaySection` uses
+                    // post-onboarding, never a second onboarding-only
+                    // control.
                     VStack(alignment: .leading, spacing: 13) {
                         HStack {
-                            SectionHeader(title: "Training days per week")
+                            SectionHeader(title: "Training days")
                             Spacer()
-                            Text("\(viewModel.availableTrainingDaysPerWeek)")
-                                .font(.system(size: 20, weight: .bold, design: .monospaced))
+                            Text("\(viewModel.availableTrainingDaysPerWeek) day\(viewModel.availableTrainingDaysPerWeek == 1 ? "" : "s")/week")
+                                .font(Theme.label)
                                 .foregroundStyle(Theme.primary)
                         }
-                        TrainingOSCapacityBar(value: viewModel.availableTrainingDaysPerWeek, range: 1...7) { newValue in
-                            viewModel.availableTrainingDaysPerWeek = newValue
+                        ForEach(Array(Weekday.allCases.enumerated()), id: \.element) { index, day in
+                            Toggle(isOn: Binding(
+                                get: { viewModel.selectedWeekdays.contains(day) },
+                                set: { isOn in
+                                    if isOn { viewModel.selectedWeekdays.insert(day) } else { viewModel.selectedWeekdays.remove(day) }
+                                }
+                            )) {
+                                Text(PlanPresentation.weekdayLabel(day))
+                                    .font(Theme.body)
+                                    .foregroundStyle(Theme.textPrimary)
+                            }
+                            .tint(Theme.primary)
+                            .padding(.vertical, 2)
+                            if index < Weekday.allCases.count - 1 { Divider().opacity(0.4) }
+                        }
+                        if viewModel.selectedWeekdays.isEmpty {
+                            Text("Select at least one day.")
+                                .font(Theme.label)
+                                .foregroundStyle(Theme.attention)
                         }
                     }
                     .trainingOSCard()
@@ -532,6 +559,7 @@ struct OnboardingFlowView: View {
                     Button("Continue") { viewModel.advance(from: .preferences, modelContext: modelContext) }
                         .buttonStyle(.trainingOSPrimary)
                         .frame(maxWidth: .infinity)
+                        .disabled(viewModel.selectedWeekdays.isEmpty)
                 }
                 .padding(Theme.screenPadding)
             }

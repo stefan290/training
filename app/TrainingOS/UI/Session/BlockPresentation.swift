@@ -148,6 +148,9 @@ enum BlockPresentation {
         if let reps = movement.reps { parts.append("\(reps) reps") }
         if let calories = movement.calories { parts.append("\(calories) cal") }
         if let distance = movement.distanceMeters { parts.append("\(Int(distance)) m") }
+        // MUSCLE + 5FF FINAL CLOSURE, Section 9: a genuine SUSTAINED_AEROBIC
+        // duration target — "30 min," never a distance standing in for it.
+        if let duration = movement.durationSeconds { parts.append("\(duration / 60) min") }
         if let load = movement.loadKilograms { parts.append("\(load.formattedWeight) kg") }
         return parts.joined(separator: " \u{b7} ")
     }
@@ -169,6 +172,28 @@ enum BlockPresentation {
             parts.append("sustainable, unbroken pace")
         }
         return parts.joined(separator: " · ")
+    }
+
+    /// Dogfood Round 2 (Finding 4): the athlete-facing block-type label
+    /// for a block that's part of a Functional-Fitness-owned Session,
+    /// reflecting the REAL, persisted phase-driven archetype decision
+    /// (`FunctionalFitnessPrescription.archetype`) — never re-derived or
+    /// guessed from the phase at render time. Falls back to the existing
+    /// generic `blockTypeLabel` for an `.unbiased` archetype (a dedicated
+    /// FF-performance/fat-loss/endurance/transition phase, or content
+    /// materialized before this checkpoint) and for any block that isn't
+    /// part of a Functional Fitness session at all — never changes what
+    /// every other session type's blocks already correctly show.
+    static func functionalFitnessAwareBlockLabel(for block: WorkoutBlock) -> String {
+        guard let session = block.session, session.modality == .functionalFitness,
+              let archetype = session.orderedBlocks.compactMap({ $0.functionalFitnessPrescription?.archetype }).first,
+              archetype.conditioningIsSubordinate
+        else { return blockTypeLabel(block.type) }
+        switch block.type {
+        case .strength, .hypertrophy: return archetype.displayLabel
+        case .functionalFitness: return "Conditioning"
+        default: return blockTypeLabel(block.type)
+        }
     }
 
     static func formatLabel(_ format: WorkoutFormat) -> String {

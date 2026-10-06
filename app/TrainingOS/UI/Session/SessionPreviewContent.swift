@@ -31,7 +31,10 @@ struct SessionPreviewContent: View {
     private func blockSection(_ block: WorkoutBlock) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text(block.type.rawValue.uppercased())
+                // MUSCLE VERTICAL SLICE CONTINUATION, Section 16: the
+                // real, archetype-aware label — see `TodayView`'s
+                // identical fix for the full defect trace.
+                Text(BlockPresentation.functionalFitnessAwareBlockLabel(for: block).uppercased())
                     .font(Theme.label)
                     .foregroundStyle(Theme.primary)
                 if let detail = BlockPresentation.compactDetail(for: block) {
@@ -65,11 +68,27 @@ struct SessionPreviewContent: View {
         .background(Theme.surfacePrimary, in: RoundedRectangle(cornerRadius: 12))
     }
 
+    /// Dogfood Round 2 Continuation (Finding J): the real prescription
+    /// shape, never a fabricated rep count for a distance/duration-based
+    /// role (e.g. Farmer's Carry reads "3 × 40 m", never "3 × 0").
     private func exerciseRow(index: Int, prescription: ExercisePrescription) -> some View {
         let sets = prescription.orderedSetPrescriptions
         let first = sets.first
-        let repsLabel = first.map { $0.repRangeLow == $0.repRangeHigh ? "\($0.repRangeLow)" : "\($0.repRangeLow)-\($0.repRangeHigh)" }
         let rirLabel = first?.targetRir.map { " @ \($0) RIR" } ?? ""
+        let detailLabel: String? = first.flatMap { set -> String? in
+            if let low = set.repRangeLow {
+                let high = set.repRangeHigh ?? low
+                let repsPart = low == high ? "\(low)" : "\(low)-\(high)"
+                return "\(sets.count) \u{d7} \(repsPart)\(rirLabel)"
+            }
+            if let distance = set.targetDistanceMeters {
+                return "\(sets.count) \u{d7} \(Int(distance)) m\(rirLabel)"
+            }
+            if let duration = set.targetDurationSeconds {
+                return "\(sets.count) \u{d7} \(duration)s\(rirLabel)"
+            }
+            return nil
+        }
 
         return HStack(alignment: .top, spacing: 8) {
             Text("\(index + 1).")
@@ -79,8 +98,8 @@ struct SessionPreviewContent: View {
                 Text(prescription.exercise?.canonicalName ?? "Exercise")
                     .font(Theme.body)
                     .foregroundStyle(Theme.textPrimary)
-                if let repsLabel {
-                    Text("\(sets.count) \u{d7} \(repsLabel)\(rirLabel)")
+                if let detailLabel {
+                    Text(detailLabel)
                         .font(Theme.label)
                         .foregroundStyle(Theme.textSecondary)
                 }

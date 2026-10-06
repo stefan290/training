@@ -1,0 +1,42 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild test-without-building -scheme TrainingOS -destination "platform=iOS Simulator,name=iPhone 17" "-only-testing:TrainingOSTests/AdvanceTacticalWeekCapabilityWiringTests"
+
+Test Suite 'Selected tests' started at 2026-10-02 10:27:35.208.
+Test Suite 'TrainingOSTests.xctest' started at 2026-10-02 10:27:35.208.
+Test Suite 'AdvanceTacticalWeekCapabilityWiringTests' started at 2026-10-02 10:27:35.208.
+Test Case '-[TrainingOSTests.AdvanceTacticalWeekCapabilityWiringTests testAdvancementUsesTheProgramOwnersEvidenceNeverASecondUsersEvidence]' started.
+2026-10-02 10:27:35.495657+0200 TrainingOS[30186:76213552] [ModelContext] Illegal attempt to insert a model in to a different model context. Model PersistentIdentifier(id: SwiftData.PersistentIdentifier.ID(backing: SwiftData.PersistentIdentifier.PersistentIdentifierBacking.managedObjectID(0xa9301be268f8154c <x-coredata://D0A8740B-16D2-4757-B234-EAC6C46DEF25/Exercise/p6>))) is already bound to SwiftData.ModelContext but insert was called on SwiftData.ModelContext
+2026-10-02 10:27:35.499425+0200 TrainingOS[30186:76213552] [ModelContext] Illegal attempt to insert a model in to a different model context. Model PersistentIdentifier(id: SwiftData.PersistentIdentifier.ID(backing: SwiftData.PersistentIdentifier.PersistentIdentifierBacking.managedObjectID(0xa9301be26f98154c <x-coredata://D0A8740B-16D2-4757-B234-EAC6C46DEF25/Exercise/p61>))) is already bound to SwiftData.ModelContext but insert was called on SwiftData.ModelContext
+Test Case '-[TrainingOSTests.AdvanceTacticalWeekCapabilityWiringTests testAdvancementUsesTheProgramOwnersEvidenceNeverASecondUsersEvidence]' passed (0.312 seconds).
+Test Case '-[TrainingOSTests.AdvanceTacticalWeekCapabilityWiringTests testAdvanceTacticalWeekUsesOwnersCapabilityAfterReloadingInAFreshContext]' started.
+2026-10-02 10:27:35.677682+0200 TrainingOS[30186:76213552] [ModelContext] Illegal attempt to insert a model in to a different model context. Model PersistentIdentifier(id: SwiftData.PersistentIdentifier.ID(backing: SwiftData.PersistentIdentifier.PersistentIdentifierBacking.managedObjectID(0xa9301be26fb817bc <x-coredata://E66C0F09-89DF-4389-8D5E-148D4F5DA0E4/Exercise/p60>))) is already bound to SwiftData.ModelContext but insert was called on SwiftData.ModelContext
+2026-10-02 10:27:35.680267+0200 TrainingOS[30186:76213552] [ModelContext] Illegal attempt to insert a model in to a different model context. Model PersistentIdentifier(id: SwiftData.PersistentIdentifier.ID(backing: SwiftData.PersistentIdentifier.PersistentIdentifierBacking.managedObjectID(0xa9301be26a7817bc <x-coredata://E66C0F09-89DF-4389-8D5E-148D4F5DA0E4/Exercise/p18>))) is already bound to SwiftData.ModelContext but insert was called on SwiftData.ModelContext
+Test Case '-[TrainingOSTests.AdvanceTacticalWeekCapabilityWiringTests testAdvanceTacticalWeekUsesOwnersCapabilityAfterReloadingInAFreshContext]' passed (0.175 seconds).
+Test Case '-[TrainingOSTests.AdvanceTacticalWeekCapabilityWiringTests testAdvanceTacticalWeekUsesOwnersPersistedCapabilityEvidence]' started.
+2026-10-02 10:27:35.900498+0200 TrainingOS[30186:76213552] [ModelContext] Illegal attempt to insert a model in to a different model context. Model PersistentIdentifier(id: SwiftData.PersistentIdentifier.ID(backing: SwiftData.PersistentIdentifier.PersistentIdentifierBacking.managedObjectID(0xa9301be26e9811ac <x-coredata://834993A8-CA3F-4B7E-A12F-8D1120310F04/Exercise/p53>))) is already bound to SwiftData.ModelContext but insert was called on SwiftData.ModelContext
+2026-10-02 10:27:35.903239+0200 TrainingOS[30186:76213552] [ModelContext] Illegal attempt to insert a model in to a different model context. Model PersistentIdentifier(id: SwiftData.PersistentIdentifier.ID(backing: SwiftData.PersistentIdentifier.PersistentIdentifierBacking.managedObjectID(0xa9301be26b1811ac <x-coredata://834993A8-CA3F-4B7E-A12F-8D1120310F04/Exercise/p25>))) is already bound to SwiftData.ModelContext but insert was called on SwiftData.ModelContext
+C1 TRACE: owner=A033F46F-2AFD-4025-8CB5-E027286A5100 ttbCapacity=7 pullUpCapacity=5 hspuCapacity=3
+C1 TRACE: oldSessionIDs=["A5F80028-A51D-4FF7-9A10-CE0E5B14C864", "C5F3A6F7-F2C7-4F83-B39F-2E6A78DABC2F", "DD8C6874-E57A-42D8-948C-2C08290A1F28", "ECBD85CF-0E8D-4611-BA2B-C23421D1D3EE", "FF016CB1-2EFC-425A-9CBD-EC348AD74D57"]
+C1 TRACE: newSessionIDs=["02E3B282-CDB7-40D8-B9C9-381B0E7CDEC3", "281F31A8-3B63-466E-87F1-376FEFC08E94", "9BAB06ED-37AB-40DF-A1A3-BEEB3BD34CB7", "DC50C6F7-640D-42ED-9B19-C9E71E021B18", "EE15AAB0-9CB4-4828-9BFD-C7D85C6B8C12"]
+C1 TRACE: ttbPrescribedReps=[(Optional(3), Optional(3)), (Optional(3), Optional(3)), (Optional(3), Optional(3))]
+Test Case '-[TrainingOSTests.AdvanceTacticalWeekCapabilityWiringTests testAdvanceTacticalWeekUsesOwnersPersistedCapabilityEvidence]' passed (0.235 seconds).
+Test Case '-[TrainingOSTests.AdvanceTacticalWeekCapabilityWiringTests testRepeatedImmediateAdvancementCreatesNoAdditionalWeek]' started.
+2026-10-02 10:27:36.089310+0200 TrainingOS[30186:76213552] [ModelContext] Illegal attempt to insert a model in to a different model context. Model PersistentIdentifier(id: SwiftData.PersistentIdentifier.ID(backing: SwiftData.PersistentIdentifier.PersistentIdentifierBacking.managedObjectID(0xa9301be26bb813ec <x-coredata://ECD8AA43-C3B7-497C-94EC-D78E59628BA5/Exercise/p28>))) is already bound to SwiftData.ModelContext but insert was called on SwiftData.ModelContext
+2026-10-02 10:27:36.092219+0200 TrainingOS[30186:76213552] [ModelContext] Illegal attempt to insert a model in to a different model context. Model PersistentIdentifier(id: SwiftData.PersistentIdentifier.ID(backing: SwiftData.PersistentIdentifier.PersistentIdentifierBacking.managedObjectID(0xa9301be26c3813ec <x-coredata://ECD8AA43-C3B7-497C-94EC-D78E59628BA5/Exercise/p32>))) is already bound to SwiftData.ModelContext but insert was called on SwiftData.ModelContext
+Test Case '-[TrainingOSTests.AdvanceTacticalWeekCapabilityWiringTests testRepeatedImmediateAdvancementCreatesNoAdditionalWeek]' passed (0.179 seconds).
+Test Suite 'AdvanceTacticalWeekCapabilityWiringTests' passed at 2026-10-02 10:27:36.110.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.901 (0.902) seconds
+Test Suite 'TrainingOSTests.xctest' passed at 2026-10-02 10:27:36.110.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.901 (0.902) seconds
+Test Suite 'Selected tests' passed at 2026-10-02 10:27:36.110.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.901 (0.902) seconds
+2026-10-02 10:27:36.403 xcodebuild[30146:76212864] [MT] IDETestOperationsObserverDebug: 9.256 elapsed -- Testing started completed.
+2026-10-02 10:27:36.403 xcodebuild[30146:76212864] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-02 10:27:36.403 xcodebuild[30146:76212864] [MT] IDETestOperationsObserverDebug: 9.256 sec, +9.256 sec -- end
+
+Test session results, code coverage, and logs:
+	/Users/stefankedling/Library/Developer/Xcode/DerivedData/TrainingOS-heqapafjeoqodgdjjypjihjvfkbc/Logs/Test/Test-TrainingOS-2026.10.02_10-27-26-+0200.xcresult
+
+** TEST EXECUTE SUCCEEDED **
+
+Testing started

@@ -112,18 +112,34 @@ struct CompletedExerciseDetail: View {
         .background(Theme.surfaceSecondary, in: RoundedRectangle(cornerRadius: 10))
     }
 
+    /// Dogfood Round 2 Continuation (Finding J): the real prescribed
+    /// shape, never a fabricated rep count for a distance/duration-based
+    /// role.
     private var prescribedSection: some View {
         let sets = prescription.orderedSetPrescriptions
         let first = sets.first
-        let repsLabel = first.map { $0.repRangeLow == $0.repRangeHigh ? "\($0.repRangeLow)" : "\($0.repRangeLow)-\($0.repRangeHigh)" }
         let rirLabel = first?.targetRir.map { " @ \($0) RIR" } ?? ""
+        let detailLabel: String? = first.flatMap { set -> String? in
+            if let low = set.repRangeLow {
+                let high = set.repRangeHigh ?? low
+                let repsPart = low == high ? "\(low)" : "\(low)-\(high)"
+                return "\(sets.count) \u{d7} \(repsPart)\(rirLabel)"
+            }
+            if let distance = set.targetDistanceMeters {
+                return "\(sets.count) \u{d7} \(Int(distance)) m\(rirLabel)"
+            }
+            if let duration = set.targetDurationSeconds {
+                return "\(sets.count) \u{d7} \(duration)s\(rirLabel)"
+            }
+            return nil
+        }
 
         return VStack(alignment: .leading, spacing: 4) {
             Text("PRESCRIBED")
                 .font(Theme.label)
                 .foregroundStyle(Theme.primary)
-            if let repsLabel {
-                Text("\(sets.count) \u{d7} \(repsLabel)\(rirLabel)")
+            if let detailLabel {
+                Text(detailLabel)
                     .font(Theme.body)
                     .foregroundStyle(Theme.textPrimary)
             }
@@ -158,12 +174,25 @@ struct CompletedExerciseDetail: View {
         .background(Theme.surfacePrimary, in: RoundedRectangle(cornerRadius: 10))
     }
 
+    /// Dogfood Round 2 Continuation (Finding J): the real recorded shape —
+    /// reps, distance, or duration, whichever this result actually
+    /// carries, never a fabricated rep count.
     private func resultRow(_ result: SetResult) -> some View {
-        HStack {
+        let actualLabel: String
+        if let reps = result.reps {
+            actualLabel = "\(result.weight.formattedWeight) \u{d7} \(reps)"
+        } else if let distance = result.distanceMeters {
+            actualLabel = "\(result.weight.formattedWeight) \u{d7} \(Int(distance)) m"
+        } else if let duration = result.durationSeconds {
+            actualLabel = "\(result.weight.formattedWeight) \u{d7} \(duration)s"
+        } else {
+            actualLabel = result.weight.formattedWeight
+        }
+        return HStack {
             Text("Set \(result.setIndex + 1)")
                 .font(Theme.label)
                 .foregroundStyle(Theme.textSecondary)
-            Text("\(result.weight.formattedWeight) \u{d7} \(result.reps)\(result.actualRir.map { " @ \($0)" } ?? "")")
+            Text("\(actualLabel)\(result.actualRir.map { " @ \($0)" } ?? "")")
                 .font(Theme.body)
                 .foregroundStyle(Theme.textPrimary)
             if result.isPersonalRecord {

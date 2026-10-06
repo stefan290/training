@@ -22,6 +22,21 @@ final class SetPrescription {
     var repRangeHigh: Int?
     var targetWeight: Double?
     var targetRir: Int?
+    /// GENERIC STRENGTH PRESCRIPTION AUTHORITY V1: `targetRir`'s range
+    /// high bound (e.g. `targetRir: 2, targetRirHigh: 3` for "2-3 RIR") —
+    /// mirrors `repRangeHigh`'s exact existing precedent. `nil` for every
+    /// pre-existing row (a single-value RIR target, unaffected).
+    var targetRirHigh: Int?
+    /// Dogfood Round 2 Continuation (Finding J): the real target dimensions
+    /// this ONE prescription asks the athlete to perform — composable with
+    /// the fields above, never mutually exclusive with them (e.g. Farmer's
+    /// Carry: `targetDistanceMeters` populated, `repRangeLow/High` left
+    /// `nil`; a future weighted-duration exercise could legitimately
+    /// populate `targetWeight` alongside `targetDurationSeconds`). `nil`
+    /// for every prescription that isn't distance/duration-based —
+    /// including every existing row, unaffected.
+    var targetDistanceMeters: Double?
+    var targetDurationSeconds: Int?
     var isWarmup: Bool
     /// Stage 8B addition: `true` when a Level 2 readiness adaptation
     /// removed this set from TODAY's executable prescription
@@ -48,6 +63,9 @@ final class SetPrescription {
         repRangeHigh: Int? = nil,
         targetWeight: Double? = nil,
         targetRir: Int? = nil,
+        targetRirHigh: Int? = nil,
+        targetDistanceMeters: Double? = nil,
+        targetDurationSeconds: Int? = nil,
         isWarmup: Bool = false,
         isAdaptedAway: Bool = false
     ) {
@@ -57,6 +75,9 @@ final class SetPrescription {
         self.repRangeHigh = repRangeHigh
         self.targetWeight = targetWeight
         self.targetRir = targetRir
+        self.targetRirHigh = targetRirHigh
+        self.targetDistanceMeters = targetDistanceMeters
+        self.targetDurationSeconds = targetDurationSeconds
         self.isWarmup = isWarmup
         self.isAdaptedAway = isAdaptedAway
     }

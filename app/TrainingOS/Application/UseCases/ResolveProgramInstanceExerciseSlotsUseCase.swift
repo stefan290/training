@@ -99,80 +99,115 @@ enum ResolveProgramInstanceExerciseSlotsUseCase {
     /// the alphabetically-first eligible candidate** (Stage 7 Slice 4
     /// acceptance finding: a "Horizontal Push" slot and a "Chest
     /// Isolation" slot in the same session both resolving to "Barbell
-    /// Bench Press" is a real selection bug, not a valid program). Scoped
-    /// to one `TemplateSession` at a time — repeating the same exercise
-    /// across *different* training days (e.g. every "Day 1" of every
-    /// week) is methodologically normal and untouched; this only avoids
-    /// duplication among the slots that would otherwise appear together
-    /// in one Session. Falls back to reusing an already-picked candidate
-    /// only when no distinct eligible alternative exists — this must
-    /// never leave a slot unresolved (`.calibrationRequired`) merely to
-    /// enforce distinctness.
+    /// Bench Press" is a real selection bug, not a valid program).
+    /// Scoped to one **distinctness group** at a time — for a recurring
+    /// (non-week-pinned) `TemplateSession`, that's the session itself, so
+    /// repeating the same exercise across *different* training days (e.g.
+    /// every "Day 1" of every week) remains methodologically normal and
+    /// untouched. Falls back to reusing an already-picked candidate only
+    /// when no distinct eligible alternative exists — this must never
+    /// leave a slot unresolved (`.calibrationRequired`) merely to enforce
+    /// distinctness.
+    ///
+    /// MUSCLE + 5FF FINAL CLOSURE, Section 1/4 (project-owner decision):
+    /// a Functional-Fitness `weeklyPlan` definition (§Session-index
+    /// rotation fix's own doc comment) builds one distinct, week-pinned
+    /// `TemplateSession` PER REAL WEEK/session pair — unlike Hypertrophy/
+    /// Powerlifting's one recurring `TemplateSession` reused for the
+    /// whole mesocycle, so "Week 1 — Session 1" and "Week 1 — Session 3"
+    /// are two separate `TemplateSession` rows that each independently
+    /// resolved their own "Squat" slot to the same alphabetically-first
+    /// candidate — the exact, confirmed mechanism behind "Sessions 1/3/4
+    /// nearly identical" (real evidence: Session 1 and Session 3 both
+    /// resolving to Back Squat + Barbell Bench Press). The distinctness
+    /// group for such a definition is therefore every `TemplateSession`
+    /// sharing the same real week (`activeFromWeek`, which the weekly-
+    /// plan generator already sets to that session's own
+    /// `intent.relativeWeek` — not an invented new field), not the
+    /// individual session. Every other definition (Hypertrophy,
+    /// Powerlifting, the pre-Multi-Week-V1 recurring FF path) keeps
+    /// exactly one `TemplateSession` per group, i.e. byte-for-byte the
+    /// original per-session behavior — detected via
+    /// `definition.functionalFitnessConfiguration?.weeklyPlan != nil`,
+    /// the same real, already-established signal
+    /// `FunctionalFitnessMaterializer`'s own "exact-equality filter
+    /// branch" already keys off, never a new ambiguous heuristic.
     static func resolve(definition: ProgramDefinition, candidateExercises: [Exercise], environment: TrainingEnvironment?) throws {
         guard !candidateExercises.isEmpty else { return }
         let sortedCandidates = candidateExercises.sorted { $0.canonicalName < $1.canonicalName }
 
-        for templateSession in definition.orderedTemplateSessions {
+        let isWeekPinnedDefinition = definition.functionalFitnessConfiguration?.weeklyPlan != nil
+        let distinctnessGroups: [[TemplateSession]]
+        if isWeekPinnedDefinition {
+            let byWeek = Dictionary(grouping: definition.orderedTemplateSessions, by: \.activeFromWeek)
+            distinctnessGroups = byWeek.keys.sorted().map { byWeek[$0]! }
+        } else {
+            distinctnessGroups = definition.orderedTemplateSessions.map { [$0] }
+        }
+
+        for group in distinctnessGroups {
             var usedExerciseIDs: Set<UUID> = []
-            let slots = templateSession.orderedBlockTemplates
-                .flatMap(\.orderedPrescriptionTemplates)
-                .compactMap(\.exerciseSlot)
+            for templateSession in group {
+                let slots = templateSession.orderedBlockTemplates
+                    .flatMap(\.orderedPrescriptionTemplates)
+                    .compactMap(\.exerciseSlot)
 
-            // Stage TE.1 fail-fast guard: checked once per template
-            // session, before this session's own candidate-resolution
-            // loop — never entered with an unknown environment silently
-            // treated as "anything goes."
-            if !slots.isEmpty, environment == nil {
-                throw ExerciseSlotResolutionError.trainingEnvironmentRequired
-            }
-
-            for slot in slots {
-                if let alreadyResolved = slot.resolvedExercise {
-                    usedExerciseIDs.insert(alreadyResolved.id)
-                    continue
+                // Stage TE.1 fail-fast guard: checked once per template
+                // session, before this session's own candidate-resolution
+                // loop — never entered with an unknown environment silently
+                // treated as "anything goes."
+                if !slots.isEmpty, environment == nil {
+                    throw ExerciseSlotResolutionError.trainingEnvironmentRequired
                 }
 
-                // Stage TE.1 (§K/§L): a narrowed main-lift/competition
-                // slot is precisely attributable to environment — see
-                // `FunctionalFitnessMaterializer`'s identical reasoning.
-                if !slot.allowedExercises.isEmpty,
-                   !slot.allowedExercises.contains(where: {
-                       TrainingEnvironmentCompatibilityRule.evaluate(required: $0.requiredEquipment, environment: environment) == .compatible
-                   }) {
-                    let missing = Set(slot.allowedExercises.flatMap(\.requiredEquipment)).subtracting(Set(environment?.availableEquipment ?? []))
-                    throw ExerciseSlotResolutionError.environmentIncompatible(slot: slot.name, missingEquipment: Array(missing))
-                }
-
-                let eligible = sortedCandidates.filter { SubstitutionValidator.isValid(candidate: $0, for: slot, environment: environment) }
-
-                // Stage TE.1 checkpoint-gate fix: a KNOWN environment that
-                // simply has no candidate at all for this slot (unrelated
-                // to equipment) is a pre-existing, out-of-scope unresolved-
-                // slot state (`slot.resolvedExercise` stays `nil`, exactly
-                // as before this stage). But if at least one candidate
-                // satisfies every OTHER constraint on this slot and is
-                // excluded only by equipment, that is a real, attributable
-                // environment conflict — it must be a typed, blocking
-                // failure BEFORE any Session materializes, never a
-                // silently-unresolved slot that could still reach an
-                // athlete-facing prescription with no exercise (CLAUDE.md
-                // rule 14/the locked TE.1 invariant: every prescription
-                // must be executable in the selected environment).
-                if eligible.isEmpty {
-                    let semanticallyEligible = sortedCandidates.filter {
-                        SubstitutionValidator.matchesSemanticConstraints(candidate: $0, for: slot)
+                for slot in slots {
+                    if let alreadyResolved = slot.resolvedExercise {
+                        usedExerciseIDs.insert(alreadyResolved.id)
+                        continue
                     }
-                    if !semanticallyEligible.isEmpty {
-                        let missing = Set(semanticallyEligible.flatMap(\.requiredEquipment))
-                            .subtracting(Set(environment?.availableEquipment ?? []))
+
+                    // Stage TE.1 (§K/§L): a narrowed main-lift/competition
+                    // slot is precisely attributable to environment — see
+                    // `FunctionalFitnessMaterializer`'s identical reasoning.
+                    if !slot.allowedExercises.isEmpty,
+                       !slot.allowedExercises.contains(where: {
+                           TrainingEnvironmentCompatibilityRule.evaluate(required: $0.requiredEquipment, environment: environment) == .compatible
+                       }) {
+                        let missing = Set(slot.allowedExercises.flatMap(\.requiredEquipment)).subtracting(Set(environment?.availableEquipment ?? []))
                         throw ExerciseSlotResolutionError.environmentIncompatible(slot: slot.name, missingEquipment: Array(missing))
                     }
-                    continue
-                }
 
-                let chosen = eligible.first { !usedExerciseIDs.contains($0.id) } ?? eligible.first
-                slot.resolvedExercise = chosen
-                if let chosen { usedExerciseIDs.insert(chosen.id) }
+                    let eligible = sortedCandidates.filter { SubstitutionValidator.isValid(candidate: $0, for: slot, environment: environment) }
+
+                    // Stage TE.1 checkpoint-gate fix: a KNOWN environment that
+                    // simply has no candidate at all for this slot (unrelated
+                    // to equipment) is a pre-existing, out-of-scope unresolved-
+                    // slot state (`slot.resolvedExercise` stays `nil`, exactly
+                    // as before this stage). But if at least one candidate
+                    // satisfies every OTHER constraint on this slot and is
+                    // excluded only by equipment, that is a real, attributable
+                    // environment conflict — it must be a typed, blocking
+                    // failure BEFORE any Session materializes, never a
+                    // silently-unresolved slot that could still reach an
+                    // athlete-facing prescription with no exercise (CLAUDE.md
+                    // rule 14/the locked TE.1 invariant: every prescription
+                    // must be executable in the selected environment).
+                    if eligible.isEmpty {
+                        let semanticallyEligible = sortedCandidates.filter {
+                            SubstitutionValidator.matchesSemanticConstraints(candidate: $0, for: slot)
+                        }
+                        if !semanticallyEligible.isEmpty {
+                            let missing = Set(semanticallyEligible.flatMap(\.requiredEquipment))
+                                .subtracting(Set(environment?.availableEquipment ?? []))
+                            throw ExerciseSlotResolutionError.environmentIncompatible(slot: slot.name, missingEquipment: Array(missing))
+                        }
+                        continue
+                    }
+
+                    let chosen = eligible.first { !usedExerciseIDs.contains($0.id) } ?? eligible.first
+                    slot.resolvedExercise = chosen
+                    if let chosen { usedExerciseIDs.insert(chosen.id) }
+                }
             }
         }
     }

@@ -144,6 +144,15 @@ struct FunctionalFitnessDecisionEngine: ProgrammingDecisionEngine {
     /// covered by whatever this SAME component already programmed earlier
     /// in this SAME tactical week.
     private func adjustForSameWeekComplementarity(_ input: ProgrammingDecisionInput) -> ProgrammingDecisionOutput? {
+        // PROGRAMMING AUTHORITY V1 Part XXXII: an authored session family
+        // owns its own primary stimulus/duration domain outright.
+        // Complementarity is subordinate — it may reorder EXERCISE
+        // selection (handled entirely outside `Stimulus`, by the movement
+        // composer) but must never re-derive the physiological structure
+        // an authored family already fixed. See `ProgrammingDecisionInput
+        // .authoredStimulusIsLocked`'s own doc comment for the reproduced
+        // failure this prevents.
+        guard !input.authoredStimulusIsLocked else { return nil }
         guard !input.componentAdaptationObjectives.isEmpty, !input.currentWeekContext.alreadyProgrammedThisWeek.isEmpty else { return nil }
 
         let servedSoFar = Set(input.currentWeekContext.alreadyProgrammedThisWeek.flatMap {

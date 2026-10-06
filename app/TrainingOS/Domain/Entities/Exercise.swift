@@ -84,6 +84,43 @@ final class Exercise {
     /// deliberately minimal alternative to a full skill/capability
     /// questionnaire.
     var requiresDemonstratedCapability: Bool = false
+    /// Dogfood Round 2 Continuation (Finding J): which real-world
+    /// dimensions this Exercise is measured by — a CAPABILITY signal
+    /// ("what this exercise supports"), never a requirement that every
+    /// prescription for it must populate every listed dimension.
+    /// `SetPrescription` remains the sole authority for what any ONE
+    /// prescription actually targets. Default `[]` (empty), matching
+    /// `primaryTargets`/`requiredEquipment`'s own established convention:
+    /// empty means "not yet explicitly classified," never "supports
+    /// nothing" and never a false, silently-asserted `[.load, .reps]` for
+    /// every pre-existing row (a real, previously-cataloged bodyweight
+    /// movement like Pull-up is not load-measured just because it hasn't
+    /// been tagged yet). Confirmed via direct grep that no current
+    /// production code reads this field, so this default carries zero
+    /// behavioral risk — it is purely an honest "unclassified" marker
+    /// until an exercise (e.g. Farmer's Carry, `[.load, .distance]`) is
+    /// explicitly tagged.
+    var measuredDimensions: [MeasurementDimension] = []
+    /// MUSCLE VERTICAL SLICE REPAIR, Section 14: the diagnosed defect —
+    /// "Easy Run (Zone 2)" (a real, deliberate LOW-intensity movement
+    /// variant) being selected as the cyclical component of a
+    /// SHORT_HIGH_OUTPUT (high-intensity) conditioning stimulus — proved
+    /// exercise identity and intensity/stimulus semantics were
+    /// conflated: "Easy Run (Zone 2)" and "Track Interval Run" share
+    /// identical `movementFunctions`/`functionalModality`/
+    /// `measuredDimensions` and differ ONLY in `canonicalName` — nothing
+    /// in the domain model previously said "this variant is only
+    /// truthful for low-intensity work." Reuses the existing
+    /// `IntensityClassification` (`Stimulus.intensity`'s own vocabulary)
+    /// rather than inventing a parallel one. `nil` (every pre-existing
+    /// row) means "not a dedicated single-intensity variant" — never
+    /// "low intensity" and never "high intensity" — so this is a
+    /// zero-migration-risk, purely additive marker exactly like
+    /// `measuredDimensions`'s own established convention. Only
+    /// dedicated single-intensity variants (e.g. "Easy Run (Zone 2)")
+    /// are ever tagged; the neutral "Track Interval Run"/"Row Erg"/etc.
+    /// stay `nil` and remain eligible for any intensity.
+    var intendedIntensity: IntensityClassification?
 
     @Relationship(deleteRule: .cascade, inverse: \ExerciseAlias.exercise)
     var aliases: [ExerciseAlias] = []
@@ -115,7 +152,9 @@ final class Exercise {
         functionalModality: FunctionalModality? = nil,
         requiredEquipment: [EquipmentRequirement] = [],
         isExplosiveExpression: Bool = false,
-        requiresDemonstratedCapability: Bool = false
+        requiresDemonstratedCapability: Bool = false,
+        measuredDimensions: [MeasurementDimension] = [],
+        intendedIntensity: IntensityClassification? = nil
     ) {
         self.id = id
         self.canonicalName = canonicalName
@@ -128,6 +167,8 @@ final class Exercise {
         self.movementFunctions = movementFunctions
         self.functionalModality = functionalModality
         self.requiredEquipment = requiredEquipment
+        self.measuredDimensions = measuredDimensions
+        self.intendedIntensity = intendedIntensity
     }
 
     /// The only way application code should attach an ExerciseAlias.

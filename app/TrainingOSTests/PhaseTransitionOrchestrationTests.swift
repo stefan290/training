@@ -49,7 +49,10 @@ final class PhaseTransitionOrchestrationTests: XCTestCase {
         func exercise(
             _ name: String, _ targets: [MuscleGroup] = [], _ movementFunctions: [MovementFunction] = [], _ functionalModality: FunctionalModality? = nil
         ) -> Exercise {
-            let ex = Exercise(canonicalName: name, modality: .hypertrophy, equipment: "barbell", movementPattern: "test", primaryTargets: targets, movementFunctions: movementFunctions, functionalModality: functionalModality)
+            // FUNCTIONAL FITNESS PROGRAMMING AUTHORITY V2, Section 10/11:
+            // generic scheduling filler, not a target-content test —
+            // tagged `.distance` so it stays truthfully materializable.
+            let ex = Exercise(canonicalName: name, modality: .hypertrophy, equipment: "barbell", movementPattern: "test", primaryTargets: targets, movementFunctions: movementFunctions, functionalModality: functionalModality, measuredDimensions: movementFunctions.contains(.monostructural) ? [.distance] : [])
             context.insert(ex)
             return ex
         }
@@ -101,7 +104,11 @@ final class PhaseTransitionOrchestrationTests: XCTestCase {
         let materializationContext = TacticalMaterializationContext(
             equipmentProfile: equipment, strengthCandidateExercises: candidates.strength, functionalFitnessCandidateExercises: candidates.functionalFitness, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context))
 
-        // Phase 1: the simple "Focused Hypertrophy" candidate (Hypertrophy + SteadyState only — no Functional Fitness yet).
+        // Phase 1: the simple "Focused Hypertrophy" candidate (Hypertrophy
+        // only — no Functional Fitness yet). MUSCLE VERTICAL SLICE REPAIR,
+        // Sections 2-3: this candidate is now Hypertrophy-only (the
+        // removed "5H+2Zone2" worked example never had a real, validated
+        // basis for its Zone 2 component — see `muscleGainFocusedHypertrophyMix`).
         let phase1Candidates = LongTermPlanner.proposeTrainingMix(phase: phase1, goal: fixture.goal)
         let mix1 = try XCTUnwrap(phase1Candidates.first { $0.mix.name == "Focused Hypertrophy" })
         try StartPhaseUseCase.start(
@@ -115,7 +122,6 @@ final class PhaseTransitionOrchestrationTests: XCTestCase {
         )
         XCTAssertEqual(phase1.status, .active)
         let phase1HypertrophyInstance = try XCTUnwrap(phase1.primaryInstance)
-        XCTAssertTrue(phase1.programInstances.contains { $0.programDefinition?.programmingSystem == .steadyState }, "Focused Hypertrophy's Zone 2 Conditioning component must also have instantiated")
         let phase1InstanceIDs = Set(phase1.programInstances.map(\.id))
 
         // Real logged history against phase 1's Hypertrophy instance —

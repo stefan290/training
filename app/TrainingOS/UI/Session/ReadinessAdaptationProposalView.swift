@@ -16,7 +16,9 @@ struct ReadinessAdaptationProposalView: View {
     @State private var index = 0
 
     var body: some View {
-        NavigationStack {
+        // Dogfood Round 2 (Finding G): no longer its own `NavigationStack` —
+        // see `ReadinessCheckInView`'s matching comment.
+        Group {
             VStack(alignment: .leading, spacing: 20) {
                 if let item = currentItem {
                     Text("\(index + 1) of \(proposal.items.count)")
@@ -54,11 +56,11 @@ struct ReadinessAdaptationProposalView: View {
                 }
                 Spacer()
             }
-            .padding(16)
-            .background(Theme.ground)
-            .navigationTitle("Today's Adjustments")
-            .navigationBarTitleDisplayMode(.inline)
         }
+        .padding(16)
+        .background(Theme.ground)
+        .navigationTitle("Today's Adjustments")
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     private var currentItem: ReadinessAdaptationProposalItem? {

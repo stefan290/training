@@ -51,20 +51,39 @@ final class TrainingEnvironmentReconciliationTests: XCTestCase {
 
     // MARK: onboarding no longer requires manual environment creation
 
-    func testOnboardingReachesReviewWithoutAnyManualEnvironmentCreation() throws {
+    /// Dogfood Round 2 Continuation (Finding I): a default `TrainingEnvironment`
+    /// (Full Gym) existing is not the same as the athlete having actually
+    /// SEEN and ACCEPTED it — `hasDefaultTrainingEnvironment` being true from
+    /// `ensureBaselineIdentity`'s own auto-seed used to let onboarding skip
+    /// the `.environment` step entirely, so a real athlete never got the
+    /// choice of what equipment they have. The step must now be shown and
+    /// explicitly advanced through even though Full Gym already exists —
+    /// only `hasConfirmedTrainingEnvironment` (set the moment the athlete
+    /// taps Continue on that step) unlocks `.review`.
+    func testOnboardingRoutesThroughEnvironmentStepBeforeReviewEvenWithFullGymDefault() throws {
         let viewModel = OnboardingViewModel()
         viewModel.start(modelContext: context)
         viewModel.selectedGoalType = .generalStrength
         viewModel.advance(from: .goal, modelContext: context)
         viewModel.advance(from: .preferences, modelContext: context)
-        XCTAssertEqual(viewModel.step, .review, "Full Gym already exists — no manual environment step required")
+        XCTAssertEqual(viewModel.step, .environment, "Full Gym already existing must not silently skip the athlete's own confirmation step")
         XCTAssertTrue(viewModel.hasDefaultTrainingEnvironment)
+        XCTAssertFalse(viewModel.hasConfirmedTrainingEnvironment, "a default existing is not the same as the athlete having accepted it")
 
-        // A relaunch mid-flow resumes at Review too — never re-forced
-        // through Environment merely because it wasn't the resume path.
+        // A relaunch mid-flow (before confirming) resumes at Environment,
+        // never fast-forwarded to Review just because a default exists.
         let relaunched = OnboardingViewModel()
         relaunched.start(modelContext: context)
-        XCTAssertEqual(relaunched.step, .review)
+        XCTAssertEqual(relaunched.step, .environment)
+
+        viewModel.advance(from: .environment, modelContext: context)
+        XCTAssertEqual(viewModel.step, .review, "explicitly confirming Full Gym unlocks Review")
+
+        // A relaunch AFTER confirming resumes at Review, never re-forced
+        // back through Environment merely because it wasn't the resume path.
+        let relaunchedAfterConfirming = OnboardingViewModel()
+        relaunchedAfterConfirming.start(modelContext: context)
+        XCTAssertEqual(relaunchedAfterConfirming.step, .review)
     }
 
     // MARK: nil environment still means environmentUnknown — never redefined as "all equipment"

@@ -91,19 +91,29 @@ struct PlanView: View {
 
     @ViewBuilder private var spine: some View {
         SectionHeader(title: "Your Journey")
+        // Dogfood Round 2 (Finding D): the connecting line's segment count
+        // must match ONLY the real phase-row column — the "No later phase
+        // is planned yet." caption below is a truthful terminator, not
+        // another spine entry, and must sit outside the HStack the line
+        // measures against. Previously the caption row's extra height fed
+        // back into this HStack (the line has no explicit height, so it
+        // stretches to match its tallest sibling), making the line visually
+        // run past the last real phase and read as "more below" when
+        // Maintenance is genuinely the final, open-ended phase.
         HStack(alignment: .top, spacing: 14) {
             SpineLine(count: spineItems.count, currentIndex: spineItems.firstIndex { $0.isCurrentPhase(viewModel.currentPhase) })
             VStack(alignment: .leading, spacing: 10) {
                 ForEach(spineItems) { item in
                     spineRow(for: item)
                 }
-                if viewModel.isFinalPhase {
-                    Text("No later phase is planned yet.")
-                        .font(Theme.label)
-                        .foregroundStyle(Theme.textMuted)
-                        .padding(.top, 2)
-                }
             }
+        }
+        if viewModel.isFinalPhase {
+            Text("No later phase is planned yet.")
+                .font(Theme.label)
+                .foregroundStyle(Theme.textMuted)
+                .padding(.top, 2)
+                .padding(.leading, 26)
         }
     }
 

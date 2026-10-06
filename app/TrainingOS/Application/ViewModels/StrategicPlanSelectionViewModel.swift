@@ -328,7 +328,7 @@ final class StrategicPlanSelectionViewModel {
     func buildCustomMix(selections: [(style: TrainingStyle, frequency: Int)]) -> Bool {
         guard let goal, let previewPhase else { return false }
         customMixValidationError = nil
-        switch LongTermPlanner.buildCustomMix(selections: selections, capacity: weeklyCapacity) {
+        switch LongTermPlanner.buildCustomMix(selections: selections, capacity: weeklyCapacity, phaseType: previewPhase.type) {
         case .failure(let error):
             customMixValidationError = error
             return false
@@ -396,7 +396,14 @@ final class StrategicPlanSelectionViewModel {
             let user = users.first
             let environment = user?.profile?.defaultTrainingEnvironment
             let preferences = goal.preferences
-            let trainingDays = preferences?.availableTrainingDaysPerWeek ?? 4
+            // Dogfood Round 2 Continuation (Finding A): the athlete's real,
+            // onboarding-selected weekdays must reach the FIRST tactical
+            // materialization too — mirrors the exact pattern already
+            // established at `PhaseDetailViewModel.currentAvailability` for
+            // every later roll. `nil`/never-chosen still degrades to `[]`
+            // (no restriction), never a guessed subset of the legacy count.
+            let availableWeekdays = preferences?.availableWeekdays ?? []
+            let trainingDays = availableWeekdays.isEmpty ? (preferences?.availableTrainingDaysPerWeek ?? 4) : availableWeekdays.count
             let allowsDoubles = preferences?.allowsDoubleSessions ?? false
             let materializationContext = TacticalMaterializationContext(
                 equipmentProfile: EquipmentProfile(equipmentType: .barbell, smallestIncrementKg: 2.5),
@@ -409,8 +416,8 @@ final class StrategicPlanSelectionViewModel {
                 phase: firstPhase, mix: mix, asOf: referenceDate, ownerUserID: goal.ownerUserID,
                 performanceProfile: user?.performanceProfile,
                 availability: UserAvailability(
-                    trainingDaysPerWeek: trainingDays, allowsDoubleSessions: allowsDoubles,
-                    maxSessionsPerDay: allowsDoubles ? 2 : 1
+                    trainingDaysPerWeek: trainingDays, availableWeekdays: availableWeekdays,
+                    allowsDoubleSessions: allowsDoubles, maxSessionsPerDay: allowsDoubles ? 2 : 1
                 ),
                 materializationContext: materializationContext, context: modelContext
             )
@@ -425,6 +432,11 @@ final class StrategicPlanSelectionViewModel {
             // this durability-critical (mirrors CLAUDE.md rule 20's "durable
             // at each meaningful action" discipline).
             try? modelContext.save()
+            // FINAL DIAGNOSTIC CLOSURE, Section A: debug/dogfood-only —
+            // reads back the SAME just-persisted materialization the UI
+            // renders next; see `DogfoodTraceDump`'s own doc comment.
+            // Zero effect unless `-FFDogfoodTrace` is passed.
+            DogfoodTraceDump.dump(phase: firstPhase, performanceProfile: user?.performanceProfile)
             didSucceed = true
             return true
         } catch {

@@ -25,23 +25,30 @@ struct SessionDetailView: View {
     @State private var completionSummary: CompletionSummary?
     @State private var pendingFinishContext: SessionCompletionContext?
     @State private var pendingFeedbackPrompts: [ExercisePrescription] = []
-    /// Auto-advance seam: a Session with exactly one `WorkoutBlock` (every
-    /// Hypertrophy/Powerlifting/Steady State/Interval/Functional Fitness
-    /// Session materialized so far) has no real "choose a block" decision
-    /// for the user to make — showing a one-row list before letting them
-    /// into their own already-started workout is pure friction, and was
-    /// the reported gap: after readiness -> warm-up -> "Start Workout",
-    /// the user landed back on this hub with nothing indicating where to
-    /// go next, never inside `StrengthExecutionView`. Fires at most once
-    /// per `SessionDetailView` instance (`hasAutoNavigated` persists for
-    /// this view's lifetime in the NavigationStack, so popping back from
-    /// the block to tap Finish/Resume Later never re-triggers it) and
-    /// only for an already-`.inProgress` Session whose sole block still
-    /// has work — never for `.scheduled` (that transition is still the
-    /// user's own "Start Workout" tap here) and never for a
-    /// multi-block Session, where the choice is real.
+    /// Auto-advance seam: a Session with exactly one `WorkoutBlock` still
+    /// remaining (every Hypertrophy/Powerlifting/Steady State/Interval/
+    /// Functional Fitness Session materialized so far, PLUS a multi-block
+    /// Session once every other block is genuinely finished) has no real
+    /// "choose a block" decision for the user to make — showing a block
+    /// list before letting them into their own already-started workout is
+    /// pure friction, and was the reported gap: after readiness -> warm-up
+    /// -> "Start Workout", the user landed back on this hub with nothing
+    /// indicating where to go next, never inside `StrengthExecutionView`.
+    /// Only for an already-`.inProgress` Session — never for `.scheduled`
+    /// (that transition is still the user's own "Start Workout" tap here).
+    ///
+    /// Dogfood Round 2 Continuation (Finding O): re-evaluated on every
+    /// appearance (not a one-shot flag any more) so completing Functional
+    /// Bodybuilding and returning here auto-advances straight into
+    /// Conditioning — "continue to conditioning," no redundant overview
+    /// step. `lastAutoOpenedBlockID` is the one thing that prevents this
+    /// from forcing the athlete straight back into a block they just
+    /// deliberately backed out of without finishing: re-appearing after
+    /// backing out of the SAME still-incomplete block yields the same
+    /// candidate, which is skipped; a genuinely NEW candidate (a
+    /// different, now-sole-remaining block) still opens.
     @State private var autoOpenedBlock: WorkoutBlock?
-    @State private var hasAutoNavigated = false
+    @State private var lastAutoOpenedBlockID: UUID?
 
     /// Stage 6E: a completed/skipped/missed/abandoned Session is ALWAYS
     /// history, regardless of the caller's `readOnly` flag — that flag
@@ -191,14 +198,15 @@ struct SessionDetailView: View {
         }
     }
 
-    /// See `autoOpenedBlock`'s own doc comment for the exact scope of
-    /// this seam. The actual decision is `SessionAutoAdvance.blockToAutoOpen`
-    /// (a pure, independently-tested function) — this only fires it at
-    /// most once per view instance.
+    /// See `autoOpenedBlock`'s own doc comment for the exact scope of this
+    /// seam. The actual decision is `SessionAutoAdvance.blockToAutoOpen`
+    /// (a pure, independently-tested function) — re-evaluated every time
+    /// this screen reappears, but never re-opens the same block the
+    /// athlete was just looking at (that would fight "Resume Later").
     private func autoNavigateIfNeeded() {
-        guard !hasAutoNavigated else { return }
-        hasAutoNavigated = true
-        autoOpenedBlock = SessionAutoAdvance.blockToAutoOpen(session: session)
+        guard let candidate = SessionAutoAdvance.blockToAutoOpen(session: session), candidate.id != lastAutoOpenedBlockID else { return }
+        lastAutoOpenedBlockID = candidate.id
+        autoOpenedBlock = candidate
     }
 
     /// Every modality's execution screen shares this Session's one
@@ -265,7 +273,7 @@ private struct BlockRow: View {
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text(block.type.rawValue.uppercased())
+                Text(BlockPresentation.functionalFitnessAwareBlockLabel(for: block).uppercased())
                     .font(Theme.label)
                     .foregroundStyle(Theme.primary)
                 Text(BlockPresentation.summary(for: block))

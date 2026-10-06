@@ -86,6 +86,14 @@ enum RollTacticalWindowUseCase {
                 exposureHistory: FunctionalFitnessExposureHistoryBuilder.build(fromCompletedSessionsIn: instance),
                 componentAdaptationObjectives: componentAdaptationObjectives,
                 environment: materializationContext.trainingEnvironment,
+                // FUNCTIONAL FITNESS PROGRAMMING AUTHORITY V2, Section 8:
+                // the one real production wiring of per-athlete movement
+                // capability into selection. `nil` (no row exists for
+                // this exercise) reads as `.unknown` — Section 28's
+                // migration-safety requirement — never inferred
+                // `.workoutReady`.
+                movementCapabilityLookup: { exercise in performanceProfile?.movementCapability(for: exercise)?.proficiency ?? .unknown },
+                performanceProfile: performanceProfile, userProfile: userProfile,
                 context: context
             )
         }
@@ -111,6 +119,27 @@ enum RollTacticalWindowUseCase {
         performanceProfile: PerformanceProfile?, availability: UserAvailability, userProfile: UserProfile? = nil,
         materializationContext: TacticalMaterializationContext, context: ModelContext
     ) throws -> Result? {
+        // Dogfood Round 2 (Finding 2): every real `Day` this call could
+        // land a placement on — whether created earlier by
+        // `StartPhaseUseCase`/a materializer (always midnight-normalized,
+        // via `phase.startDate`/`instance.startDate` arithmetic) or by
+        // `AcceptScheduleProposalUseCase.findOrCreateDay`'s own exact-
+        // equality lookup below — must share the SAME calendar-day
+        // identity convention. `asOf` here is real callers' raw
+        // `Date()` (`PhaseDetailViewModel.advanceTacticalWeek`), never
+        // normalized upstream; used un-normalized, it seeds
+        // `SchedulingWindow.startDate` with a real time-of-day, so
+        // `window.date(forDayOffset: 0)` would never exactly equal an
+        // already-existing midnight `Day.date` for that same real
+        // calendar day — `findOrCreateDay` would then silently create a
+        // SECOND `Day` row for one real date, which every UI grouping
+        // that uses `Calendar.isDate(_:inSameDayAs:)` then renders as two
+        // separate sessions that day, even though nothing here ever
+        // decided to schedule a double. Normalizing once, here, at the
+        // single real call boundary this checkpoint's trace found,
+        // closes it — never touches `ConcurrentScheduler`'s own
+        // occupancy/hard-constraint logic, which was already correct.
+        let asOf = Calendar.current.startOfDay(for: asOf)
         var inputs: [ScheduledProgramInput] = []
         var newSessionsByComponent: [UUID: [Session]] = [:]
 
@@ -224,6 +253,8 @@ enum RollTacticalWindowUseCase {
                 protectedSiblingStressProfilesThisWeek: protectedSiblingStressProfilesThisWeek,
                 componentAdaptationObjectives: component.adaptationObjectives,
                 environment: materializationContext.trainingEnvironment,
+                movementCapabilityLookup: { exercise in performanceProfile?.movementCapability(for: exercise)?.proficiency ?? .unknown },
+                performanceProfile: performanceProfile, userProfile: userProfile,
                 context: context
             )
 
@@ -233,6 +264,59 @@ enum RollTacticalWindowUseCase {
         }
 
         guard !inputs.isEmpty else { return nil }
+
+        // MUSCLE + 5FF FINAL CLOSURE, Section 17/18 (project-owner
+        // decision): the real fix, after two reverted attempts anchored
+        // on `asOf` in one form or another — see
+        // `causal-analysis/tactical-window-anchor.md` for the full trace
+        // of both, including exactly which real test each one broke.
+        // Neither attempt is used. `asOf` is "when the user is doing this
+        // action" (Section 18) — it must never redefine which real
+        // calendar dates belong to the program week, so it is never used
+        // to ANCHOR the window at all. The window instead derives
+        // directly from the REAL naive dates the materializers above
+        // already stamped onto each just-materialized Session's `Day`
+        // (`instance.startDate + weekIndex*7`, computed independently per
+        // component exactly as `StartPhaseUseCase`'s own scheduling call
+        // already anchors to `phase.startDate` rather than `asOf` — the
+        // same "anchor to the real template boundary, never the action
+        // moment" precedent, applied here too) — always correct by
+        // construction, never a re-derived guess.
+        //
+        // This also directly resolves Attempt 1's real failure (a Strength
+        // component rolling week 0 for the first time alongside an FF
+        // component already on week 1, in the SAME call — two components
+        // genuinely at different weekIndex advancement is real, valid,
+        // already-tested production behavior, not an edge case to
+        // special-case away): rather than forcing one single canonical
+        // week onto every component, the window WIDENS to cover the full
+        // span from the earliest to the latest component's own real
+        // target week. `ConcurrentScheduler.originWeekFloorOffset`
+        // already exists, already handles a window spanning multiple real
+        // weeks (built for Steady State's own multi-week-per-call
+        // materialization), and already floors each session to its own
+        // intended relative week within a wider window via its naive
+        // `Day.date` — this reuses that existing, already-tested
+        // mechanism rather than inventing a new one.
+        let allNaiveDates = inputs.flatMap(\.sessions).compactMap { $0.day?.date }
+        let calendar = Calendar.current
+        let windowStartDate: Date
+        let windowNumberOfDays: Int
+        if let earliest = allNaiveDates.min(), let latest = allNaiveDates.max() {
+            windowStartDate = calendar.startOfDay(for: earliest)
+            let spanDays = calendar.dateComponents([.day], from: windowStartDate, to: calendar.startOfDay(for: latest)).day ?? 0
+            // +7 guarantees the LATEST session's own real week is fully
+            // covered even when that session isn't the first day of its
+            // week (e.g. a Sunday session near the end of a 7-day span).
+            windowNumberOfDays = spanDays + 7
+        } else {
+            // Defensive fallback only — every real materializer always
+            // assigns a `Day` to a Session it produces, so this should
+            // never be reached in practice. `asOf` here is strictly a
+            // last resort, never the primary anchor.
+            windowStartDate = asOf
+            windowNumberOfDays = 7
+        }
 
         // Stage CP.2 (Correction 1 — no post-scheduler regeneration): this
         // remains the ONLY `SchedulingPipeline.propose` call in a
@@ -244,7 +328,7 @@ enum RollTacticalWindowUseCase {
         // reprogramming/negotiation is a DEFERRED FUTURE CAPABILITY, not
         // built here (see `TRAINING_MIX_CONCURRENT_PROGRAMMING_DESIGN.md`'s
         // CP.2 Corrections Before Implementation section).
-        let constraints = SchedulingConstraints(availability: availability, window: SchedulingWindow(startDate: asOf, numberOfDays: 7))
+        let constraints = SchedulingConstraints(availability: availability, window: SchedulingWindow(startDate: windowStartDate, numberOfDays: windowNumberOfDays))
         let scheduled = SchedulingPipeline.propose(mix: mix, inputs: inputs, constraints: constraints)
         try AcceptScheduleProposalUseCase.accept(scheduled.proposal, ownerUserID: ownerUserID, context: context)
 

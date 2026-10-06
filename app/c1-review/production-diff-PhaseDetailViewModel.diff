@@ -1,0 +1,111 @@
+diff --git a/app/TrainingOS/Application/ViewModels/PhaseDetailViewModel.swift b/app/TrainingOS/Application/ViewModels/PhaseDetailViewModel.swift
+index f978e13..e02a82c 100644
+--- a/app/TrainingOS/Application/ViewModels/PhaseDetailViewModel.swift
++++ b/app/TrainingOS/Application/ViewModels/PhaseDetailViewModel.swift
+@@ -267,6 +267,36 @@ final class PhaseDetailViewModel {
+         }
+     }
+ 
++    /// Dogfood Round 2 (Finding 1): the real, current `GoalPreferences`
++    /// for this phase's own `Goal` — the exact same construction
++    /// `StrategicPlanSelectionViewModel.acceptAndStart` already uses at
++    /// initial phase start, reused here so a later tactical roll respects
++    /// the same athlete-approved availability, including any change made
++    /// through `TrainingPreferencesSettingsView` since the phase started.
++    /// Falls back to the same defaults `GoalPreferences` itself documents
++    /// (`availableTrainingDaysPerWeek` unset -> 4, doubles unset -> false)
++    /// when no preference has ever been stated — never blocks on it.
++    ///
++    /// Dogfood Round 2 (Finding 1) — Independent Review Correction 1: now
++    /// also threads the athlete's real `GoalPreferences.availableWeekdays`
++    /// into `UserAvailability.availableWeekdays` — the ONE existing
++    /// authority `ConcurrentScheduler.hardCheck`/`isUsable` already
++    /// enforces as a hard constraint. `nil`/never-chosen degrades to `[]`
++    /// (`UserAvailability`'s own documented "no explicit restriction, every
++    /// day usable" meaning), preserving exactly today's behavior for every
++    /// athlete who has never opened the new weekday editor — never a
++    /// guessed subset inferred from the legacy day-count integer.
++    private static func currentAvailability(phase: TrainingPhase) -> UserAvailability {
++        let preferences = phase.plan?.goal?.preferences
++        let availableWeekdays = preferences?.availableWeekdays ?? []
++        let trainingDays = availableWeekdays.isEmpty ? (preferences?.availableTrainingDaysPerWeek ?? 4) : availableWeekdays.count
++        let allowsDoubles = preferences?.allowsDoubleSessions ?? false
++        return UserAvailability(
++            trainingDaysPerWeek: trainingDays, availableWeekdays: availableWeekdays,
++            allowsDoubleSessions: allowsDoubles, maxSessionsPerDay: allowsDoubles ? 2 : 1
++        )
++    }
++
+     /// Stage 10R.2B: the one deliberate write this ViewModel performs —
+     /// see this type's own top-level doc comment. Never called by `load`;
+     /// only ever in direct response to an explicit user action (a button
+@@ -282,7 +312,14 @@ final class PhaseDetailViewModel {
+             try StartNextHypertrophyMesocycleUseCase.start(
+                 previousPhase: phase, previousInstance: primaryInstance, asOf: Date(),
+                 ownerUserID: primaryInstance.ownerUserID,
+-                availability: UserAvailability(trainingDaysPerWeek: 7, allowsDoubleSessions: false, maxSessionsPerDay: 1),
++                // Dogfood Round 2 (Finding 1): the athlete's real, current
++                // `GoalPreferences` — never a hardcoded universal
++                // availability — so a training-preferences change the
++                // athlete just approved actually takes effect starting
++                // with the next real advancement, exactly the same
++                // construction `StrategicPlanSelectionViewModel.acceptAndStart`
++                // already uses.
++                availability: Self.currentAvailability(phase: phase),
+                 materializationContext: TacticalMaterializationContext(
+                     // KNOWN DOMAIN GAP — see the identical note in
+                     // `advanceTacticalWeek` below.
+@@ -309,17 +346,39 @@ final class PhaseDetailViewModel {
+     /// method's own `canAdvanceTacticalWeek` read is only ever used to
+     /// decide whether to SHOW the button, never trusted as proof it's
+     /// still safe to actually roll.
++    /// TRAININGOS — C1 (project-owner decision): the real athlete-owner
++    /// resolution this call needs — `primaryInstance.ownerUserID` is the
++    /// one authoritative identity for whose `PerformanceProfile`/
++    /// training environment this advancement must use. Previously this
++    /// read `users.first` (an arbitrary row, never necessarily the real
++    /// owner) and never passed a `PerformanceProfile` at all — the
++    /// athlete's own persisted movement-capability evidence (TTB/Pull-up/
++    /// HSPU capacity, etc.) therefore could never reach real next-week
++    /// materialization through this UI entry point, even though it was
++    /// correctly saved and correctly read by every other consumer
++    /// (`TechnicalCapacityDoseAuthority`, direct materializer calls).
++    /// Resolved by an exact `id`-predicated fetch — never `.first`, never
++    /// a fabricated/replaced profile, never another user's evidence. A
++    /// `nil` result (no `User` row, or a real user with no
++    /// `PerformanceProfile` yet) preserves the exact prior behavior for
++    /// that case — this is additive, never a new requirement to have one.
+     @discardableResult
+-    func advanceTacticalWeek(modelContext: ModelContext) -> Bool {
++    func advanceTacticalWeek(modelContext: ModelContext, asOf: Date = Date()) -> Bool {
+         needsTrainingEnvironment = false
+         guard let phase, let primaryInstance = phase.primaryInstance else { return false }
+         let candidates = (try? modelContext.fetch(FetchDescriptor<Exercise>())) ?? []
+-        let users = (try? modelContext.fetch(FetchDescriptor<User>())) ?? []
++        let ownerUserID = primaryInstance.ownerUserID
++        let ownerDescriptor = FetchDescriptor<User>(predicate: #Predicate { $0.id == ownerUserID })
++        let owner = (try? modelContext.fetch(ownerDescriptor))?.first
+         do {
+             let outcome = try AdvanceTacticalWeekUseCase.advance(
+-                phase: phase, asOf: Date(), ownerUserID: primaryInstance.ownerUserID,
+-                performanceProfile: nil,
+-                availability: UserAvailability(trainingDaysPerWeek: 7, allowsDoubleSessions: false, maxSessionsPerDay: 1),
++                phase: phase, asOf: asOf, ownerUserID: ownerUserID,
++                performanceProfile: owner?.performanceProfile,
++                // Dogfood Round 2 (Finding 1): see the identical note in
++                // `startNextHypertrophyMesocycle` above — this is the
++                // call that must actually pick up an approved training-
++                // preferences change for the following tactical week.
++                availability: Self.currentAvailability(phase: phase),
+                 materializationContext: TacticalMaterializationContext(
+                     // KNOWN DOMAIN GAP (Stage 10R.6, D-10R6-11 — deferred by
+                     // explicit product decision): TrainingOS has no
+@@ -338,7 +397,7 @@ final class PhaseDetailViewModel {
+                     equipmentProfile: EquipmentProfile(equipmentType: .barbell, smallestIncrementKg: 2.5),
+                     strengthCandidateExercises: candidates,
+                     functionalFitnessCandidateExercises: candidates,
+-                    trainingEnvironment: users.first?.profile?.defaultTrainingEnvironment
++                    trainingEnvironment: owner?.profile?.defaultTrainingEnvironment
+                 ),
+                 context: modelContext
+             )

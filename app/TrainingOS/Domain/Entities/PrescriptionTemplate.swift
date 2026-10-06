@@ -106,6 +106,26 @@ final class PrescriptionTemplate {
     /// `RepGoal` behavior for every Family A/B/C row.
     var repGoalRepRangeHigh: [Int] = []
     var repGoalTargetRir: [Int] = []
+    /// GENERIC STRENGTH PRESCRIPTION AUTHORITY V1: mirrors
+    /// `repGoalRepRangeHigh`'s exact flattening/sentinel discipline for
+    /// `RepGoal.targetRirHigh`. Every pre-existing row defaults to all
+    /// `-1`, decoding back to `nil` — zero behavior change for any
+    /// existing Family A/B/C/Hypertrophy-V2 row.
+    var repGoalTargetRirHigh: [Int] = []
+
+    /// Dogfood Round 2 Continuation (Finding J): the template-level
+    /// counterpart of `SetPrescription.targetDistanceMeters`/
+    /// `.targetDurationSeconds` — flat, optional scalars, matching this
+    /// file's own established discipline (never nested inside
+    /// `StrengthProgressionRules`/`repGoalSchedule`, which stays exactly
+    /// rep-shaped). Every materialized week's `SetPrescription` for this
+    /// template carries the same distance/duration target (no per-week
+    /// progression modeled here — out of scope for this checkpoint,
+    /// exactly like `.none`-load-rule accessory roles already carry no
+    /// per-week load progression). `nil` for every existing/rep-based
+    /// template, unaffected.
+    var targetDistanceMeters: Double?
+    var targetDurationSeconds: Int?
 
     var deloadWeightAction: DeloadExerciseAction = DeloadExerciseAction.standard
     var deloadRepAction: DeloadExerciseAction = DeloadExerciseAction.standard
@@ -295,12 +315,13 @@ final class PrescriptionTemplate {
             (0..<repGoalIsFixedReps.count).map { i in
                 let high = (repGoalRepRangeHigh.indices.contains(i) && repGoalRepRangeHigh[i] >= 0) ? repGoalRepRangeHigh[i] : nil
                 let rir = (repGoalTargetRir.indices.contains(i) && repGoalTargetRir[i] >= 0) ? repGoalTargetRir[i] : nil
+                let rirHigh = (repGoalTargetRirHigh.indices.contains(i) && repGoalTargetRirHigh[i] >= 0) ? repGoalTargetRirHigh[i] : nil
                 if repGoalIsPriorSlotActualResultRelative.indices.contains(i), repGoalIsPriorSlotActualResultRelative[i] {
-                    return RepGoal(prescription: .priorSlotActualResultRelative, repRangeHigh: high, targetRir: rir)
+                    return RepGoal(prescription: .priorSlotActualResultRelative, repRangeHigh: high, targetRir: rir, targetRirHigh: rirHigh)
                 }
                 let value = repGoalPrescriptionValue.indices.contains(i) ? repGoalPrescriptionValue[i] : 0
                 let prescription: RepPrescriptionKind = repGoalIsFixedReps[i] ? .fixedReps(value) : .rir(value)
-                return RepGoal(prescription: prescription, repRangeHigh: high, targetRir: rir)
+                return RepGoal(prescription: prescription, repRangeHigh: high, targetRir: rir, targetRirHigh: rirHigh)
             }
         }
         set {
@@ -319,6 +340,7 @@ final class PrescriptionTemplate {
             }
             repGoalRepRangeHigh = newValue.map { $0.repRangeHigh ?? -1 }
             repGoalTargetRir = newValue.map { $0.targetRir ?? -1 }
+            repGoalTargetRirHigh = newValue.map { $0.targetRirHigh ?? -1 }
         }
     }
 

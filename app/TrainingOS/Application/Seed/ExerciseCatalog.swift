@@ -109,6 +109,18 @@ struct ExerciseCatalog {
     let doubleUnders: Exercise
     let farmersCarry: Exercise
     let boxJump: Exercise
+    // FUNCTIONAL FITNESS PROGRAMMING AUTHORITY V2, Section 6: the missing
+    // canonical gated exercises from the project lead's initial technical
+    // capability set (Bar Muscle-Up, Ring Muscle-Up, Handstand Walk, Rope
+    // Climb, Clean, Jerk, Snatch — barbell). Box Jump is deliberately NOT
+    // part of this set (already exists above, ungated).
+    let barMuscleUp: Exercise
+    let ringMuscleUp: Exercise
+    let handstandWalk: Exercise
+    let ropeClimb: Exercise
+    let clean: Exercise
+    let jerk: Exercise
+    let snatch: Exercise
 
     /// Stage 10R.7A-TX rename (was `makeAndInsert`) — the old name implied
     /// "always construct fresh objects," which is exactly the behavior
@@ -127,7 +139,9 @@ struct ExerciseCatalog {
             functionalModality: FunctionalModality? = nil,
             requiredEquipment: [EquipmentRequirement] = [],
             isExplosiveExpression: Bool = false,
-            requiresDemonstratedCapability: Bool = false
+            requiresDemonstratedCapability: Bool = false,
+            measuredDimensions: [MeasurementDimension] = [],
+            intendedIntensity: IntensityClassification? = nil
         ) -> Exercise {
             if let existing = try? context.fetch(FetchDescriptor<Exercise>(predicate: #Predicate { $0.canonicalName == name })).first {
                 return existing
@@ -136,7 +150,8 @@ struct ExerciseCatalog {
                 canonicalName: name, modality: modality, equipment: equipment, movementPattern: pattern,
                 primaryTargets: primaryTargets, movementFunctions: movementFunctions, functionalModality: functionalModality,
                 requiredEquipment: requiredEquipment, isExplosiveExpression: isExplosiveExpression,
-                requiresDemonstratedCapability: requiresDemonstratedCapability
+                requiresDemonstratedCapability: requiresDemonstratedCapability, measuredDimensions: measuredDimensions,
+                intendedIntensity: intendedIntensity
             )
             context.insert(exercise)
             return exercise
@@ -180,17 +195,24 @@ struct ExerciseCatalog {
         let backSquat = make(
             "Back Squat", .strength, "barbell", "squat",
             primaryTargets: [.quadriceps, .glutes], movementFunctions: [.squatLoaded], functionalModality: .weightlifting,
-            requiredEquipment: [.barbell, .rack]
+            requiredEquipment: [.barbell, .rack],
+            // FUNCTIONAL FITNESS PROGRAMMING AUTHORITY V2, Section 10:
+            // canonical worked example — reps + load.
+            measuredDimensions: [.reps, .load]
         )
         let easyRun = make(
             "Easy Run (Zone 2)", .conditioning, "none", "locomotion",
             movementFunctions: [.monostructural, .locomotion], functionalModality: .metabolicConditioning,
-            requiredEquipment: []
+            requiredEquipment: [], measuredDimensions: [.distance, .duration],
+            // MUSCLE VERTICAL SLICE REPAIR, Section 14: a real,
+            // dedicated LOW-intensity variant — truthfully never a
+            // substitute for a high-output cyclical role.
+            intendedIntensity: .low
         )
         let trackIntervalRun = make(
             "Track Interval Run", .conditioning, "none", "locomotion",
             movementFunctions: [.monostructural, .locomotion], functionalModality: .metabolicConditioning,
-            requiredEquipment: []
+            requiredEquipment: [], measuredDimensions: [.distance, .duration]
         )
         let wallBall = make(
             "Wall Ball", .functionalFitness, "medicineBall", "squatToPress",
@@ -228,31 +250,37 @@ struct ExerciseCatalog {
         let pullUp = make(
             "Pull-up", .functionalFitness, "bodyweight", "verticalPull",
             primaryTargets: [.back, .biceps], movementFunctions: [.gymnasticsPull, .verticalPullLoaded], functionalModality: .gymnastics,
-            requiredEquipment: [.pullUpBar]
+            requiredEquipment: [.pullUpBar], measuredDimensions: [.reps]
         )
 
         // Monostructural.
         let bike = make(
             "Assault Bike", .functionalFitness, "bike", "locomotion",
             movementFunctions: [.monostructural, .locomotion], functionalModality: .metabolicConditioning,
-            requiredEquipment: [.bike]
+            requiredEquipment: [.bike],
+            // FUNCTIONAL FITNESS PROGRAMMING AUTHORITY V2, Section 10:
+            // a bike is calorie/duration measured, never distance —
+            // truthful tagging, not a special case (the general
+            // `measuredDimensions` check is what excludes it from a
+            // distance target now, not an equipment-name carve-out).
+            measuredDimensions: [.calories, .duration]
         )
         let row = make(
             "Row Erg", .functionalFitness, "rower", "locomotion",
             movementFunctions: [.monostructural, .locomotion], functionalModality: .metabolicConditioning,
-            requiredEquipment: [.rower]
+            requiredEquipment: [.rower], measuredDimensions: [.distance, .calories, .duration]
         )
         let skiErg = make(
             "SkiErg", .functionalFitness, "skiErg", "locomotion",
             movementFunctions: [.monostructural, .locomotion], functionalModality: .metabolicConditioning,
-            requiredEquipment: [.skiErg]
+            requiredEquipment: [.skiErg], measuredDimensions: [.distance, .calories, .duration]
         )
 
         // Gymnastics.
         let toesToBar = make(
             "Toes-to-Bar", .functionalFitness, "bodyweight", "coreFlexion",
             primaryTargets: [.core], movementFunctions: [.gymnasticsPull, .trunk], functionalModality: .gymnastics,
-            requiredEquipment: [.pullUpBar]
+            requiredEquipment: [.pullUpBar], measuredDimensions: [.reps]
         )
         let pushUp = make(
             "Push-up", .functionalFitness, "bodyweight", "horizontalPush",
@@ -463,7 +491,7 @@ struct ExerciseCatalog {
         let gobletSquat = make(
             "Goblet Squat", .hypertrophy, "dumbbell", "squat",
             primaryTargets: [.quadriceps, .glutes], movementFunctions: [.squatLoaded], functionalModality: .weightlifting,
-            requiredEquipment: [.dumbbells]
+            requiredEquipment: [.dumbbells], measuredDimensions: [.reps, .load]
         )
         let singleLegRomanianDeadlift = make(
             "Single-Leg Romanian Deadlift", .hypertrophy, "dumbbell", "hinge",
@@ -543,17 +571,76 @@ struct ExerciseCatalog {
         let doubleUnders = make(
             "Double-Unders", .functionalFitness, "bodyweight", "jumpRope",
             movementFunctions: [.jumping, .monostructural], functionalModality: .metabolicConditioning,
-            requiredEquipment: [.bodyweight]
+            requiredEquipment: [.bodyweight],
+            // FUNCTIONAL FITNESS PROGRAMMING AUTHORITY V2, Section 10/11:
+            // the real fix for the disclosed "Double-Unders · 200m"
+            // defect — Double-Unders is rep-counted, never distance-
+            // measured. `MovementRoleExerciseSelector`'s general
+            // `measuredDimensions` check (not a Double-Unders-name
+            // special case) is what now prevents a distance target from
+            // ever being accepted for it.
+            measuredDimensions: [.reps]
         )
         let farmersCarry = make(
             "Farmer's Carry", .functionalFitness, "dumbbell", "carry",
             primaryTargets: [.forearms, .core], movementFunctions: [.carry], functionalModality: .weightlifting,
-            requiredEquipment: [.dumbbells]
+            requiredEquipment: [.dumbbells],
+            // Dogfood Round 2 Continuation (Finding J): the one exercise
+            // in this catalog that actually needed this signal — a carry
+            // is load- and distance-measured, never rep-measured. Every
+            // other exercise keeps its honest, unclassified `[]` default;
+            // this is not a catalog-wide migration.
+            measuredDimensions: [.load, .distance]
         )
         let boxJump = make(
             "Box Jump", .functionalFitness, "bodyweight", "jump",
             primaryTargets: [.quadriceps, .glutes], movementFunctions: [.jumping], functionalModality: .gymnastics,
             requiredEquipment: [.bodyweight]
+        )
+
+        // FUNCTIONAL FITNESS PROGRAMMING AUTHORITY V2, Section 6: the
+        // missing canonical gated exercises. All 7 are `requiresDemonstratedCapability:
+        // true` — this is the GLOBAL (non-athlete-specific) catalog flag,
+        // unchanged in meaning; per-athlete `MovementCapabilityProfile`
+        // (Section 5) is the separate, real gating mechanism this
+        // checkpoint adds. `measuredDimensions` tagged truthfully per
+        // Section 7's own worked examples (Double-Unders/Toes-to-Bar/
+        // Handstand Walk/Snatch) — reps for rep-counted gymnastics work,
+        // distance for Handstand Walk, load for the barbell lifts.
+        let barMuscleUp = make(
+            "Bar Muscle-Up", .functionalFitness, "bodyweight", "verticalPull",
+            primaryTargets: [.back, .chest, .triceps], movementFunctions: [.gymnasticsPull, .gymnasticsPush], functionalModality: .gymnastics,
+            requiredEquipment: [.pullUpBar], requiresDemonstratedCapability: true, measuredDimensions: [.reps]
+        )
+        let ringMuscleUp = make(
+            "Ring Muscle-Up", .functionalFitness, "bodyweight", "verticalPull",
+            primaryTargets: [.back, .chest, .triceps], movementFunctions: [.gymnasticsPull, .gymnasticsPush], functionalModality: .gymnastics,
+            requiredEquipment: [.rings], requiresDemonstratedCapability: true, measuredDimensions: [.reps]
+        )
+        let handstandWalk = make(
+            "Handstand Walk", .functionalFitness, "bodyweight", "invertedLocomotion",
+            primaryTargets: [.shoulders, .core], movementFunctions: [.other], functionalModality: .gymnastics,
+            requiredEquipment: [.bodyweight], requiresDemonstratedCapability: true, measuredDimensions: [.distance]
+        )
+        let ropeClimb = make(
+            "Rope Climb", .functionalFitness, "bodyweight", "verticalPull",
+            primaryTargets: [.back, .forearms], movementFunctions: [.gymnasticsPull], functionalModality: .gymnastics,
+            requiredEquipment: [.climbingRope], requiresDemonstratedCapability: true, measuredDimensions: [.reps]
+        )
+        let clean = make(
+            "Clean", .functionalFitness, "barbell", "hingeToSquat",
+            primaryTargets: [.hamstrings, .glutes, .quadriceps], movementFunctions: [.hingeLoaded, .squatLoaded], functionalModality: .weightlifting,
+            requiredEquipment: [.barbell], isExplosiveExpression: true, requiresDemonstratedCapability: true, measuredDimensions: [.load]
+        )
+        let jerk = make(
+            "Jerk", .functionalFitness, "barbell", "press",
+            primaryTargets: [.shoulders, .triceps], movementFunctions: [.pressLoaded], functionalModality: .weightlifting,
+            requiredEquipment: [.barbell], isExplosiveExpression: true, requiresDemonstratedCapability: true, measuredDimensions: [.load]
+        )
+        let snatch = make(
+            "Snatch", .functionalFitness, "barbell", "hingeToPress",
+            primaryTargets: [.hamstrings, .glutes, .shoulders], movementFunctions: [.hingeLoaded, .pressLoaded], functionalModality: .weightlifting,
+            requiredEquipment: [.barbell], isExplosiveExpression: true, requiresDemonstratedCapability: true, measuredDimensions: [.load]
         )
 
         return ExerciseCatalog(
@@ -614,7 +701,14 @@ struct ExerciseCatalog {
             chestToBarPullUp: chestToBarPullUp,
             doubleUnders: doubleUnders,
             farmersCarry: farmersCarry,
-            boxJump: boxJump
+            boxJump: boxJump,
+            barMuscleUp: barMuscleUp,
+            ringMuscleUp: ringMuscleUp,
+            handstandWalk: handstandWalk,
+            ropeClimb: ropeClimb,
+            clean: clean,
+            jerk: jerk,
+            snatch: snatch
         )
     }
 }

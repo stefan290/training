@@ -14,10 +14,39 @@ enum StrengthSetPresentation {
     /// Never both a rep count and an implied RIR fabricated from each
     /// other — each half is only ever present when the underlying
     /// `SetPrescription` field actually carries it.
-    static func targetText(repRangeLow: Int?, repRangeHigh: Int?, targetRir: Int?) -> String {
+    static func targetText(repRangeLow: Int?, repRangeHigh: Int?, targetRir: Int?, targetRirHigh: Int? = nil) -> String {
         let repsText = repsText(repRangeLow: repRangeLow, repRangeHigh: repRangeHigh)
-        let rirText = targetRir.map { "RIR \($0)" }
+        let rirText = rirText(targetRir: targetRir, targetRirHigh: targetRirHigh)
         return [repsText, rirText].compactMap { $0 }.joined(separator: " · ")
+    }
+
+    /// Dogfood Round 2 Continuation (Finding J): the distance/duration
+    /// counterparts of `targetText` above — purely additive, composable
+    /// with `repsText`/`rirText` (never fabricated together for the same
+    /// prescription, since a role's `SetPrescription` only ever populates
+    /// the dimensions it actually has).
+    static func targetText(
+        repRangeLow: Int?, repRangeHigh: Int?, targetRir: Int?,
+        targetDistanceMeters: Double?, targetDurationSeconds: Int?,
+        targetRirHigh: Int? = nil
+    ) -> String {
+        let repsText = repsText(repRangeLow: repRangeLow, repRangeHigh: repRangeHigh)
+        let distanceText = targetDistanceMeters.map { "\(Int($0)) m" }
+        let durationText = targetDurationSeconds.map { "\($0)s" }
+        let rirText = rirText(targetRir: targetRir, targetRirHigh: targetRirHigh)
+        return [repsText, distanceText, durationText, rirText].compactMap { $0 }.joined(separator: " · ")
+    }
+
+    /// GENERIC STRENGTH PRESCRIPTION AUTHORITY V1: honest range display
+    /// when `targetRirHigh` genuinely differs from `targetRir` (e.g.
+    /// "RIR 2-3"), mirroring `repsText`'s existing range-vs-single
+    /// convention exactly. A single value (`targetRirHigh == nil`)
+    /// renders exactly as before — zero display change for any
+    /// pre-existing prescription.
+    static func rirText(targetRir: Int?, targetRirHigh: Int? = nil) -> String? {
+        guard let low = targetRir else { return nil }
+        guard let high = targetRirHigh, high != low else { return "RIR \(low)" }
+        return "RIR \(low)-\(high)"
     }
 
     /// The fixed-rep-count portion alone (`"5 reps"`/`"5-10 reps"`), or

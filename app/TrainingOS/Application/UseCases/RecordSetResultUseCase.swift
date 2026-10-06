@@ -16,8 +16,9 @@ enum RecordSetResultUseCase {
     static func recordSet(
         setIndex: Int,
         weight: Double,
-        reps: Int,
+        reps: Int?,
         targetRir: Int?,
+        targetRirHigh: Int? = nil,
         actualRir: Int?,
         prBand: String?,
         scoringDirection: ScoringDirection,
@@ -27,7 +28,9 @@ enum RecordSetResultUseCase {
         exercise: Exercise,
         performanceProfile: PerformanceProfile,
         completedAt: Date,
-        modelContext: ModelContext
+        modelContext: ModelContext,
+        distanceMeters: Double? = nil,
+        durationSeconds: Int? = nil
     ) -> (result: SetResult, isFirstEverEntry: Bool) {
         let exerciseProfile = PerformanceProfileStore.exerciseProfile(
             for: exercise,
@@ -40,9 +43,12 @@ enum RecordSetResultUseCase {
             weight: weight,
             reps: reps,
             targetRir: targetRir,
+            targetRirHigh: targetRirHigh,
             actualRir: actualRir,
             completedAt: completedAt,
-            prBand: prBand
+            prBand: prBand,
+            distanceMeters: distanceMeters,
+            durationSeconds: durationSeconds
         )
         modelContext.insert(result)
 
@@ -50,6 +56,19 @@ enum RecordSetResultUseCase {
         exercisePrescription.addLoggedSetResult(result)
         exerciseProfile.addSetResult(result)
         exerciseProfile.lastPerformedAt = completedAt
+
+        // Dogfood Round 2 Continuation (Finding J): the PR mechanism below
+        // is rep-band-keyed (`prBand`) and weight-scored — a real, tested
+        // shape for rep-based strength work, never yet designed for a
+        // distance-based result (a "heaviest carry" or "farthest carry"
+        // PR is a genuinely different, un-built concept — no additional
+        // carry progression was authorized this checkpoint). `reps == nil`
+        // is the exact, honest signal this result isn't rep-based —
+        // explicitly skipped, never coerced through the existing rep-band
+        // PR path as if it were a zero-rep strength set.
+        guard reps != nil else {
+            return (result, false)
+        }
 
         let existingBest = ScoringEngine.bestRecord(
             among: exerciseProfile.personalRecords,

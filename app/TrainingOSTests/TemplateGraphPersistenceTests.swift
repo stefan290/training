@@ -720,18 +720,30 @@ final class TemplateGraphPersistenceTests: XCTestCase {
     }
 
     private func reproductionExercise(_ name: String, _ functions: [MovementFunction], _ modality: FunctionalModality) -> Exercise {
-        let ex = Exercise(canonicalName: name, modality: .functionalFitness, equipment: "barbell", movementPattern: "test", movementFunctions: functions, functionalModality: modality)
+        // FUNCTIONAL FITNESS PROGRAMMING AUTHORITY V2, Section 10/11:
+        // generic scheduling filler, not a target-content test — tagged
+        // `.distance` so it stays truthfully materializable.
+        let ex = Exercise(canonicalName: name, modality: .functionalFitness, equipment: "barbell", movementPattern: "test", movementFunctions: functions, functionalModality: modality, measuredDimensions: functions.contains(.monostructural) ? [.distance] : [])
         context.insert(ex)
         return ex
     }
 
+    /// DOGFOOD — FIX ORDER 1, Section C/D: renamed to real catalog names
+    /// `FunctionalFitnessMovementTargetRule.resolve`'s hinge/press/
+    /// gymnasticsPush branches actually recognize — their `default` case
+    /// is genuinely empty (a real, pre-existing, locked PRODUCT VALUE
+    /// gap, not invented by this checkpoint), so a synthetic placeholder
+    /// name like "Hinge Lift" now correctly fails `hasExecutableTarget`
+    /// and can never be automatically selected — a real production
+    /// session could never truthfully dose it either. See the identical
+    /// fix/comment in `FunctionalFitnessMultiWeekV1Tests.makeCandidates`.
     private func reproductionCandidateExercises() -> [Exercise] {
         [
             reproductionExercise("Squat Lift", [.squatLoaded], .weightlifting),
-            reproductionExercise("Hinge Lift", [.hingeLoaded], .weightlifting),
-            reproductionExercise("Press Lift", [.pressLoaded], .weightlifting),
+            reproductionExercise("Deadlift", [.hingeLoaded], .weightlifting),
+            reproductionExercise("Thruster", [.pressLoaded], .weightlifting),
             reproductionExercise("Gymnastics Pull", [.gymnasticsPull], .gymnastics),
-            reproductionExercise("Gymnastics Push", [.gymnasticsPush], .gymnastics),
+            reproductionExercise("Push-up", [.gymnasticsPush], .gymnastics),
             reproductionExercise("Conditioning Bike", [.monostructural], .metabolicConditioning),
         ]
     }

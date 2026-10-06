@@ -43,7 +43,15 @@ final class TacticalPlacementBoundaryTests: XCTestCase {
         func exercise(
             _ name: String, _ targets: [MuscleGroup] = [], _ movementFunctions: [MovementFunction] = [], _ functionalModality: FunctionalModality? = nil
         ) -> Exercise {
-            let ex = Exercise(canonicalName: name, modality: .hypertrophy, equipment: "barbell", movementPattern: "test", primaryTargets: targets, movementFunctions: movementFunctions, functionalModality: functionalModality)
+            // FUNCTIONAL FITNESS PROGRAMMING AUTHORITY V2, Section 10/11:
+            // this helper's only monostructural use in this file is
+            // generic scheduling-boundary filler content, never a test
+            // of measuredDimensions/target-content itself — tagging it
+            // `.distance` (matching a real distance-native monostructural
+            // exercise like Row Erg/SkiErg) keeps it truthfully
+            // materializable now that `FunctionalFitnessMovementTargetRule`
+            // checks this field instead of an equipment-name string.
+            let ex = Exercise(canonicalName: name, modality: .hypertrophy, equipment: "barbell", movementPattern: "test", primaryTargets: targets, movementFunctions: movementFunctions, functionalModality: functionalModality, measuredDimensions: movementFunctions.contains(.monostructural) ? [.distance] : [])
             context.insert(ex)
             return ex
         }
@@ -158,7 +166,7 @@ final class TacticalPlacementBoundaryTests: XCTestCase {
     func testRunningsFrequencyIsPreservedOneRealCalendarWeekAtATimeInCorrectOrder() throws {
         let asOf = date(2026, 1, 5) // Monday
         let fixture = try startVariedMix(asOf: asOf)
-        let runningInstance = try XCTUnwrap(fixture.mix.orderedComponents.first { $0.label == "Running" }?.programInstance)
+        let runningInstance = try XCTUnwrap(fixture.mix.orderedComponents.first { $0.label == "Easy Aerobic" }?.programInstance)
 
         let byWeek = Dictionary(grouping: runningInstance.sessions) { session -> Int in
             weekIndex(of: session.day?.date ?? .distantPast, from: fixture.phase.startDate)
@@ -188,7 +196,7 @@ final class TacticalPlacementBoundaryTests: XCTestCase {
 
         let strengthInstance = try XCTUnwrap(fixture.mix.orderedComponents.first { $0.label == "Strength" }?.programInstance)
         let ffInstance = try XCTUnwrap(fixture.mix.orderedComponents.first { $0.label == "Functional Fitness" }?.programInstance)
-        let runningInstance = try XCTUnwrap(fixture.mix.orderedComponents.first { $0.label == "Running" }?.programInstance)
+        let runningInstance = try XCTUnwrap(fixture.mix.orderedComponents.first { $0.label == "Easy Aerobic" }?.programInstance)
 
         func week0Count(_ instance: ProgramInstance) -> Int {
             instance.sessions.filter { weekIndex(of: $0.day?.date ?? .distantPast, from: fixture.phase.startDate) == 0 }.count
@@ -288,7 +296,7 @@ final class TacticalPlacementBoundaryTests: XCTestCase {
     func testNoTrainingDebtAccumulatesIntoAnyLaterCalendarWeek() throws {
         let asOf = date(2026, 1, 7) // Wednesday
         let fixture = try startVariedMix(asOf: asOf)
-        let runningInstance = try XCTUnwrap(fixture.mix.orderedComponents.first { $0.label == "Running" }?.programInstance)
+        let runningInstance = try XCTUnwrap(fixture.mix.orderedComponents.first { $0.label == "Easy Aerobic" }?.programInstance)
         XCTAssertEqual(runningInstance.sessions.count, 5, "sanity: Running's whole natural block materialized")
 
         let byCalendarWeek = Dictionary(grouping: runningInstance.sessions) { session in

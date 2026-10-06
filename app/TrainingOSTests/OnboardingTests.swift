@@ -111,7 +111,7 @@ final class OnboardingTests: XCTestCase {
         viewModel.hasTargetDate = true
         viewModel.targetDate = Date(timeIntervalSince1970: 2_000_000_000)
         viewModel.varietyPreference = .high
-        viewModel.availableTrainingDaysPerWeek = 5
+        viewModel.selectedWeekdays = Set(Weekday.allCases.prefix(5))
         viewModel.allowsDoubleSessions = true
 
         viewModel.advance(from: .goal, modelContext: context)
@@ -145,7 +145,7 @@ final class OnboardingTests: XCTestCase {
         viewModel.milestoneDate = milestoneDate
         viewModel.hasTargetDate = true
         viewModel.targetDate = targetDate
-        viewModel.availableTrainingDaysPerWeek = 5
+        viewModel.selectedWeekdays = Set(Weekday.allCases.prefix(5))
 
         viewModel.advance(from: .goal, modelContext: context)
         viewModel.advance(from: .preferences, modelContext: context)
@@ -190,7 +190,7 @@ final class OnboardingTests: XCTestCase {
         // No targetDate — no UI control sets this, and none is set here,
         // exactly matching what a real athlete using the corrected
         // onboarding flow persists.
-        viewModel.availableTrainingDaysPerWeek = 5
+        viewModel.selectedWeekdays = Set(Weekday.allCases.prefix(5))
 
         viewModel.advance(from: .goal, modelContext: context)
         viewModel.advance(from: .preferences, modelContext: context)
@@ -382,7 +382,7 @@ final class OnboardingTests: XCTestCase {
         let viewModel = OnboardingViewModel()
         viewModel.start(modelContext: context)
         viewModel.selectedGoalType = .functionalFitness
-        viewModel.availableTrainingDaysPerWeek = 3
+        viewModel.selectedWeekdays = Set(Weekday.allCases.prefix(3))
         XCTAssertFalse(viewModel.hasMilestone)
 
         viewModel.advance(from: .goal, modelContext: context)
@@ -463,10 +463,16 @@ final class OnboardingTests: XCTestCase {
         let viewModel = OnboardingViewModel()
         viewModel.start(modelContext: context)
         viewModel.selectedGoalType = .enduranceEvent
-        viewModel.availableTrainingDaysPerWeek = 6
+        viewModel.selectedWeekdays = Set(Weekday.allCases.prefix(6))
         viewModel.varietyPreference = .low
         viewModel.advance(from: .goal, modelContext: context)
         viewModel.advance(from: .preferences, modelContext: context)
+        // Dogfood Round 2 Continuation (Finding I): a default existing
+        // (Full Gym, auto-seeded) is no longer sufficient to skip the
+        // Environment step on its own — explicitly accept it here, as a
+        // real athlete's Continue tap would, so this test's own resume
+        // assertion below reflects the real, corrected flow.
+        viewModel.advance(from: .environment, modelContext: context)
 
         // A fresh ViewModel re-reading persisted state (simulating relaunch mid-flow)
         // must reflect the real, saved choices.
@@ -475,11 +481,9 @@ final class OnboardingTests: XCTestCase {
         XCTAssertEqual(resumed.selectedGoalType, .enduranceEvent)
         XCTAssertEqual(resumed.availableTrainingDaysPerWeek, 6)
         XCTAssertEqual(resumed.varietyPreference, .low)
-        // V1 R5: Full Gym is now auto-seeded the moment baseline identity
-        // exists, so `hasDefaultTrainingEnvironment` is already true on
-        // resume — onboarding skips straight to Review, never forcing a
-        // manual environment step for a normal athlete.
-        XCTAssertEqual(resumed.step, .review, "resumes at Review — Full Gym is already a real, effective default")
+        // Full Gym is auto-seeded AND was just explicitly accepted above —
+        // resuming skips straight to Review, never re-asking.
+        XCTAssertEqual(resumed.step, .review, "resumes at Review — Full Gym was already explicitly accepted")
     }
 
     // MARK: Dogfooding regression — Continue enables after a real Training Environment is created,

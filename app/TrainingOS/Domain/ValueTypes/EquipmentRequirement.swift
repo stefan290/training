@@ -44,6 +44,14 @@ enum EquipmentRequirement: String, Codable, CaseIterable {
     case bike
     case rower
     case skiErg
+    /// FUNCTIONAL FITNESS PROGRAMMING AUTHORITY V2, Section 6: a real,
+    /// standard gymnastics apparatus none of the pre-existing cases could
+    /// truthfully represent (`.pullUpBar` is a genuinely different piece
+    /// of equipment) — needed to add Ring Muscle-Up as its own canonical
+    /// exercise rather than mis-tagging it as bar equipment.
+    case rings
+    /// Section 6: needed for Rope Climb — no existing case fits.
+    case climbingRope
 }
 
 /// Stage TE.1: the first real consumer of this vocabulary — user-facing
@@ -65,6 +73,8 @@ extension EquipmentRequirement {
         case .bike: return "Assault Bike"
         case .rower: return "Rower"
         case .skiErg: return "SkiErg"
+        case .rings: return "Gymnastics Rings"
+        case .climbingRope: return "Climbing Rope"
         }
     }
 }

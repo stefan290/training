@@ -109,6 +109,7 @@ struct CompletedFunctionalFitnessDetail: View {
                 if let reps = movement.performedReps { Text("\(reps) reps") }
                 if let calories = movement.performedCalories { Text("\(calories) cal") }
                 if let distance = movement.performedDistanceMeters { Text("\(Int(distance)) m") }
+                if let duration = movement.performedDurationSeconds { Text("\(duration / 60) min") }
                 if let load = movement.performedLoadKilograms { Text("\(load.formattedWeight) kg") }
             }
             .font(Theme.label)

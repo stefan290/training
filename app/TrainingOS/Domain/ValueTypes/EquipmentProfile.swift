@@ -90,6 +90,30 @@ struct EquipmentProfile: Codable, Equatable {
         }
     }
 
+    /// RESULT-DRIVEN RESISTANCE PROGRESSION V1, Section 17: `resolve(_:)`
+    /// above only ever rounds an arbitrary continuous ideal load to the
+    /// NEAREST/DOWN/UP loadable point — it has no notion of stepping from
+    /// one already-loadable value to the next. This mandatory trace found
+    /// no other "next valid load above/below" mechanism anywhere in this
+    /// codebase. This is the smallest truthful extension, not a new
+    /// physiological rule: it reuses the exact same, already-known
+    /// per-exercise `smallestIncrementKg` this same type already owns —
+    /// literally "add/subtract one real increment" — never a percentage
+    /// formula (Section 12 explicitly forbids `currentLoad * 1.05`).
+    /// `current` is assumed already-loadable (the result of a prior
+    /// `resolve(_:)` call or an athlete-entered real performed weight);
+    /// this function does not itself re-round `current`.
+    func nextValidLoad(above current: Double) -> Double {
+        guard smallestIncrementKg > 0 else { return current }
+        return current + smallestIncrementKg
+    }
+
+    /// See `nextValidLoad(above:)`. Never returns a negative load.
+    func nextValidLoad(below current: Double) -> Double {
+        guard smallestIncrementKg > 0 else { return current }
+        return max(0, current - smallestIncrementKg)
+    }
+
     /// Dogfood Round 1 — Final Close (Finding 1 correction): the real,
     /// per-exercise equipment/increment authority — never a blanket
     /// barbell assumption applied to every exercise regardless of what it

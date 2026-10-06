@@ -812,6 +812,31 @@ enum LongTermPlanner {
     /// which expands Running/Cycling to two SYSTEMS for soft-preference
     /// matching — a real weekly composition needs exactly one concrete
     /// component per style, not two).
+    /// MUSCLE VERTICAL SLICE REPAIR, Section 2: "EVERY RECOMMENDED
+    /// TRAINING MIX MUST PASS THE SAME DOMAIN VALIDATION REQUIRED OF AN
+    /// EQUIVALENT USER-CREATED TRAINING MIX." A `.recommended` mix is
+    /// built directly from `ProgrammingSystemKind` (never routed through
+    /// `buildCustomMix`'s `TrainingStyle`-keyed validation), so this is
+    /// the smallest real, reusable capability check both paths can
+    /// share: every non-zero component's frequency must be listed in
+    /// `ProgramCapabilityRegistry.supportedFrequencies` for its system
+    /// where that system declares a real restricted list — `nil` (an
+    /// intentionally unrestricted system, e.g. `.functionalFitness`)
+    /// always passes, exactly like `buildCustomMix` never rejecting a
+    /// `TrainingStyle` whose `supportedFrequencies` is `nil`. This is a
+    /// read-only assertion, never a repair — a candidate that fails is
+    /// reported, never silently mutated.
+    static func recommendedMixPassesCanonicalCapabilityValidation(_ mix: TrainingMix) -> Bool {
+        mix.orderedComponents.allSatisfy { component in
+            guard component.frequency.target > 0 else { return true }
+            guard let system = component.programmingSystem else { return true }
+            guard let supported = ProgramCapabilityRegistry.supportedFrequencies(for: system) else {
+                return true
+            }
+            return supported.contains(component.frequency.target)
+        }
+    }
+
     static func underlyingSystem(for style: TrainingStyle) -> ProgrammingSystemKind {
         switch style {
         case .hypertrophy: return .hypertrophy
@@ -875,6 +900,29 @@ enum LongTermPlanner {
         /// silently substitutes anything. Revisit only if/when Cycling
         /// gets its own real system.
         case conflictingEnduranceStyles
+        /// GENERAL PROGRAMMING ALLOCATION ARCHITECTURE V1 §5/§10: a
+        /// resistance-requiring phase (Muscle Gain, Strength) whose
+        /// selected Training Forms contain NONE of the real, currently
+        /// resistance-capable systems (`FunctionalFitnessRequirementAllocator
+        /// .resistanceCapableSystems` — Hypertrophy/Powerlifting/
+        /// Functional Fitness) — e.g. "Muscle Gain + 5 Running." Reported
+        /// as an explicit typed incompatibility rather than silently
+        /// accepted (which would produce a plan that can never actually
+        /// build muscle) or silently repaired (which would add/change a
+        /// Training Form the athlete never selected).
+        ///
+        /// FUNCTIONAL FITNESS PROGRAMMING AUTHORITY V1 reuses this exact
+        /// same case for two more real, typed incompatibilities rather
+        /// than inventing new ones: (1) a fatLoss/enduranceEvent
+        /// (Conditioning-goal) phase whose selections contain none of
+        /// `FunctionalFitnessRequirementAllocator.conditioningCapableSystems`;
+        /// (2) exactly 6 Functional Fitness sessions/week, which this
+        /// codebase's real recovery/fatigue model (athlete-input-driven
+        /// `ReadinessCheckIn` only, never planning-time predictive)
+        /// cannot honestly enforce Part V's six-day distribution rule
+        /// for — `reason` is `FunctionalFitnessRequirementAllocator
+        /// .sixDayFFUnsupportedReason` in that case.
+        case unsupportedProgrammingAssignment(requiredCapability: String, reason: String)
     }
 
     /// V1 "Explicit Weekly Composition" checkpoint (Checkpoint 1): builds
@@ -890,10 +938,18 @@ enum LongTermPlanner {
     /// never reaches `proposeProgram`/`closestByDayCount` at all, so this
     /// checkpoint makes zero change to how an existing `.recommended`
     /// template resolves its own (already curated-exact) frequencies.
+    /// GENERAL PROGRAMMING ALLOCATION ARCHITECTURE V1: `phaseType`
+    /// defaults `nil` — every existing call site that doesn't pass it
+    /// (this checkpoint's own new §5 mix-validation check is opt-in, per
+    /// real phase context) is completely unaffected. Only
+    /// `StrategicPlanSelectionViewModel.buildCustomMix` (the one real
+    /// production call site with a real, already-known `previewPhase`)
+    /// passes it.
     static func buildCustomMix(
         name: String = "Your Custom Mix",
         selections: [(style: TrainingStyle, frequency: Int)],
-        capacity: Int
+        capacity: Int,
+        phaseType: PhaseType? = nil
     ) -> Result<TrainingMix, CustomMixValidationError> {
         let nonZero = selections.filter { $0.frequency > 0 }
         guard !nonZero.isEmpty else { return .failure(.empty) }
@@ -901,6 +957,76 @@ enum LongTermPlanner {
         let stylesPresent = Set(nonZero.map(\.style))
         guard !(stylesPresent.contains(.running) && stylesPresent.contains(.cycling)) else {
             return .failure(.conflictingEnduranceStyles)
+        }
+
+        // GENERAL PROGRAMMING ALLOCATION ARCHITECTURE V1 §5/§10: a
+        // resistance-requiring phase (Muscle Gain, Strength) whose
+        // selected styles resolve to NONE of the real resistance-capable
+        // systems cannot ever satisfy the phase's own core requirement —
+        // e.g. "Muscle Gain + 5 Running." Reported as an explicit typed
+        // incompatibility BEFORE any `TrainingMix`/`TrainingMixComponent`
+        // is constructed, matching this function's own existing
+        // "validate everything before constructing" discipline. Never
+        // silently adds a Training Form the athlete never selected, never
+        // silently changes a frequency.
+        if phaseType == .muscleGain || phaseType == .strength {
+            let selectedSystems = Set(nonZero.map { underlyingSystem(for: $0.style) })
+            if selectedSystems.isDisjoint(with: FunctionalFitnessRequirementAllocator.resistanceCapableSystems) {
+                return .failure(.unsupportedProgrammingAssignment(
+                    requiredCapability: "resistance-training exposure",
+                    reason: "None of the selected Training Forms (\(stylesPresent.map(\.rawValue).sorted().joined(separator: ", "))) can provide the resistance stimulus this phase requires."
+                ))
+            }
+        }
+
+        // GENERIC STRENGTH PRESCRIPTION AUTHORITY V1: Family B ("Strength")
+        // remains confirmed program-schedule-specific, never borrowed as a
+        // generic FF Strength engine — but a real, separate, evidence-
+        // backed GENERIC HIGH_LOAD_STRENGTH_EXPOSURE prescription (3 sets
+        // x 3-6 reps x 2-3 RIR, load suggested only when a real `.rm1`
+        // calibration exists, `.calibrationRequired` otherwise — never a
+        // fabricated number) now exists and is genuinely materializable
+        // (`GenericStrengthRequirementCalculator`, wired into
+        // `FunctionalFitnessPhaseBiasPolicy.apply`/`FunctionalFitnessProgramGenerator
+        // .addGenericHighLoadStrengthPrescription`). The blanket rejection
+        // this comment used to describe is removed — a Strength-goal mix
+        // selecting Functional Fitness is no longer categorically
+        // unsupported; `generalFFStrengthUnsupportedReason` remains
+        // available for a genuine future case where even this generic
+        // authority cannot be honestly satisfied, but no such case exists
+        // in the real allocator today.
+
+        // FUNCTIONAL FITNESS PROGRAMMING AUTHORITY V1 Part V/Part XVII:
+        // a fatLoss/enduranceEvent (Conditioning-goal) phase whose
+        // selected Training Forms contain none of the real,
+        // conditioning-capable systems cannot ever satisfy the phase's
+        // own core requirement — mirrors the Muscle/Strength check above
+        // exactly, using the Conditioning-side capability set instead.
+        if phaseType == .fatLoss || phaseType == .enduranceEvent {
+            let selectedSystems = Set(nonZero.map { underlyingSystem(for: $0.style) })
+            if selectedSystems.isDisjoint(with: FunctionalFitnessRequirementAllocator.conditioningCapableSystems) {
+                return .failure(.unsupportedProgrammingAssignment(
+                    requiredCapability: "conditioning exposure",
+                    reason: "None of the selected Training Forms (\(stylesPresent.map(\.rawValue).sorted().joined(separator: ", "))) can provide the conditioning stimulus this phase requires."
+                ))
+            }
+        }
+
+        // Part V: 6 Functional Fitness sessions/week is a real, named
+        // AUTHORED V1 frequency in the project-lead spec, but this
+        // codebase has no real predictive recovery/fatigue model
+        // (`ReadinessCheckIn`/`ReadinessAdaptationDecision` are athlete-
+        // input-driven, never planning-time predictive) to honestly
+        // enforce the six-day distribution/recovery rule Part V requires
+        // — so it is refused as an explicit typed incompatibility, never
+        // silently approximated to 5 (`ProgramCapabilityRegistry
+        // .isFunctionalFitnessV1Supported`'s own 1-5 range) or silently
+        // accepted through the pre-V1 unbounded fallback.
+        if nonZero.contains(where: { $0.style == .functionalFitness && $0.frequency == 6 }) {
+            return .failure(.unsupportedProgrammingAssignment(
+                requiredCapability: "6-day Functional Fitness recovery model",
+                reason: FunctionalFitnessRequirementAllocator.sixDayFFUnsupportedReason
+            ))
         }
 
         for selection in nonZero {
@@ -1610,18 +1736,38 @@ enum LongTermPlanner {
         }
     }
 
-    /// §5d's exact worked-example candidate A: 5-Day Hypertrophy + 2 Zone 2.
+    /// MUSCLE VERTICAL SLICE REPAIR, Sections 2-3: this candidate
+    /// previously hardcoded "§5d's exact worked-example candidate A:
+    /// 5-Day Hypertrophy + 2 Zone 2," a static worked example whose Zone
+    /// 2 component used `programmingSystem: .steadyState` — a system
+    /// `ProgramCapabilityRegistry.supportedFrequencies` reports as
+    /// UNRESTRICTED (`nil`), meaning it was never validated against any
+    /// real curated capability the way `buildCustomMix` validates every
+    /// athlete-selected style. Confirmed via real simulator dogfood: for
+    /// a 5-day athlete, `applyCapacity`'s proportional apportionment
+    /// scaled the original 5:2 ratio down to 4:1, producing "4x
+    /// Hypertrophy + 1x Zone 2 Conditioning" for an athlete who never
+    /// selected any conditioning preference — the exact diagnosed defect.
+    ///
+    /// Per Section 3's locked product decision: aerobic/conditioning work
+    /// must never appear in the Build-Muscle recommendation "solely from
+    /// the removed static 5H+2Zone2 candidate" — it may only be
+    /// recommended when justified by an explicit athlete preference,
+    /// which is exactly what `muscleGainVariedMix` below (the real,
+    /// unmodified, preference-promotable second candidate — Functional
+    /// Fitness + Running, both genuinely resistance/conditioning-capable
+    /// systems with real curated content) already exists to satisfy via
+    /// the existing `bestPromotionCandidate`/preference-gating mechanism.
+    /// This candidate is now Hypertrophy-only: at the acceptance
+    /// scenario's capacity (5 days), `applyCapacity`'s "already fits"
+    /// branch returns it completely unscaled — 5x Hypertrophy, never an
+    /// invented ratio.
     private static func muscleGainFocusedHypertrophyMix() -> TrainingMix {
         let mix = TrainingMix(kind: .recommended, name: "Focused Hypertrophy")
         mix.addComponent(TrainingMixComponent(
             label: "Hypertrophy", programmingSystem: .hypertrophy, priority: .primary,
             adaptationObjectives: [.muscleGain],
             frequency: SessionFrequency(target: 5)
-        ))
-        mix.addComponent(TrainingMixComponent(
-            label: "Zone 2 Conditioning", programmingSystem: .steadyState, priority: .supporting,
-            adaptationObjectives: [.aerobicCapacity],
-            frequency: SessionFrequency(target: 2)
         ))
         return mix
     }
@@ -1649,7 +1795,24 @@ enum LongTermPlanner {
             frequency: SessionFrequency(target: 2)
         ))
         mix.addComponent(TrainingMixComponent(
-            label: "Running", programmingSystem: .steadyState, priority: .supporting,
+            // MUSCLE VERTICAL SLICE CONTINUATION (SCOPE DECISION):
+            // previously labeled "Running" while built on `.steadyState`
+            // — a system `ProgramCapabilityRegistry.supportedFrequencies`
+            // reports as unrestricted, letting this candidate claim a
+            // "1x/week Running" recommendation the real, source-backed
+            // `.running` system (restricted to `{2}` days/week) would
+            // never let an athlete build via Custom Mix. Relabeling to
+            // "Easy Aerobic" (the same honest label/system pairing
+            // `fatLossConditioningFocusedMix()` already uses for the
+            // identical situation) removes the false claim entirely
+            // rather than gating it: this component was never meant to
+            // BE the real Running program, so it should never say
+            // "Running." Deliberately does not touch `.running`/Running
+            // V1 frequency authority or the Endurance/Conditioning
+            // recommendation templates at all — see
+            // causal-analysis/deferred-endurance-recommendation.md for
+            // that separate, deferred product decision.
+            label: "Easy Aerobic", programmingSystem: .steadyState, priority: .supporting,
             adaptationObjectives: [.aerobicCapacity],
             frequency: SessionFrequency(target: 1)
         ))
@@ -1851,6 +2014,21 @@ enum LongTermPlanner {
     /// (CLAUDE.md rule 10).
     private static func comparisonAvailability(goal: Goal) -> UserAvailability {
         let allowsDoubles = goal.preferences?.allowsDoubleSessions ?? false
+        // Dogfood Round 2 Continuation (Finding A): prefer the athlete's
+        // real, explicitly-chosen weekdays when they exist — never a
+        // guessed "first N weekdays" stand-in once a real choice is on
+        // record. The prefix-based guess below is retained ONLY as the
+        // fallback for a legacy athlete who has never opened the real
+        // weekday editor (no `availableWeekdays` on record at all) —
+        // unchanged from its prior behavior for that case.
+        if let availableWeekdays = goal.preferences?.availableWeekdays, !availableWeekdays.isEmpty {
+            return UserAvailability(
+                trainingDaysPerWeek: availableWeekdays.count,
+                availableWeekdays: availableWeekdays,
+                allowsDoubleSessions: allowsDoubles,
+                maxSessionsPerDay: allowsDoubles ? 2 : 1
+            )
+        }
         guard let statedDays = goal.preferences?.availableTrainingDaysPerWeek else {
             return UserAvailability(
                 trainingDaysPerWeek: Weekday.allCases.count,
@@ -2134,8 +2312,83 @@ enum LongTermPlanner {
             // never attached to a real phase, in which case the
             // authored plan is used completely unbiased (today's exact
             // behavior).
+            // GENERAL PROGRAMMING ALLOCATION ARCHITECTURE V1: the real,
+            // already-materialized `TrainingMix` this component belongs
+            // to (when one exists — a disposable preview component has
+            // none, matching the `phaseType` `nil` case just above) is
+            // the one real source of "how much dedicated resistance work
+            // already exists this week" — never a second, hand-maintained
+            // count, never a percentage.
+            let phaseType = component.trainingMix?.phase?.type
+            let goal = FunctionalFitnessProgrammingGoal.from(phaseType: phaseType)
+            let allocation = component.trainingMix.flatMap { mix in goal.map { FunctionalFitnessRequirementAllocator.allocation(mix: mix, goal: $0) } } ?? .low
+            // PROGRAMMING AUTHORITY V1 — FINAL CLOSE-OUT, Part XV: only
+            // ask Functional Fitness to guarantee its own squat+hinge
+            // coverage when no real dedicated resistance source already
+            // does — see `sourceAlreadyProvidesBothLoadedPatterns`'s own
+            // doc comment for the verified, real basis for this check.
+            let weekLevelPatternGuaranteeNeeded = !FunctionalFitnessRequirementAllocator.sourceAlreadyProvidesBothLoadedPatterns(mix: component.trainingMix)
+            // GENERIC STRENGTH PRESCRIPTION AUTHORITY V1, Sections 3-9:
+            // real weekly exposure allocation, computed from the athlete's
+            // actual `TrainingMix` — never a second, hand-maintained count.
+            // Only meaningful for a `.strength`-goal mix (the calculator's
+            // own real Strength/Powerlifting `sourceContribution` is
+            // goal-agnostic arithmetic, but assignment only ever applies
+            // to `.strength`-goal FF sessions per `FunctionalFitnessPhaseBiasPolicy
+            // .apply`'s own `genericStrengthAssignments` consumption).
+            var genericStrengthAssignments: [Int: MovementFunction] = [:]
+            if goal == .strength, let mix = component.trainingMix {
+                let sourceContribution = GenericStrengthRequirementCalculator.sourceContribution(mix: mix)
+                let remaining = GenericStrengthRequirementCalculator.remainingRequirement(sourceContribution: sourceContribution)
+                // Real source-backed Strength/Powerlifting programs cover
+                // every real loaded pattern (squat/hinge/press/pull) via
+                // their own category structure whenever they contribute at
+                // all (confirmed directly against `PowerliftingProgramGenerator`'s
+                // real Legs/Deadlift/Pushing/Upper-Body-Pulling category
+                // set) — never a per-pattern-precise claim this checkpoint
+                // does not have real evidence for.
+                let patternsCovered: Set<MovementFunction> = sourceContribution > 0 ? Set(GenericStrengthRequirementCalculator.strengthCapablePatterns) : []
+                genericStrengthAssignments = GenericStrengthRequirementCalculator.allocateFFAssignments(
+                    eligibleFFSessionIndices: Array(0..<days), remaining: remaining, patternsAlreadyCoveredBySource: patternsCovered
+                )
+            }
+            // CONDITIONING V2 — LIVE RUNNING CONTRIBUTION + MODALITY
+            // SELECTION, Section 1/3-5: real source Running contribution,
+            // scoped to the SAME tactical week being allocated — never a
+            // whole-program aggregate applied uniformly to every week
+            // (the real defect the prior checkpoint's `wholeProgramContribution()`
+            // call had). Built once, deterministically, from
+            // `authoredPlan`'s own already-known `relativeWeek` values —
+            // no hidden mutable state, no iteration-order dependency.
+            // Only meaningful for a `.conditioning`-goal mix with a real
+            // dedicated Running component; every other goal/mix keeps the
+            // exact prior empty-dictionary (no-op) behavior.
+            var runningContributionByRelativeWeek: [Int: RunningWeeklyContribution] = [:]
+            if goal == .conditioning,
+               let mix = component.trainingMix,
+               mix.orderedComponents.contains(where: { $0.programmingSystem == .running && $0.frequency.target > 0 }) {
+                for relativeWeek in Set(authoredPlan.map(\.relativeWeek)) {
+                    // `FunctionalFitnessSessionIntent.relativeWeek` is
+                    // 0-indexed (its own doc comment); `RunningSourceWorkout
+                    // .relativeWeek` is 1-13 (its own doc comment, and
+                    // `RunningProgramGenerator`'s own confirmed identity
+                    // `RunningSourceWorkout.relativeWeek == TemplateSession
+                    // .activeFromWeek + 1`, while FF sets `activeFromWeek`
+                    // to its intent's `relativeWeek` directly, unconverted —
+                    // see `FunctionalFitnessProgramGenerator`'s own
+                    // `activeFromWeek: intent.relativeWeek`). The dictionary
+                    // KEY stays FF's own 0-indexed value (what `apply`'s
+                    // `intent.relativeWeek` lookup uses); only the VALUE
+                    // stored under it is computed by converting to
+                    // Running's 1-indexed numbering.
+                    runningContributionByRelativeWeek[relativeWeek] = RunningProgramGenerator.weeklyContribution(relativeWeek: relativeWeek + 1)
+                }
+            }
             let weeklyPlan = FunctionalFitnessPhaseBiasPolicy.apply(
-                authoredPlan, phaseType: component.trainingMix?.phase?.type
+                authoredPlan, phaseType: phaseType, allocation: allocation,
+                weekLevelPatternGuaranteeNeeded: weekLevelPatternGuaranteeNeeded,
+                genericStrengthAssignments: genericStrengthAssignments,
+                runningContributionByRelativeWeek: runningContributionByRelativeWeek
             )
             // Placeholder single-stimulus fields below are structurally
             // required by `FunctionalFitnessProgramConfiguration`'s

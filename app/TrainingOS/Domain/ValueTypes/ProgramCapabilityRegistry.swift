@@ -261,17 +261,23 @@ enum ProgramCapabilityRegistry {
     /// FF Multi-Week V1: whether a deliberately-authored `weeklyPlan`
     /// exists for `daysPerWeek` — declarative, mirrors
     /// `isRunningConfigurationSupported`'s fail-closed discipline exactly.
-    /// `true` only for `1...3` (the 3 authored frequencies in
-    /// `FunctionalFitnessAuthoredProgramLibrary`); the actual "never
-    /// approximate an unsupported frequency" enforcement lives in
-    /// `LongTermPlanner.functionalFitnessParameterCandidates`, which
-    /// returns no candidate at all outside this range — mirroring
-    /// Running's own `.running` branch (an empty candidate list) rather
-    /// than a thrown generator error, since Functional Fitness's existing
-    /// generator has no `throws` signature to extend and this checkpoint
-    /// does not touch that signature.
+    /// The actual "never approximate an unsupported frequency"
+    /// enforcement lives in `LongTermPlanner.functionalFitnessParameterCandidates`/
+    /// `FunctionalFitnessAuthoredProgramLibrary.weeklyPlan(forSessionsPerWeek:)`,
+    /// which return no candidate/`nil` at all outside this range —
+    /// mirroring Running's own `.running` branch (an empty candidate
+    /// list) rather than a thrown generator error, since Functional
+    /// Fitness's existing generator has no `throws` signature to extend.
+    /// FUNCTIONAL FITNESS PROGRAMMING AUTHORITY V1 (Part V): widened from
+    /// 1-3 to 1-5 — 4 and 5 sessions/week are now real, authored V1
+    /// frequencies (`FunctionalFitnessAuthoredProgramLibrary.fourSessionsPerWeek`/
+    /// `.fiveSessionsPerWeek`), no longer the generic pre-V1 fallback. 6
+    /// is deliberately EXCLUDED — the real recovery/fatigue domain in
+    /// this codebase cannot truthfully enforce the six-day distribution
+    /// rule Part V requires (see `LongTermPlanner.buildCustomMix`'s own
+    /// six-day typed-unsupported gate) — never silently widened past 5.
     static func isFunctionalFitnessV1Supported(daysPerWeek: Int) -> Bool {
-        (1...3).contains(daysPerWeek)
+        (1...5).contains(daysPerWeek)
     }
 
     /// Structural validity of the parameters themselves — "can a real

@@ -104,7 +104,10 @@ struct ProgramDetailView: View {
             }
             ForEach(session.orderedBlocks) { block in
                 if let detail = BlockPresentation.compactDetail(for: block) {
-                    Text("\(block.type.rawValue.uppercased()) · \(detail)")
+                    // MUSCLE VERTICAL SLICE CONTINUATION, Section 16: the
+                    // real, archetype-aware label — see `TodayView`'s
+                    // identical fix for the full defect trace.
+                    Text("\(BlockPresentation.functionalFitnessAwareBlockLabel(for: block).uppercased()) · \(detail)")
                         .font(Theme.label)
                         .foregroundStyle(Theme.textSecondary)
                 }

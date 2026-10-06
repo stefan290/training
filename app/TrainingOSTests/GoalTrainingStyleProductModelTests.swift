@@ -70,11 +70,22 @@ final class GoalTrainingStyleProductModelTests: XCTestCase {
 
     func testMainGoalOptionsExcludeFunctionalFitnessAndUseOutcomePhrasing() {
         XCTAssertFalse(PlanPresentation.mainGoalOptions.contains(.functionalFitness), "Functional Fitness is a Training Style, never a Main Goal option")
-        XCTAssertEqual(Set(PlanPresentation.mainGoalOptions), [.muscleGain, .generalStrength, .fatLoss, .enduranceEvent, .maintenance])
+        // MUSCLE VERTICAL SLICE REPAIR, Section 1 / Section 21-A: "Lose
+        // Fat" is no longer one of the three currently-supported primary
+        // adaptation goals offered to a NEW athlete. `GoalType.fatLoss`
+        // itself is untouched (see below) — only the picker's option list
+        // changed.
+        XCTAssertFalse(PlanPresentation.mainGoalOptions.contains(.fatLoss), "Lose Fat must not be offered as a new-athlete primary goal (MUSCLE VERTICAL SLICE REPAIR, Section 1)")
+        XCTAssertEqual(Set(PlanPresentation.mainGoalOptions), [.muscleGain, .generalStrength, .enduranceEvent, .maintenance])
         XCTAssertEqual(PlanPresentation.mainGoalLabel(.enduranceEvent), "Improve Fitness & Endurance", "never the raw internal 'Endurance Event' phrase on the Main Goal screen")
         XCTAssertEqual(PlanPresentation.mainGoalLabel(.generalStrength), "Get Stronger")
         XCTAssertEqual(PlanPresentation.mainGoalLabel(.muscleGain), "Build Muscle")
-        XCTAssertEqual(PlanPresentation.mainGoalLabel(.fatLoss), "Lose Fat")
+        // MUSCLE VERTICAL SLICE REPAIR, Section 1: `mainGoalLabel` stays
+        // exhaustive and keeps producing a real label for `.fatLoss` —
+        // legacy-compatibility requirement: a pre-existing persisted Goal
+        // with `primaryType == .fatLoss` must still render correctly, it
+        // is simply never offered to a NEW athlete going forward.
+        XCTAssertEqual(PlanPresentation.mainGoalLabel(.fatLoss), "Lose Fat", "legacy data compatibility: a pre-existing .fatLoss Goal must still label correctly even though it's no longer offered as a new option")
         XCTAssertEqual(PlanPresentation.mainGoalLabel(.maintenance), "Maintain My Fitness")
     }
 

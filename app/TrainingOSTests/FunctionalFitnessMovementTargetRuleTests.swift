@@ -61,21 +61,31 @@ final class FunctionalFitnessMovementTargetRuleTests: XCTestCase {
     private func rowErg() -> Exercise {
         Exercise(
             canonicalName: "Row Erg", modality: .functionalFitness, equipment: "rower", movementPattern: "locomotion",
-            movementFunctions: [.monostructural, .locomotion], functionalModality: .metabolicConditioning
+            movementFunctions: [.monostructural, .locomotion], functionalModality: .metabolicConditioning,
+            // FUNCTIONAL FITNESS PROGRAMMING AUTHORITY V2, Section 10/11:
+            // matches the real catalog's truthful tagging — this test
+            // helper must declare the same dimensions the production
+            // Exercise it stands in for actually declares, now that
+            // `FunctionalFitnessMovementTargetRule.resolve`'s monostructural
+            // branch checks `measuredDimensions` instead of an equipment
+            // string.
+            measuredDimensions: [.distance, .calories, .duration]
         )
     }
 
     private func skiErg() -> Exercise {
         Exercise(
             canonicalName: "SkiErg", modality: .functionalFitness, equipment: "skiErg", movementPattern: "locomotion",
-            movementFunctions: [.monostructural, .locomotion], functionalModality: .metabolicConditioning
+            movementFunctions: [.monostructural, .locomotion], functionalModality: .metabolicConditioning,
+            measuredDimensions: [.distance, .calories, .duration]
         )
     }
 
     private func easyRun() -> Exercise {
         Exercise(
             canonicalName: "Easy Run (Zone 2)", modality: .functionalFitness, equipment: "none", movementPattern: "locomotion",
-            movementFunctions: [.monostructural, .locomotion], functionalModality: .metabolicConditioning
+            movementFunctions: [.monostructural, .locomotion], functionalModality: .metabolicConditioning,
+            measuredDimensions: [.distance, .duration]
         )
     }
 
@@ -125,7 +135,8 @@ final class FunctionalFitnessMovementTargetRuleTests: XCTestCase {
 
     func testSquatLoadedWeightliftingRoundsForTimeGetsTwelveReps() {
         let target = FunctionalFitnessMovementTargetRule.resolve(
-            format: realProductionFormat(), modality: .weightlifting, movementFunctions: [.squatLoaded], exercise: backSquat()
+            format: realProductionFormat(), modality: .weightlifting, movementFunctions: [.squatLoaded], exercise: backSquat(),
+            targetDurationDomain: .medium
         )
         XCTAssertEqual(target.reps, 12)
         XCTAssertNil(target.distanceMeters)
@@ -133,7 +144,8 @@ final class FunctionalFitnessMovementTargetRuleTests: XCTestCase {
 
     func testGymnasticsPullGymnasticsRoundsForTimeGetsEightReps() {
         let target = FunctionalFitnessMovementTargetRule.resolve(
-            format: realProductionFormat(), modality: .gymnastics, movementFunctions: [.gymnasticsPull], exercise: pullUp()
+            format: realProductionFormat(), modality: .gymnastics, movementFunctions: [.gymnasticsPull], exercise: pullUp(),
+            targetDurationDomain: .medium
         )
         XCTAssertEqual(target.reps, 8)
         XCTAssertNil(target.distanceMeters)
@@ -142,9 +154,9 @@ final class FunctionalFitnessMovementTargetRuleTests: XCTestCase {
     // MARK: C — total-dose sanity
 
     func testTotalDoseAtFiveRealProductionRoundsMatchesTheLockedTotals() {
-        let squat = FunctionalFitnessMovementTargetRule.resolve(format: realProductionFormat(), modality: .weightlifting, movementFunctions: [.squatLoaded], exercise: backSquat())
-        let pull = FunctionalFitnessMovementTargetRule.resolve(format: realProductionFormat(), modality: .gymnastics, movementFunctions: [.gymnasticsPull], exercise: pullUp())
-        let mono = FunctionalFitnessMovementTargetRule.resolve(format: realProductionFormat(), modality: .metabolicConditioning, movementFunctions: [.monostructural], exercise: rowErg())
+        let squat = FunctionalFitnessMovementTargetRule.resolve(format: realProductionFormat(), modality: .weightlifting, movementFunctions: [.squatLoaded], exercise: backSquat(), targetDurationDomain: .medium)
+        let pull = FunctionalFitnessMovementTargetRule.resolve(format: realProductionFormat(), modality: .gymnastics, movementFunctions: [.gymnasticsPull], exercise: pullUp(), targetDurationDomain: .medium)
+        let mono = FunctionalFitnessMovementTargetRule.resolve(format: realProductionFormat(), modality: .metabolicConditioning, movementFunctions: [.monostructural], exercise: rowErg(), targetDurationDomain: .medium)
         XCTAssertEqual((squat.reps ?? 0) * 5, 60)
         XCTAssertEqual((pull.reps ?? 0) * 5, 40)
         XCTAssertEqual((mono.distanceMeters ?? 0) * 5, 1000)
@@ -217,18 +229,65 @@ final class FunctionalFitnessMovementTargetRuleTests: XCTestCase {
     }
 
     func testDistanceNativeMonostructuralCandidatesAllReceiveTwoHundredMetersUniformly() {
-        for candidate in [rowErg(), skiErg(), easyRun()] {
+        // MUSCLE + 5FF FINAL CLOSURE, Section 9: `.short`/`.medium` are
+        // completely unaffected by the new SUSTAINED_AEROBIC duration
+        // branch — this is exactly the real, pre-existing, already-
+        // shipped short/medium pairing that must never change; only
+        // `.long` is new (see `testLongDurationDomainMonostructuralCandidatesReceiveASustainedAerobicDurationInstead` below).
+        for domain: DurationDomain in [.short, .medium] {
+            for candidate in [rowErg(), skiErg(), easyRun()] {
+                let target = FunctionalFitnessMovementTargetRule.resolve(
+                    format: realProductionFormat(), modality: .metabolicConditioning, movementFunctions: [.monostructural], exercise: candidate,
+                    targetDurationDomain: domain
+                )
+                XCTAssertEqual(target.distanceMeters, 200, "\(candidate.canonicalName) should receive the uniform 200m target for \(domain)")
+                XCTAssertNil(target.reps)
+                XCTAssertNil(target.durationSeconds, "\(domain) must never populate the new duration dimension")
+            }
+        }
+    }
+
+    /// MUSCLE + 5FF FINAL CLOSURE, Section 9 (project-owner decision):
+    /// the real fix — "Run for 30 min at intended sustainable intensity,"
+    /// never a fixed 200m standing in for a `.long` (SUSTAINED_AEROBIC-
+    /// shaped, >15 min) continuous effort, regardless of the block's own
+    /// format/cap (this rule's own established "never derive from format"
+    /// discipline — proven explicitly below across several formats). This
+    /// is the direct fix for the confirmed "For Time cap 20min / Easy Run
+    /// (Zone 2) 200m" incoherence.
+    func testLongDurationDomainMonostructuralCandidatesReceiveASustainedAerobicDurationInstead() {
+        for format: WorkoutFormat in [.forTime(capSeconds: 1200), realProductionFormat(), .maxLoad] {
+            for candidate in [rowErg(), skiErg(), easyRun()] {
+                let target = FunctionalFitnessMovementTargetRule.resolve(
+                    format: format, modality: .metabolicConditioning, movementFunctions: [.monostructural], exercise: candidate,
+                    targetDurationDomain: .long
+                )
+                XCTAssertNil(target.distanceMeters, "\(candidate.canonicalName) must never receive a fixed distance for a `.long` domain, regardless of format (\(format))")
+                XCTAssertNil(target.reps)
+                XCTAssertEqual(target.durationSeconds, FunctionalFitnessMovementTargetRule.sustainedAerobicDurationSeconds, "\(candidate.canonicalName) must receive the real, locked SUSTAINED_AEROBIC duration target")
+            }
+        }
+    }
+
+    /// The one real exception (Assault Bike, no authored `.distance`
+    /// dimension) must remain honestly untargeted for `.long` too — never
+    /// receive a fabricated duration merely because a domain changed.
+    func testAssaultBikeReceivesNoTargetEvenForLongDurationDomain() {
+        for domain: DurationDomain in [.short, .medium, .long] {
             let target = FunctionalFitnessMovementTargetRule.resolve(
-                format: realProductionFormat(), modality: .metabolicConditioning, movementFunctions: [.monostructural], exercise: candidate
+                format: realProductionFormat(), modality: .metabolicConditioning, movementFunctions: [.monostructural], exercise: assaultBike(),
+                targetDurationDomain: domain
             )
-            XCTAssertEqual(target.distanceMeters, 200, "\(candidate.canonicalName) should receive the uniform 200m target")
             XCTAssertNil(target.reps)
+            XCTAssertNil(target.distanceMeters)
+            XCTAssertNil(target.durationSeconds, "Assault Bike has no authored `.distance` dimension and must never receive a fabricated duration target for \(domain) either")
         }
     }
 
     func testAssaultBikeReceivesNoTarget() {
         let target = FunctionalFitnessMovementTargetRule.resolve(
-            format: realProductionFormat(), modality: .metabolicConditioning, movementFunctions: [.monostructural], exercise: assaultBike()
+            format: realProductionFormat(), modality: .metabolicConditioning, movementFunctions: [.monostructural], exercise: assaultBike(),
+            targetDurationDomain: .medium
         )
         XCTAssertNil(target.reps)
         XCTAssertNil(target.distanceMeters)
@@ -243,18 +302,42 @@ final class FunctionalFitnessMovementTargetRuleTests: XCTestCase {
         // reachable" branch still correctly falls through to no target.
         let target = FunctionalFitnessMovementTargetRule.resolve(
             format: realProductionFormat(), modality: .gymnastics, movementFunctions: [.trunk],
-            exercise: exercise("Toes-to-Bar", targets: [.core])
+            exercise: exercise("Toes-to-Bar", targets: [.core]), targetDurationDomain: .medium
         )
         XCTAssertNil(target.reps)
         XCTAssertNil(target.distanceMeters)
     }
 
-    func testUnsupportedWorkoutFormatReceivesNoGeneratedTarget() {
-        let target = FunctionalFitnessMovementTargetRule.resolve(
-            format: .amrap(capSeconds: 600), modality: .weightlifting, movementFunctions: [.squatLoaded], exercise: backSquat()
+    /// PROGRAMMING MODEL CORRECTION: supersedes the original FF.P1 Design
+    /// Lock this test used to protect (`format == .roundsForTime` was the
+    /// only format that ever received a target). That gate was found to be
+    /// a real domain/implementation bug during the programming-model
+    /// correction checkpoint — every value this rule returns is already
+    /// keyed only on modality/movementFunctions/exercise, never on
+    /// `format`, so withholding a real, already-computed target for any
+    /// other format was untruthful: a DB/barbell squat does not stop
+    /// needing load guidance because it appears in an AMRAP, interval, or
+    /// density block. This test now proves the CORRECTED behavior: the
+    /// same real target this rule already gives `.roundsForTime` is given
+    /// identically for `.amrap` (and, by the same non-gated logic, every
+    /// other format) — never format-dependent, never format-gated to nil.
+    func testResolutionIsFormatIndependentAcrossEveryRealWorkoutFormat() {
+        let roundsForTimeTarget = FunctionalFitnessMovementTargetRule.resolve(
+            format: .roundsForTime(rounds: 5, capSeconds: nil), modality: .weightlifting, movementFunctions: [.squatLoaded], exercise: backSquat(),
+            targetDurationDomain: .medium
         )
-        XCTAssertNil(target.reps)
-        XCTAssertNil(target.distanceMeters)
+        let formatsToVerify: [WorkoutFormat] = [
+            .amrap(capSeconds: 600), .emom(intervalSeconds: 60, totalSeconds: 600), .forTime(capSeconds: nil),
+            .chipper(capSeconds: nil), .ladder(direction: .ascending, capSeconds: nil), .maxLoad,
+            .maxReps(capSeconds: 60), .intervals(count: 3, workSeconds: 40, restSeconds: 20),
+        ]
+        for format in formatsToVerify {
+            let target = FunctionalFitnessMovementTargetRule.resolve(
+                format: format, modality: .weightlifting, movementFunctions: [.squatLoaded], exercise: backSquat(),
+                targetDurationDomain: .medium
+            )
+            XCTAssertEqual(target, roundsForTimeTarget, "prescription semantics must derive from movement + exercise identity alone — \(format) must produce the exact same real target as .roundsForTime, never nil")
+        }
     }
 
     // MARK: Authored precedence — never overwritten

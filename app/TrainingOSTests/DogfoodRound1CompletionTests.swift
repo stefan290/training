@@ -426,15 +426,49 @@ final class DogfoodRound1CompletionTests: XCTestCase {
         let ffComponent = try XCTUnwrap(mix.orderedComponents.first { $0.programmingSystem == .functionalFitness })
         let definition = try XCTUnwrap(ffComponent.programInstance?.programDefinition)
         let strengthSlotNames = definition.orderedTemplateSessions
-            .flatMap(\.orderedBlockTemplates).filter { $0.type == .strength }
+            .flatMap(\.orderedBlockTemplates).filter { ($0.type == .strength || $0.type == .hypertrophy) }
             .flatMap(\.orderedPrescriptionTemplates).compactMap(\.exerciseSlot?.name)
         XCTAssertGreaterThan(Set(strengthSlotNames).count, 1, "must rotate through more than one Functional Bodybuilding pattern across the 4 weeks")
         XCTAssertTrue(strengthSlotNames.allSatisfy { $0.hasPrefix("Functional Bodybuilding") }, "must be clearly labeled as its own distinct expression, never a bare 'Squat' strength test")
 
-        let repGoals = definition.orderedTemplateSessions
-            .flatMap(\.orderedBlockTemplates).filter { $0.type == .strength }
-            .flatMap(\.orderedPrescriptionTemplates).compactMap(\.rules?.repGoalSchedule.first)
-        XCTAssertTrue(repGoals.allSatisfy { if case .fixedReps(10) = $0 { return true }; return false }, "Functional Bodybuilding uses a moderate rep range, never a 5-rep strength test")
+        // Dogfood Round 2 (Finding E revision): Muscle Gain's Functional
+        // Bodybuilding main body now also authors two functional-accessory
+        // roles (carry, trunk — see `FunctionalFitnessProgramGenerator
+        // .addMovementFunctionAccessoryPrescription`) alongside the
+        // original loaded-pattern rotation this test was written to cover.
+        // Those accessory roles legitimately use their own rep scheme
+        // (12, not this test's "moderate 10" strength-pattern invariant) —
+        // scoping this assertion to the loaded-pattern roles (identified by
+        // NOT being one of the two named accessory slots) preserves the
+        // original invariant exactly where it still applies, rather than
+        // weakening it to tolerate every role.
+        let allBlockTemplates = definition.orderedTemplateSessions.flatMap(\.orderedBlockTemplates)
+        let resistanceBlockTemplates = allBlockTemplates.filter { $0.type == .strength || $0.type == .hypertrophy }
+        let allPrescriptionTemplates = resistanceBlockTemplates.flatMap(\.orderedPrescriptionTemplates)
+        let loadedPatternTemplates = allPrescriptionTemplates.filter { template -> Bool in
+            let name = template.exerciseSlot?.name ?? ""
+            return !name.contains("Carry") && !name.contains("Trunk")
+        }
+        let loadedPatternRepGoals = loadedPatternTemplates.compactMap(\.rules?.repGoalSchedule.first)
+        // SOURCE AUTHORITY REUSE IMPLEMENTATION: this role now reuses
+        // Hypertrophy's own real week-1 RIR target (`.rir(3)`, Stage
+        // 10R.1D's "N/fail" semantics — an effort target, never a fixed
+        // rep count) directly from `HypertrophyProgramGenerator
+        // .repGoalSchedule`, replacing the old, unsourced
+        // `.fixedReps(10)` invention this test originally asserted. The
+        // real invariant this test exists for — moderate hypertrophy
+        // work, never a low-rep/high-intensity strength test — still
+        // holds: an RIR-3 (not RIR-0/1, and not a `.fixedReps` low-rep
+        // row) target is exactly that, just expressed the source-faithful
+        // way.
+        let expectedWeek1Rir: Int? = {
+            guard case .rir(let n) = HypertrophyProgramGenerator.repGoalSchedule.first?.prescription else { return nil }
+            return n
+        }()
+        XCTAssertTrue(loadedPatternRepGoals.allSatisfy {
+            guard case .rir(let n) = $0.prescription else { return false }
+            return n == expectedWeek1Rir
+        }, "Functional Bodybuilding's loaded-pattern roles use Hypertrophy's own real source-backed RIR target, never a fixed low-rep strength test")
     }
 
     // MARK: - Finding 3C: capability-aware movement selection

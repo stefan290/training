@@ -1,0 +1,40 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild test-without-building -scheme TrainingOS -destination "platform=iOS Simulator,name=iPhone 17" "-only-testing:TrainingOSTests/AdvanceTacticalWeekCapabilityWiringTests/testAdvanceTacticalWeekUsesOwnersPersistedCapabilityEvidence"
+
+Test Suite 'Selected tests' started at 2026-10-02 10:34:06.782.
+Test Suite 'TrainingOSTests.xctest' started at 2026-10-02 10:34:06.782.
+Test Suite 'AdvanceTacticalWeekCapabilityWiringTests' started at 2026-10-02 10:34:06.783.
+Test Case '-[TrainingOSTests.AdvanceTacticalWeekCapabilityWiringTests testAdvanceTacticalWeekUsesOwnersPersistedCapabilityEvidence]' started.
+2026-10-02 10:34:07.145405+0200 TrainingOS[31527:76234313] [ModelContext] Illegal attempt to insert a model in to a different model context. Model PersistentIdentifier(id: SwiftData.PersistentIdentifier.ID(backing: SwiftData.PersistentIdentifier.PersistentIdentifierBacking.managedObjectID(0x92b72b9fa95d23e9 <x-coredata://D267C2A2-8D48-4BC8-BBD3-43AB766369EC/Exercise/p18>))) is already bound to SwiftData.ModelContext but insert was called on SwiftData.ModelContext
+2026-10-02 10:34:07.149021+0200 TrainingOS[31527:76234313] [ModelContext] Illegal attempt to insert a model in to a different model context. Model PersistentIdentifier(id: SwiftData.PersistentIdentifier.ID(backing: SwiftData.PersistentIdentifier.PersistentIdentifierBacking.managedObjectID(0x92b72b9fad1d23e9 <x-coredata://D267C2A2-8D48-4BC8-BBD3-43AB766369EC/Exercise/p48>))) is already bound to SwiftData.ModelContext but insert was called on SwiftData.ModelContext
+/Users/stefankedling/Desktop/training/app/TrainingOSTests/AdvanceTacticalWeekCapabilityWiringTests.swift:199: error: -[TrainingOSTests.AdvanceTacticalWeekCapabilityWiringTests testAdvanceTacticalWeekUsesOwnersPersistedCapabilityEvidence] : XCTAssertLessThanOrEqual failed: ("15") is greater than ("3") - TTB's prescribed rep bound must be clamped to the real capacity-7 ceiling (3) — the raw authored target is 15, unclamped only when performanceProfile is nil
+/Users/stefankedling/Desktop/training/app/TrainingOSTests/AdvanceTacticalWeekCapabilityWiringTests.swift:200: error: -[TrainingOSTests.AdvanceTacticalWeekCapabilityWiringTests testAdvanceTacticalWeekUsesOwnersPersistedCapabilityEvidence] : XCTAssertLessThanOrEqual failed: ("15") is greater than ("3") - TTB's prescribed rep bound must be clamped to the real capacity-7 ceiling (3)
+/Users/stefankedling/Desktop/training/app/TrainingOSTests/AdvanceTacticalWeekCapabilityWiringTests.swift:199: error: -[TrainingOSTests.AdvanceTacticalWeekCapabilityWiringTests testAdvanceTacticalWeekUsesOwnersPersistedCapabilityEvidence] : XCTAssertLessThanOrEqual failed: ("15") is greater than ("3") - TTB's prescribed rep bound must be clamped to the real capacity-7 ceiling (3) — the raw authored target is 15, unclamped only when performanceProfile is nil
+/Users/stefankedling/Desktop/training/app/TrainingOSTests/AdvanceTacticalWeekCapabilityWiringTests.swift:200: error: -[TrainingOSTests.AdvanceTacticalWeekCapabilityWiringTests testAdvanceTacticalWeekUsesOwnersPersistedCapabilityEvidence] : XCTAssertLessThanOrEqual failed: ("15") is greater than ("3") - TTB's prescribed rep bound must be clamped to the real capacity-7 ceiling (3)
+/Users/stefankedling/Desktop/training/app/TrainingOSTests/AdvanceTacticalWeekCapabilityWiringTests.swift:199: error: -[TrainingOSTests.AdvanceTacticalWeekCapabilityWiringTests testAdvanceTacticalWeekUsesOwnersPersistedCapabilityEvidence] : XCTAssertLessThanOrEqual failed: ("15") is greater than ("3") - TTB's prescribed rep bound must be clamped to the real capacity-7 ceiling (3) — the raw authored target is 15, unclamped only when performanceProfile is nil
+/Users/stefankedling/Desktop/training/app/TrainingOSTests/AdvanceTacticalWeekCapabilityWiringTests.swift:200: error: -[TrainingOSTests.AdvanceTacticalWeekCapabilityWiringTests testAdvanceTacticalWeekUsesOwnersPersistedCapabilityEvidence] : XCTAssertLessThanOrEqual failed: ("15") is greater than ("3") - TTB's prescribed rep bound must be clamped to the real capacity-7 ceiling (3)
+C1 TRACE: owner=23A518E1-BF8B-4F57-8CFC-F32A440BE172 ttbCapacity=7 pullUpCapacity=5 hspuCapacity=3
+C1 TRACE: oldSessionIDs=["3B3F80B1-595D-4D97-80A5-3B14209F6648", "4A312ACF-8997-4EB8-BFD5-CE08E6081D6D", "7D76D287-0326-409D-9522-B797641BBA3D", "9E098A4D-0007-400E-B57E-DA4E0FEE50B1", "E5F5E60C-4D7D-4B46-BE10-483A097D6CCB"]
+C1 TRACE: newSessionIDs=["22D62331-B619-475D-9A1B-C6F154CB7585", "6ED844BF-9858-4B08-A26C-749CCB895571", "7CC9D549-7E93-4989-B2F4-7980011D1A83", "BCDDAA02-87CD-4C55-A282-FD461EF3B34F", "FEBEB78F-CCA0-46EF-B9FB-1089F653D321"]
+C1 TRACE: ttbPrescribedReps=[(Optional(15), Optional(15)), (Optional(15), Optional(15)), (Optional(15), Optional(15))]
+Test Case '-[TrainingOSTests.AdvanceTacticalWeekCapabilityWiringTests testAdvanceTacticalWeekUsesOwnersPersistedCapabilityEvidence]' failed (0.447 seconds).
+Test Suite 'AdvanceTacticalWeekCapabilityWiringTests' failed at 2026-10-02 10:34:07.230.
+	 Executed 1 test, with 6 failures (0 unexpected) in 0.447 (0.448) seconds
+Test Suite 'TrainingOSTests.xctest' failed at 2026-10-02 10:34:07.230.
+	 Executed 1 test, with 6 failures (0 unexpected) in 0.447 (0.448) seconds
+Test Suite 'Selected tests' failed at 2026-10-02 10:34:07.230.
+	 Executed 1 test, with 6 failures (0 unexpected) in 0.447 (0.448) seconds
+2026-10-02 10:34:15.880 xcodebuild[31517:76234079] [MT] IDETestOperationsObserverDebug: 10.792 elapsed -- Testing started completed.
+2026-10-02 10:34:15.880 xcodebuild[31517:76234079] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-02 10:34:15.880 xcodebuild[31517:76234079] [MT] IDETestOperationsObserverDebug: 10.792 sec, +10.792 sec -- end
+
+Test session results, code coverage, and logs:
+	/Users/stefankedling/Library/Developer/Xcode/DerivedData/TrainingOS-heqapafjeoqodgdjjypjihjvfkbc/Logs/Test/Test-TrainingOS-2026.10.02_10-34-04-+0200.xcresult
+
+Failing tests:
+	AdvanceTacticalWeekCapabilityWiringTests.testAdvanceTacticalWeekUsesOwnersPersistedCapabilityEvidence()
+	AdvanceTacticalWeekCapabilityWiringTests.testAdvanceTacticalWeekUsesOwnersPersistedCapabilityEvidence()
+
+** TEST EXECUTE FAILED **
+
+Testing started

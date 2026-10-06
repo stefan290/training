@@ -98,19 +98,40 @@ final class FunctionalFitnessPrescriptionTemplate {
     /// traceability, an unrelated concept).
     var isDynamicallyComposed: Bool = true
 
+    /// Dogfood Round 2 (Finding 4): the real, explicit phase-driven
+    /// archetype `FunctionalFitnessPhaseBiasPolicy.apply` decided for this
+    /// template — `.unbiased` (the default) for every template generated
+    /// before this checkpoint. Read by `FunctionalFitnessMaterializer` to
+    /// bias the real composer's role selection, and copied onto the real
+    /// materialized `FunctionalFitnessPrescription` for the presentation
+    /// layer.
+    var archetype: FunctionalFitnessSessionArchetype = FunctionalFitnessSessionArchetype.unbiased
+
+    /// FUNCTIONAL FITNESS PROGRAMMING AUTHORITY V1: the real session
+    /// family `FunctionalFitnessPhaseBiasPolicy.apply` resolved for this
+    /// template — `nil` for every template this checkpoint's allocator
+    /// doesn't bias. Read by `FunctionalFitnessMaterializer` to decide the
+    /// composer's conditioning role count/behavior, generalizing the
+    /// prior checkpoint's archetype-only decision.
+    var sessionFamily: FunctionalFitnessSessionFamily? = nil
+
     init(
         id: UUID = UUID(),
         stimulus: Stimulus,
         format: WorkoutFormat,
         requiresRecentExposureToProgress: Bool = false,
         varianceConstraints: VarianceConstraints? = nil,
-        isDynamicallyComposed: Bool = true
+        isDynamicallyComposed: Bool = true,
+        archetype: FunctionalFitnessSessionArchetype = .unbiased,
+        sessionFamily: FunctionalFitnessSessionFamily? = nil
     ) {
         self.id = id
         self.stimulus = stimulus
         self.requiresRecentExposureToProgress = requiresRecentExposureToProgress
         self.varianceConstraints = varianceConstraints
         self.isDynamicallyComposed = isDynamicallyComposed
+        self.archetype = archetype
+        self.sessionFamily = sessionFamily
         self.format = format
     }
 

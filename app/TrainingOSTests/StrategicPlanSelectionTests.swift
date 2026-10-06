@@ -256,16 +256,24 @@ final class StrategicPlanSelectionTests: XCTestCase {
     }
 
     // Test 2 — with doubles allowed, capacity-scaling must not apply; the
-    // real fixed template (7 sessions) is left untouched, and whether it's
-    // actually placeable is exactly what the real scheduling-based
-    // alignment already determines honestly.
+    // real fixed template is left untouched, and whether it's actually
+    // placeable is exactly what the real scheduling-based alignment
+    // already determines honestly.
+    //
+    // MUSCLE VERTICAL SLICE REPAIR, Sections 2-3: the real fixed template
+    // for a Muscle Gain goal with no stated conditioning preference is now
+    // "Focused Hypertrophy" — a single 5-session Hypertrophy component
+    // (the removed "5H+2Zone2" worked example never had a real,
+    // validated basis for its Zone 2 component — see
+    // `muscleGainFocusedHypertrophyMix`) — so the untouched total is now
+    // 5, not 7.
     func testFiveDayAllowsDoublesLeavesTheRealTemplateUntouched() throws {
         try makeOnboardedAthlete(goalType: .muscleGain, trainingDays: 5, allowsDoubles: true)
         let viewModel = StrategicPlanSelectionViewModel()
         viewModel.load(modelContext: context)
         let mix = try XCTUnwrap(viewModel.reviewedMix)
         let totalSessions = mix.orderedComponents.reduce(0) { $0 + $1.frequency.target }
-        XCTAssertEqual(totalSessions, 7, "allowsDoubleSessions=true must leave the real fixed template exactly as-is")
+        XCTAssertEqual(totalSessions, 5, "allowsDoubleSessions=true must leave the real fixed template exactly as-is")
     }
 
     // Test 3 — 3 days, no doubles: whatever is recommended (if anything)
@@ -287,11 +295,15 @@ final class StrategicPlanSelectionTests: XCTestCase {
     // proportional apportionment (largest-remainder/Hamilton), never
     // "primary fully protected, supporting yields to zero."
 
-    /// Locked worked example: the real "Focused Hypertrophy" template
-    /// (5 Hypertrophy + 2 Zone 2) at capacity 5 must become 4 Hypertrophy +
-    /// 1 Zone 2 — BOTH components survive, composition preserved, never
-    /// 5+0.
-    func testFiveDayNoDoublesCapacityScalingProducesFourHypertrophyPlusOneZoneTwo() throws {
+    /// MUSCLE VERTICAL SLICE REPAIR, Sections 2-3: the old worked example
+    /// ("Focused Hypertrophy" = 5 Hypertrophy + 2 Zone 2, with Zone 2 an
+    /// unvalidated `.steadyState` component never subject to the same
+    /// capability validation a user's own Custom Mix selection would be
+    /// held to) is removed — "Focused Hypertrophy" is now Hypertrophy-
+    /// only. At capacity 5 (== its own single-component target), the
+    /// "already fits" branch of `applyCapacity` leaves it completely
+    /// unscaled: 5 Hypertrophy, never an invented split.
+    func testFiveDayNoDoublesCapacityScalingProducesFiveHypertrophy() throws {
         let (_, goal) = try makeOnboardedAthlete(goalType: .muscleGain, trainingDays: 5, allowsDoubles: false)
         let proposal = LongTermPlanner.proposeStrategicPlan(goal: goal, asOf: Date())
         let proposedPhase = try XCTUnwrap(proposal.phases.first)
@@ -301,18 +313,17 @@ final class StrategicPlanSelectionTests: XCTestCase {
         )
         let candidates = LongTermPlanner.proposeTrainingMix(phase: previewPhase, goal: goal)
         let focusedHypertrophy = try XCTUnwrap(candidates.first { $0.mix.name == "Focused Hypertrophy" })
-        let hypertrophy = focusedHypertrophy.mix.orderedComponents.first { $0.programmingSystem == .hypertrophy }
-        let zoneTwo = focusedHypertrophy.mix.orderedComponents.first { $0.programmingSystem == .steadyState }
-        XCTAssertEqual(hypertrophy?.frequency.target, 4, "largest-remainder apportionment of 5+2 at capacity 5 must give Hypertrophy 4")
-        XCTAssertEqual(zoneTwo?.frequency.target, 1, "Zone 2 must survive with 1 session, never be zeroed out")
+        XCTAssertEqual(focusedHypertrophy.mix.orderedComponents.count, 1, "Focused Hypertrophy is now a single-system recommendation, never an invented Hypertrophy+Zone2 split")
+        let hypertrophy = try XCTUnwrap(focusedHypertrophy.mix.orderedComponents.first { $0.programmingSystem == .hypertrophy })
+        XCTAssertEqual(hypertrophy.frequency.target, 5, "5 days, no conditioning preference -> 5x Hypertrophy, already fits capacity 5 unscaled")
     }
 
-    /// Same real template at capacity 3: both components must still
-    /// survive (capacity 3 >= 2 non-zero components), proportionally
-    /// apportioned — 5:2 ratio over 3 sessions gives 2 Hypertrophy + 1
-    /// Zone 2 (quotas 3*5/7≈2.143, 3*2/7≈0.857; floors 2+0=2, leftover 1
-    /// goes to Zone 2's larger remainder).
-    func testThreeDayNoDoublesCapacityScalingProducesTwoHypertrophyPlusOneZoneTwo() throws {
+    /// Same real (now single-component) template at capacity 3: the sole
+    /// survivor takes the entire capacity (rule: "capacity >= non-zero
+    /// component count" branch, 1 component <= capacity 3), so Hypertrophy
+    /// is scaled down to 3 — never an invented Zone 2 split that was
+    /// never part of a validated Custom-Mix-equivalent selection.
+    func testThreeDayNoDoublesCapacityScalingProducesThreeHypertrophy() throws {
         let (_, goal) = try makeOnboardedAthlete(goalType: .muscleGain, trainingDays: 3, allowsDoubles: false)
         let proposal = LongTermPlanner.proposeStrategicPlan(goal: goal, asOf: Date())
         let proposedPhase = try XCTUnwrap(proposal.phases.first)
@@ -322,11 +333,9 @@ final class StrategicPlanSelectionTests: XCTestCase {
         )
         let candidates = LongTermPlanner.proposeTrainingMix(phase: previewPhase, goal: goal)
         let focusedHypertrophy = try XCTUnwrap(candidates.first { $0.mix.name == "Focused Hypertrophy" })
-        let hypertrophy = focusedHypertrophy.mix.orderedComponents.first { $0.programmingSystem == .hypertrophy }
-        let zoneTwo = focusedHypertrophy.mix.orderedComponents.first { $0.programmingSystem == .steadyState }
-        XCTAssertEqual(hypertrophy?.frequency.target, 2)
-        XCTAssertEqual(zoneTwo?.frequency.target, 1, "both components must still survive at capacity 3, never dropped to 0")
-        XCTAssertEqual((hypertrophy?.frequency.target ?? 0) + (zoneTwo?.frequency.target ?? 0), 3)
+        XCTAssertEqual(focusedHypertrophy.mix.orderedComponents.count, 1)
+        let hypertrophy = try XCTUnwrap(focusedHypertrophy.mix.orderedComponents.first { $0.programmingSystem == .hypertrophy })
+        XCTAssertEqual(hypertrophy.frequency.target, 3, "the sole component receives the full capacity when capacity < its original target")
     }
 
     /// Capacity 1 (< 2 non-zero components, rule 7): only the
@@ -417,12 +426,26 @@ final class StrategicPlanSelectionTests: XCTestCase {
     // Test 5 — an activity-scoped dislike ("no running") must steer the
     // real materialized activity away from running WITHOUT vetoing
     // steady-state/conditioning entirely.
+    //
+    // MUSCLE VERTICAL SLICE REPAIR, Sections 2-3: the DEFAULT (no stated
+    // conditioning preference) Muscle Gain recommendation is now
+    // Hypertrophy-only (the removed hardcoded "5H+2Zone2" worked example
+    // — see `muscleGainFocusedHypertrophyMix`) and so no longer carries
+    // ANY steady-state component to isolate this test's real subject
+    // (activity-level exclusion WITHIN an existing steady-state
+    // component). A stated Functional Fitness preference (the same real,
+    // established convention `testCapacityScalingNeverErasesAPreferredNonPrimaryModality`/
+    // `testPreferredFunctionalFitnessReachesRealPlannerRanking` already
+    // use) reaches the real "Strength Plus Variety" candidate, which DOES
+    // carry a steady-state component — the correct real-world setup for
+    // this test's actual claim.
     func testDislikedRunningSpecificallyExcludesRunningFromMaterializedActivity() throws {
         // 7-day capacity so the supporting steady-state component keeps a
         // real, nonzero allocation regardless of capacity-scaling — this
         // test isolates activity SELECTION, not capacity REDUCTION.
         try makeOnboardedAthlete(
             goalType: .muscleGain, trainingDays: 7, allowsDoubles: false,
+            preferredModalities: [ModalityPreference(system: .functionalFitness)],
             dislikedModalities: [ModalityPreference(system: .steadyState, activityType: .running)]
         )
         let viewModel = StrategicPlanSelectionViewModel()

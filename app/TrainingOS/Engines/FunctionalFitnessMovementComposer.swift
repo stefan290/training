@@ -66,12 +66,61 @@ struct FunctionalFitnessMovementComposer {
     /// `monostructuralEligible`) genuinely cannot fill 3 — this is honest
     /// environment degradation, never invented variety (Correction 1/
     /// Amendment Part 15).
-    mutating func composeSession(eligibleFunctions: Set<MovementFunction>, monostructuralEligible: Bool, targetRoleCount: Int = 3) -> [MovementFunction] {
+    /// Dogfood Round 2 (Finding 4): `archetype` is the real, explicit
+    /// phase-driven input this checkpoint's trace found was missing —
+    /// biasing only the authored `Stimulus.movementFunctions` field has
+    /// zero athlete-visible effect, since this composer already
+    /// recomputes roles from live eligibility/exposure every time (see
+    /// `FunctionalFitnessPhaseBiasPolicy`'s own doc comment). Defaults to
+    /// `.unbiased`, which reproduces this function's exact pre-existing
+    /// behavior for every caller/test that doesn't pass one.
+    /// FUNCTIONAL FITNESS V2 RESISTANCE AUTHORITY COMPLETION, Section
+    /// 16-19: which loaded-pattern `MovementFunction`s this SAME session's
+    /// own source-backed main body (Back Squat, etc. — a separate
+    /// `WorkoutBlock` this composer never touches) already exposed
+    /// meaningfully, for THIS ONE `composeSession` call only — never
+    /// persisted into `sameWeekExposure` (which tracks conditioning-role
+    /// assignments across the whole tactical week and must stay exactly
+    /// that). Treated as a soft +1 same-session bonus when deciding
+    /// primary-coverage priority, exactly like an existing same-week
+    /// conditioning-role exposure would be — so the composer prefers an
+    /// uncovered complementary pattern (e.g. hinge/press) over repeating
+    /// squat when a genuine alternative exists, but still falls back to
+    /// the exposed pattern when it's the only eligible one (Section 18:
+    /// "do NOT prohibit repeated patterns when the assignment genuinely
+    /// requires them"). Additive, defaults empty — every pre-existing
+    /// call site/test is completely unaffected.
+    mutating func composeSession(
+        eligibleFunctions: Set<MovementFunction>, monostructuralEligible: Bool, targetRoleCount: Int = 3,
+        archetype: FunctionalFitnessSessionArchetype = .unbiased,
+        sameSessionMainBodyExposedFunctions: Set<MovementFunction> = []
+    ) -> [MovementFunction] {
         var roles: [MovementFunction] = []
         var usedConditioningThisSession = false
+        let preferLoadedFirst = archetype.prefersLoadedMovementEmphasis
+        // Dogfood Round 2 (Finding E revision): for Muscle Gain, the
+        // conditioning block is an OPTIONAL/SUBORDINATE short finisher, not
+        // a standalone metcon — its own main body (a separate WorkoutBlock,
+        // never composed by this type) already covers loaded/complementary/
+        // accessory work, so this block's identity should be conditioning
+        // itself, not another loaded role. Scoped narrowly to
+        // `.functionalBodybuilding` (not the more general
+        // `conditioningIsSubordinate`, which `.strengthPower` also
+        // declares) so `.strengthPower`'s existing behavior is completely
+        // unaffected — see this checkpoint's report for why extending this
+        // to `.strengthPower` is a follow-up, not built here.
+        let conditioningLeadsSession = archetype == .functionalBodybuilding
 
         while roles.count < targetRoleCount {
-            if let picked = pickPrimaryCoverage(eligibleFunctions: eligibleFunctions) {
+            if conditioningLeadsSession, !usedConditioningThisSession, monostructuralEligible {
+                roles.append(.monostructural)
+                usedConditioningThisSession = true
+                continue
+            }
+            if let picked = pickPrimaryCoverage(
+                eligibleFunctions: eligibleFunctions, preferLoadedFirst: preferLoadedFirst,
+                sameSessionMainBodyExposedFunctions: sameSessionMainBodyExposedFunctions
+            ) {
                 roles.append(picked)
                 sameWeekExposure[picked, default: 0] += 1
                 continue
@@ -79,7 +128,17 @@ struct FunctionalFitnessMovementComposer {
             // Phase 2 (a): CONDITIONING fills the slot once primary
             // coverage is satisfied — a real programming reason
             // ("everything eligible has already been seen this week"),
-            // never "it's next in a fixed loop" (Correction 1).
+            // never "it's next in a fixed loop" (Correction 1). Never
+            // suppressed by archetype: an earlier version of this pass
+            // suppressed it entirely for `.functionalBodybuilding`, which
+            // — in a real environment with only one candidate per loaded/
+            // gymnastics function — could force a THIRD role to repeat an
+            // already-exhausted function/exercise instead of falling back
+            // to this safe monostructural fill, leaving the role
+            // genuinely unresolvable. `preferLoadedFirst` alone already
+            // gives loaded compound patterns real priority; conditioning
+            // remains available as the honest, always-safe fallback,
+            // exactly as it already is for every other archetype.
             if !usedConditioningThisSession, monostructuralEligible {
                 roles.append(.monostructural)
                 usedConditioningThisSession = true
@@ -88,7 +147,7 @@ struct FunctionalFitnessMovementComposer {
             // Phase 2 (b): a second (or later) lap through the same
             // least-exposed-first rule — still deterministic, still
             // same-week-primary/prior-week-secondary.
-            if let picked = pickLeastExposed(among: eligibleFunctions) {
+            if let picked = pickLeastExposed(among: eligibleFunctions, sameSessionMainBodyExposedFunctions: sameSessionMainBodyExposedFunctions) {
                 roles.append(picked)
                 sameWeekExposure[picked, default: 0] += 1
                 continue
@@ -107,22 +166,56 @@ struct FunctionalFitnessMovementComposer {
     /// "due" per the continuous alternation cursor — falling back to the
     /// OTHER class if the due class has no uncovered candidate (alternation
     /// is a cadence heuristic, never allowed to block real coverage).
-    private mutating func pickPrimaryCoverage(eligibleFunctions: Set<MovementFunction>) -> MovementFunction? {
+    ///
+    /// Dogfood Round 2 (Finding 4): `preferLoadedFirst` overrides the
+    /// alternation cursor to always try `.loaded` (squat/hinge/press)
+    /// before `.gymnastics` — a real, deterministic bias toward compound
+    /// loaded patterns for an archetype that wants them dominant, never a
+    /// fabricated new movement vocabulary. `sameWeekExposure`/
+    /// `priorWeekExposure` tie-breaking within a class is completely
+    /// unaffected either way.
+    private mutating func pickPrimaryCoverage(
+        eligibleFunctions: Set<MovementFunction>, preferLoadedFirst: Bool,
+        sameSessionMainBodyExposedFunctions: Set<MovementFunction>
+    ) -> MovementFunction? {
+        if preferLoadedFirst {
+            if let picked = leastExposedUncovered(in: .loaded, eligibleFunctions: eligibleFunctions, sameSessionMainBodyExposedFunctions: sameSessionMainBodyExposedFunctions) {
+                nextClassDue = .gymnastics
+                return picked
+            }
+            if let picked = leastExposedUncovered(in: .gymnastics, eligibleFunctions: eligibleFunctions, sameSessionMainBodyExposedFunctions: sameSessionMainBodyExposedFunctions) {
+                nextClassDue = .loaded
+                return picked
+            }
+            return nil
+        }
         let dueClass = nextClassDue
-        if let picked = leastExposedUncovered(in: dueClass, eligibleFunctions: eligibleFunctions) {
+        if let picked = leastExposedUncovered(in: dueClass, eligibleFunctions: eligibleFunctions, sameSessionMainBodyExposedFunctions: sameSessionMainBodyExposedFunctions) {
             nextClassDue = dueClass.other
             return picked
         }
         let otherClass = dueClass.other
-        if let picked = leastExposedUncovered(in: otherClass, eligibleFunctions: eligibleFunctions) {
+        if let picked = leastExposedUncovered(in: otherClass, eligibleFunctions: eligibleFunctions, sameSessionMainBodyExposedFunctions: sameSessionMainBodyExposedFunctions) {
             nextClassDue = otherClass.other
             return picked
         }
         return nil // primary coverage complete (or nothing eligible at all)
     }
 
-    private func leastExposedUncovered(in cls: FunctionalFitnessMovementClass, eligibleFunctions: Set<MovementFunction>) -> MovementFunction? {
-        let uncovered = cls.orderedFunctions.filter { eligibleFunctions.contains($0) && (sameWeekExposure[$0] ?? 0) == 0 }
+    /// Section 16-19: a function already exposed by this SAME session's
+    /// own source-backed main body is treated as NOT "uncovered" here —
+    /// so a genuinely-uncovered complementary function wins primary
+    /// coverage first. If every eligible function carries this bonus (no
+    /// real alternative exists), this returns `nil` and Phase 2(b)'s
+    /// `pickLeastExposed` below still allows it, ranked appropriately —
+    /// never a hard prohibition.
+    private func leastExposedUncovered(
+        in cls: FunctionalFitnessMovementClass, eligibleFunctions: Set<MovementFunction>,
+        sameSessionMainBodyExposedFunctions: Set<MovementFunction>
+    ) -> MovementFunction? {
+        let uncovered = cls.orderedFunctions.filter {
+            eligibleFunctions.contains($0) && (sameWeekExposure[$0] ?? 0) == 0 && !sameSessionMainBodyExposedFunctions.contains($0)
+        }
         guard !uncovered.isEmpty else { return nil }
         // Every candidate here is tied at same-week exposure 0 by
         // definition (that's what "uncovered" means) — so the real
@@ -141,13 +234,17 @@ struct FunctionalFitnessMovementComposer {
     /// loaded/gymnastics functions (CONDITIONING excluded — it's handled
     /// separately, capped at 1/session), tie-broken by PRIOR-WEEK exposure
     /// (secondary), then fixed declared order (final).
-    private func pickLeastExposed(among eligibleFunctions: Set<MovementFunction>) -> MovementFunction? {
+    /// Section 16-19: a same-session-main-body-exposed function is ranked
+    /// as if it carried one additional same-week exposure — a soft
+    /// deprioritization, never an exclusion, so it remains selectable
+    /// (and IS selected) when it is genuinely the only eligible function.
+    private func pickLeastExposed(among eligibleFunctions: Set<MovementFunction>, sameSessionMainBodyExposedFunctions: Set<MovementFunction>) -> MovementFunction? {
         let candidates = FunctionalFitnessMovementClass.allCases.flatMap(\.orderedFunctions).filter { eligibleFunctions.contains($0) }
         guard !candidates.isEmpty else { return nil }
         let declaredOrder = FunctionalFitnessMovementClass.allCases.flatMap(\.orderedFunctions)
         return candidates.min { a, b in
-            let sameWeekA = sameWeekExposure[a] ?? 0
-            let sameWeekB = sameWeekExposure[b] ?? 0
+            let sameWeekA = (sameWeekExposure[a] ?? 0) + (sameSessionMainBodyExposedFunctions.contains(a) ? 1 : 0)
+            let sameWeekB = (sameWeekExposure[b] ?? 0) + (sameSessionMainBodyExposedFunctions.contains(b) ? 1 : 0)
             if sameWeekA != sameWeekB { return sameWeekA < sameWeekB }
             let priorA = priorWeekExposure[a] ?? 0
             let priorB = priorWeekExposure[b] ?? 0

@@ -61,7 +61,10 @@ final class MixedModalityOrchestrationTests: XCTestCase {
         func exercise(
             _ name: String, _ targets: [MuscleGroup] = [], _ movementFunctions: [MovementFunction] = [], _ functionalModality: FunctionalModality? = nil
         ) -> Exercise {
-            let ex = Exercise(canonicalName: name, modality: .hypertrophy, equipment: "barbell", movementPattern: "test", primaryTargets: targets, movementFunctions: movementFunctions, functionalModality: functionalModality)
+            // FUNCTIONAL FITNESS PROGRAMMING AUTHORITY V2, Section 10/11:
+            // generic scheduling filler, not a target-content test —
+            // tagged `.distance` so it stays truthfully materializable.
+            let ex = Exercise(canonicalName: name, modality: .hypertrophy, equipment: "barbell", movementPattern: "test", primaryTargets: targets, movementFunctions: movementFunctions, functionalModality: functionalModality, measuredDimensions: movementFunctions.contains(.monostructural) ? [.distance] : [])
             context.insert(ex)
             return ex
         }
@@ -168,7 +171,10 @@ final class MixedModalityOrchestrationTests: XCTestCase {
         XCTAssertFalse(ffMovements.isEmpty, "the FF prescription must have real movements, not an empty shell")
         XCTAssertTrue(ffMovements.allSatisfy { $0.exercise != nil }, "every FF movement slot must have resolved a concrete exercise from the real candidate pool — this is the exact path that always threw before Slice 3, since nothing ever supplied real FF candidates through StartPhaseUseCase")
 
-        let runningInstance = try XCTUnwrap(byLabel["Running"]?.programInstance)
+        // MUSCLE VERTICAL SLICE CONTINUATION (SCOPE DECISION): relabeled
+        // from "Running" to "Easy Aerobic" (still `.steadyState`) — see
+        // `muscleGainVariedMix`.
+        let runningInstance = try XCTUnwrap(byLabel["Easy Aerobic"]?.programInstance)
         XCTAssertFalse(runningInstance.sessions.isEmpty, "SteadyState materializes its whole natural block up front — must not be silently empty")
 
         // Nothing silently dropped from the merged schedule either.
@@ -289,17 +295,28 @@ final class MixedModalityOrchestrationTests: XCTestCase {
         let asOf = date(2026, 1, 5)
         let fixture = try startVariedMix(asOf: asOf)
         let ffInstance = try XCTUnwrap(fixture.mix.orderedComponents.first { $0.label == "Functional Fitness" }?.programInstance)
-        let ffMovement = try XCTUnwrap(ffInstance.sessions.first?.orderedBlocks.first { $0.type == .functionalFitness }?.functionalFitnessPrescription?.orderedMovements.first { $0.exercise?.canonicalName == "Mixed FF Bike" })
+        // GENERAL PROGRAMMING ALLOCATION ARCHITECTURE V1: a Muscle-Gain-
+        // priority multi-session FF week may now legitimately have a
+        // `.resistanceDominant`-purpose session with NO `.functionalFitness`-
+        // type block at all (conditioning is not mandatory — see
+        // `FunctionalFitnessRequirementAllocator`) — search across every
+        // real materialized session for the one that actually carries
+        // "Mixed FF Bike," never assume `.sessions.first` always has one.
+        let ffMovement = try XCTUnwrap(ffInstance.sessions
+            .flatMap(\.orderedBlocks)
+            .first { $0.type == .functionalFitness }?
+            .functionalFitnessPrescription?.orderedMovements.first { $0.exercise?.canonicalName == "Mixed FF Bike" })
         let ffSlot = try XCTUnwrap(ffMovement.exercise.flatMap { exercise in
             fixture.candidates.functionalFitness.first { $0.id == exercise.id }
         })
         _ = ffSlot // the candidate itself; the real slot lives on the template graph:
-        let ffSlotTemplate = try XCTUnwrap(ffInstance.programDefinition?.orderedTemplateSessions.first?.orderedBlockTemplates
+        let ffSlotTemplate = try XCTUnwrap(ffInstance.programDefinition?.orderedTemplateSessions
+            .flatMap(\.orderedBlockTemplates)
             .first { $0.type == .functionalFitness }?.functionalFitnessPrescriptionTemplate?.orderedMovementSlots
             .first { $0.exerciseSlot?.allowedModalities.contains(.metabolicConditioning) == true }?.exerciseSlot)
         let realSlot = try XCTUnwrap(ffSlotTemplate)
 
-        let alternativeBike = Exercise(canonicalName: "Zzz Alt Metcon Machine", modality: .functionalFitness, equipment: "rower", movementPattern: "test", movementFunctions: [.monostructural], functionalModality: .metabolicConditioning)
+        let alternativeBike = Exercise(canonicalName: "Zzz Alt Metcon Machine", modality: .functionalFitness, equipment: "rower", movementPattern: "test", movementFunctions: [.monostructural], functionalModality: .metabolicConditioning, measuredDimensions: [.distance])
         context.insert(alternativeBike)
         try SubstituteExerciseUseCase.substituteGoingForward(instance: ffInstance, slot: realSlot, with: alternativeBike,  environment: TrainingEnvironmentTestSupport.full(context: context), context: context)
 

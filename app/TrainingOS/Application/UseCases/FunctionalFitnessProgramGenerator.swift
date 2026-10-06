@@ -73,22 +73,42 @@ enum FunctionalFitnessProgramGenerator {
                 definition.addTemplateSession(session)
 
                 if intent.includeStrengthBlock {
-                    addStrengthBlock(to: session, relativeWeek: intent.relativeWeek, context: context)
+                    addStrengthBlock(
+                        to: session, relativeWeek: intent.relativeWeek, archetype: intent.archetype,
+                        family: intent.sessionFamily, requiredLoadedPattern: intent.requiredLoadedPattern,
+                        genericStrengthAssignment: intent.genericStrengthAssignment,
+                        sessionIndexInWeek: intent.sessionIndexInWeek, context: context
+                    )
                 }
 
-                let ffBlock = WorkoutBlockTemplate(type: .functionalFitness)
-                context.insert(ffBlock)
-                session.addBlockTemplate(ffBlock)
+                // GENERAL PROGRAMMING ALLOCATION ARCHITECTURE V1 §13.A/§17:
+                // "not every FF session requires... even a conditioning
+                // block" — a `.resistanceDominant`-purpose session's real
+                // main body (just authored above) already carries the
+                // session's whole resistance stimulus, so the conditioning
+                // block is genuinely omitted, never a placeholder, never
+                // forced to exist merely because this is a Functional
+                // Fitness session. `includeConditioningBlock` defaults
+                // `true` so every pre-existing authored entry/test
+                // (`archetype == .unbiased`, no `muscleSessionPurpose`)
+                // is completely unaffected.
+                if intent.includeConditioningBlock {
+                    let ffBlock = WorkoutBlockTemplate(type: .functionalFitness)
+                    context.insert(ffBlock)
+                    session.addBlockTemplate(ffBlock)
 
-                let prescriptionTemplate = FunctionalFitnessPrescriptionTemplate(
-                    stimulus: intent.stimulus,
-                    format: intent.format,
-                    requiresRecentExposureToProgress: false,
-                    varianceConstraints: intent.varianceConstraints,
-                    isDynamicallyComposed: true
-                )
-                context.insert(prescriptionTemplate)
-                ffBlock.attachFunctionalFitnessPrescriptionTemplate(prescriptionTemplate)
+                    let prescriptionTemplate = FunctionalFitnessPrescriptionTemplate(
+                        stimulus: intent.stimulus,
+                        format: intent.format,
+                        requiresRecentExposureToProgress: false,
+                        varianceConstraints: intent.varianceConstraints,
+                        isDynamicallyComposed: true,
+                        archetype: intent.archetype,
+                        sessionFamily: intent.sessionFamily
+                    )
+                    context.insert(prescriptionTemplate)
+                    ffBlock.attachFunctionalFitnessPrescriptionTemplate(prescriptionTemplate)
+                }
             }
             return definition
         }
@@ -201,23 +221,316 @@ enum FunctionalFitnessProgramGenerator {
             case .pull: return [.back, .biceps]
             }
         }
+
+        /// PROGRAMMING AUTHORITY V1 — FINAL CLOSE-OUT, Part XV: a real,
+        /// pre-existing latent defect this checkpoint's stricter validator
+        /// surfaced (not introduced by it) — `allowedTargets` alone
+        /// (`MuscleGroup`) cannot distinguish a genuine hip-hinge/deadlift
+        /// movement from a hamstrings-isolation exercise that merely
+        /// shares the `.hamstrings` target; `MovementFunction.kneeFlexionLoaded`
+        /// exists in this codebase specifically to name that distinction
+        /// (see its own doc comment), but this slot never constrained
+        /// against it. Without this, the "Hinge" slot could silently
+        /// resolve to a leg-curl-family exercise, which is never a real
+        /// hip-hinge pattern — meaning even the PRE-EXISTING mesocycle
+        /// rotation could not truthfully guarantee a "hinge week" actually
+        /// contained hinge-pattern work. Fixed generally (every loaded-
+        /// pattern slot, not only Part XV's own override), since this is
+        /// the slot's own declared intent, not new scope.
+        var allowedMovementFunctions: [MovementFunction] {
+            switch self {
+            case .squat: return [.squatLoaded]
+            case .hinge: return [.hingeLoaded]
+            case .press: return [.pressLoaded]
+            case .pull: return [.horizontalPullLoaded, .verticalPullLoaded]
+            }
+        }
     }
 
-    private static func addStrengthBlock(to session: TemplateSession, relativeWeek: Int = 0, context: ModelContext) {
-        let block = WorkoutBlockTemplate(type: .strength)
+    private static func addStrengthBlock(
+        to session: TemplateSession, relativeWeek: Int = 0,
+        archetype: FunctionalFitnessSessionArchetype = .unbiased,
+        family: FunctionalFitnessSessionFamily? = nil,
+        requiredLoadedPattern: MovementFunction? = nil,
+        genericStrengthAssignment: MovementFunction? = nil,
+        // MUSCLE + 5FF FINAL CLOSURE, Section 1/4 (project-owner
+        // decision): `0` for every pre-existing call site/test
+        // (completely unaffected). The one real weekly-plan call site
+        // passes each session's own real `sessionIndexInWeek`, so the
+        // fallback loaded-pattern rotation below (used whenever
+        // `requiredLoadedPattern` is `nil`) varies BY SESSION within the
+        // same real week, not only week-to-week — without this, every
+        // session beyond the first two explicitly-overridden ones
+        // collided on the exact same pattern (the real, traced root
+        // cause of "Sessions 1/3/4 nearly identical").
+        sessionIndexInWeek: Int = 0, context: ModelContext
+    ) {
+        // MUSCLE + 5FF FINAL CLOSURE, Section 16 (project-owner decision):
+        // `.functionalBodybuilding`-archetype content (the Muscle-goal
+        // main body) is genuine Hypertrophy prescription authority —
+        // `addLoadedPatternPrescription` below uses
+        // `HypertrophyProgramGenerator`'s own real, source-cited load
+        // factors and rep/RIR schedule, never a Strength-goal
+        // HIGH_LOAD_STRENGTH exposure. It was previously always typed
+        // `.strength` — the SAME canonical type a genuine
+        // `.strengthPower`-archetype session (real heavy/power/generic-
+        // strength content) or a real Powerlifting source program uses —
+        // "accidentally classifying all resistance work as strength
+        // because the domain lacks a better type" (Section 16's own
+        // language). `WorkoutBlockType.hypertrophy` already exists and is
+        // already the real, established canonical type
+        // `HypertrophyProgramGenerator`'s own blocks use for the
+        // identical kind of content; every other archetype (`.strengthPower`,
+        // `.unbiased`) is unaffected — kept exactly `.strength`, since
+        // those really do represent (or, for `.unbiased`, predate this
+        // Muscle-vs-Strength distinction and are out of this specific
+        // audit's scope).
+        let block = WorkoutBlockTemplate(type: archetype == .functionalBodybuilding ? .hypertrophy : .strength)
         context.insert(block)
         session.addBlockTemplate(block)
 
-        let pattern = FunctionalBodybuildingPattern.allCases[relativeWeek % FunctionalBodybuildingPattern.allCases.count]
+        // GENERIC STRENGTH PRESCRIPTION AUTHORITY V1, Section 14/17: when
+        // the weekly allocator has assigned this session a genuine
+        // remaining HIGH_LOAD_STRENGTH_EXPOSURE responsibility, that takes
+        // precedence over every family-based branch below — this is a
+        // completely separate adaptation (Section 7: "adaptation" is why
+        // this work exists, distinct from `family`'s own dosing semantics).
+        // `nil` for every pre-existing call site/test (completely
+        // unaffected) and for every non-`.strengthPower` archetype.
+        if let genericStrengthAssignment {
+            addGenericHighLoadStrengthPrescription(pattern: genericStrengthAssignment, to: block, context: context)
+            return
+        }
+
+        // PROGRAMMING AUTHORITY V1 — FINAL CLOSE-OUT, Part XV: `nil` for
+        // every pre-existing call site/test — completely unaffected, the
+        // `relativeWeek`-keyed rotation below applies exactly as before.
+        // When set, overrides only the PRIMARY pattern for whichever
+        // branch below picks one; a 2-pattern (`.functionalBodybuilding`)
+        // session's complementary pattern is still derived from the
+        // required one (`+2`, i.e. squat's complement is press, hinge's
+        // is pull) rather than dropped, preserving that shape's real
+        // 2-pattern main body.
+        let requiredPattern: FunctionalBodybuildingPattern? = {
+            switch requiredLoadedPattern {
+            case .squatLoaded: return .squat
+            case .hingeLoaded: return .hinge
+            default: return nil
+            }
+        }()
+
+        // FUNCTIONAL FITNESS PROGRAMMING AUTHORITY V1 (Part IV.2/IV.3):
+        // Strength-priority sessions (`.strengthPower` archetype) get
+        // their own family-driven main body — heavy compound work for
+        // `.heavyStrength`, low-volume quality work for `.powerAthletic`
+        // — reusing the exact same real `StrengthProgressionRules`/
+        // `RMBasedLoad`/`ExerciseSlot` machinery the Muscle-side roles
+        // already use, never a new load-resolution system. `family ==
+        // nil` (every pre-existing `.strengthPower` call site/test) keeps
+        // the exact original single-pattern behavior, completely
+        // unaffected.
+        if archetype == .strengthPower, let family {
+            switch family {
+            case .heavyStrength, .powerAthletic:
+                // GENERIC STRENGTH PRESCRIPTION AUTHORITY V1, Section 20/21:
+                // reaching here means `genericStrengthAssignment` was `nil`
+                // for THIS session — the weekly allocator did not assign it
+                // a remaining HIGH_LOAD_STRENGTH_EXPOSURE responsibility
+                // (either the fallback's 2-exposure target was already met
+                // by earlier sessions this week, or by a real source
+                // program). "Remaining FF sessions do NOT automatically
+                // become heavy Strength days" (Section 20/21's explicit
+                // requirement, confirmed by `testFixtureE_StrengthFourPowerliftingOneFF`/
+                // `testFixtureG_StrengthFiveFFAlone`'s own doc comments) —
+                // an unassigned heavyStrength/powerAthletic session falls
+                // back to the same real, load-formula-free carry+trunk
+                // content `.lowerFatigueComplementary` already uses, never
+                // an invented duplicate heavy/power pattern.
+                addDistanceAccessoryPrescription(name: "Functional Bodybuilding — Carry", movementFunction: .carry, targetDistanceMeters: 40, setCount: 3, to: block, context: context)
+                addMovementFunctionAccessoryPrescription(name: "Functional Bodybuilding — Trunk", movementFunction: .trunk, to: block, context: context)
+                return
+            case .mixedResistanceWorkCapacity:
+                // The same real, moderate loaded-pattern content Muscle
+                // Gain's own single-lift path already uses — a Strength-
+                // priority week's own lighter fallback slot borrows this
+                // rather than inventing a second moderate-load scheme.
+                let pattern = requiredPattern ?? FunctionalBodybuildingPattern.allCases[(relativeWeek + sessionIndexInWeek) % FunctionalBodybuildingPattern.allCases.count]
+                addLoadedPatternPrescription(pattern: pattern, to: block, context: context)
+                return
+            case .lowerFatigueComplementary:
+                addDistanceAccessoryPrescription(name: "Functional Bodybuilding — Carry", movementFunction: .carry, targetDistanceMeters: 40, setCount: 3, to: block, context: context)
+                addMovementFunctionAccessoryPrescription(name: "Functional Bodybuilding — Trunk", movementFunction: .trunk, to: block, context: context)
+                return
+            default:
+                break // resistanceDominant never reached in the Strength allocator branch.
+            }
+        }
+
+        guard archetype == .functionalBodybuilding else {
+            // Every other archetype (and the pre-Round-2 recurring path,
+            // which never carries an archetype at all): exactly the
+            // original single-lift behavior, completely unchanged.
+            // `requiredPattern` is never actually non-nil on this path in
+            // practice (Part XV's override only ever accompanies
+            // `.functionalBodybuilding`/`.strengthPower`), included only
+            // for defensive consistency with every other branch above.
+            let pattern = requiredPattern ?? FunctionalBodybuildingPattern.allCases[(relativeWeek + sessionIndexInWeek) % FunctionalBodybuildingPattern.allCases.count]
+            addLoadedPatternPrescription(pattern: pattern, to: block, context: context)
+            return
+        }
+
+        // GENERAL PROGRAMMING ALLOCATION ARCHITECTURE V1 §13.C: a
+        // `.lowerFatigueComplementary`-family session's own "reduced
+        // systemic cost" comes from the MAIN BODY here — carry + trunk
+        // only (the two roles Section 13.C's own language names
+        // verbatim: "complementary patterns... carries... trunk"),
+        // never the two heavier loaded compound patterns — rather than
+        // from re-touching `stimulus.intensity`/`.systemicDemand`
+        // directly (`FunctionalFitnessPhaseBiasPolicy`'s own established,
+        // hard-won discipline: that path decouples Stage E's format/
+        // duration-domain pairing via the decision engine's same-week
+        // repair logic). Every other family (`.resistanceDominant`,
+        // `.mixedResistanceWorkCapacity`) keeps the full, original 4-role
+        // main body, completely unchanged.
+        if family == .lowerFatigueComplementary {
+            addDistanceAccessoryPrescription(name: "Functional Bodybuilding — Carry", movementFunction: .carry, targetDistanceMeters: 40, setCount: 3, to: block, context: context)
+            addMovementFunctionAccessoryPrescription(name: "Functional Bodybuilding — Trunk", movementFunction: .trunk, to: block, context: context)
+            return
+        }
+
+        // MUSCLE + 5FF FINAL CLOSURE, Section 5 (project-owner decision):
+        // "Carry/trunk roles are legitimate programming roles. They are
+        // NOT mandatory decorations for every Functional Fitness
+        // session... Only add them when the session responsibility/week
+        // requirements justify them." Previously EVERY resistanceDominant/
+        // mixedResistanceWorkCapacity session unconditionally appended a
+        // Carry + Trunk accessory pair here — since only one real catalog
+        // exercise (Farmer's Carry/Toes-to-Bar) satisfies each narrow
+        // role, this made both appear in every session of the week
+        // regardless of real programming need (the exact reported
+        // defect). The main body for these two families is now the real
+        // PRIMARY + COMPLEMENTARY LOADED MOVEMENT pair only — two solid
+        // compound lifts is a legitimate, complete resistance
+        // responsibility on its own; carry/trunk work remains a real,
+        // reachable role, but only for `.lowerFatigueComplementary`
+        // (handled by its own dedicated branch above), where it is the
+        // session's own deliberate, justified reduced-main-body shape —
+        // never appended here as a default.
+        let primaryPattern = requiredPattern ?? FunctionalBodybuildingPattern.allCases[(relativeWeek + sessionIndexInWeek) % FunctionalBodybuildingPattern.allCases.count]
+        let complementaryPattern = FunctionalBodybuildingPattern.allCases[(primaryPattern.rawValue + 2) % FunctionalBodybuildingPattern.allCases.count]
+        addLoadedPatternPrescription(pattern: primaryPattern, to: block, context: context)
+        addLoadedPatternPrescription(pattern: complementaryPattern, to: block, context: context)
+    }
+
+    /// SOURCE AUTHORITY REUSE IMPLEMENTATION (FF V2 corrected architecture),
+    /// Section 2/3/6: this role carries a genuine HYPERTROPHY_RESISTANCE
+    /// responsibility (Muscle-goal `.functionalBodybuilding` sessions, and
+    /// Strength's own `.mixedResistanceWorkCapacity` fallback, which
+    /// already deliberately borrowed this same function pre-this-change —
+    /// see that call site's own "the same real, moderate loaded-pattern
+    /// content Muscle Gain's own single-lift path already uses" comment).
+    /// The load rule and rep/RIR schedule now come DIRECTLY from
+    /// `HypertrophyProgramGenerator`'s own real, source-cited Basic
+    /// Hypertrophy policy — `primaryWeekOneFactor(for: .basicHypertrophy)`
+    /// (0.85, `SOURCE_PROGRAM_MANIFEST.md`'s `MROUND(10RM×0.85, ...)`
+    /// formula), `laterWeekMultipliers` ([1.05, 1.075, 1.1]), and
+    /// `repGoalSchedule` ([.rir(3), .rir(3), .rir(2), .rir(1)]) — a
+    /// reference to the SAME static source, never a copied literal, so a
+    /// future change to Hypertrophy's own authority automatically carries
+    /// here too. This REPLACES the prior, unsourced `weekOneFactor: 0.65`/
+    /// `laterWeekMultipliers: [1.0, 1.0, 1.0]`/`.fixedReps(10)` — verified
+    /// by direct source-workbook reconciliation to be unsourced and, for
+    /// this checkpoint's purposes, superseded by the real Hypertrophy
+    /// authority every other loaded-pattern role in this file now shares.
+    private static func addLoadedPatternPrescription(pattern: FunctionalBodybuildingPattern, to block: WorkoutBlockTemplate, context: ModelContext) {
         let template = PrescriptionTemplate(rules: StrengthProgressionRules(
-            loadRule: .rmBased(RMBasedLoad(rmType: .rm10, weekOneFactor: 0.65, laterWeekMultipliers: [1.0, 1.0, 1.0])),
+            loadRule: .rmBased(RMBasedLoad(
+                rmType: .rm10,
+                weekOneFactor: HypertrophyProgramGenerator.primaryWeekOneFactor(for: .basicHypertrophy),
+                laterWeekMultipliers: HypertrophyProgramGenerator.laterWeekMultipliers
+            )),
             setCountRule: .fixed(setsByWeek: [4, 4, 4, 4]),
-            repGoalSchedule: [.fixedReps(10)]
+            repGoalSchedule: HypertrophyProgramGenerator.repGoalSchedule
         ))
         context.insert(template)
         block.addPrescriptionTemplate(template)
 
-        let slot = ExerciseSlot(name: pattern.slotName, allowedTargets: pattern.allowedTargets)
+        let slot = ExerciseSlot(name: pattern.slotName, allowedTargets: pattern.allowedTargets, allowedMovementFunctions: pattern.allowedMovementFunctions)
+        context.insert(slot)
+        template.attachExerciseSlot(slot)
+    }
+
+    /// GENERIC STRENGTH PRESCRIPTION AUTHORITY V1, Sections 9-13: the real
+    /// weekly-allocator-assigned HIGH_LOAD_STRENGTH_EXPOSURE responsibility
+    /// — a real, moderate-rep-range loaded pattern (3-6 reps, 2-3 RIR),
+    /// distinct from both `.heavyStrength`'s 4x5 and `.powerAthletic`'s
+    /// 3x3, since this is a fallback covering a real weekly requirement
+    /// gap, not a family's own dedicated main body. Slot name prefixed
+    /// "Generic Strength" so callers (`ProgrammingValidator`, this
+    /// checkpoint's own tests) can distinguish it from every other
+    /// loaded-pattern slot without a new stored field.
+    private static func addGenericHighLoadStrengthPrescription(pattern: MovementFunction, to block: WorkoutBlockTemplate, context: ModelContext) {
+        let bodybuildingPattern: FunctionalBodybuildingPattern
+        switch pattern {
+        case .squatLoaded: bodybuildingPattern = .squat
+        case .hingeLoaded: bodybuildingPattern = .hinge
+        case .pressLoaded: bodybuildingPattern = .press
+        default: bodybuildingPattern = .pull
+        }
+        let template = PrescriptionTemplate(rules: StrengthProgressionRules(
+            loadRule: .rmBased(RMBasedLoad(
+                rmType: .rm1,
+                weekOneFactor: 0.8,
+                laterWeekMultipliers: HypertrophyProgramGenerator.laterWeekMultipliers
+            )),
+            setCountRule: .fixed(setsByWeek: [3, 3, 3, 3]),
+            repGoalSchedule: [RepGoal(prescription: .fixedReps(3), repRangeHigh: 6, targetRir: 2, targetRirHigh: 3)]
+        ))
+        context.insert(template)
+        block.addPrescriptionTemplate(template)
+
+        let slot = ExerciseSlot(
+            name: "Generic Strength — \(bodybuildingPattern.slotName.replacingOccurrences(of: "Functional Bodybuilding — ", with: ""))",
+            allowedTargets: bodybuildingPattern.allowedTargets, allowedMovementFunctions: bodybuildingPattern.allowedMovementFunctions
+        )
+        context.insert(slot)
+        template.attachExerciseSlot(slot)
+    }
+
+    /// Dogfood Round 2 Continuation (Finding J): a carry is load- and
+    /// distance-measured, never rep-measured.
+    private static func addDistanceAccessoryPrescription(
+        name: String, movementFunction: MovementFunction, targetDistanceMeters: Double, setCount: Int,
+        to block: WorkoutBlockTemplate, context: ModelContext
+    ) {
+        let template = PrescriptionTemplate(rules: StrengthProgressionRules(
+            loadRule: .none,
+            setCountRule: .fixed(setsByWeek: Array(repeating: setCount, count: 4)),
+            repGoalSchedule: []
+        ))
+        template.targetDistanceMeters = targetDistanceMeters
+        context.insert(template)
+        block.addPrescriptionTemplate(template)
+
+        let slot = ExerciseSlot(name: name, allowedMovementFunctions: [movementFunction])
+        context.insert(slot)
+        template.attachExerciseSlot(slot)
+    }
+
+    /// Trunk work: no real tested-RM basis, so no load rule is invented.
+    private static func addMovementFunctionAccessoryPrescription(
+        name: String, movementFunction: MovementFunction,
+        to block: WorkoutBlockTemplate, context: ModelContext
+    ) {
+        let template = PrescriptionTemplate(rules: StrengthProgressionRules(
+            loadRule: .none,
+            setCountRule: .fixed(setsByWeek: [3, 3, 3, 3]),
+            repGoalSchedule: [.fixedReps(15)]
+        ))
+        context.insert(template)
+        block.addPrescriptionTemplate(template)
+
+        let slot = ExerciseSlot(name: name, allowedMovementFunctions: [movementFunction])
         context.insert(slot)
         template.attachExerciseSlot(slot)
     }
