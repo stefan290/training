@@ -116,6 +116,14 @@ final class ExercisePrescription {
     /// additive execution-layer guidance sitting alongside it.
     var loadOverlayRecommendedWeight: Double?
 
+    /// Latest-result execution guidance, separate from the accepted plan.
+    /// Frozen when first shown; survives relaunch and never rewrites targets.
+    /// Exercise identity prevents reusing guidance after a substitution.
+    var executionLoadRecommendationWeight: Double?
+    var executionLoadRecommendationReasonCode: ProgressionReasonCode?
+    var executionLoadRecommendationExerciseID: UUID?
+    var executionLoadRecommendationExplanation: String?
+
     @Relationship(deleteRule: .cascade, inverse: \SetPrescription.exercisePrescription)
     var setPrescriptions: [SetPrescription] = []
 

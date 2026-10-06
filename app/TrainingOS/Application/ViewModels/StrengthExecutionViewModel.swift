@@ -78,6 +78,9 @@ final class StrengthExecutionViewModel {
         return ordered.indices.contains(currentSetIndex) ? ordered[currentSetIndex] : nil
     }
 
+    /// Result-driven FF/V2 guidance is resolved from current evidence
+    /// when a working movement opens, then durably frozen alongside its
+    /// original targets. Source-backed RM programs keep the overlay below.
     /// Stage 10R.5, D-10R5-18: the weight the execution UI should
     /// actually show/prefill — the source's own untouched
     /// `SetPrescription.targetWeight` in SOURCE mode or for any exposure
@@ -91,8 +94,11 @@ final class StrengthExecutionViewModel {
     /// recomputation drift); every subsequent read of the same exposure
     /// simply returns the already-frozen value. Never mutates
     /// `SetPrescription.targetWeight` itself.
-    func effectiveTargetWeight(modelContext: ModelContext) -> Double? {
+    func effectiveTargetWeight(modelContext: ModelContext, asOf: Date = Date()) -> Double? {
         guard let movement = currentMovement, let setPrescription = currentSetPrescription else { return nil }
+        if !setPrescription.isWarmup, let recommendation = latestResultWeight(for: movement, modelContext: modelContext, asOf: asOf) {
+            return recommendation
+        }
         guard let sourceWeight = setPrescription.targetWeight else { return nil }
 
         if let frozen = movement.loadOverlayRecommendedWeight { return frozen }
@@ -119,6 +125,100 @@ final class StrengthExecutionViewModel {
         movement.appliedLoadOverlayReasonCode = recommendation.reasonCode
         try? modelContext.save()
         return recommendation.finalWeight
+    }
+
+    var currentExecutionLoadExplanation: String? {
+        guard let movement = currentMovement,
+              movement.executionLoadRecommendationExerciseID == movement.exercise?.id,
+              !movement.readinessAdaptationDecisions.contains(where: { $0.userResponse == .accepted })
+        else { return nil }
+        return movement.executionLoadRecommendationExplanation
+    }
+
+    /// Resolve at execution entry, not while browsing the weekly plan.
+    /// The existing method policies remain distinct; only their latest
+    /// evidence is refreshed. Source-backed RM programs keep their overlay.
+    private func latestResultWeight(
+        for movement: ExercisePrescription, modelContext: ModelContext, asOf: Date
+    ) -> Double? {
+        guard let exercise = movement.exercise,
+              let session = movement.workoutBlock?.session,
+              let instance = session.programInstance,
+              let template = movement.sourcePrescriptionTemplate else { return nil }
+        guard !movement.readinessAdaptationDecisions.contains(where: { $0.userResponse == .accepted }) else { return nil }
+        if movement.executionLoadRecommendationExerciseID == exercise.id,
+           let frozen = movement.executionLoadRecommendationWeight { return frozen }
+        // Never introduce a new recommendation into an already-attempted
+        // movement or a historical session. Accepted readiness asks retain
+        // their own adapted targets.
+        guard movement.loggedSetResults.isEmpty,
+              session.status == .scheduled || session.status == .inProgress
+        else { return nil }
+        let ownerID = instance.ownerUserID
+        guard let owner = try? modelContext.fetch(FetchDescriptor<User>(predicate: #Predicate { $0.id == ownerID })).first else { return nil }
+        let weight: Double
+        let reason: ProgressionReasonCode
+        let explanation: String
+        if template.loadRuleKind == .doubleProgression {
+            let result = HypertrophyV2ProgressionEngine.resolveWeight(
+                exercise: exercise, performanceProfile: owner.performanceProfile,
+                equipmentIncrement: owner.profile?.equipmentIncrements[exercise.equipment] ?? 2.5
+            )
+            guard let resolved = result.weightKg else { return nil }
+            weight = resolved
+            reason = result.reasonCode
+            explanation = result.inputsSummary
+        } else if instance.programDefinition?.programmingSystem == .functionalFitness,
+                  let rules = template.rules, case .rmBased = rules.loadRule {
+            // The existing FF materializer does not yet exclude accepted
+            // readiness adaptations from history. Do not promote that
+            // evidence into new live guidance for the original ask.
+            let priorResults = owner.performanceProfile?.profile(for: exercise)?.orderedSetResults.filter {
+                $0.completedAt < asOf && $0.setPrescription?.isWarmup != true
+            } ?? []
+            if priorResults.last?.exercisePrescription?.readinessAdaptationDecisions.contains(where: { $0.userResponse == .accepted }) == true {
+                return nil
+            }
+            let result = ResistanceLoadEvidenceResolver.resolve(
+                exercise: exercise, rules: rules, performanceProfile: owner.performanceProfile,
+                instance: instance, userProfile: owner.profile, before: asOf
+            )
+            guard case .suggested(let resolved, let code) = result else { return nil }
+            switch code {
+            case .loadIncreasedOneEquipmentStep:
+                reason = .loadIncrease
+                explanation = "Your latest comparable performance exceeded its target. Suggested load increased by one equipment step."
+            case .loadReducedOneEquipmentStep:
+                reason = .loadDecrease
+                explanation = "Your latest comparable performance fell below its target. Suggested load reduced by one equipment step."
+            case .loadHeld:
+                reason = .hold
+                explanation = "Your latest comparable performance matched its target. Suggested load stays the same."
+            default: return nil // bootstrap is the existing prescription, not new evidence
+            }
+            weight = resolved
+        } else {
+            return nil
+        }
+        let previousWeight = movement.executionLoadRecommendationWeight
+        let previousReason = movement.executionLoadRecommendationReasonCode
+        let previousExerciseID = movement.executionLoadRecommendationExerciseID
+        let previousExplanation = movement.executionLoadRecommendationExplanation
+        movement.executionLoadRecommendationWeight = weight
+        movement.executionLoadRecommendationReasonCode = reason
+        movement.executionLoadRecommendationExerciseID = exercise.id
+        movement.executionLoadRecommendationExplanation = explanation
+        do {
+            try modelContext.save()
+            return weight
+        } catch {
+            // Do not display guidance as frozen if its snapshot was not saved.
+            movement.executionLoadRecommendationWeight = previousWeight
+            movement.executionLoadRecommendationReasonCode = previousReason
+            movement.executionLoadRecommendationExerciseID = previousExerciseID
+            movement.executionLoadRecommendationExplanation = previousExplanation
+            return nil
+        }
     }
 
     /// Deterministic from authoritative persisted state alone (Part I):
