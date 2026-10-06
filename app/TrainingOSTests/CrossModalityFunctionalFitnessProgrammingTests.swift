@@ -127,12 +127,22 @@ final class CrossModalityFunctionalFitnessProgrammingTests: XCTestCase {
 
         let focused = try XCTUnwrap(candidates.first { $0.mix.name == "Focused Hypertrophy" })
         XCTAssertEqual(focused.mix.orderedComponents.first { $0.label == "Hypertrophy" }?.adaptationObjectives, [.muscleGain])
-        XCTAssertEqual(focused.mix.orderedComponents.first { $0.label == "Zone 2 Conditioning" }?.adaptationObjectives, [.aerobicCapacity])
+        // MUSCLE VERTICAL SLICE REPAIR, Sections 2-3: "Focused Hypertrophy"
+        // is now Hypertrophy-only — the removed "Zone 2 Conditioning"
+        // component was the diagnosed hardcoded worked example, never
+        // subject to the same capability validation a user's own Custom
+        // Mix selection would be held to. See `muscleGainFocusedHypertrophyMix`.
+        XCTAssertEqual(focused.mix.orderedComponents.count, 1, "Focused Hypertrophy is now a single-system recommendation")
 
         let varied = try XCTUnwrap(candidates.first { $0.mix.name == "Strength Plus Variety" })
         XCTAssertEqual(varied.mix.orderedComponents.first { $0.label == "Strength" }?.adaptationObjectives, [.muscleGain])
         XCTAssertEqual(varied.mix.orderedComponents.first { $0.label == "Functional Fitness" }?.adaptationObjectives, [.workCapacity, .aerobicCapacity, .power], "the reference combination used throughout the CP.2 design doc, now a real PRODUCT DECISION, not illustrative")
-        XCTAssertEqual(varied.mix.orderedComponents.first { $0.label == "Running" }?.adaptationObjectives, [.aerobicCapacity])
+        // MUSCLE VERTICAL SLICE CONTINUATION (SCOPE DECISION): this
+        // component's real, `.steadyState`-backed system is unchanged —
+        // only its display label moved from the dishonest "Running"
+        // (falsely implying the real, restricted `.running` system) to
+        // "Easy Aerobic" (see `muscleGainVariedMix`).
+        XCTAssertEqual(varied.mix.orderedComponents.first { $0.label == "Easy Aerobic" }?.adaptationObjectives, [.aerobicCapacity])
     }
 
     func testFocusedFunctionalFitnessGetsTheBroadGPPObjectiveSetExcludingUnmappedOnes() throws {

@@ -18,6 +18,15 @@ import SwiftData
 struct ReadinessGateFlow: View {
     let session: Session
     let onFinished: () -> Void
+    /// Dogfood Round 2 (Finding G): this whole gate is presented via a
+    /// `fullScreenCover`, which — unlike a `.sheet` — has no free system
+    /// swipe-to-dismiss gesture. Every one of the 3 steps below used to
+    /// have no way out at all: the athlete could only ever move forward,
+    /// never back out of a workout they hadn't started yet. `onCancel`
+    /// leaves the Session exactly as it was (still `.scheduled` —
+    /// `StartSessionUseCase` never having run), never a partial/aborted
+    /// state, since nothing here has mutated the Session itself yet.
+    let onCancel: () -> Void
 
     @Environment(\.modelContext) private var modelContext
     @State private var proposal: ReadinessAdaptationProposal?
@@ -25,16 +34,23 @@ struct ReadinessGateFlow: View {
     @State private var warmupSequence: WarmupSequence?
 
     var body: some View {
-        Group {
-            if let warmupSequence {
-                WarmupView(sequence: warmupSequence, onDone: onFinished)
-            } else if let proposal, let recordedCheckIn, !proposal.isEmpty {
-                ReadinessAdaptationProposalView(
-                    session: session, checkIn: recordedCheckIn, proposal: proposal,
-                    onDone: { proceedToWarmup(checkIn: recordedCheckIn) }
-                )
-            } else {
-                ReadinessCheckInView(session: session, onSubmit: handleSubmit)
+        NavigationStack {
+            Group {
+                if let warmupSequence {
+                    WarmupView(sequence: warmupSequence, onDone: onFinished)
+                } else if let proposal, let recordedCheckIn, !proposal.isEmpty {
+                    ReadinessAdaptationProposalView(
+                        session: session, checkIn: recordedCheckIn, proposal: proposal,
+                        onDone: { proceedToWarmup(checkIn: recordedCheckIn) }
+                    )
+                } else {
+                    ReadinessCheckInView(session: session, onSubmit: handleSubmit)
+                }
+            }
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel", action: onCancel)
+                }
             }
         }
     }

@@ -1,0 +1,151 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild test-without-building -scheme TrainingOS -destination "platform=iOS Simulator,name=iPhone 17" "-only-testing:TrainingOSTests/AdvanceTacticalWeekCapabilityWiringTests" "-only-testing:TrainingOSTests/MixedModalityTacticalAtomicityTests" "-only-testing:TrainingOSTests/MovementCapabilityCollectionTests" "-only-testing:TrainingOSTests/DogfoodRound2CompletionTests"
+
+Test Suite 'Selected tests' started at 2026-10-02 10:34:59.556.
+Test Suite 'TrainingOSTests.xctest' started at 2026-10-02 10:34:59.556.
+Test Suite 'AdvanceTacticalWeekCapabilityWiringTests' started at 2026-10-02 10:34:59.556.
+Test Case '-[TrainingOSTests.AdvanceTacticalWeekCapabilityWiringTests testAdvancementUsesTheProgramOwnersEvidenceNeverASecondUsersEvidence]' started.
+2026-10-02 10:34:59.873836+0200 TrainingOS[31749:76239476] [ModelContext] Illegal attempt to insert a model in to a different model context. Model PersistentIdentifier(id: SwiftData.PersistentIdentifier.ID(backing: SwiftData.PersistentIdentifier.PersistentIdentifierBacking.managedObjectID(0x980ef19cc1b06ec1 <x-coredata://BA0C7B3B-1B57-4141-87D0-87313762F5EC/Exercise/p41>))) is already bound to SwiftData.ModelContext but insert was called on SwiftData.ModelContext
+2026-10-02 10:34:59.878337+0200 TrainingOS[31749:76239476] [ModelContext] Illegal attempt to insert a model in to a different model context. Model PersistentIdentifier(id: SwiftData.PersistentIdentifier.ID(backing: SwiftData.PersistentIdentifier.PersistentIdentifierBacking.managedObjectID(0x980ef19cc6f06ec1 <x-coredata://BA0C7B3B-1B57-4141-87D0-87313762F5EC/Exercise/p19>))) is already bound to SwiftData.ModelContext but insert was called on SwiftData.ModelContext
+Test Case '-[TrainingOSTests.AdvanceTacticalWeekCapabilityWiringTests testAdvancementUsesTheProgramOwnersEvidenceNeverASecondUsersEvidence]' passed (0.342 seconds).
+Test Case '-[TrainingOSTests.AdvanceTacticalWeekCapabilityWiringTests testAdvanceTacticalWeekUsesOwnersCapabilityAfterReloadingInAFreshContext]' started.
+2026-10-02 10:35:00.085093+0200 TrainingOS[31749:76239476] [ModelContext] Illegal attempt to insert a model in to a different model context. Model PersistentIdentifier(id: SwiftData.PersistentIdentifier.ID(backing: SwiftData.PersistentIdentifier.PersistentIdentifierBacking.managedObjectID(0x980ef19cc5d06c31 <x-coredata://A9699E6D-FEF6-4FDB-90C7-9ED317279332/Exercise/p10>))) is already bound to SwiftData.ModelContext but insert was called on SwiftData.ModelContext
+2026-10-02 10:35:00.088151+0200 TrainingOS[31749:76239476] [ModelContext] Illegal attempt to insert a model in to a different model context. Model PersistentIdentifier(id: SwiftData.PersistentIdentifier.ID(backing: SwiftData.PersistentIdentifier.PersistentIdentifierBacking.managedObjectID(0x980ef19cc0906c31 <x-coredata://A9699E6D-FEF6-4FDB-90C7-9ED317279332/Exercise/p32>))) is already bound to SwiftData.ModelContext but insert was called on SwiftData.ModelContext
+Test Case '-[TrainingOSTests.AdvanceTacticalWeekCapabilityWiringTests testAdvanceTacticalWeekUsesOwnersCapabilityAfterReloadingInAFreshContext]' passed (0.207 seconds).
+Test Case '-[TrainingOSTests.AdvanceTacticalWeekCapabilityWiringTests testAdvanceTacticalWeekUsesOwnersPersistedCapabilityEvidence]' started.
+2026-10-02 10:35:00.299094+0200 TrainingOS[31749:76239476] [ModelContext] Illegal attempt to insert a model in to a different model context. Model PersistentIdentifier(id: SwiftData.PersistentIdentifier.ID(backing: SwiftData.PersistentIdentifier.PersistentIdentifierBacking.managedObjectID(0x980ef19cc2706a21 <x-coredata://4A908A4E-FE82-46A0-A8E5-7C7C2666F30C/Exercise/p55>))) is already bound to SwiftData.ModelContext but insert was called on SwiftData.ModelContext
+2026-10-02 10:35:00.302250+0200 TrainingOS[31749:76239476] [ModelContext] Illegal attempt to insert a model in to a different model context. Model PersistentIdentifier(id: SwiftData.PersistentIdentifier.ID(backing: SwiftData.PersistentIdentifier.PersistentIdentifierBacking.managedObjectID(0x980ef19cc7506a21 <x-coredata://4A908A4E-FE82-46A0-A8E5-7C7C2666F30C/Exercise/p30>))) is already bound to SwiftData.ModelContext but insert was called on SwiftData.ModelContext
+C1 TRACE: owner=F8856704-69C1-43A7-822F-EBCD0FE527CF ttbCapacity=7 pullUpCapacity=5 hspuCapacity=3
+C1 TRACE: oldSessionIDs=["2879F8CB-7322-4B0F-B066-D47A2A7E08E8", "3312F594-6DC3-4A27-9918-D11ED8A14310", "7E36A049-B79E-4AD4-95D7-4FF8906293B8", "7F2BFCE3-1934-4AB3-B369-75EB7C3B7D18", "9F02D49D-7FE5-44FA-96D6-EE55554D83BF"]
+C1 TRACE: newSessionIDs=["2BD13228-0C69-4ED2-BB98-4AA11A134C6B", "6EC5CCFF-36B7-4B7D-8312-BB4171FB5235", "87CC5257-167D-462D-A26D-F9683112F7BA", "99C70BA7-E56E-4B68-AD60-FF0C6B15C11F", "9EF9D794-77CA-4B36-92E7-39F22DBAF54B"]
+C1 TRACE: ttbPrescribedReps=[(Optional(3), Optional(3)), (Optional(3), Optional(3)), (Optional(3), Optional(3))]
+Test Case '-[TrainingOSTests.AdvanceTacticalWeekCapabilityWiringTests testAdvanceTacticalWeekUsesOwnersPersistedCapabilityEvidence]' passed (0.224 seconds).
+Test Case '-[TrainingOSTests.AdvanceTacticalWeekCapabilityWiringTests testRepeatedImmediateAdvancementCreatesNoAdditionalWeek]' started.
+2026-10-02 10:35:00.498962+0200 TrainingOS[31749:76239476] [ModelContext] Illegal attempt to insert a model in to a different model context. Model PersistentIdentifier(id: SwiftData.PersistentIdentifier.ID(backing: SwiftData.PersistentIdentifier.PersistentIdentifierBacking.managedObjectID(0x980ef19cc4f06861 <x-coredata://9BC46865-CDFC-4EDB-9600-5CA24D545C1C/Exercise/p3>))) is already bound to SwiftData.ModelContext but insert was called on SwiftData.ModelContext
+2026-10-02 10:35:00.501975+0200 TrainingOS[31749:76239476] [ModelContext] Illegal attempt to insert a model in to a different model context. Model PersistentIdentifier(id: SwiftData.PersistentIdentifier.ID(backing: SwiftData.PersistentIdentifier.PersistentIdentifierBacking.managedObjectID(0x980ef19cc3306861 <x-coredata://9BC46865-CDFC-4EDB-9600-5CA24D545C1C/Exercise/p61>))) is already bound to SwiftData.ModelContext but insert was called on SwiftData.ModelContext
+Test Case '-[TrainingOSTests.AdvanceTacticalWeekCapabilityWiringTests testRepeatedImmediateAdvancementCreatesNoAdditionalWeek]' passed (0.190 seconds).
+Test Suite 'AdvanceTacticalWeekCapabilityWiringTests' passed at 2026-10-02 10:35:00.521.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.964 (0.965) seconds
+Test Suite 'DogfoodRound2CompletionTests' started at 2026-10-02 10:35:00.521.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testAcceptanceJourney_BuildMuscleFourHypertrophyOneFunctionalFitness]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testAcceptanceJourney_BuildMuscleFourHypertrophyOneFunctionalFitness]' passed (0.315 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testCorrection1_ExactlyFourWeekdaysSelectedPersistExactly]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testCorrection1_ExactlyFourWeekdaysSelectedPersistExactly]' passed (0.033 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testCorrection1_FourWeekdaysWithFiveRequiredSessionsConsequenceAndHistoryPreservation]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testCorrection1_FourWeekdaysWithFiveRequiredSessionsConsequenceAndHistoryPreservation]' passed (0.314 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testCorrection1_SelectedWeekdaysReachSchedulerAndUnavailableWeekdaysAreNeverUsed]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testCorrection1_SelectedWeekdaysReachSchedulerAndUnavailableWeekdaysAreNeverUsed]' passed (0.338 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding1_AdvanceTacticalWeekRespectsRealGoalPreferencesAllowsDoubleSessions]' started.
+2026-10-02 10:35:01.946120+0200 TrainingOS[31749:76239476] [ModelContext] Illegal attempt to insert a model in to a different model context. Model PersistentIdentifier(id: SwiftData.PersistentIdentifier.ID(backing: SwiftData.PersistentIdentifier.PersistentIdentifierBacking.managedObjectID(0x980ef19cc5b07ff1 <x-coredata://25C28305-ED3B-46B9-B1F2-3B84BEFB0B65/Exercise/p9>))) is already bound to SwiftData.ModelContext but insert was called on SwiftData.ModelContext
+2026-10-02 10:35:01.946539+0200 TrainingOS[31749:76239476] [ModelContext] Illegal attempt to insert a model in to a different model context. Model PersistentIdentifier(id: SwiftData.PersistentIdentifier.ID(backing: SwiftData.PersistentIdentifier.PersistentIdentifierBacking.managedObjectID(0x980ef19cc6f07ff1 <x-coredata://25C28305-ED3B-46B9-B1F2-3B84BEFB0B65/Exercise/p19>))) is already bound to SwiftData.ModelContext but insert was called on SwiftData.ModelContext
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding1_AdvanceTacticalWeekRespectsRealGoalPreferencesAllowsDoubleSessions]' passed (0.457 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding1_EvaluateConsequence_ExceedsCapacityEvenWithDoubles]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding1_EvaluateConsequence_ExceedsCapacityEvenWithDoubles]' passed (0.019 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding1_EvaluateConsequence_FitsAsIs]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding1_EvaluateConsequence_FitsAsIs]' passed (0.019 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding1_EvaluateConsequence_RequiresDoubleSessions]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding1_EvaluateConsequence_RequiresDoubleSessions]' passed (0.019 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding1_LegacyDayCountAloneNeverInfersSpecificWeekdays]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding1_LegacyDayCountAloneNeverInfersSpecificWeekdays]' passed (0.032 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding1_SaveOnlyEverPersistsGoalPreferencesNeverDuplicateStorage]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding1_SaveOnlyEverPersistsGoalPreferencesNeverDuplicateStorage]' passed (0.035 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding1_SaveRefusesAnEmptyWeekdaySelection]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding1_SaveRefusesAnEmptyWeekdaySelection]' passed (0.031 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding1_TrainingPreferencesViewModelLoadsRealPersistedValues]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding1_TrainingPreferencesViewModelLoadsRealPersistedValues]' passed (0.034 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding2_RollForwardNormalizesAsOfSoDayDatesAreMidnightAndNeverDoubleUp]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding2_RollForwardNormalizesAsOfSoDayDatesAreMidnightAndNeverDoubleUp]' passed (0.323 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding3_FFStrengthSlotResolvesARealExerciseThroughStartPhaseUseCase]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding3_FFStrengthSlotResolvesARealExerciseThroughStartPhaseUseCase]' passed (0.296 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding3_NoStrengthCandidatesMeansTheBlockIsAbsentNeverEmpty]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding3_NoStrengthCandidatesMeansTheBlockIsAbsentNeverEmpty]' passed (0.034 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding4_BiasIsKeyedOnPhaseTypeNeverGoalString]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding4_BiasIsKeyedOnPhaseTypeNeverGoalString]' passed (0.019 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding4_ComposerPrefersLoadedFunctionsForFunctionalBodybuildingArchetype]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding4_ComposerPrefersLoadedFunctionsForFunctionalBodybuildingArchetype]' passed (0.019 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding4_ConditioningFillRemainsAvailableAsSafeFallbackForFunctionalBodybuildingArchetype]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding4_ConditioningFillRemainsAvailableAsSafeFallbackForFunctionalBodybuildingArchetype]' passed (0.019 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding4_FunctionalFitnessPerformancePhaseRemainsUnbiased]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding4_FunctionalFitnessPerformancePhaseRemainsUnbiased]' passed (0.019 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding4_MuscleGainArchetypeIsFunctionalBodybuilding]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding4_MuscleGainArchetypeIsFunctionalBodybuilding]' passed (0.019 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding4_PresentationLabelsReflectRealArchetype]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding4_PresentationLabelsReflectRealArchetype]' passed (0.019 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding4_RecoveryArchetypeUnchangedFromRound1]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding4_RecoveryArchetypeUnchangedFromRound1]' passed (0.019 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding4_StrengthArchetypeIsDistinctFromMuscleGain]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding4_StrengthArchetypeIsDistinctFromMuscleGain]' passed (0.019 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding4_UnbiasedArchetypeFallsBackToGenericLabels]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding4_UnbiasedArchetypeFallsBackToGenericLabels]' passed (0.019 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding4_UnbiasedArchetypeReproducesExactPriorComposerBehavior]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding4_UnbiasedArchetypeReproducesExactPriorComposerBehavior]' passed (0.019 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFindingE_ConditioningRoleCountReducedForFunctionalBodybuildingArchetype]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFindingE_ConditioningRoleCountReducedForFunctionalBodybuildingArchetype]' passed (0.019 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFindingE_MainBodyRoleRespectsEnvironmentFiltering]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFindingE_MainBodyRoleRespectsEnvironmentFiltering]' passed (0.022 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFindingE_MainBodyRoleWithNoRealCandidateIsAbsentButOtherRolesStillMaterialize]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFindingE_MainBodyRoleWithNoRealCandidateIsAbsentButOtherRolesStillMaterialize]' passed (0.032 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFindingE_MuscleGainMainBodyHasMultipleDistinctRealMovements]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFindingE_MuscleGainMainBodyHasMultipleDistinctRealMovements]' passed (0.300 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFindingK_MuscleGainConditioningFormatMatchesActualShortContentAcrossAllFourWeeks]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFindingK_MuscleGainConditioningFormatMatchesActualShortContentAcrossAllFourWeeks]' passed (0.038 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFindingL_LoadedPatternRoleCorrectlyEntersExistingCalibrationLifecycle]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFindingL_LoadedPatternRoleCorrectlyEntersExistingCalibrationLifecycle]' passed (0.042 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFindingP_MuscleGainConditioningUsesARealRepeatableRoundNeverASingleMovementAMRAP]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFindingP_MuscleGainConditioningUsesARealRepeatableRoundNeverASingleMovementAMRAP]' passed (0.019 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFindingP_SingleIntervalWithNoRestNeverProducesAPhantomRecoveryPhase]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFindingP_SingleIntervalWithNoRestNeverProducesAPhantomRecoveryPhase]' passed (0.019 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFindingQ_AllCalibrationsResolveIntoRealReachableSetExecutionNeverALoop]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFindingQ_AllCalibrationsResolveIntoRealReachableSetExecutionNeverALoop]' passed (0.108 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testProgrammingModelCorrection_MuscleGainLoadedConditioningRoleReceivesRealLoadGuidanceUnderAMRAP]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testProgrammingModelCorrection_MuscleGainLoadedConditioningRoleReceivesRealLoadGuidanceUnderAMRAP]' passed (0.032 seconds).
+Test Suite 'DogfoodRound2CompletionTests' passed at 2026-10-02 10:35:03.646.
+	 Executed 35 tests, with 0 failures (0 unexpected) in 3.118 (3.125) seconds
+Test Suite 'MixedModalityTacticalAtomicityTests' started at 2026-10-02 10:35:03.646.
+Test Case '-[TrainingOSTests.MixedModalityTacticalAtomicityTests testAdvanceStillUsesExactlyTheCallerSuppliedEquipmentProfileNoNewInferenceIntroduced]' started.
+Test Case '-[TrainingOSTests.MixedModalityTacticalAtomicityTests testAdvanceStillUsesExactlyTheCallerSuppliedEquipmentProfileNoNewInferenceIntroduced]' passed (0.118 seconds).
+Test Case '-[TrainingOSTests.MixedModalityTacticalAtomicityTests testFunctionalFitnessExposureHistoryIsRealAndGatesCorrectly]' started.
+Test Case '-[TrainingOSTests.MixedModalityTacticalAtomicityTests testFunctionalFitnessExposureHistoryIsRealAndGatesCorrectly]' passed (0.042 seconds).
+Test Case '-[TrainingOSTests.MixedModalityTacticalAtomicityTests testInitialMaterializationUsesTheSameFunctionalFitnessAndIntervalPolicyAsRollForward]' started.
+Test Case '-[TrainingOSTests.MixedModalityTacticalAtomicityTests testInitialMaterializationUsesTheSameFunctionalFitnessAndIntervalPolicyAsRollForward]' passed (0.024 seconds).
+Test Case '-[TrainingOSTests.MixedModalityTacticalAtomicityTests testIntervalWeekContextEmptyAtWeekZeroAndRealAtWeekOnePlus]' started.
+Test Case '-[TrainingOSTests.MixedModalityTacticalAtomicityTests testIntervalWeekContextEmptyAtWeekZeroAndRealAtWeekOnePlus]' passed (0.044 seconds).
+Test Case '-[TrainingOSTests.MixedModalityTacticalAtomicityTests testPreflightBlocksFunctionalFitnessAdvanceBeforeAnyComponentIsMutated]' started.
+Test Case '-[TrainingOSTests.MixedModalityTacticalAtomicityTests testPreflightBlocksFunctionalFitnessAdvanceBeforeAnyComponentIsMutated]' passed (0.065 seconds).
+Test Case '-[TrainingOSTests.MixedModalityTacticalAtomicityTests testPreflightBlocksIntervalAdvanceBeforeAnyComponentIsMutated]' started.
+Test Case '-[TrainingOSTests.MixedModalityTacticalAtomicityTests testPreflightBlocksIntervalAdvanceBeforeAnyComponentIsMutated]' passed (0.064 seconds).
+Test Case '-[TrainingOSTests.MixedModalityTacticalAtomicityTests testSuccessfulAdvanceRollsHypertrophyAndFunctionalFitnessTogetherInOneCall]' started.
+Test Case '-[TrainingOSTests.MixedModalityTacticalAtomicityTests testSuccessfulAdvanceRollsHypertrophyAndFunctionalFitnessTogetherInOneCall]' passed (0.121 seconds).
+Test Case '-[TrainingOSTests.MixedModalityTacticalAtomicityTests testUnrelatedPendingMutationSurvivesAndRetryAfterFixingBlockerAdvancesExactlyOnceForEveryComponent]' started.
+Test Case '-[TrainingOSTests.MixedModalityTacticalAtomicityTests testUnrelatedPendingMutationSurvivesAndRetryAfterFixingBlockerAdvancesExactlyOnceForEveryComponent]' passed (0.155 seconds).
+Test Suite 'MixedModalityTacticalAtomicityTests' passed at 2026-10-02 10:35:04.281.
+	 Executed 8 tests, with 0 failures (0 unexpected) in 0.633 (0.635) seconds
+Test Suite 'MovementCapabilityCollectionTests' started at 2026-10-02 10:35:04.281.
+Test Case '-[TrainingOSTests.MovementCapabilityCollectionTests testRecordCreatesARealPersistedCapabilityRow]' started.
+Test Case '-[TrainingOSTests.MovementCapabilityCollectionTests testRecordCreatesARealPersistedCapabilityRow]' passed (0.036 seconds).
+Test Case '-[TrainingOSTests.MovementCapabilityCollectionTests testRecordedCapacityIsTheSameDataTechnicalCapacityDoseAuthorityReads]' started.
+Test Case '-[TrainingOSTests.MovementCapabilityCollectionTests testRecordedCapacityIsTheSameDataTechnicalCapacityDoseAuthorityReads]' passed (0.035 seconds).
+Test Case '-[TrainingOSTests.MovementCapabilityCollectionTests testRecordTwiceUpdatesInPlaceNeverDuplicates]' started.
+Test Case '-[TrainingOSTests.MovementCapabilityCollectionTests testRecordTwiceUpdatesInPlaceNeverDuplicates]' passed (0.035 seconds).
+Test Case '-[TrainingOSTests.MovementCapabilityCollectionTests testUnreadyRowPersistsAsUnknownNeverAGuessedProficiency]' started.
+Test Case '-[TrainingOSTests.MovementCapabilityCollectionTests testUnreadyRowPersistsAsUnknownNeverAGuessedProficiency]' passed (0.041 seconds).
+Test Case '-[TrainingOSTests.MovementCapabilityCollectionTests testViewModelLoadsExactlyTheThreeGatedMovements]' started.
+Test Case '-[TrainingOSTests.MovementCapabilityCollectionTests testViewModelLoadsExactlyTheThreeGatedMovements]' passed (0.034 seconds).
+Test Case '-[TrainingOSTests.MovementCapabilityCollectionTests testViewModelSaveThenReloadRoundTripsRealPersistedState]' started.
+Test Case '-[TrainingOSTests.MovementCapabilityCollectionTests testViewModelSaveThenReloadRoundTripsRealPersistedState]' passed (0.045 seconds).
+Test Suite 'MovementCapabilityCollectionTests' passed at 2026-10-02 10:35:04.509.
+	 Executed 6 tests, with 0 failures (0 unexpected) in 0.227 (0.228) seconds
+Test Suite 'TrainingOSTests.xctest' passed at 2026-10-02 10:35:04.509.
+	 Executed 53 tests, with 0 failures (0 unexpected) in 4.942 (4.953) seconds
+Test Suite 'Selected tests' passed at 2026-10-02 10:35:04.509.
+	 Executed 53 tests, with 0 failures (0 unexpected) in 4.942 (4.953) seconds
+2026-10-02 10:35:04.811 xcodebuild[31740:76239251] [MT] IDETestOperationsObserverDebug: 6.935 elapsed -- Testing started completed.
+2026-10-02 10:35:04.811 xcodebuild[31740:76239251] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-02 10:35:04.811 xcodebuild[31740:76239251] [MT] IDETestOperationsObserverDebug: 6.935 sec, +6.935 sec -- end
+
+Test session results, code coverage, and logs:
+	/Users/stefankedling/Library/Developer/Xcode/DerivedData/TrainingOS-heqapafjeoqodgdjjypjihjvfkbc/Logs/Test/Test-TrainingOS-2026.10.02_10-34-57-+0200.xcresult
+
+** TEST EXECUTE SUCCEEDED **
+
+Testing started

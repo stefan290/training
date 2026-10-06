@@ -1,7 +1,16 @@
 import Foundation
 
-/// FF Multi-Week V1: the TrainingOS-authored 4-week `weeklyPlan` content
-/// for each of the 3 supported frequencies (1/2/3 sessions per week).
+/// FF Multi-Week V1 / FUNCTIONAL FITNESS PROGRAMMING AUTHORITY V1 (Part V):
+/// the TrainingOS-authored 4-week `weeklyPlan` content for each of the 5
+/// supported frequencies (1-5 sessions per week). 4/5 sessions/week are
+/// real, authored V1 frequencies — not a generic fallback — mirroring the
+/// exact same authoring rigor (real variance, real format/domain/scoreType
+/// agreement) as 1/2/3. This base content is what a plain, non-goal-biased
+/// `.functionalFitness` phase materializes directly; for a Muscle/
+/// Strength/Conditioning goal phase, `FunctionalFitnessPhaseBiasPolicy`
+/// overrides format/stimulus per-session using `FunctionalFitnessRequirementAllocator
+/// .sessionFamily`, so this file's own per-slot role design (below) need
+/// not — and does not — reproduce that goal-specific sequencing.
 ///
 /// **This is authored programming, not recovered source** — unlike
 /// Hypertrophy/Powerlifting/Running, there is no workbook to reproduce.
@@ -463,14 +472,635 @@ enum FunctionalFitnessAuthoredProgramLibrary {
         ),
     ]
 
+    // MARK: - 4 sessions/week: 2 structured (strength+conditioning) days
+    // with distinct loaded patterns, 1 skill day (gymnastics-emphasis), 1
+    // aerobic-capacity day (long, monostructural-heavy, no strength block)
+    // — 4 distinct roles every week, both structured days varied from
+    // each other and from week to week.
+
+    static let fourSessionsPerWeek: [FunctionalFitnessSessionIntent] = [
+        // Week 1
+        FunctionalFitnessSessionIntent(
+            relativeWeek: 0, sessionIndexInWeek: 0,
+            stimulus: Stimulus(
+                targetDurationDomain: .medium, intensity: .moderate, loading: .heavy,
+                movementFunctions: [.squatLoaded, .pressLoaded],
+                movementModalityMix: [
+                    ModalityCount(modality: .weightlifting, count: 1),
+                    ModalityCount(modality: .gymnastics, count: 1),
+                    ModalityCount(modality: .metabolicConditioning, count: 1),
+                ],
+                skillDemand: .low, systemicDemand: .low, scoreType: .load
+            ),
+            format: .maxLoad, // no cap
+            includeStrengthBlock: false, varianceConstraints: standardVariance, sessionRole: .mixed
+        ),
+        // PROGRAMMING MODEL CORRECTION (see `fiveSessionsPerWeek`'s
+        // identical, real, reproduced fix): session index 1 is
+        // deliberately the real, genuinely-easy LONG aerobic session —
+        // not the skill day — placed right after the always-first,
+        // always-immune index 0 so `FunctionalFitnessDecisionEngine
+        // .adjustForSameWeekComplementarity`'s own same-week nudge sees
+        // `.aerobicCapacity` served EARLY, before any later fixed-format
+        // slot could be silently nudged toward a domain its own locked
+        // format can't satisfy. Index 1's base content is irrelevant to
+        // every goal-aware bias path (Muscle → `.resistanceDominant`
+        // disables conditioning; Strength → `.heavyStrength` disables it
+        // too; Conditioning → `.mediumMixedModal` overrides format
+        // regardless) — only the plain, non-goal-biased case needs this.
+        FunctionalFitnessSessionIntent(
+            relativeWeek: 0, sessionIndexInWeek: 1,
+            stimulus: Stimulus(
+                targetDurationDomain: .long, intensity: .low, loading: .bodyweightOnly,
+                movementFunctions: [.monostructural],
+                movementModalityMix: [
+                    ModalityCount(modality: .weightlifting, count: 1),
+                    ModalityCount(modality: .gymnastics, count: 1),
+                    ModalityCount(modality: .metabolicConditioning, count: 1),
+                ],
+                skillDemand: .low, systemicDemand: .moderate, scoreType: .time
+            ),
+            format: .forTime(capSeconds: 1800), // long
+            includeStrengthBlock: false, varianceConstraints: standardVariance, sessionRole: .aerobicBase
+        ),
+        FunctionalFitnessSessionIntent(
+            relativeWeek: 0, sessionIndexInWeek: 2,
+            stimulus: Stimulus(
+                targetDurationDomain: .medium, intensity: .high, loading: .light,
+                movementFunctions: [.monostructural, .hingeLoaded],
+                movementModalityMix: [
+                    ModalityCount(modality: .weightlifting, count: 1),
+                    ModalityCount(modality: .gymnastics, count: 1),
+                    ModalityCount(modality: .metabolicConditioning, count: 1),
+                ],
+                skillDemand: .low, systemicDemand: .high, scoreType: .roundsAndReps
+            ),
+            format: .amrap(capSeconds: 600), // medium (300-900s)
+            includeStrengthBlock: false, varianceConstraints: standardVariance, sessionRole: .functionalFitness
+        ),
+        FunctionalFitnessSessionIntent(
+            relativeWeek: 0, sessionIndexInWeek: 3,
+            stimulus: Stimulus(
+                targetDurationDomain: .short, intensity: .moderate, loading: .bodyweightOnly,
+                movementFunctions: [.gymnasticsPull, .gymnasticsPush],
+                movementModalityMix: [
+                    ModalityCount(modality: .weightlifting, count: 1),
+                    ModalityCount(modality: .gymnastics, count: 1),
+                    ModalityCount(modality: .metabolicConditioning, count: 1),
+                ],
+                skillDemand: .high, systemicDemand: .high, scoreType: .completedIntervals
+            ),
+            format: .emom(intervalSeconds: 60, totalSeconds: 240), // short
+            includeStrengthBlock: false, varianceConstraints: standardVariance, sessionRole: .skill
+        ),
+        // Week 2
+        FunctionalFitnessSessionIntent(
+            relativeWeek: 1, sessionIndexInWeek: 0,
+            stimulus: Stimulus(
+                targetDurationDomain: .medium, intensity: .moderate, loading: .moderate,
+                movementFunctions: [.hingeLoaded, .squatLoaded],
+                movementModalityMix: [
+                    ModalityCount(modality: .weightlifting, count: 1),
+                    ModalityCount(modality: .gymnastics, count: 1),
+                    ModalityCount(modality: .metabolicConditioning, count: 1),
+                ],
+                skillDemand: .low, systemicDemand: .low, scoreType: .time
+            ),
+            format: .roundsForTime(rounds: 5, capSeconds: 600), // medium (300-900s), avoids a stored-nil optional associated value
+            includeStrengthBlock: false, varianceConstraints: standardVariance, sessionRole: .mixed
+        ),
+        // See week 1's own index-1 doc comment: real, genuinely-easy LONG
+        // aerobic content, placed right after the always-first, always-
+        // immune index 0.
+        FunctionalFitnessSessionIntent(
+            relativeWeek: 1, sessionIndexInWeek: 1,
+            stimulus: Stimulus(
+                targetDurationDomain: .long, intensity: .moderate, loading: .light,
+                movementFunctions: [.monostructural, .hingeLoaded],
+                movementModalityMix: [
+                    ModalityCount(modality: .weightlifting, count: 1),
+                    ModalityCount(modality: .gymnastics, count: 1),
+                    ModalityCount(modality: .metabolicConditioning, count: 1),
+                ],
+                skillDemand: .low, systemicDemand: .high, scoreType: .completedIntervals
+            ),
+            format: .intervals(count: 6, workSeconds: 180, restSeconds: 60), // 6*240=1440s, long
+            includeStrengthBlock: false, varianceConstraints: standardVariance, sessionRole: .aerobicBase
+        ),
+        FunctionalFitnessSessionIntent(
+            relativeWeek: 1, sessionIndexInWeek: 2,
+            stimulus: Stimulus(
+                targetDurationDomain: .short, intensity: .high, loading: .light,
+                movementFunctions: [.gymnasticsPull, .monostructural],
+                movementModalityMix: [
+                    ModalityCount(modality: .weightlifting, count: 1),
+                    ModalityCount(modality: .gymnastics, count: 1),
+                    ModalityCount(modality: .metabolicConditioning, count: 1),
+                ],
+                skillDemand: .moderate, systemicDemand: .high, scoreType: .roundsAndReps
+            ),
+            format: .amrap(capSeconds: 240), // short
+            includeStrengthBlock: false, varianceConstraints: standardVariance, sessionRole: .functionalFitness
+        ),
+        FunctionalFitnessSessionIntent(
+            relativeWeek: 1, sessionIndexInWeek: 3,
+            stimulus: Stimulus(
+                targetDurationDomain: .medium, intensity: .moderate, loading: .light,
+                movementFunctions: [.gymnasticsPush, .monostructural],
+                movementModalityMix: [
+                    ModalityCount(modality: .weightlifting, count: 1),
+                    ModalityCount(modality: .gymnastics, count: 1),
+                    ModalityCount(modality: .metabolicConditioning, count: 1),
+                ],
+                skillDemand: .high, systemicDemand: .high, scoreType: .time
+            ),
+            format: .roundsForTime(rounds: 4, capSeconds: 720), // medium (300-900s)
+            includeStrengthBlock: false, varianceConstraints: standardVariance, sessionRole: .skill
+        ),
+        // Week 3
+        FunctionalFitnessSessionIntent(
+            relativeWeek: 2, sessionIndexInWeek: 0,
+            stimulus: Stimulus(
+                targetDurationDomain: .short, intensity: .moderate, loading: .heavy,
+                movementFunctions: [.pressLoaded, .squatLoaded],
+                movementModalityMix: [
+                    ModalityCount(modality: .weightlifting, count: 1),
+                    ModalityCount(modality: .gymnastics, count: 1),
+                    ModalityCount(modality: .metabolicConditioning, count: 1),
+                ],
+                skillDemand: .low, systemicDemand: .low, scoreType: .repetitions
+            ),
+            format: .maxReps(capSeconds: 240), // short
+            includeStrengthBlock: false, varianceConstraints: standardVariance, sessionRole: .mixed
+        ),
+        // See week 1's own index-1 doc comment: real, genuinely-easy LONG
+        // aerobic content, placed right after the always-first, always-
+        // immune index 0.
+        FunctionalFitnessSessionIntent(
+            relativeWeek: 2, sessionIndexInWeek: 1,
+            stimulus: Stimulus(
+                targetDurationDomain: .long, intensity: .low, loading: .bodyweightOnly,
+                movementFunctions: [.monostructural],
+                movementModalityMix: [
+                    ModalityCount(modality: .weightlifting, count: 1),
+                    ModalityCount(modality: .gymnastics, count: 1),
+                    ModalityCount(modality: .metabolicConditioning, count: 1),
+                ],
+                skillDemand: .low, systemicDemand: .moderate, scoreType: .time
+            ),
+            format: .forTime(capSeconds: 2100), // long
+            includeStrengthBlock: false, varianceConstraints: standardVariance, sessionRole: .aerobicBase
+        ),
+        FunctionalFitnessSessionIntent(
+            relativeWeek: 2, sessionIndexInWeek: 2,
+            stimulus: Stimulus(
+                targetDurationDomain: .medium, intensity: .moderate, loading: .moderate,
+                movementFunctions: [.monostructural, .pressLoaded],
+                movementModalityMix: [
+                    ModalityCount(modality: .weightlifting, count: 1),
+                    ModalityCount(modality: .gymnastics, count: 1),
+                    ModalityCount(modality: .metabolicConditioning, count: 1),
+                ],
+                skillDemand: .low, systemicDemand: .high, scoreType: .time
+            ),
+            format: .chipper(capSeconds: 900), // medium (300-900s boundary)
+            includeStrengthBlock: false, varianceConstraints: standardVariance, sessionRole: .functionalFitness
+        ),
+        FunctionalFitnessSessionIntent(
+            relativeWeek: 2, sessionIndexInWeek: 3,
+            stimulus: Stimulus(
+                targetDurationDomain: .short, intensity: .high, loading: .bodyweightOnly,
+                movementFunctions: [.gymnasticsPull, .gymnasticsPush],
+                movementModalityMix: [
+                    ModalityCount(modality: .weightlifting, count: 1),
+                    ModalityCount(modality: .gymnastics, count: 1),
+                    ModalityCount(modality: .metabolicConditioning, count: 1),
+                ],
+                skillDemand: .high, systemicDemand: .high, scoreType: .completedIntervals
+            ),
+            format: .emom(intervalSeconds: 45, totalSeconds: 270), // short (<300s)
+            includeStrengthBlock: false, varianceConstraints: standardVariance, sessionRole: .skill
+        ),
+        // Week 4
+        FunctionalFitnessSessionIntent(
+            relativeWeek: 3, sessionIndexInWeek: 0,
+            stimulus: Stimulus(
+                targetDurationDomain: .medium, intensity: .moderate, loading: .heavy,
+                movementFunctions: [.squatLoaded, .hingeLoaded],
+                movementModalityMix: [
+                    ModalityCount(modality: .weightlifting, count: 1),
+                    ModalityCount(modality: .gymnastics, count: 1),
+                    ModalityCount(modality: .metabolicConditioning, count: 1),
+                ],
+                skillDemand: .low, systemicDemand: .low, scoreType: .load
+            ),
+            format: .maxLoad, // no cap
+            includeStrengthBlock: false, varianceConstraints: standardVariance, sessionRole: .mixed
+        ),
+        // See week 1's own index-1 doc comment: real, genuinely-easy LONG
+        // aerobic content, placed right after the always-first, always-
+        // immune index 0.
+        FunctionalFitnessSessionIntent(
+            relativeWeek: 3, sessionIndexInWeek: 1,
+            stimulus: Stimulus(
+                targetDurationDomain: .long, intensity: .moderate, loading: .light,
+                movementFunctions: [.monostructural, .hingeLoaded],
+                movementModalityMix: [
+                    ModalityCount(modality: .weightlifting, count: 1),
+                    ModalityCount(modality: .gymnastics, count: 1),
+                    ModalityCount(modality: .metabolicConditioning, count: 1),
+                ],
+                skillDemand: .low, systemicDemand: .high, scoreType: .completedIntervals
+            ),
+            format: .intervals(count: 5, workSeconds: 240, restSeconds: 60), // 5*300=1500s, long
+            includeStrengthBlock: false, varianceConstraints: standardVariance, sessionRole: .aerobicBase
+        ),
+        FunctionalFitnessSessionIntent(
+            relativeWeek: 3, sessionIndexInWeek: 2,
+            stimulus: Stimulus(
+                targetDurationDomain: .medium, intensity: .moderate, loading: .bodyweightOnly,
+                movementFunctions: [.gymnasticsPush, .gymnasticsPull],
+                movementModalityMix: [
+                    ModalityCount(modality: .weightlifting, count: 1),
+                    ModalityCount(modality: .gymnastics, count: 1),
+                    ModalityCount(modality: .metabolicConditioning, count: 1),
+                ],
+                skillDemand: .high, systemicDemand: .high, scoreType: .roundsAndReps
+            ),
+            format: .amrap(capSeconds: 720), // medium (300-900s)
+            includeStrengthBlock: false, varianceConstraints: standardVariance, sessionRole: .skill
+        ),
+        FunctionalFitnessSessionIntent(
+            relativeWeek: 3, sessionIndexInWeek: 3,
+            stimulus: Stimulus(
+                targetDurationDomain: .short, intensity: .high, loading: .light,
+                movementFunctions: [.monostructural, .gymnasticsPull],
+                movementModalityMix: [
+                    ModalityCount(modality: .weightlifting, count: 1),
+                    ModalityCount(modality: .gymnastics, count: 1),
+                    ModalityCount(modality: .metabolicConditioning, count: 1),
+                ],
+                skillDemand: .moderate, systemicDemand: .high, scoreType: .time
+            ),
+            format: .ladder(direction: .ascending, capSeconds: 240), // short
+            includeStrengthBlock: false, varianceConstraints: standardVariance, sessionRole: .functionalFitness
+        ),
+    ]
+
+    // MARK: - 5 sessions/week: 2 structured (strength+conditioning) days
+    // with distinct loaded patterns, 1 skill day, 1 mixed-modal/performance
+    // day, 1 lower-fatigue complementary/recovery day (bodyweight-only, low
+    // intensity, no strength block) — 5 distinct roles every week.
+
+    static let fiveSessionsPerWeek: [FunctionalFitnessSessionIntent] = [
+        // Week 1
+        FunctionalFitnessSessionIntent(
+            relativeWeek: 0, sessionIndexInWeek: 0,
+            stimulus: Stimulus(
+                targetDurationDomain: .medium, intensity: .moderate, loading: .heavy,
+                movementFunctions: [.squatLoaded, .pressLoaded],
+                movementModalityMix: [
+                    ModalityCount(modality: .weightlifting, count: 1),
+                    ModalityCount(modality: .gymnastics, count: 1),
+                    ModalityCount(modality: .metabolicConditioning, count: 1),
+                ],
+                skillDemand: .low, systemicDemand: .low, scoreType: .load
+            ),
+            format: .maxLoad, // no cap
+            includeStrengthBlock: false, varianceConstraints: standardVariance, sessionRole: .mixed
+        ),
+        // PROGRAMMING MODEL CORRECTION (real, reproduced Stage-E failure
+        // at 5 FF/week, plain non-goal-biased phase): session index 1 is
+        // deliberately a real, genuinely-easy LONG aerobic session — not
+        // a second heavy/short day — so that `FunctionalFitnessDecisionEngine
+        // .adjustForSameWeekComplementarity`'s own real same-week nudge
+        // sees this component's `.aerobicCapacity` objective served EARLY
+        // (right after the immune, always-first session index 0), before
+        // any later FIXED-format short/medium slot could otherwise be
+        // silently nudged toward a domain its own locked format can't
+        // satisfy. Index 1's own base content is completely irrelevant to
+        // every goal-aware bias path (Muscle → `.resistanceDominant`
+        // disables conditioning entirely here; Strength → `.heavyStrength`
+        // does too; Conditioning → `.mediumMixedModal` overrides format
+        // regardless) — so this reordering changes nothing for any
+        // goal-biased phase, only the plain, non-goal-biased case this
+        // fixes.
+        FunctionalFitnessSessionIntent(
+            relativeWeek: 0, sessionIndexInWeek: 1,
+            stimulus: Stimulus(
+                targetDurationDomain: .long, intensity: .low, loading: .bodyweightOnly,
+                movementFunctions: [.monostructural],
+                movementModalityMix: [
+                    ModalityCount(modality: .weightlifting, count: 1),
+                    ModalityCount(modality: .gymnastics, count: 1),
+                    ModalityCount(modality: .metabolicConditioning, count: 1),
+                ],
+                skillDemand: .low, systemicDemand: .low, scoreType: .time
+            ),
+            format: .forTime(capSeconds: 1800), // long
+            includeStrengthBlock: false, varianceConstraints: standardVariance, sessionRole: .recovery
+        ),
+        FunctionalFitnessSessionIntent(
+            relativeWeek: 0, sessionIndexInWeek: 2,
+            stimulus: Stimulus(
+                targetDurationDomain: .short, intensity: .moderate, loading: .bodyweightOnly,
+                movementFunctions: [.gymnasticsPull, .gymnasticsPush],
+                movementModalityMix: [
+                    ModalityCount(modality: .weightlifting, count: 1),
+                    ModalityCount(modality: .gymnastics, count: 1),
+                    ModalityCount(modality: .metabolicConditioning, count: 1),
+                ],
+                skillDemand: .high, systemicDemand: .high, scoreType: .completedIntervals
+            ),
+            format: .emom(intervalSeconds: 60, totalSeconds: 240), // short
+            includeStrengthBlock: false, varianceConstraints: standardVariance, sessionRole: .skill
+        ),
+        FunctionalFitnessSessionIntent(
+            relativeWeek: 0, sessionIndexInWeek: 3,
+            stimulus: Stimulus(
+                targetDurationDomain: .medium, intensity: .high, loading: .light,
+                movementFunctions: [.monostructural, .hingeLoaded],
+                movementModalityMix: [
+                    ModalityCount(modality: .weightlifting, count: 1),
+                    ModalityCount(modality: .gymnastics, count: 1),
+                    ModalityCount(modality: .metabolicConditioning, count: 1),
+                ],
+                skillDemand: .low, systemicDemand: .high, scoreType: .roundsAndReps
+            ),
+            format: .amrap(capSeconds: 600), // medium (300-900s)
+            includeStrengthBlock: false, varianceConstraints: standardVariance, sessionRole: .functionalFitness
+        ),
+        FunctionalFitnessSessionIntent(
+            relativeWeek: 0, sessionIndexInWeek: 4,
+            stimulus: Stimulus(
+                targetDurationDomain: .short, intensity: .moderate, loading: .moderate,
+                movementFunctions: [.hingeLoaded, .pressLoaded],
+                movementModalityMix: [
+                    ModalityCount(modality: .weightlifting, count: 1),
+                    ModalityCount(modality: .gymnastics, count: 1),
+                    ModalityCount(modality: .metabolicConditioning, count: 1),
+                ],
+                skillDemand: .low, systemicDemand: .high, scoreType: .repetitions
+            ),
+            format: .maxReps(capSeconds: 240), // short
+            includeStrengthBlock: false, varianceConstraints: standardVariance, sessionRole: .mixed
+        ),
+        // Week 2
+        FunctionalFitnessSessionIntent(
+            relativeWeek: 1, sessionIndexInWeek: 0,
+            stimulus: Stimulus(
+                targetDurationDomain: .medium, intensity: .moderate, loading: .heavy,
+                movementFunctions: [.squatLoaded, .hingeLoaded],
+                movementModalityMix: [
+                    ModalityCount(modality: .weightlifting, count: 1),
+                    ModalityCount(modality: .gymnastics, count: 1),
+                    ModalityCount(modality: .metabolicConditioning, count: 1),
+                ],
+                skillDemand: .low, systemicDemand: .low, scoreType: .time
+            ),
+            format: .roundsForTime(rounds: 5, capSeconds: 600), // medium (300-900s)
+            includeStrengthBlock: false, varianceConstraints: standardVariance, sessionRole: .mixed
+        ),
+        // See week 1's own index-1 doc comment: real, genuinely-easy LONG
+        // aerobic content, placed right after the always-first, always-
+        // immune index 0 so this component's `.aerobicCapacity` objective
+        // is served before any later fixed-format slot could be nudged.
+        FunctionalFitnessSessionIntent(
+            relativeWeek: 1, sessionIndexInWeek: 1,
+            stimulus: Stimulus(
+                targetDurationDomain: .medium, intensity: .low, loading: .bodyweightOnly,
+                movementFunctions: [.monostructural],
+                movementModalityMix: [
+                    ModalityCount(modality: .weightlifting, count: 1),
+                    ModalityCount(modality: .gymnastics, count: 1),
+                    ModalityCount(modality: .metabolicConditioning, count: 1),
+                ],
+                skillDemand: .low, systemicDemand: .high, scoreType: .completedIntervals
+            ),
+            format: .intervals(count: 4, workSeconds: 120, restSeconds: 60), // 4*180=720s, medium
+            includeStrengthBlock: false, varianceConstraints: standardVariance, sessionRole: .recovery
+        ),
+        FunctionalFitnessSessionIntent(
+            relativeWeek: 1, sessionIndexInWeek: 2,
+            stimulus: Stimulus(
+                targetDurationDomain: .medium, intensity: .moderate, loading: .light,
+                movementFunctions: [.gymnasticsPush, .monostructural],
+                movementModalityMix: [
+                    ModalityCount(modality: .weightlifting, count: 1),
+                    ModalityCount(modality: .gymnastics, count: 1),
+                    ModalityCount(modality: .metabolicConditioning, count: 1),
+                ],
+                skillDemand: .high, systemicDemand: .high, scoreType: .time
+            ),
+            format: .roundsForTime(rounds: 4, capSeconds: 720), // medium (300-900s)
+            includeStrengthBlock: false, varianceConstraints: standardVariance, sessionRole: .skill
+        ),
+        FunctionalFitnessSessionIntent(
+            relativeWeek: 1, sessionIndexInWeek: 3,
+            stimulus: Stimulus(
+                targetDurationDomain: .short, intensity: .high, loading: .light,
+                movementFunctions: [.gymnasticsPull, .monostructural],
+                movementModalityMix: [
+                    ModalityCount(modality: .weightlifting, count: 1),
+                    ModalityCount(modality: .gymnastics, count: 1),
+                    ModalityCount(modality: .metabolicConditioning, count: 1),
+                ],
+                skillDemand: .moderate, systemicDemand: .high, scoreType: .roundsAndReps
+            ),
+            format: .amrap(capSeconds: 240), // short
+            includeStrengthBlock: false, varianceConstraints: standardVariance, sessionRole: .functionalFitness
+        ),
+        FunctionalFitnessSessionIntent(
+            relativeWeek: 1, sessionIndexInWeek: 4,
+            stimulus: Stimulus(
+                targetDurationDomain: .short, intensity: .moderate, loading: .moderate,
+                movementFunctions: [.pressLoaded, .squatLoaded],
+                movementModalityMix: [
+                    ModalityCount(modality: .weightlifting, count: 1),
+                    ModalityCount(modality: .gymnastics, count: 1),
+                    ModalityCount(modality: .metabolicConditioning, count: 1),
+                ],
+                skillDemand: .low, systemicDemand: .high, scoreType: .load
+            ),
+            format: .maxLoad, // no cap
+            includeStrengthBlock: false, varianceConstraints: standardVariance, sessionRole: .mixed
+        ),
+        // Week 3
+        FunctionalFitnessSessionIntent(
+            relativeWeek: 2, sessionIndexInWeek: 0,
+            stimulus: Stimulus(
+                targetDurationDomain: .short, intensity: .moderate, loading: .heavy,
+                movementFunctions: [.hingeLoaded, .pressLoaded],
+                movementModalityMix: [
+                    ModalityCount(modality: .weightlifting, count: 1),
+                    ModalityCount(modality: .gymnastics, count: 1),
+                    ModalityCount(modality: .metabolicConditioning, count: 1),
+                ],
+                skillDemand: .low, systemicDemand: .low, scoreType: .repetitions
+            ),
+            format: .maxReps(capSeconds: 240), // short
+            includeStrengthBlock: false, varianceConstraints: standardVariance, sessionRole: .mixed
+        ),
+        // See week 1's own index-1 doc comment: real, genuinely-easy LONG
+        // aerobic content, placed right after the always-first, always-
+        // immune index 0 so this component's `.aerobicCapacity` objective
+        // is served before any later fixed-format slot could be nudged.
+        FunctionalFitnessSessionIntent(
+            relativeWeek: 2, sessionIndexInWeek: 1,
+            stimulus: Stimulus(
+                targetDurationDomain: .long, intensity: .low, loading: .bodyweightOnly,
+                movementFunctions: [.monostructural],
+                movementModalityMix: [
+                    ModalityCount(modality: .weightlifting, count: 1),
+                    ModalityCount(modality: .gymnastics, count: 1),
+                    ModalityCount(modality: .metabolicConditioning, count: 1),
+                ],
+                skillDemand: .low, systemicDemand: .moderate, scoreType: .time
+            ),
+            format: .forTime(capSeconds: 2100), // long
+            includeStrengthBlock: false, varianceConstraints: standardVariance, sessionRole: .recovery
+        ),
+        FunctionalFitnessSessionIntent(
+            relativeWeek: 2, sessionIndexInWeek: 2,
+            stimulus: Stimulus(
+                targetDurationDomain: .short, intensity: .high, loading: .bodyweightOnly,
+                movementFunctions: [.gymnasticsPull, .gymnasticsPush],
+                movementModalityMix: [
+                    ModalityCount(modality: .weightlifting, count: 1),
+                    ModalityCount(modality: .gymnastics, count: 1),
+                    ModalityCount(modality: .metabolicConditioning, count: 1),
+                ],
+                skillDemand: .high, systemicDemand: .high, scoreType: .completedIntervals
+            ),
+            format: .emom(intervalSeconds: 45, totalSeconds: 270), // short (<300s)
+            includeStrengthBlock: false, varianceConstraints: standardVariance, sessionRole: .skill
+        ),
+        FunctionalFitnessSessionIntent(
+            relativeWeek: 2, sessionIndexInWeek: 3,
+            stimulus: Stimulus(
+                targetDurationDomain: .medium, intensity: .moderate, loading: .moderate,
+                movementFunctions: [.monostructural, .pressLoaded],
+                movementModalityMix: [
+                    ModalityCount(modality: .weightlifting, count: 1),
+                    ModalityCount(modality: .gymnastics, count: 1),
+                    ModalityCount(modality: .metabolicConditioning, count: 1),
+                ],
+                skillDemand: .low, systemicDemand: .high, scoreType: .time
+            ),
+            format: .chipper(capSeconds: 900), // medium (300-900s boundary)
+            includeStrengthBlock: false, varianceConstraints: standardVariance, sessionRole: .functionalFitness
+        ),
+        FunctionalFitnessSessionIntent(
+            relativeWeek: 2, sessionIndexInWeek: 4,
+            stimulus: Stimulus(
+                targetDurationDomain: .medium, intensity: .moderate, loading: .moderate,
+                movementFunctions: [.squatLoaded, .hingeLoaded],
+                movementModalityMix: [
+                    ModalityCount(modality: .weightlifting, count: 1),
+                    ModalityCount(modality: .gymnastics, count: 1),
+                    ModalityCount(modality: .metabolicConditioning, count: 1),
+                ],
+                skillDemand: .low, systemicDemand: .high, scoreType: .time
+            ),
+            format: .ladder(direction: .descending, capSeconds: 600), // medium (300-900s)
+            includeStrengthBlock: false, varianceConstraints: standardVariance, sessionRole: .mixed
+        ),
+        // Week 4
+        FunctionalFitnessSessionIntent(
+            relativeWeek: 3, sessionIndexInWeek: 0,
+            stimulus: Stimulus(
+                targetDurationDomain: .medium, intensity: .moderate, loading: .heavy,
+                movementFunctions: [.squatLoaded, .pressLoaded],
+                movementModalityMix: [
+                    ModalityCount(modality: .weightlifting, count: 1),
+                    ModalityCount(modality: .gymnastics, count: 1),
+                    ModalityCount(modality: .metabolicConditioning, count: 1),
+                ],
+                skillDemand: .low, systemicDemand: .low, scoreType: .load
+            ),
+            format: .maxLoad, // no cap
+            includeStrengthBlock: false, varianceConstraints: standardVariance, sessionRole: .mixed
+        ),
+        // See week 1's own index-1 doc comment: real, genuinely-easy LONG
+        // aerobic content, placed right after the always-first, always-
+        // immune index 0 so this component's `.aerobicCapacity` objective
+        // is served before any later fixed-format slot could be nudged.
+        FunctionalFitnessSessionIntent(
+            relativeWeek: 3, sessionIndexInWeek: 1,
+            stimulus: Stimulus(
+                targetDurationDomain: .long, intensity: .low, loading: .light,
+                movementFunctions: [.monostructural, .hingeLoaded],
+                movementModalityMix: [
+                    ModalityCount(modality: .weightlifting, count: 1),
+                    ModalityCount(modality: .gymnastics, count: 1),
+                    ModalityCount(modality: .metabolicConditioning, count: 1),
+                ],
+                skillDemand: .low, systemicDemand: .moderate, scoreType: .completedIntervals
+            ),
+            format: .intervals(count: 5, workSeconds: 240, restSeconds: 60), // 5*300=1500s, long
+            includeStrengthBlock: false, varianceConstraints: standardVariance, sessionRole: .recovery
+        ),
+        FunctionalFitnessSessionIntent(
+            relativeWeek: 3, sessionIndexInWeek: 2,
+            stimulus: Stimulus(
+                targetDurationDomain: .medium, intensity: .moderate, loading: .bodyweightOnly,
+                movementFunctions: [.gymnasticsPush, .gymnasticsPull],
+                movementModalityMix: [
+                    ModalityCount(modality: .weightlifting, count: 1),
+                    ModalityCount(modality: .gymnastics, count: 1),
+                    ModalityCount(modality: .metabolicConditioning, count: 1),
+                ],
+                skillDemand: .high, systemicDemand: .high, scoreType: .roundsAndReps
+            ),
+            format: .amrap(capSeconds: 720), // medium (300-900s)
+            includeStrengthBlock: false, varianceConstraints: standardVariance, sessionRole: .skill
+        ),
+        FunctionalFitnessSessionIntent(
+            relativeWeek: 3, sessionIndexInWeek: 3,
+            stimulus: Stimulus(
+                targetDurationDomain: .short, intensity: .high, loading: .light,
+                movementFunctions: [.monostructural, .gymnasticsPull],
+                movementModalityMix: [
+                    ModalityCount(modality: .weightlifting, count: 1),
+                    ModalityCount(modality: .gymnastics, count: 1),
+                    ModalityCount(modality: .metabolicConditioning, count: 1),
+                ],
+                skillDemand: .moderate, systemicDemand: .high, scoreType: .time
+            ),
+            format: .ladder(direction: .ascending, capSeconds: 240), // short
+            includeStrengthBlock: false, varianceConstraints: standardVariance, sessionRole: .functionalFitness
+        ),
+        FunctionalFitnessSessionIntent(
+            relativeWeek: 3, sessionIndexInWeek: 4,
+            stimulus: Stimulus(
+                targetDurationDomain: .short, intensity: .moderate, loading: .moderate,
+                movementFunctions: [.hingeLoaded, .squatLoaded],
+                movementModalityMix: [
+                    ModalityCount(modality: .weightlifting, count: 1),
+                    ModalityCount(modality: .gymnastics, count: 1),
+                    ModalityCount(modality: .metabolicConditioning, count: 1),
+                ],
+                skillDemand: .low, systemicDemand: .high, scoreType: .time
+            ),
+            format: .forTime(capSeconds: 270), // short (<300s)
+            includeStrengthBlock: false, varianceConstraints: standardVariance, sessionRole: .mixed
+        ),
+    ]
+
     /// `nil` for any unsupported frequency — never approximated to the
     /// nearest supported one (mirrors `RunningBuiltInLibrary`'s own
-    /// fail-closed discipline).
+    /// fail-closed discipline). 6 is deliberately absent: Part V's
+    /// six-day FF frequency is a real, typed-unsupported programming
+    /// assignment (`LongTermPlanner.buildCustomMix`'s six-day gate,
+    /// `FunctionalFitnessRequirementAllocator.sixDayFFUnsupportedReason`),
+    /// never silently degraded to this library's nearest authored plan.
     static func weeklyPlan(forSessionsPerWeek count: Int) -> [FunctionalFitnessSessionIntent]? {
         switch count {
         case 1: return oneSessionPerWeek
         case 2: return twoSessionsPerWeek
         case 3: return threeSessionsPerWeek
+        case 4: return fourSessionsPerWeek
+        case 5: return fiveSessionsPerWeek
         default: return nil
         }
     }

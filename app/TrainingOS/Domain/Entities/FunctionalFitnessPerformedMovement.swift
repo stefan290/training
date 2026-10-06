@@ -28,6 +28,12 @@ final class FunctionalFitnessPerformedMovement {
     var performedReps: Int?
     var performedCalories: Int?
     var performedDistanceMeters: Double?
+    /// MUSCLE + 5FF FINAL CLOSURE, Section 9: the actual-result sibling of
+    /// `FunctionalFitnessMovement.durationSeconds`, added for the same
+    /// reason `performedDistanceMeters` exists alongside
+    /// `FunctionalFitnessMovement.distanceMeters` — never merges
+    /// prescribed and actual (CLAUDE.md rule 3).
+    var performedDurationSeconds: Int?
     var performedLoadKilograms: Double?
 
     init(
@@ -37,6 +43,7 @@ final class FunctionalFitnessPerformedMovement {
         performedReps: Int? = nil,
         performedCalories: Int? = nil,
         performedDistanceMeters: Double? = nil,
+        performedDurationSeconds: Int? = nil,
         performedLoadKilograms: Double? = nil
     ) {
         self.id = id
@@ -46,6 +53,7 @@ final class FunctionalFitnessPerformedMovement {
         self.performedReps = performedReps
         self.performedCalories = performedCalories
         self.performedDistanceMeters = performedDistanceMeters
+        self.performedDurationSeconds = performedDurationSeconds
         self.performedLoadKilograms = performedLoadKilograms
     }
 }

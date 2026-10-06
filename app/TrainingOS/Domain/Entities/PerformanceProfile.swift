@@ -24,6 +24,12 @@ final class PerformanceProfile {
     @Relationship(deleteRule: .cascade, inverse: \BenchmarkPerformanceProfile.performanceProfile)
     var benchmarkProfiles: [BenchmarkPerformanceProfile] = []
 
+    /// FUNCTIONAL FITNESS PROGRAMMING AUTHORITY V2, Section 5: a further
+    /// sibling of the three relationships above, not a replacement for
+    /// any of them.
+    @Relationship(deleteRule: .cascade, inverse: \MovementCapabilityProfile.performanceProfile)
+    var movementCapabilities: [MovementCapabilityProfile] = []
+
     init(id: UUID = UUID()) {
         self.id = id
     }
@@ -64,5 +70,23 @@ final class PerformanceProfile {
 
     func benchmarkProfile(for benchmark: BenchmarkDefinition) -> BenchmarkPerformanceProfile? {
         benchmarkProfiles.first { $0.benchmark?.id == benchmark.id }
+    }
+
+    /// FUNCTIONAL FITNESS PROGRAMMING AUTHORITY V2, Section 28
+    /// (migration-safe): a `nil` return here — no row exists yet for this
+    /// `(performanceProfile, exercise)` pair, whether because the profile
+    /// predates this feature or the athlete simply never recorded one —
+    /// must be read by every caller as `MovementProficiency.unknown`,
+    /// never inferred as `.workoutReady`. See
+    /// `MovementRoleExerciseSelector`'s own capability-gating call site.
+    func movementCapability(for exercise: Exercise) -> MovementCapabilityProfile? {
+        movementCapabilities.first { $0.exercise?.id == exercise.id }
+    }
+
+    /// The only way application code should attach a
+    /// MovementCapabilityProfile. Mutates exactly one side; SwiftData
+    /// maintains the declared inverse.
+    func addMovementCapability(_ capability: MovementCapabilityProfile) {
+        movementCapabilities.append(capability)
     }
 }

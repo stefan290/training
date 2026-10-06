@@ -83,6 +83,27 @@ struct ProgrammingDecisionInput {
     /// `CurrentWeekFunctionalFitnessProgrammingContext`'s own doc comment
     /// for why this is deliberately distinct from `exposureHistory`.
     var currentWeekContext: CurrentWeekFunctionalFitnessProgrammingContext = CurrentWeekFunctionalFitnessProgrammingContext()
+    /// PROGRAMMING AUTHORITY V1 Part XXXII (conditioning ownership):
+    /// `true` when `stimulusRequirements` was authored by
+    /// `FunctionalFitnessPhaseBiasPolicy` for a real `sessionFamily` — in
+    /// which case the session family already fixed this session's primary
+    /// stimulus (`targetDurationDomain`/`intensity`/`systemicDemand`/
+    /// `skillDemand`) AND its paired `format` together, deliberately, at
+    /// authoring time. Same-week complementarity (Stage CP.2) may only
+    /// ever refine EXERCISE/CONTENT selection inside that assignment
+    /// (`FunctionalFitnessMovementComposer`'s own role selection, entirely
+    /// separate from `Stimulus`) — it must never overwrite the authored
+    /// family's own primary stimulus or duration domain, which is exactly
+    /// what it would otherwise do (nudging `targetDurationDomain` toward
+    /// `.aerobicCapacity` while the paired `format` stays fixed produces a
+    /// real, reproduced `FunctionalFitnessStimulusValidator` failure —
+    /// see `FunctionalFitnessMaterializer`'s own call site). Defaults
+    /// `false` so every pre-existing direct-engine-input test (this
+    /// protocol's whole design point — a plain input struct, no
+    /// materializer dependency) is completely unaffected; the real
+    /// production materializer sets this whenever `ffTemplate.sessionFamily
+    /// != nil`.
+    var authoredStimulusIsLocked: Bool = false
 }
 
 /// Deliberately produces the *next stimulus*, not a fully materialized

@@ -93,6 +93,15 @@ extension FunctionalFitnessMaterializationError: TrainingEnvironmentRecoverableE
         // problem — reconfiguring equipment cannot fix it, so it is never
         // TE-recoverable.
         case .previousExposureRequired, .stimulusValidationFailed, .capabilityUnknown: return false
+        // DOGFOOD — FIX ORDER 1, Section C: a missing authored quantity
+        // is a programming-content gap, not an equipment gap —
+        // reconfiguring Training Environment cannot fix it either.
+        case .noExecutableTargetAvailable: return false
+        // MUSCLE + 5FF FINAL CLOSURE, Sections 12/13: a composition-
+        // coherence gap is a programming-content problem, not an
+        // equipment gap — reconfiguring Training Environment cannot fix
+        // an incoherent work package either.
+        case .compositionValidationFailed: return false
         }
     }
 }
@@ -141,6 +150,12 @@ func trainingEnvironmentRecoveryMessage(for error: Error) -> String? {
         // message belongs to whatever real UI eventually surfaces this
         // error, not invented here.
         case .capabilityUnknown: return nil
+        // DOGFOOD — FIX ORDER 1, Section C: not a Training Environment
+        // message either — same reasoning as `.capabilityUnknown` above.
+        case .noExecutableTargetAvailable: return nil
+        // MUSCLE + 5FF FINAL CLOSURE, Sections 12/13: not a Training
+        // Environment message either — same reasoning.
+        case .compositionValidationFailed: return nil
         }
     }
     if let error = error as? SteadyStateMaterializationError {

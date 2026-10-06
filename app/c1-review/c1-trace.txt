@@ -1,0 +1,7 @@
+C1 TRACE (from a real, passing run of testAdvanceTacticalWeekUsesOwnersPersistedCapabilityEvidence,
+with the correct, shipped production code — see req5-after-restore-focused.log for the full run this was extracted from):
+
+C1 TRACE: owner=F8856704-69C1-43A7-822F-EBCD0FE527CF ttbCapacity=7 pullUpCapacity=5 hspuCapacity=3
+C1 TRACE: oldSessionIDs=["2879F8CB-7322-4B0F-B066-D47A2A7E08E8", "3312F594-6DC3-4A27-9918-D11ED8A14310", "7E36A049-B79E-4AD4-95D7-4FF8906293B8", "7F2BFCE3-1934-4AB3-B369-75EB7C3B7D18", "9F02D49D-7FE5-44FA-96D6-EE55554D83BF"]
+C1 TRACE: newSessionIDs=["2BD13228-0C69-4ED2-BB98-4AA11A134C6B", "6EC5CCFF-36B7-4B7D-8312-BB4171FB5235", "87CC5257-167D-462D-A26D-F9683112F7BA", "99C70BA7-E56E-4B68-AD60-FF0C6B15C11F", "9EF9D794-77CA-4B36-92E7-39F22DBAF54B"]
+C1 TRACE: ttbPrescribedReps=[(Optional(3), Optional(3)), (Optional(3), Optional(3)), (Optional(3), Optional(3))]

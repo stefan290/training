@@ -20,7 +20,13 @@ struct WarmupView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        // Dogfood Round 2 (Finding G): no longer its own `NavigationStack` —
+        // see `ReadinessCheckInView`'s matching comment. This is also the
+        // step reached from a plain "Start Workout" tap on an already-
+        // scheduled-for-today Session (no readiness check-in shown), so the
+        // shared Cancel button in `ReadinessGateFlow`'s toolbar is this
+        // view's only way out too, not just the earlier steps'.
+        Group {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     VStack(alignment: .leading, spacing: 4) {
@@ -53,10 +59,10 @@ struct WarmupView: View {
                 }
                 .padding(16)
             }
-            .background(Theme.ground)
-            .navigationTitle("Warm-up")
-            .navigationBarTitleDisplayMode(.inline)
         }
+        .background(Theme.ground)
+        .navigationTitle("Warm-up")
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     private var estimatedMinutesLabel: String {

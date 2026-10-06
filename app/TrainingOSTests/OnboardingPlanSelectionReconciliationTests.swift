@@ -34,7 +34,10 @@ final class OnboardingPlanSelectionReconciliationTests: XCTestCase {
         func exercise(
             _ name: String, _ targets: [MuscleGroup] = [], _ movementFunctions: [MovementFunction] = [], _ functionalModality: FunctionalModality? = nil
         ) -> Exercise {
-            let ex = Exercise(canonicalName: name, modality: .hypertrophy, equipment: "barbell", movementPattern: "test", primaryTargets: targets, movementFunctions: movementFunctions, functionalModality: functionalModality)
+            // FUNCTIONAL FITNESS PROGRAMMING AUTHORITY V2, Section 10/11:
+            // generic scheduling filler, not a target-content test —
+            // tagged `.distance` so it stays truthfully materializable.
+            let ex = Exercise(canonicalName: name, modality: .hypertrophy, equipment: "barbell", movementPattern: "test", primaryTargets: targets, movementFunctions: movementFunctions, functionalModality: functionalModality, measuredDimensions: movementFunctions.contains(.monostructural) ? [.distance] : [])
             context.insert(ex)
             return ex
         }
@@ -262,19 +265,33 @@ final class OnboardingPlanSelectionReconciliationTests: XCTestCase {
 
     // MARK: L — zero-config environment: a fresh athlete never manually configures equipment
 
-    func testFreshAthleteNeverManuallyConfiguresEnvironmentThroughOnboarding() throws {
+    /// Dogfood Round 2 Continuation (Finding I) revised this: a fresh
+    /// athlete still never has to MANUALLY configure anything (Full Gym is
+    /// already their real default the instant baseline identity exists),
+    /// but they must still see and explicitly accept it — the Environment
+    /// step is no longer silently skipped just because a default already
+    /// exists. One Continue tap accepts the zero-config default.
+    func testFreshAthleteAcceptsZeroConfigEnvironmentThroughOnboarding() throws {
         let onboardingViewModel = OnboardingViewModel()
         onboardingViewModel.start(modelContext: context)
         onboardingViewModel.selectedGoalType = .muscleGain
         onboardingViewModel.advance(from: .goal, modelContext: context)
         onboardingViewModel.advance(from: .preferences, modelContext: context)
-        XCTAssertEqual(onboardingViewModel.step, .review, "Full Gym already exists (R5) — the Environment step must never be forced")
+        XCTAssertEqual(onboardingViewModel.step, .environment, "the athlete must see the Environment step at least once, even though Full Gym already exists as a real default")
         XCTAssertTrue(onboardingViewModel.hasDefaultTrainingEnvironment)
+        XCTAssertFalse(onboardingViewModel.hasConfirmedTrainingEnvironment, "existing but never explicitly accepted")
 
         let users = try context.fetch(FetchDescriptor<User>())
         let environment = try XCTUnwrap(users.first?.profile?.defaultTrainingEnvironment)
         XCTAssertEqual(environment.name, "Full Gym")
         XCTAssertTrue(environment.isBuiltIn)
+
+        // A single Continue tap — no manual configuration required — is
+        // real, explicit acceptance.
+        onboardingViewModel.advance(from: .environment, modelContext: context)
+        XCTAssertEqual(onboardingViewModel.step, .review)
+        XCTAssertTrue(onboardingViewModel.hasConfirmedTrainingEnvironment)
+        XCTAssertTrue(try XCTUnwrap(users.first?.profile).hasConfirmedTrainingEnvironment, "persisted, not just held in the ViewModel")
     }
 
     // MARK: K — editing an earlier onboarding answer invalidates/recomputes dependent state truthfully
@@ -320,7 +337,7 @@ final class OnboardingPlanSelectionReconciliationTests: XCTestCase {
         let onboardingViewModel = OnboardingViewModel()
         onboardingViewModel.start(modelContext: context)
         onboardingViewModel.selectedGoalType = .muscleGain
-        onboardingViewModel.availableTrainingDaysPerWeek = 5
+        onboardingViewModel.selectedWeekdays = Set(Weekday.allCases.prefix(5))
         onboardingViewModel.hasMilestone = true
         onboardingViewModel.milestoneDate = date(2026, 6, 15)
         onboardingViewModel.advance(from: .goal, modelContext: context)

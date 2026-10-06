@@ -45,7 +45,12 @@ struct ReadinessCheckInView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        // Dogfood Round 2 (Finding G): no longer its own `NavigationStack` —
+        // this is one of 3 steps swapped inside `ReadinessGateFlow`'s single
+        // shared stack (the same nested-`NavigationStack` defect fixed for
+        // Profile applies here), so its Cancel toolbar button reaches every
+        // step, not just whichever one happened to declare its own.
+        Group {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     Text("Before you start")
@@ -98,10 +103,10 @@ struct ReadinessCheckInView: View {
                 }
                 .padding(16)
             }
-            .background(Theme.ground)
-            .navigationTitle("Readiness")
-            .navigationBarTitleDisplayMode(.inline)
         }
+        .background(Theme.ground)
+        .navigationTitle("Readiness")
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     /// The fast path only requires the gateway to have been answered —

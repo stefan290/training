@@ -174,7 +174,20 @@ enum StartPhaseUseCase {
             // once, at this specific instance's creation — never inside
             // the generator (which stays user-independent) and never
             // repeated on every materialization call.
-            if system == .hypertrophy || system == .powerlifting {
+            //
+            // Dogfood Round 2 (Finding 3): a Functional Fitness program
+            // can carry its own embedded strength `WorkoutBlockTemplate`
+            // (`FunctionalFitnessProgramGenerator.addStrengthBlock`,
+            // Dogfood Round 1 Finding 3E) whose `ExerciseSlot` needs this
+            // exact same resolution pass — it was never widened to cover
+            // it when that block was introduced, so the slot stayed
+            // permanently unresolved and `FunctionalFitnessMaterializer
+            // .materializeStrengthBlock` had nothing to build a real
+            // prescription from (`SubstituteExerciseUseCase.resolvedExercise`
+            // returning `nil`). Reuses the strength candidate pool — the
+            // slot's `allowedTargets` use the same muscle-group vocabulary
+            // Hypertrophy's own slots already resolve against.
+            if system == .hypertrophy || system == .powerlifting || system == .functionalFitness {
                 try ResolveProgramInstanceExerciseSlotsUseCase.resolve(
                     definition: chosen.programDefinition, candidateExercises: materializationContext.strengthCandidateExercises,
                     environment: materializationContext.trainingEnvironment

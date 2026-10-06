@@ -154,7 +154,10 @@ enum DebugAcceptanceFixturesUseCase {
             let benchDip = find("Bench Dip"), let bentOverReverseFly = find("Bent-Over Dumbbell Reverse Fly"),
             let dumbbellShoulderPress = find("Dumbbell Shoulder Press"), let sumoDeadlift = find("Sumo Deadlift"),
             let chestToBarPullUp = find("Chest-to-Bar Pull-up"), let doubleUnders = find("Double-Unders"),
-            let farmersCarry = find("Farmer's Carry"), let boxJump = find("Box Jump")
+            let farmersCarry = find("Farmer's Carry"), let boxJump = find("Box Jump"),
+            let barMuscleUp = find("Bar Muscle-Up"), let ringMuscleUp = find("Ring Muscle-Up"),
+            let handstandWalk = find("Handstand Walk"), let ropeClimb = find("Rope Climb"),
+            let clean = find("Clean"), let jerk = find("Jerk"), let snatch = find("Snatch")
         else { return nil }
 
         return ExerciseCatalog(
@@ -179,7 +182,9 @@ enum DebugAcceptanceFixturesUseCase {
             benchDip: benchDip, bentOverReverseFly: bentOverReverseFly,
             dumbbellShoulderPress: dumbbellShoulderPress, sumoDeadlift: sumoDeadlift,
             chestToBarPullUp: chestToBarPullUp, doubleUnders: doubleUnders,
-            farmersCarry: farmersCarry, boxJump: boxJump
+            farmersCarry: farmersCarry, boxJump: boxJump,
+            barMuscleUp: barMuscleUp, ringMuscleUp: ringMuscleUp, handstandWalk: handstandWalk,
+            ropeClimb: ropeClimb, clean: clean, jerk: jerk, snatch: snatch
         )
     }
 }

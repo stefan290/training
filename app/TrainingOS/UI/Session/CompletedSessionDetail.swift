@@ -77,7 +77,10 @@ private struct CompletedBlockRow: View {
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text(block.type.rawValue.uppercased())
+                // MUSCLE VERTICAL SLICE CONTINUATION, Section 16: the
+                // real, archetype-aware label — see `TodayView`'s
+                // identical fix for the full defect trace.
+                Text(BlockPresentation.functionalFitnessAwareBlockLabel(for: block).uppercased())
                     .font(Theme.label)
                     .foregroundStyle(Theme.primary)
                 Text(summary)
@@ -123,7 +126,7 @@ private struct CompletedBlockPlaceholder: View {
         }
         .padding(16)
         .background(Theme.ground)
-        .navigationTitle(block.type.rawValue.uppercased())
+        .navigationTitle(BlockPresentation.functionalFitnessAwareBlockLabel(for: block).uppercased())
         .navigationBarTitleDisplayMode(.inline)
     }
 }

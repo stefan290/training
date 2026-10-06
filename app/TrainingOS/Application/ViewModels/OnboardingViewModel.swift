@@ -47,6 +47,12 @@ final class OnboardingViewModel {
     /// `.trainingEnvironmentDefaultChanged`, so the Continue button's
     /// enablement is driven by a property SwiftUI is guaranteed to observe.
     private(set) var hasDefaultTrainingEnvironment = false
+    /// Dogfood Round 2 Continuation (Finding I): mirrors
+    /// `UserProfile.hasConfirmedTrainingEnvironment` the same way
+    /// `hasDefaultTrainingEnvironment` mirrors `defaultTrainingEnvironment`
+    /// — a directly-observed scalar refreshed alongside it, never read via
+    /// a transitive relationship path at the call site.
+    private(set) var hasConfirmedTrainingEnvironment = false
 
     /// DF-BUG-1 fix (Dogfood Release Readiness V1): a genuinely new
     /// athlete must see NO Goal pre-selected — the athlete-facing
@@ -93,7 +99,17 @@ final class OnboardingViewModel {
     /// the real confirm button's `.disabled()` reads.
     var isMilestoneDateValid: Bool { milestoneDate > Date() }
     var varietyPreference: VarietyPreference = .moderate
-    var availableTrainingDaysPerWeek: Int = 4
+    /// Dogfood Round 2 Continuation (Finding A): the real, athlete-selected
+    /// weekly-availability authority — same `GoalPreferences.availableWeekdays`
+    /// field, same "no restriction = every weekday" default, `TrainingPreferencesViewModel`
+    /// already established for post-onboarding editing. Onboarding writes
+    /// this same authority directly rather than inventing separate
+    /// onboarding-only storage.
+    var selectedWeekdays: Set<Weekday> = Set(Weekday.allCases)
+    /// Read-only — the real capacity number IS the count of days selected
+    /// above, never a second, independently-set truth that could disagree
+    /// with it.
+    var availableTrainingDaysPerWeek: Int { selectedWeekdays.count }
     var allowsDoubleSessions = false
     /// R6 Visual Correction Pass: `GoalPreferences.typicalSessionDurationMinutes`
     /// is real, already-persisted state (`LongTermGoalTypes.swift`) that
@@ -141,14 +157,19 @@ final class OnboardingViewModel {
             }
             if let preferences = activeGoal.preferences {
                 varietyPreference = preferences.varietyPreference
-                availableTrainingDaysPerWeek = preferences.availableTrainingDaysPerWeek ?? 4
+                selectedWeekdays = preferences.availableWeekdays ?? Set(Weekday.allCases)
                 allowsDoubleSessions = preferences.allowsDoubleSessions ?? false
                 typicalSessionDurationMinutes = preferences.typicalSessionDurationMinutes
                 preferredTrainingStyles = trainingStyles(matching: preferences.preferredModalities)
                 dislikedTrainingStyles = trainingStyles(matching: preferences.dislikedModalities)
             }
             hasDefaultTrainingEnvironment = resolvedUser.profile?.defaultTrainingEnvironment != nil
-            step = hasDefaultTrainingEnvironment ? .review : .environment
+            hasConfirmedTrainingEnvironment = resolvedUser.profile?.hasConfirmedTrainingEnvironment ?? false
+            // Finding I: a default existing (true immediately, via the
+            // baseline auto-seed) is no longer sufficient on its own to
+            // skip the Environment step — the athlete must have actually
+            // seen and accepted it at least once.
+            step = (hasDefaultTrainingEnvironment && hasConfirmedTrainingEnvironment) ? .review : .environment
         } else {
             runningStartingState = suggestedRunningStartingState(user: resolvedUser)
             step = .goal
@@ -204,6 +225,7 @@ final class OnboardingViewModel {
         guard let refreshedUser = users.first else { return }
         user = refreshedUser
         hasDefaultTrainingEnvironment = refreshedUser.profile?.defaultTrainingEnvironment != nil
+        hasConfirmedTrainingEnvironment = refreshedUser.profile?.hasConfirmedTrainingEnvironment ?? false
     }
 
     func advance(from currentStep: Step, modelContext: ModelContext) {
@@ -217,20 +239,32 @@ final class OnboardingViewModel {
             guard selectedGoalType != nil else { return }
             step = .preferences
         case .preferences:
+            // Finding A: mirrors DF-BUG-1's own defense-in-depth discipline
+            // — the ViewModel, not only the View's `.disabled`, refuses to
+            // advance with no training day selected.
+            guard !selectedWeekdays.isEmpty else { return }
             createOrUpdateGoal(modelContext: modelContext)
-            // V1 R5 (Training Environment product reconciliation): Full
-            // Gym is now a real, auto-seeded default the moment baseline
-            // identity exists (`AppRootStateResolver.ensureBaselineIdentity`)
-            // — refreshing here (the exact same check `start()`'s own
-            // resume branch already makes) means a normal athlete moving
-            // FORWARD through onboarding also skips the now-optional
-            // Environment step, not only an athlete who relaunches
-            // mid-flow. Environment configuration remains fully reachable
-            // (via Back from Review, or Training Environment settings) —
-            // this only stops it from being FORCED.
             refreshEnvironmentState(modelContext: modelContext)
-            step = hasDefaultTrainingEnvironment ? .review : .environment
+            // Dogfood Round 2 Continuation (Finding I): a default existing
+            // (true immediately via the baseline auto-seed) no longer
+            // skips the Environment step on its own — the athlete must
+            // have explicitly accepted/confirmed it at least once
+            // (`hasConfirmedTrainingEnvironment`). A RETURNING athlete who
+            // already confirmed it on an earlier pass through onboarding
+            // still skips straight to Review, exactly as before.
+            step = (hasDefaultTrainingEnvironment && hasConfirmedTrainingEnvironment) ? .review : .environment
         case .environment:
+            // Finding I: this Continue tap IS the athlete's real,
+            // explicit acceptance of whatever Training Environment is
+            // currently their default (Full Gym, unchanged, or a real
+            // custom one they just created/switched to) — persisted so
+            // this athlete is never routed back through this step again
+            // on a later resume/relaunch.
+            if let profile = user?.profile {
+                profile.hasConfirmedTrainingEnvironment = true
+                try? modelContext.save()
+                hasConfirmedTrainingEnvironment = true
+            }
             step = .review
         case .review:
             break
@@ -267,9 +301,10 @@ final class OnboardingViewModel {
             preferredModalities: preferredModalities,
             dislikedModalities: dislikedModalities,
             varietyPreference: varietyPreference,
-            availableTrainingDaysPerWeek: availableTrainingDaysPerWeek,
+            availableTrainingDaysPerWeek: selectedWeekdays.count,
             typicalSessionDurationMinutes: typicalSessionDurationMinutes,
-            allowsDoubleSessions: allowsDoubleSessions
+            allowsDoubleSessions: allowsDoubleSessions,
+            availableWeekdays: selectedWeekdays
         )
         // Dated Objectives + 10K Strategic Reconciliation V1: Summer Shape
         // keeps writing `milestoneDate`/`bodyCompositionDirection` exactly

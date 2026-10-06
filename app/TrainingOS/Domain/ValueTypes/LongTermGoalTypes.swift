@@ -125,12 +125,30 @@ struct GoalPreferences: Codable, Equatable {
     /// metric this pass; never read by structured comparison logic.
     /// `STRATEGIC_PLAN_MODEL.md` §1c.
     var performanceGoals: [String]
-    /// Coarse, strategic-grain only — the real `UserAvailability` is
-    /// always supplied fresh at tactical time and never duplicated here.
-    /// `STRATEGIC_PLAN_MODEL.md` §1e.
+    /// Coarse, legacy, count-only signal from the original onboarding
+    /// "how many days a week" question — never itself a scheduling
+    /// constraint (no real per-weekday meaning). Dogfood Round 2
+    /// Correction 1: once `availableWeekdays` below is non-nil, THIS
+    /// field is kept strictly in sync as `availableWeekdays?.count` by
+    /// `TrainingPreferencesViewModel.save` — the two are never allowed to
+    /// disagree. Retained (rather than removed) only so a pre-existing
+    /// athlete who has never opened Training Preferences still has a real
+    /// capacity number for `StrategicPlanSelectionViewModel.weeklyCapacity`/
+    /// `LongTermPlanner.buildCustomMix`'s own capacity gate.
     var availableTrainingDaysPerWeek: Int?
     var typicalSessionDurationMinutes: Int?
     var allowsDoubleSessions: Bool?
+    /// Dogfood Round 2 (Finding 1, Correction 1): the real, athlete-
+    /// selected weekday availability — the ONE authority that flows into
+    /// `UserAvailability.availableWeekdays` (`PhaseDetailViewModel
+    /// .currentAvailability`), never a second, independent truth.
+    /// `nil` means "never explicitly chosen" — every pre-existing athlete
+    /// starts here, and is treated exactly as before (no weekday
+    /// restriction: `UserAvailability.isUsable` already treats an empty
+    /// `availableWeekdays` as "every day usable," so `nil`/empty here is
+    /// the honest, behavior-preserving default, never a guess at which
+    /// specific days a stored integer like "5" meant).
+    var availableWeekdays: Set<Weekday>?
 
     init(
         preferredModalities: [ModalityPreference] = [],
@@ -140,7 +158,8 @@ struct GoalPreferences: Codable, Equatable {
         performanceGoals: [String] = [],
         availableTrainingDaysPerWeek: Int? = nil,
         typicalSessionDurationMinutes: Int? = nil,
-        allowsDoubleSessions: Bool? = nil
+        allowsDoubleSessions: Bool? = nil,
+        availableWeekdays: Set<Weekday>? = nil
     ) {
         self.preferredModalities = preferredModalities
         self.dislikedModalities = dislikedModalities
@@ -150,6 +169,7 @@ struct GoalPreferences: Codable, Equatable {
         self.availableTrainingDaysPerWeek = availableTrainingDaysPerWeek
         self.typicalSessionDurationMinutes = typicalSessionDurationMinutes
         self.allowsDoubleSessions = allowsDoubleSessions
+        self.availableWeekdays = availableWeekdays
     }
 }
 

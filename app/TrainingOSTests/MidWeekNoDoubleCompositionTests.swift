@@ -57,7 +57,10 @@ final class MidWeekNoDoubleCompositionTests: XCTestCase {
         func exercise(
             _ name: String, _ targets: [MuscleGroup] = [], _ movementFunctions: [MovementFunction] = [], _ functionalModality: FunctionalModality? = nil
         ) -> Exercise {
-            let ex = Exercise(canonicalName: name, modality: .hypertrophy, equipment: "barbell", movementPattern: "test", primaryTargets: targets, movementFunctions: movementFunctions, functionalModality: functionalModality)
+            // FUNCTIONAL FITNESS PROGRAMMING AUTHORITY V2, Section 10/11:
+            // generic scheduling filler, not a target-content test —
+            // tagged `.distance` so it stays truthfully materializable.
+            let ex = Exercise(canonicalName: name, modality: .hypertrophy, equipment: "barbell", movementPattern: "test", primaryTargets: targets, movementFunctions: movementFunctions, functionalModality: functionalModality, measuredDimensions: movementFunctions.contains(.monostructural) ? [.distance] : [])
             context.insert(ex)
             return ex
         }

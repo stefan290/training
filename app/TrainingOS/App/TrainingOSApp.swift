@@ -6,6 +6,25 @@ struct TrainingOSApp: App {
     let container: ModelContainer
 
     init() {
+        // SIMULATOR AUTOMATION HARNESS (Section 2): the smallest truthful
+        // "reset before onboarding" seam for the real UI-automation
+        // dogfood harness — gated behind an explicit launch argument, so
+        // every real athlete launch (which never passes this argument) is
+        // completely unaffected. Deletes SwiftData's own default on-disk
+        // store files before the container opens them, producing a
+        // genuinely clean, real first-run state through the SAME
+        // `PersistenceController.makeAppContainer()` production path a
+        // real athlete's fresh install uses — never a fabricated/seeded
+        // state.
+        if ProcessInfo.processInfo.arguments.contains("-FFDogfoodCleanState") {
+            let fm = FileManager.default
+            if let supportDir = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
+                for suffix in ["", "-shm", "-wal"] {
+                    let url = supportDir.appendingPathComponent("default.store\(suffix)")
+                    try? fm.removeItem(at: url)
+                }
+            }
+        }
         self.container = PersistenceController.makeAppContainer()
         // Stage V1.Checkpoint 1: production first launch no longer seeds a
         // demo Goal/Plan/Sessions — `AppRootView` routes a real athlete

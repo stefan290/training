@@ -3,6 +3,20 @@ import Foundation
 /// Pure display-string mapping for Plan's Goal/Phase/ProgramDefinition
 /// concepts — user-facing names instead of raw enum-like strings (Part 4).
 enum PlanPresentation {
+    /// Dogfood Round 2 (Finding 1, Correction 1): athlete-facing weekday
+    /// name for the real weekly-availability editor.
+    static func weekdayLabel(_ day: Weekday) -> String {
+        switch day {
+        case .monday: "Monday"
+        case .tuesday: "Tuesday"
+        case .wednesday: "Wednesday"
+        case .thursday: "Thursday"
+        case .friday: "Friday"
+        case .saturday: "Saturday"
+        case .sunday: "Sunday"
+        }
+    }
+
     static func goalTypeLabel(_ type: GoalType) -> String {
         switch type {
         case .muscleGain: "Muscle Gain"
@@ -21,7 +35,18 @@ enum PlanPresentation {
     /// persisted `Goal.primaryType == .functionalFitness` data (if any)
     /// is never migrated or blocked by this — this is only which options
     /// the picker itself offers going forward.
-    static let mainGoalOptions: [GoalType] = [.muscleGain, .generalStrength, .fatLoss, .enduranceEvent, .maintenance]
+    ///
+    /// MUSCLE VERTICAL SLICE REPAIR, Section 1: `.fatLoss` is likewise
+    /// removed from this list — "Lose Fat" is not one of the three
+    /// currently-supported primary adaptation goals (Muscle/Strength/
+    /// Conditioning). Same non-destructive pattern as `.functionalFitness`
+    /// above: the `GoalType` case and every downstream phase-planning
+    /// path stay fully intact (a pre-existing persisted
+    /// `Goal.primaryType == .fatLoss` still loads and plans correctly —
+    /// `mainGoalLabel`/`candidateMixTemplates`/etc. all stay exhaustive
+    /// switches, never touched) — only the NEW-athlete picker stops
+    /// offering it.
+    static let mainGoalOptions: [GoalType] = [.muscleGain, .generalStrength, .enduranceEvent, .maintenance]
 
     /// Athlete-facing OUTCOME phrasing for the Main Goal screen —
     /// deliberately distinct from `goalTypeLabel` above (which stays the
@@ -163,6 +188,7 @@ enum PlanPresentation {
         case .rm10: "10RM"
         case .rm8: "8RM"
         case .rm5: "5RM"
+        case .rm1: "1RM"
         }
     }
 }

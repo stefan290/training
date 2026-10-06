@@ -58,6 +58,17 @@ struct FunctionalFitnessExecutionView: View {
 
                     if viewModel.block.status == .completed {
                         completedContent
+                    } else if isTimedFormat(prescription.format), viewModel.block.status == .pending {
+                        // DOGFOOD — FIX ORDER 1, Section B: a timed block
+                        // must never start merely by being opened/viewed.
+                        // The full prescription still renders below
+                        // (movementsCard) — only the running clock is
+                        // withheld until the athlete explicitly taps Start.
+                        startWorkoutPrompt(prescription)
+
+                        if !prescription.orderedMovements.isEmpty {
+                            movementsCard(prescription)
+                        }
                     } else {
                         content(for: prescription.format)
 
@@ -74,11 +85,35 @@ struct FunctionalFitnessExecutionView: View {
         // already the huge display headline in the body — the native
         // nav bar title only needs the block-type context, never a
         // duplicate of the exact same string shown prominently below.
-        .navigationTitle(BlockPresentation.blockTypeLabel(viewModel.block.type))
+        // Dogfood Round 2 (Finding 4): reads "Conditioning" instead of the
+        // generic "Functional Fitness" when this block is the subordinate
+        // finisher of a Functional-Bodybuilding/Strength-Power archetyped
+        // session — unaffected for every other Functional Fitness session
+        // (`.unbiased`/`.recoveryConditioning`, where this IS the primary
+        // identity).
+        .navigationTitle(BlockPresentation.functionalFitnessAwareBlockLabel(for: viewModel.block))
         .navigationBarTitleDisplayMode(.inline)
         .task {
-            try? CompleteBlockUseCase.start(viewModel.block, modelContext: modelContext)
-            if viewModel.block.timerState == nil, let format = viewModel.format {
+            // DOGFOOD — FIX ORDER 1, Section B: opening/viewing this
+            // screen must never itself start a timed block — that used to
+            // happen unconditionally right here. `.maxLoad` has no clock
+            // at all (`startClock`'s own `.maxLoad` case is a no-op), so
+            // it is exempt from the explicit-Start gate and keeps its
+            // exact prior immediate-active behavior. Every timed format
+            // now waits for `startWorkout()` (tapped "Start Workout").
+            // The one remaining case handled here is a genuinely resumed
+            // session: if the block is already `.active` (Start was
+            // already tapped in a prior visit) but somehow has no
+            // persisted `timerState` — a defensive fallback, not the
+            // normal path, since `startWorkout()` always sets both
+            // together — recreate it rather than leaving the screen with
+            // an active block and no clock.
+            guard let format = viewModel.format else { return }
+            if case .maxLoad = format {
+                try? CompleteBlockUseCase.start(viewModel.block, modelContext: modelContext)
+                return
+            }
+            if viewModel.block.status == .active, viewModel.block.timerState == nil {
                 startClock(for: format)
             }
         }
@@ -115,6 +150,18 @@ struct FunctionalFitnessExecutionView: View {
 
     private func header(_ prescription: FunctionalFitnessPrescription) -> some View {
         VStack(alignment: .leading, spacing: 6) {
+            // Dogfood Round 2 (Finding 4): a small, explicit "CONDITIONING"
+            // eyebrow above the format headline whenever this block is
+            // the subordinate finisher of a dominant Functional
+            // Bodybuilding/Strength-Power session — the format itself
+            // ("5 Rounds For Time") may legitimately still appear here,
+            // it just never reads as the session's own primary identity.
+            if prescription.archetype.conditioningIsSubordinate {
+                Text("CONDITIONING")
+                    .font(Theme.eyebrow)
+                    .tracking(1.4)
+                    .foregroundStyle(Theme.textSecondary)
+            }
             Text(BlockPresentation.formatLabel(prescription.format))
                 .font(Theme.headingXL)
                 .foregroundStyle(Theme.textPrimary)
@@ -174,6 +221,48 @@ struct FunctionalFitnessExecutionView: View {
             }
         }
         .trainingOSCard()
+    }
+
+    /// DOGFOOD — FIX ORDER 1, Section B: `.maxLoad` is the one FF format
+    /// with no running clock at all (`startClock`'s own `.maxLoad` case),
+    /// so it is never gated behind an explicit Start — there is no
+    /// timed-work-in-progress state for a mere view to prematurely start.
+    private func isTimedFormat(_ format: WorkoutFormat) -> Bool {
+        if case .maxLoad = format { return false }
+        return true
+    }
+
+    /// DOGFOOD — FIX ORDER 1, Section B: the pre-Start state for a timed
+    /// block — the prescription is fully visible (this view, plus
+    /// `movementsCard` below it) but the clock is a stationary preview,
+    /// never ticking, and no `WorkoutBlock`/`TimerState` mutation has
+    /// happened yet. Tapping "Start Workout" is the ONLY path to
+    /// `startWorkout()`.
+    private func startWorkoutPrompt(_ prescription: FunctionalFitnessPrescription) -> some View {
+        VStack(spacing: 18) {
+            timerBlock(
+                phaseLabel: BlockPresentation.formatLabel(prescription.format).uppercased(),
+                value: formattedClock(Double(capSeconds(for: prescription.format) ?? 0)),
+                caption: "Not started",
+                expired: false
+            )
+            Button("Start Workout") { startWorkout() }
+                .buttonStyle(.trainingOSPrimary)
+                .frame(maxWidth: .infinity)
+        }
+    }
+
+    /// DOGFOOD — FIX ORDER 1, Section B: the ONLY call site allowed to
+    /// transition a timed block to `.active` and create its `TimerState`
+    /// — `CompleteBlockUseCase.start`/`UpdateBlockTimerUseCase.start`
+    /// (via `startClock`) both persist immediately, one explicit athlete
+    /// action, matching this project's durable-write-per-action rule
+    /// (CLAUDE.md rule 20) rather than deferring to any later save.
+    private func startWorkout() {
+        try? CompleteBlockUseCase.start(viewModel.block, modelContext: modelContext)
+        if let format = viewModel.format {
+            startClock(for: format)
+        }
     }
 
     private func startClock(for format: WorkoutFormat) {

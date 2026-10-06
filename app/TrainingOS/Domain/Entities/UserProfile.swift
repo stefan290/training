@@ -38,15 +38,33 @@ final class UserProfile {
     @Relationship(deleteRule: .nullify)
     var defaultTrainingEnvironment: TrainingEnvironment?
 
+    /// Dogfood Round 2 Continuation (Finding I): distinguishes "a default
+    /// Training Environment exists" (true for every athlete the instant
+    /// `AppRootStateResolver.ensureBaselineIdentity` auto-seeds Full Gym,
+    /// before onboarding even starts) from "the athlete has actually SEEN
+    /// and explicitly accepted it." `OnboardingFlowView`'s Environment step
+    /// used to be skipped for every new athlete purely because the former
+    /// was already true — the athlete never got a real chance to see or
+    /// change what TrainingOS assumed about their equipment before it
+    /// started gating exercise selection. Set to `true` only when the
+    /// athlete actually advances past the Environment step
+    /// (`OnboardingViewModel.advance(from: .environment, ...)`) — never
+    /// backfilled for existing data, so a pre-existing athlete who never
+    /// saw that step is correctly routed through it once, next time
+    /// onboarding is reachable for them.
+    var hasConfirmedTrainingEnvironment: Bool = false
+
     init(
         id: UUID = UUID(),
         weightUnit: WeightUnit = .kilograms,
         equipmentIncrements: [String: Double] = ["barbell": 2.5, "dumbbell": 2.0, "machine": 5.0],
-        preferredProgressionStyle: ProgressionStyle = .loadFocused
+        preferredProgressionStyle: ProgressionStyle = .loadFocused,
+        hasConfirmedTrainingEnvironment: Bool = false
     ) {
         self.id = id
         self.weightUnit = weightUnit
         self.equipmentIncrements = equipmentIncrements
         self.preferredProgressionStyle = preferredProgressionStyle
+        self.hasConfirmedTrainingEnvironment = hasConfirmedTrainingEnvironment
     }
 }

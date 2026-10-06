@@ -1,8 +1,9 @@
 import SwiftUI
 
-/// The approved three-tab navigation (handoff section 4 / "Locked
-/// decisions"): Today / Plan / Progress. Programs lives inside Plan and
-/// Profile hangs off the Today header — neither exists yet in this pass.
+/// The approved tab navigation (handoff section 4 / "Locked decisions"):
+/// Today / Plan / Progress, plus Profile (Dogfood Round 2, Findings B/C) —
+/// the athlete's discoverable configuration entry point, no longer a
+/// Today-toolbar-only sheet.
 ///
 /// Stage 10R.1C addition, revised by Dogfood Round 1 (Finding 1): "Set
 /// your starting weights" (`SourceRMCalibrationViewModel`) is no longer a
@@ -27,11 +28,21 @@ import SwiftUI
 /// regardless of calibration (nothing in that program depends on a live
 /// per-week result); this gate exists purely so the athlete never reaches
 /// Today staring at an unresolved percentage.
+///
+/// Dogfood Round 2 (Finding H): the starting-weight calibration banner
+/// used to live here, as a `.safeAreaInset(edge: .top)` on the whole
+/// `TabView`. That made it a persistent geometric inset for the ENTIRE
+/// region — every screen PUSHED inside any tab's own `NavigationStack`
+/// (Week, Session, workout execution) still had to render its own nav bar
+/// squeezed under it, which is exactly why it collided with the back/close
+/// control on those screens. It's moved to `TodayView`'s own root content
+/// (inside Today's `NavigationStack`, not wrapping it) — a `safeAreaInset`
+/// scoped to one specific view in a stack only affects that view, so it
+/// now shows only on Today's own top-level screen and is gone the instant
+/// anything is pushed, without needing any padding hack here.
 struct RootTabView: View {
     @Environment(\.modelContext) private var modelContext
-    @State private var calibrationViewModel = SourceRMCalibrationViewModel()
     @State private var runningCalibrationViewModel = RunningThresholdCalibrationViewModel()
-    @State private var showingCalibrationSheet = false
 
     var body: some View {
         Group {
@@ -54,26 +65,18 @@ struct RootTabView: View {
 
                     TrainingProgressView()
                         .tabItem { Label("Progress", systemImage: "chart.line.uptrend.xyaxis") }
+
+                    // Dogfood Round 2 (Findings B/C): Profile is now a real,
+                    // discoverable root tab — the athlete's one configuration
+                    // entry point — replacing the former Today-toolbar-only
+                    // sheet presentation.
+                    ProfileView()
+                        .tabItem { Label("Profile", systemImage: "person.crop.circle") }
                 }
                 .tint(Theme.primary)
-                // Dogfood Round 1 (Finding 1): a dismissible, non-blocking
-                // opportunity to estimate starting weights now — never
-                // gating the tabs behind it.
-                .safeAreaInset(edge: .top) {
-                    if calibrationViewModel.hasPendingCalibration {
-                        calibrationBanner
-                    }
-                }
-                .sheet(isPresented: $showingCalibrationSheet) {
-                    SourceRMCalibrationView(viewModel: calibrationViewModel) {
-                        calibrationViewModel.load(modelContext: modelContext)
-                        showingCalibrationSheet = false
-                    }
-                }
             }
         }
         .onAppear {
-            calibrationViewModel.load(modelContext: modelContext)
             runningCalibrationViewModel.load(modelContext: modelContext)
         }
         // Stage 10R.7B (D-10R7B-7): a successful strategic transition can
@@ -83,36 +86,8 @@ struct RootTabView: View {
         // and idempotent (`SourceRMCalibrationViewModel.load`'s own doc
         // comment) — safe to call again even when nothing changed.
         .onReceive(NotificationCenter.default.publisher(for: .strategicPhaseTransitionCompleted)) { _ in
-            calibrationViewModel.load(modelContext: modelContext)
             runningCalibrationViewModel.load(modelContext: modelContext)
         }
-    }
-
-    /// Dogfood Round 1 (Finding 1): purely an invitation, never a
-    /// requirement — tapping it opens the same optional "estimate now"
-    /// screen; ignoring it changes nothing about whether the athlete can
-    /// train today.
-    private var calibrationBanner: some View {
-        Button {
-            showingCalibrationSheet = true
-        } label: {
-            HStack(spacing: 10) {
-                Image(systemName: "scalemass")
-                Text("Some exercises still need a starting weight — set it now, or we'll ask before your first set.")
-                    .font(Theme.label)
-                    .multilineTextAlignment(.leading)
-                Spacer(minLength: 8)
-                Image(systemName: "chevron.right")
-                    .font(.caption)
-            }
-            .foregroundStyle(Theme.textPrimary)
-            .padding(12)
-            .background(Theme.surfacePrimary, in: RoundedRectangle(cornerRadius: 12))
-            .padding(.horizontal, 12)
-            .padding(.top, 8)
-        }
-        .buttonStyle(.plain)
-        .background(Theme.ground)
     }
 }
 

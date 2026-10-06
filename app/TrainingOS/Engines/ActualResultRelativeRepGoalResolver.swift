@@ -35,9 +35,15 @@ enum ActualResultRelativeRepGoalResolver {
         guard let referenced = AutoregulationRatingResolver.mostRecentlyCompletedPrescription(for: referenceSlot, in: instance) else {
             return (nil, .repGoalRequiresPriorSlotActualResult)
         }
+        // Dogfood Round 2 Continuation (Finding J): explicitly excludes
+        // any non-rep result rather than fabricating a rep value — this
+        // resolver is Powerlifting-source-specific (Family E's own
+        // referenced slot is always rep-based in every real source
+        // program), but the exclusion is made explicit rather than
+        // assumed.
         let actualReps = referenced.loggedSetResults
             .sorted { $0.setIndex < $1.setIndex }
-            .map(\.reps)
+            .compactMap(\.reps)
         guard actualReps.count >= requiredSetCount else {
             return (nil, .repGoalRequiresPriorSlotActualResult)
         }

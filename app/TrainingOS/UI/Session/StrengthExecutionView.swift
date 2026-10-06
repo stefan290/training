@@ -33,6 +33,13 @@ struct StrengthExecutionView: View {
     /// in `resetInputsForCurrentSet` — never fabricated for an RIR-only
     /// or unresolved-deload set.
     @State private var reps: Int?
+    /// Dogfood Round 2 Continuation (Finding J): distance/duration actual-
+    /// input text, parallel to `weightText` — populated/read only when
+    /// `currentSetPrescription` actually carries that target dimension
+    /// (`distanceModeActive`/`durationModeActive` below); left blank and
+    /// unused for every existing rep-based prescription.
+    @State private var distanceText: String = ""
+    @State private var durationText: String = ""
     @State private var actualRir: Int?
     @State private var lastHighlight: LoggedResultHighlight?
     @State private var showingChangeExercise = false
@@ -101,7 +108,13 @@ struct StrengthExecutionView: View {
         // native nav bar title only needs the block-type context
         // ("Strength"/"Hypertrophy"/"Accessory"), never a duplicate of
         // the exact same string the body already shows prominently.
-        .navigationTitle(BlockPresentation.blockTypeLabel(viewModel.block.type))
+        // Dogfood Round 2 (Finding 4): a Functional-Fitness-owned strength
+        // block with a real archetype bias shows its real identity
+        // ("Functional Bodybuilding") here instead of the generic
+        // "Strength" — every other strength/hypertrophy/accessory block
+        // is completely unaffected (`functionalFitnessAwareBlockLabel`
+        // falls back to the same generic label for anything else).
+        .navigationTitle(BlockPresentation.functionalFitnessAwareBlockLabel(for: viewModel.block))
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showingChangeExercise, onDismiss: { viewModel.loadPreviousPerformance(modelContext: modelContext) }) {
             if let movement = viewModel.currentMovement {
@@ -114,7 +127,12 @@ struct StrengthExecutionView: View {
             }
         }
         .task {
-            try? CompleteBlockUseCase.start(viewModel.block, modelContext: modelContext)
+            // Dogfood Round 2 Continuation (Finding O): merely viewing this
+            // block — including to resolve a calibration prompt — must
+            // never mark it `.active`. Calibration is preparation, not
+            // performance; the block now transitions `.pending -> .active`
+            // only in `StrengthExecutionViewModel.logCurrentSet`, at the
+            // moment a real set is actually logged. Removed from here.
             viewModel.loadPreviousPerformance(modelContext: modelContext)
             resetInputsForCurrentSet()
         }
@@ -249,7 +267,8 @@ struct StrengthExecutionView: View {
                 // for the pure (independently tested) formatting rules.
                 let repsText = StrengthSetPresentation.repsText(repRangeLow: setPrescription.repRangeLow, repRangeHigh: setPrescription.repRangeHigh)
                 let targetText = StrengthSetPresentation.targetText(
-                    repRangeLow: setPrescription.repRangeLow, repRangeHigh: setPrescription.repRangeHigh, targetRir: setPrescription.targetRir
+                    repRangeLow: setPrescription.repRangeLow, repRangeHigh: setPrescription.repRangeHigh, targetRir: setPrescription.targetRir,
+                    targetDistanceMeters: setPrescription.targetDistanceMeters, targetDurationSeconds: setPrescription.targetDurationSeconds
                 )
                 Text("Set \(viewModel.currentSetIndex + 1) of \(viewModel.currentMovement?.orderedSetPrescriptions.count ?? 0)"
                     + (targetText.isEmpty ? "" : " · \(targetText)"))
@@ -362,8 +381,16 @@ struct StrengthExecutionView: View {
         .trainingOSCard(emphasized: true)
     }
 
+    /// Dogfood Round 2 Continuation (Finding J): each previous result
+    /// renders whichever dimension it actually recorded — never a
+    /// fabricated rep count for a distance/duration-based result.
     private var previousResultsSummary: String {
-        viewModel.previousResults.map { "\($0.weight.formattedWeight)×\($0.reps)" }.joined(separator: " · ")
+        viewModel.previousResults.map { result -> String in
+            if let reps = result.reps { return "\(result.weight.formattedWeight)×\(reps)" }
+            if let distance = result.distanceMeters { return "\(Int(distance)) m" }
+            if let duration = result.durationSeconds { return "\(duration)s" }
+            return result.weight.formattedWeight
+        }.joined(separator: " · ")
     }
 
     /// A real disclosure of why today's suggested load is what it is —
@@ -408,9 +435,28 @@ struct StrengthExecutionView: View {
         }
     }
 
+    /// Dogfood Round 2 Continuation (Finding J): which execution INPUT
+    /// dimension this set actually needs — derived from the real,
+    /// materialized `currentSetPrescription`'s populated target fields,
+    /// never a second, independent "exercise type" switch. Distance/
+    /// duration take priority over the reps stepper (mutually exclusive
+    /// in practice today: no role authors both), so every existing rep-
+    /// based prescription (both fields `nil`) falls through unchanged to
+    /// the original reps stepper.
+    private var usesDistanceInput: Bool {
+        viewModel.currentSetPrescription?.targetDistanceMeters != nil
+    }
+    private var usesDurationInput: Bool {
+        !usesDistanceInput && viewModel.currentSetPrescription?.targetDurationSeconds != nil
+    }
+
     /// The artifact's own kg/reps/RIR pill-stepper layout — same real
     /// bindings/logging as before (`weightText`/`repsStepperBinding`/
-    /// `actualRir`/`logSet()`), only the presentation is new.
+    /// `actualRir`/`logSet()`), only the presentation is new. Dogfood
+    /// Round 2 Continuation (Finding J): the middle stat field now shows
+    /// a distance or duration TextField instead of the reps stepper when
+    /// `usesDistanceInput`/`usesDurationInput` — combinations compose with
+    /// the unchanged weight/RIR fields around it.
     private var currentSetCard: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("SET \(viewModel.currentSetIndex + 1)")
@@ -426,16 +472,34 @@ struct StrengthExecutionView: View {
                         .font(Theme.numeric.weight(.bold))
                         .foregroundStyle(Theme.textPrimary)
                 }
-                statField(label: "reps") {
-                    Stepper(value: repsStepperBinding, in: 0...50) { EmptyView() }
-                        .labelsHidden()
-                        .overlay(
-                            Text(reps.map { "\($0)" } ?? "—")
-                                .font(Theme.numeric.weight(.bold))
-                                .foregroundStyle(Theme.textPrimary)
-                                .allowsHitTesting(false)
-                                .accessibilityLabel(StrengthSetPresentation.actualRepsLabel(reps))
-                        )
+                if usesDistanceInput {
+                    statField(label: "m") {
+                        TextField("Distance", text: $distanceText)
+                            .keyboardType(.decimalPad)
+                            .multilineTextAlignment(.center)
+                            .font(Theme.numeric.weight(.bold))
+                            .foregroundStyle(Theme.textPrimary)
+                    }
+                } else if usesDurationInput {
+                    statField(label: "sec") {
+                        TextField("Duration", text: $durationText)
+                            .keyboardType(.numberPad)
+                            .multilineTextAlignment(.center)
+                            .font(Theme.numeric.weight(.bold))
+                            .foregroundStyle(Theme.textPrimary)
+                    }
+                } else {
+                    statField(label: "reps") {
+                        Stepper(value: repsStepperBinding, in: 0...50) { EmptyView() }
+                            .labelsHidden()
+                            .overlay(
+                                Text(reps.map { "\($0)" } ?? "—")
+                                    .font(Theme.numeric.weight(.bold))
+                                    .foregroundStyle(Theme.textPrimary)
+                                    .allowsHitTesting(false)
+                                    .accessibilityLabel(StrengthSetPresentation.actualRepsLabel(reps))
+                            )
+                    }
                 }
                 VStack(spacing: 7) {
                     Text("RIR")
@@ -460,9 +524,22 @@ struct StrengthExecutionView: View {
             Button("Log Set") { logSet() }
                 .buttonStyle(.trainingOSPrimary)
                 .frame(maxWidth: .infinity)
-                .disabled(Double(weightText) == nil)
+                .disabled(!canLogSet)
         }
         .trainingOSCard()
+    }
+
+    /// Dogfood Round 2 Continuation (Finding J): weight stays required for
+    /// every set (unchanged) — the athlete always knows what they carried/
+    /// lifted, formal target or not. A distance/duration set additionally
+    /// requires its own real, parseable actual value before it can be
+    /// logged; a rep-based set is unaffected (the reps stepper always has
+    /// a value, defaulting to 0, exactly as before).
+    private var canLogSet: Bool {
+        guard Double(weightText) != nil else { return false }
+        if usesDistanceInput { return Double(distanceText) != nil }
+        if usesDurationInput { return Int(durationText) != nil }
+        return true
     }
 
     private func statField<Content: View>(label: String, @ViewBuilder content: () -> Content) -> some View {
@@ -495,9 +572,23 @@ struct StrengthExecutionView: View {
         Binding(get: { reps ?? 0 }, set: { reps = $0 })
     }
 
+    /// Dogfood Round 2 Continuation (Finding J): branches on the same
+    /// `usesDistanceInput`/`usesDurationInput` signal the card itself
+    /// used — a distance/duration set logs `reps: nil` (never a
+    /// fabricated `0`, which would be indistinguishable from a real
+    /// zero-rep strength result), a rep-based set logs exactly as before
+    /// (`reps ?? 0`, unchanged).
     private func logSet() {
         guard let weight = Double(weightText) else { return }
-        lastHighlight = viewModel.logCurrentSet(weight: weight, reps: reps ?? 0, actualRir: actualRir, modelContext: modelContext)
+        if usesDistanceInput {
+            guard let distance = Double(distanceText) else { return }
+            lastHighlight = viewModel.logCurrentSet(weight: weight, reps: nil, actualRir: actualRir, modelContext: modelContext, distanceMeters: distance)
+        } else if usesDurationInput {
+            guard let duration = Int(durationText) else { return }
+            lastHighlight = viewModel.logCurrentSet(weight: weight, reps: nil, actualRir: actualRir, modelContext: modelContext, durationSeconds: duration)
+        } else {
+            lastHighlight = viewModel.logCurrentSet(weight: weight, reps: reps ?? 0, actualRir: actualRir, modelContext: modelContext)
+        }
         executionState.record(lastHighlight)
         resetInputsForCurrentSet()
     }
@@ -516,5 +607,12 @@ struct StrengthExecutionView: View {
         // `0`.
         reps = setPrescription.repRangeHigh
         actualRir = setPrescription.targetRir
+        // Dogfood Round 2 Continuation (Finding J): prefill the actual
+        // distance/duration input from the same real target the header
+        // already displays — a reasonable starting-point prefill, exactly
+        // like `repRangeHigh`'s existing precedent above; the athlete
+        // edits it to the real value they actually performed.
+        distanceText = setPrescription.targetDistanceMeters.map { "\(Int($0))" } ?? ""
+        durationText = setPrescription.targetDurationSeconds.map { "\($0)" } ?? ""
     }
 }

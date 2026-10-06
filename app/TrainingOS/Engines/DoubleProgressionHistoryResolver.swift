@@ -114,7 +114,13 @@ enum DoubleProgressionHistoryResolver {
         guard !targets.isEmpty else { return nil }
         let loggedResults = prescription.loggedSetResults.sorted { $0.setIndex < $1.setIndex }
         guard let lastWeight = loggedResults.last?.weight, loggedResults.count == targets.count else { return nil }
-        let outcomes = loggedResults.map { SetOutcome(reps: $0.reps, actualRir: $0.actualRir) }
+        // Dogfood Round 2 Continuation (Finding J): same explicit
+        // rep-only exclusion as `BlockProgressionEngine` — a non-rep
+        // result is skipped, never coerced to a fake zero-rep outcome.
+        let outcomes = loggedResults.compactMap { result -> SetOutcome? in
+            guard let reps = result.reps else { return nil }
+            return SetOutcome(reps: reps, actualRir: result.actualRir)
+        }
         return Exposure(targets: targets, outcomes: outcomes, lastKnownWeight: lastWeight)
     }
 }

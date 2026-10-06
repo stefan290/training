@@ -1,0 +1,26 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild test-without-building -scheme TrainingOS -destination "platform=iOS Simulator,name=iPhone 17" "-only-testing:TrainingOSTests/AdvanceTacticalWeekCapabilityWiringTests/testAdvancementUsesTheProgramOwnersEvidenceNeverASecondUsersEvidence"
+
+Test Suite 'Selected tests' started at 2026-10-02 10:40:16.705.
+Test Suite 'TrainingOSTests.xctest' started at 2026-10-02 10:40:16.706.
+Test Suite 'AdvanceTacticalWeekCapabilityWiringTests' started at 2026-10-02 10:40:16.706.
+Test Case '-[TrainingOSTests.AdvanceTacticalWeekCapabilityWiringTests testAdvancementUsesTheProgramOwnersEvidenceNeverASecondUsersEvidence]' started.
+2026-10-02 10:40:16.991437+0200 TrainingOS[32715:76248595] [ModelContext] Illegal attempt to insert a model in to a different model context. Model PersistentIdentifier(id: SwiftData.PersistentIdentifier.ID(backing: SwiftData.PersistentIdentifier.PersistentIdentifierBacking.managedObjectID(0xae8a39170ae0833a <x-coredata://714F59F3-44E7-48E5-8B1F-9DE9768355D3/Exercise/p34>))) is already bound to SwiftData.ModelContext but insert was called on SwiftData.ModelContext
+2026-10-02 10:40:16.994877+0200 TrainingOS[32715:76248595] [ModelContext] Illegal attempt to insert a model in to a different model context. Model PersistentIdentifier(id: SwiftData.PersistentIdentifier.ID(backing: SwiftData.PersistentIdentifier.PersistentIdentifierBacking.managedObjectID(0xae8a39170f80833a <x-coredata://714F59F3-44E7-48E5-8B1F-9DE9768355D3/Exercise/p9>))) is already bound to SwiftData.ModelContext but insert was called on SwiftData.ModelContext
+Test Case '-[TrainingOSTests.AdvanceTacticalWeekCapabilityWiringTests testAdvancementUsesTheProgramOwnersEvidenceNeverASecondUsersEvidence]' passed (0.306 seconds).
+Test Suite 'AdvanceTacticalWeekCapabilityWiringTests' passed at 2026-10-02 10:40:17.013.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.306 (0.307) seconds
+Test Suite 'TrainingOSTests.xctest' passed at 2026-10-02 10:40:17.013.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.306 (0.307) seconds
+Test Suite 'Selected tests' passed at 2026-10-02 10:40:17.013.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.306 (0.308) seconds
+2026-10-02 10:40:17.319 xcodebuild[32711:76248388] [MT] IDETestOperationsObserverDebug: 2.187 elapsed -- Testing started completed.
+2026-10-02 10:40:17.319 xcodebuild[32711:76248388] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-02 10:40:17.319 xcodebuild[32711:76248388] [MT] IDETestOperationsObserverDebug: 2.187 sec, +2.187 sec -- end
+
+Test session results, code coverage, and logs:
+	/Users/stefankedling/Library/Developer/Xcode/DerivedData/TrainingOS-heqapafjeoqodgdjjypjihjvfkbc/Logs/Test/Test-TrainingOS-2026.10.02_10-40-14-+0200.xcresult
+
+** TEST EXECUTE SUCCEEDED **
+
+Testing started

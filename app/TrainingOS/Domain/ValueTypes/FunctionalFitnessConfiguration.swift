@@ -44,6 +44,62 @@ struct FunctionalFitnessSessionIntent: Codable, Equatable {
     /// skill-emphasis conditioning, `.functionalFitness` for the general/
     /// performance-leaning case.
     var sessionRole: SessionRole
+    /// Dogfood Round 2 (Finding 4): the real, explicit phase-driven
+    /// archetype `FunctionalFitnessPhaseBiasPolicy.apply` decided for this
+    /// intent — `.unbiased` for every pre-existing authored entry (this
+    /// checkpoint's bias never invents one). Threaded onto the generated
+    /// `FunctionalFitnessPrescriptionTemplate`/`FunctionalFitnessPrescription`
+    /// so it survives to real materialized content and the athlete-facing
+    /// presentation layer, never re-derived from the phase at render time.
+    var archetype: FunctionalFitnessSessionArchetype = .unbiased
+    /// GENERAL PROGRAMMING ALLOCATION ARCHITECTURE V1 §13/§17: "not every
+    /// FF session requires... even a conditioning block." Defaults `true`
+    /// so every pre-existing authored entry/test is completely
+    /// unaffected; `false` only for a `.resistanceDominant`-purpose
+    /// Muscle Gain session, where the real main body already carries the
+    /// session's whole resistance stimulus and a conditioning block is
+    /// genuinely optional, never mandatory.
+    var includeConditioningBlock: Bool = true
+    /// FUNCTIONAL FITNESS PROGRAMMING AUTHORITY V1 (Part IV): the real
+    /// session family `FunctionalFitnessPhaseBiasPolicy.apply` resolved
+    /// for this intent from the athlete's real `TrainingMix` allocation —
+    /// `nil` for every phase this checkpoint's allocator doesn't bias
+    /// (matching `archetype`'s own `.unbiased` precedent: never guessed,
+    /// never defaulted to a fabricated non-nil family). Renamed/
+    /// generalized from the prior checkpoint's Muscle-only
+    /// `muscleSessionPurpose: FunctionalFitnessMuscleSessionPurpose?` —
+    /// the 3 original cases keep their exact prior meaning.
+    var sessionFamily: FunctionalFitnessSessionFamily? = nil
+    /// PROGRAMMING AUTHORITY V1 — FINAL CLOSE-OUT, Part XV (project-lead
+    /// authoritative rule): `nil` for every pre-existing intent/test
+    /// (completely unaffected). `FunctionalFitnessPhaseBiasPolicy.apply`
+    /// sets this to `.squatLoaded` or `.hingeLoaded` only for the (at
+    /// most 2) sessions this week responsible for the real week-level
+    /// squat+hinge guarantee — see that type's own doc comment for the
+    /// exact rule and when it activates. Consumed by
+    /// `FunctionalFitnessProgramGenerator.addStrengthBlock`, which honors
+    /// it in place of the default `relativeWeek`-keyed rotation for that
+    /// one session's PRIMARY pattern only; every other session keeps the
+    /// existing rotation entirely unchanged.
+    var requiredLoadedPattern: MovementFunction? = nil
+    /// GENERIC STRENGTH PRESCRIPTION AUTHORITY V1: `nil` for every
+    /// pre-existing intent/test (completely unaffected) and for every
+    /// Muscle-goal/Conditioning-goal session (this is a Strength-goal-
+    /// only concept). `FunctionalFitnessPhaseBiasPolicy.apply` sets this,
+    /// for a `.strength`-goal session, only when
+    /// `GenericStrengthRequirementCalculator.allocateFFAssignments` has
+    /// assigned this session's `sessionIndexInWeek` a genuine remaining
+    /// weekly HIGH_LOAD_STRENGTH_EXPOSURE responsibility a source-backed
+    /// Strength/Powerlifting program does not already satisfy. Deliberately
+    /// separate from `requiredLoadedPattern` above (a different concept —
+    /// that field only overrides which pattern the EXISTING source-backed
+    /// Hypertrophy-authority role rotation uses; this field says the
+    /// session's main body role should instead be the NEW generic
+    /// HIGH_LOAD_STRENGTH_EXPOSURE prescription entirely). Consumed by
+    /// `FunctionalFitnessProgramGenerator.addStrengthBlock`, which calls
+    /// `addGenericHighLoadStrengthPrescription` in place of the existing
+    /// family-based dispatch when this is non-nil.
+    var genericStrengthAssignment: MovementFunction? = nil
 }
 
 /// The full "recipe" `FunctionalFitnessProgramGenerator` needs to produce

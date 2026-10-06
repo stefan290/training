@@ -78,15 +78,33 @@ final class FunctionalFitnessPrescription {
     @Relationship(deleteRule: .cascade, inverse: \FunctionalFitnessMovement.functionalFitnessPrescription)
     var movements: [FunctionalFitnessMovement] = []
 
+    /// Dogfood Round 2 (Finding 4): the real archetype decision this
+    /// session's own template carried, copied here at materialization
+    /// time — the presentation layer (`BlockPresentation
+    /// .functionalFitnessAwareBlockLabel`) reads this real, persisted
+    /// value, never re-deriving it from the phase at render time.
+    /// `.unbiased` for every prescription materialized before this
+    /// checkpoint.
+    var archetype: FunctionalFitnessSessionArchetype = FunctionalFitnessSessionArchetype.unbiased
+
+    /// FUNCTIONAL FITNESS PROGRAMMING AUTHORITY V1: real session family
+    /// this prescription's template carried, copied here at
+    /// materialization time — same pattern as `archetype`.
+    var sessionFamily: FunctionalFitnessSessionFamily? = nil
+
     init(
         id: UUID = UUID(),
         stimulus: Stimulus,
         intendedStimulus: Stimulus? = nil,
-        format: WorkoutFormat
+        format: WorkoutFormat,
+        archetype: FunctionalFitnessSessionArchetype = .unbiased,
+        sessionFamily: FunctionalFitnessSessionFamily? = nil
     ) {
         self.id = id
         self.stimulus = stimulus
         self.intendedStimulus = intendedStimulus
+        self.archetype = archetype
+        self.sessionFamily = sessionFamily
         self.format = format
     }
 

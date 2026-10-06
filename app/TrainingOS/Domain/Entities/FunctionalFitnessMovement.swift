@@ -23,6 +23,16 @@ final class FunctionalFitnessMovement {
     var reps: Int?
     var calories: Int?
     var distanceMeters: Double?
+    /// MUSCLE + 5FF FINAL CLOSURE, Section 9 (project-owner decision): a
+    /// genuine, separate SUSTAINED_AEROBIC target dimension — "Run for 30
+    /// min at intended sustainable intensity," never a fixed distance
+    /// pretending to represent a long, continuous-effort stimulus.
+    /// `nil` for every movement whose real target is reps/distance/
+    /// calories (never populated alongside `distanceMeters` — see
+    /// `FunctionalFitnessMovementTargetRule.resolve`'s own doc comment for
+    /// exactly which real domain populates this instead of
+    /// `distanceMeters`).
+    var durationSeconds: Int?
     var loadKilograms: Double?
     var minuteSlot: Int?
     /// Dogfood Round 1 — Final Close (Finding 3D): the authored RELATIVE
@@ -80,6 +90,7 @@ final class FunctionalFitnessMovement {
         reps: Int? = nil,
         calories: Int? = nil,
         distanceMeters: Double? = nil,
+        durationSeconds: Int? = nil,
         loadKilograms: Double? = nil,
         minuteSlot: Int? = nil,
         substitutionUsed: Bool = false,
@@ -94,6 +105,7 @@ final class FunctionalFitnessMovement {
         self.reps = reps
         self.calories = calories
         self.distanceMeters = distanceMeters
+        self.durationSeconds = durationSeconds
         self.loadKilograms = loadKilograms
         self.minuteSlot = minuteSlot
         self.substitutionUsed = substitutionUsed

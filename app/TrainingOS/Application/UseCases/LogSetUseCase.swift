@@ -12,7 +12,7 @@ enum LogSetUseCase {
     static func logSet(
         setIndex: Int,
         weight: Double,
-        reps: Int,
+        reps: Int?,
         targetRir: Int?,
         actualRir: Int?,
         prBand: String?,
@@ -23,13 +23,17 @@ enum LogSetUseCase {
         exercise: Exercise,
         performanceProfile: PerformanceProfile,
         completedAt: Date,
-        modelContext: ModelContext
+        modelContext: ModelContext,
+        distanceMeters: Double? = nil,
+        durationSeconds: Int? = nil
     ) throws -> (result: SetResult, isFirstEverEntry: Bool) {
         let outcome = RecordSetResultUseCase.recordSet(
-            setIndex: setIndex, weight: weight, reps: reps, targetRir: targetRir, actualRir: actualRir,
+            setIndex: setIndex, weight: weight, reps: reps, targetRir: targetRir,
+            targetRirHigh: setPrescription?.targetRirHigh, actualRir: actualRir,
             prBand: prBand, scoringDirection: scoringDirection, context: resultContext,
             setPrescription: setPrescription, exercisePrescription: exercisePrescription, exercise: exercise,
-            performanceProfile: performanceProfile, completedAt: completedAt, modelContext: modelContext
+            performanceProfile: performanceProfile, completedAt: completedAt, modelContext: modelContext,
+            distanceMeters: distanceMeters, durationSeconds: durationSeconds
         )
         try modelContext.save()
         return outcome

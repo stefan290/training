@@ -75,8 +75,85 @@ struct RunningSourceWorkout {
 /// (`RunningProgramMaterializer`), from that athlete's own
 /// `RunningThresholdCalibration`, via `ThresholdPaceEngine` (R2) — never
 /// hardcoded here.
+/// CONDITIONING V2 — RUNNING CONTRIBUTION + PRODUCTION PROOF, Sections
+/// 1-4/8: the smallest read-only descriptor of what this Running
+/// program's real source content contributes toward a week's
+/// Conditioning requirement — derived from the SAME semantic authority
+/// (`sessionRole(for:)`) this generator already uses to author its own
+/// sessions, never re-inferred from label strings or duration
+/// thresholds. Exposed so `FunctionalFitnessRequirementAllocator` can see
+/// real Running contribution without reaching into this generator's
+/// private internals (Section 1's explicit architectural boundary).
+///
+/// Only 2 real distinguishable adaptation contributions exist in this
+/// source program's actual content, honestly exposed as 2 fields, not 3
+/// (Section 2: "if Running V1 does NOT truthfully distinguish [a third
+/// category], do not invent it"): `sessionRole` only ever resolves to
+/// `.easy`/`.tempo` (continuous, non-interval work — genuinely
+/// SUSTAINED_AEROBIC) or `.interval` (this source's own repeat-group
+/// blocks are all at 95-110% threshold — genuinely HIGH_INTENSITY_INTERVAL,
+/// never a separate sub-threshold "aerobic interval" shape). A distinct
+/// AEROBIC_INTERVAL category is NOT represented here — this program's
+/// real content never produces one.
+///
+/// `hasRunningImpact` is Section 2's RUNNING_IMPACT attribute — real
+/// running is inherently an impact-bearing modality whenever any real
+/// session exists this week; not an adaptation, a fatigue/modality fact.
+struct RunningWeeklyContribution: Equatable {
+    let includesSustainedAerobic: Bool
+    let includesHighIntensityInterval: Bool
+    let hasRunningImpact: Bool
+
+    static let none = RunningWeeklyContribution(includesSustainedAerobic: false, includesHighIntensityInterval: false, hasRunningImpact: false)
+}
+
 enum RunningProgramGenerator {
     static let currentVersion = 1
+
+    /// Section 1/8: the real, additive, read-only exposure seam.
+    /// `relativeWeek` matches this generator's own 1-13 numbering
+    /// exactly (the same value `TemplateSession.activeFromWeek + 1`
+    /// already carries). Derived directly from the same
+    /// `sessionRole(for:)` calls `generate` itself uses — never
+    /// re-inferred elsewhere.
+    static func weeklyContribution(relativeWeek: Int) -> RunningWeeklyContribution {
+        let weekWorkouts = sourceWorkouts.filter { $0.relativeWeek == relativeWeek }
+        guard !weekWorkouts.isEmpty else { return .none }
+        var sustainedAerobic = false
+        var highIntensityInterval = false
+        for workout in weekWorkouts {
+            switch sessionRole(for: workout) {
+            case .easy, .tempo: sustainedAerobic = true
+            case .interval: highIntensityInterval = true
+            default: break
+            }
+        }
+        return RunningWeeklyContribution(
+            includesSustainedAerobic: sustainedAerobic, includesHighIntensityInterval: highIntensityInterval, hasRunningImpact: true
+        )
+    }
+
+    /// Section 5/9: the whole-program aggregate (every relative week
+    /// this program's own 13-week cycle ever contains) — the real,
+    /// currently-available granularity for `FunctionalFitnessRequirementAllocator
+    /// .allocation`'s existing mix-level (not live-per-rolled-forward-week)
+    /// call site. A real, disclosed scope boundary: this answers "does
+    /// this athlete's selected Running program ever supply X," not "does
+    /// THIS SPECIFIC upcoming rolled-forward week supply X" — the
+    /// allocation call site this feeds is itself computed once per
+    /// `TrainingMixComponent`, not re-evaluated per rolled-forward week.
+    static func wholeProgramContribution() -> RunningWeeklyContribution {
+        var sustainedAerobic = false
+        var highIntensityInterval = false
+        for relativeWeek in 1...13 {
+            let contribution = weeklyContribution(relativeWeek: relativeWeek)
+            sustainedAerobic = sustainedAerobic || contribution.includesSustainedAerobic
+            highIntensityInterval = highIntensityInterval || contribution.includesHighIntensityInterval
+        }
+        return RunningWeeklyContribution(
+            includesSustainedAerobic: sustainedAerobic, includesHighIntensityInterval: highIntensityInterval, hasRunningImpact: true
+        )
+    }
 
     /// Relative weeks (1-indexed, matching the source's own numbering)
     /// that are genuine reductions by RP's own volume-based deload

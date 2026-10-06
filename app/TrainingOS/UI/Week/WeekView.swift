@@ -123,7 +123,10 @@ struct WeekView: View {
             }
             ForEach(session.orderedBlocks) { block in
                 HStack(spacing: 6) {
-                    Text(block.type.rawValue.uppercased())
+                    // MUSCLE VERTICAL SLICE CONTINUATION, Section 16: the
+                    // real, archetype-aware label — see `TodayView`'s
+                    // identical fix for the full defect trace.
+                    Text(BlockPresentation.functionalFitnessAwareBlockLabel(for: block).uppercased())
                         .font(Theme.label)
                         .foregroundStyle(Theme.primary)
                     if let detail = BlockPresentation.compactDetail(for: block) {

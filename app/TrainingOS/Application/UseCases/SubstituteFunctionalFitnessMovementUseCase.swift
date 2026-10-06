@@ -53,12 +53,21 @@ enum SubstituteFunctionalFitnessMovementUseCase {
         // field means the value is explicitly authored (hand-authored/
         // seed/benchmark content) and is never touched here.
         if let template = slot.owningFunctionalFitnessSlot, let format = template.functionalFitnessPrescriptionTemplate?.format {
+            // MUSCLE + 5FF FINAL CLOSURE, Section 9: the movement's own
+            // already-materialized real stimulus domain — never re-
+            // derived, never defaulted to `.short` here (unlike
+            // `MovementRoleExerciseSelector.Input`'s safe default for
+            // every OTHER pre-existing call site, this movement already
+            // has a real, persisted stimulus to read).
+            let targetDurationDomain = movement.functionalFitnessPrescription?.stimulus.targetDurationDomain ?? .short
             let target = FunctionalFitnessMovementTargetRule.resolve(
                 format: format, modality: slot.allowedModalities.first,
-                movementFunctions: slot.allowedMovementFunctions, exercise: exercise
+                movementFunctions: slot.allowedMovementFunctions, exercise: exercise,
+                targetDurationDomain: targetDurationDomain
             )
             if template.reps == nil { movement.reps = target.reps }
             if template.distanceMeters == nil { movement.distanceMeters = target.distanceMeters }
+            if template.distanceMeters == nil { movement.durationSeconds = target.durationSeconds }
             // Dogfood Round 1 — Final Close (Finding 3D): the relative
             // load/intensity guidance is exercise-specific (Wall Ball's
             // guidance is real guidance for Wall Ball, not for whatever

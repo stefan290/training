@@ -39,18 +39,34 @@ enum SessionDisplayMode {
 /// and even once there, a single-block Session's one-row block list was
 /// an extra, pointless tap before reaching execution.
 enum SessionAutoAdvance {
-    /// The sole block to auto-open, or `nil` if no auto-advance should
+    /// The one block to auto-open, or `nil` if no auto-advance should
     /// happen. Never fires for a not-yet-started (`.scheduled`) Session
     /// — that status transition is still the user's own explicit "Start
     /// Workout" tap on this same screen, never silently skipped. Never
-    /// fires for a multi-block Session — a real choice exists there, so
-    /// the block list stays. Never re-opens an already-finished block.
+    /// re-opens an already-finished block.
+    ///
+    /// Dogfood Round 2 Continuation (Finding O): generalized from "the
+    /// Session has exactly one block" to "exactly one block still has
+    /// real work left" — the SAME "no real choice exists" rationale the
+    /// original, single-block-only version already encoded, just applied
+    /// to REMAINING work instead of total block count. A brand-new
+    /// multi-block Session (e.g. Muscle Gain's Functional Bodybuilding +
+    /// Conditioning) still shows its real block-list choice while more
+    /// than one block has work left — completely unchanged from before.
+    /// Once every block but one is genuinely `.completed`/`.skipped`,
+    /// that last block is exactly as "the sole remaining thing to do" as
+    /// an originally-single-block Session always was, so it now auto-
+    /// opens the same way — closing the real reported gap ("continue to
+    /// Conditioning" after Functional Bodybuilding finishes) without a
+    /// redundant overview step, and without ever forcing the athlete back
+    /// into a block they backed out of mid-way (that block is still
+    /// `.pending`/`.active`, not `.completed`, so it isn't "the sole
+    /// remaining" thing whenever a DIFFERENT block also still has work).
     static func blockToAutoOpen(session: Session) -> WorkoutBlock? {
-        guard session.status == .inProgress, session.orderedBlocks.count == 1,
-              let onlyBlock = session.orderedBlocks.first,
-              onlyBlock.status != .completed, onlyBlock.status != .skipped
-        else { return nil }
-        return onlyBlock
+        guard session.status == .inProgress else { return nil }
+        let remaining = session.orderedBlocks.filter { $0.status != .completed && $0.status != .skipped }
+        guard remaining.count == 1, let onlyRemaining = remaining.first else { return nil }
+        return onlyRemaining
     }
 }
 

@@ -43,6 +43,17 @@ struct HypertrophyFeedbackView: View {
             .background(Theme.ground)
             .navigationTitle("Quick Check-in")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                // Dogfood Round 2 (Finding G): this `fullScreenCover` had no
+                // way out — an athlete who didn't want to rate every pending
+                // exercise had no path back to Session Detail. Skipping
+                // records nothing further (an unrated exercise is already a
+                // legitimate "no signal" state elsewhere in this app, e.g.
+                // `ReadinessCheckIn`'s own skip) — it never blocks Finish.
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Skip", action: onDone)
+                }
+            }
         }
     }
 

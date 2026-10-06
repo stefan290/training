@@ -58,7 +58,10 @@ final class StrategicPhaseLifecycleTests: XCTestCase {
         func exercise(
             _ name: String, _ targets: [MuscleGroup] = [], _ movementFunctions: [MovementFunction] = [], _ functionalModality: FunctionalModality? = nil
         ) -> Exercise {
-            let ex = Exercise(canonicalName: name, modality: .hypertrophy, equipment: "barbell", movementPattern: "test", primaryTargets: targets, movementFunctions: movementFunctions, functionalModality: functionalModality)
+            // FUNCTIONAL FITNESS PROGRAMMING AUTHORITY V2, Section 10/11:
+            // generic scheduling filler, not a target-content test —
+            // tagged `.distance` so it stays truthfully materializable.
+            let ex = Exercise(canonicalName: name, modality: .hypertrophy, equipment: "barbell", movementPattern: "test", primaryTargets: targets, movementFunctions: movementFunctions, functionalModality: functionalModality, measuredDimensions: movementFunctions.contains(.monostructural) ? [.distance] : [])
             context.insert(ex)
             return ex
         }
@@ -189,13 +192,25 @@ final class StrategicPhaseLifecycleTests: XCTestCase {
 
     // MARK: 12/13 — a phase becomes terminal once every component's program lifecycle (including the final hypertrophy mesocycle) is exhausted with no successor
 
-    func testPhaseBecomesTerminalOnceMesocycleThreeAndEveryOtherComponentIsExhausted() throws {
+    /// MUSCLE VERTICAL SLICE REPAIR, Sections 2-3: "Focused Hypertrophy"
+    /// is now Hypertrophy-only (the removed "5H+2Zone2" worked example
+    /// never had a real, validated basis for its Zone 2 component — see
+    /// `muscleGainFocusedHypertrophyMix`), so with only ONE component the
+    /// phase becomes terminal as soon as Mesocycle 3 is exhausted with no
+    /// successor — there is no longer a second component to also wait on.
+    /// The genuinely mixed-modality "every component must be terminal"
+    /// semantics are covered separately by
+    /// `testMixedModalityPhaseIsNotTerminalUntilEveryComponentIsTerminal`
+    /// (using the real "Strength Plus Variety" candidate, the remaining
+    /// multi-component Muscle Gain template).
+    func testPhaseBecomesTerminalOnceMesocycleThreeIsExhaustedWithNoSuccessor() throws {
         let asOf = date(2026, 1, 5)
         let fixture = try makeAcceptedPlan(asOf: asOf)
         let originalPhaseCount = fixture.plan.orderedPhases.count
         let phase1 = fixture.plan.orderedPhases[0]
         let candidates = makeCandidates()
         let mix1 = try XCTUnwrap(LongTermPlanner.proposeTrainingMix(phase: phase1, goal: fixture.goal).first { $0.mix.name == "Focused Hypertrophy" })
+        XCTAssertEqual(mix1.mix.orderedComponents.count, 1, "Focused Hypertrophy is now a single-system recommendation")
         try StartPhaseUseCase.start(
             phase: phase1, mix: mix1.mix, asOf: asOf, ownerUserID: ownerUserID, performanceProfile: nil, availability: availability(),
             materializationContext: TacticalMaterializationContext(equipmentProfile: equipment, strengthCandidateExercises: candidates.strength, functionalFitnessCandidateExercises: candidates.functionalFitness, trainingEnvironment: TrainingEnvironmentTestSupport.full(context: context)),
@@ -237,21 +252,7 @@ final class StrategicPhaseLifecycleTests: XCTestCase {
         let component = try XCTUnwrap((phase1.selectedTrainingMix ?? phase1.recommendedTrainingMix)?.orderedComponents.first { $0.priority == .primary })
         XCTAssertTrue(TrainingPhaseCompletion.isComponentProgramLifecycleTerminal(component), "Mesocycle 3 exhausted with no next mesocycle — the component's program lifecycle is terminal")
 
-        // "Focused Hypertrophy" is itself a mixed mix (Hypertrophy +
-        // SteadyState/"Zone 2 Conditioning") — the phase is only terminal
-        // once EVERY component's program lifecycle is, so the SteadyState
-        // component must also be exhausted (it has no succession
-        // mechanism at all — D-10R6-10 — so exhaustion alone is terminal
-        // for it).
-        XCTAssertFalse(TrainingPhaseCompletion.isPhaseTerminal(phase1), "Hypertrophy finished, but the SteadyState/Zone 2 Conditioning component is still unfinished")
-        let steadyStateComponent = try XCTUnwrap((phase1.selectedTrainingMix ?? phase1.recommendedTrainingMix)?.orderedComponents.first { $0.programmingSystem == .steadyState })
-        let steadyStateInstance = try XCTUnwrap(steadyStateComponent.programInstance)
-        for weekIndex in 0..<(steadyStateInstance.programDefinition?.orderedWeeks.count ?? 0) {
-            try skipEveryRealSession(in: steadyStateInstance, weekIndex: weekIndex)
-        }
-        XCTAssertTrue(TrainingPhaseCompletion.isComponentProgramLifecycleTerminal(steadyStateComponent), "SteadyState has no succession mechanism — exhaustion alone is terminal for it")
-
-        XCTAssertTrue(TrainingPhaseCompletion.isPhaseTerminal(phase1), "a phase becomes terminal once EVERY one of its components' program lifecycles is terminal")
+        XCTAssertTrue(TrainingPhaseCompletion.isPhaseTerminal(phase1), "with only one component, the phase becomes terminal the instant that component's program lifecycle is terminal")
         XCTAssertEqual(fixture.plan.orderedPhases.count, originalPhaseCount, "still exactly the pre-planned phases — no phase was ever fabricated by mesocycle succession")
     }
 

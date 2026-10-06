@@ -109,9 +109,19 @@ struct StrengthBlockProgressionEngine: BlockProgressionEngine {
             return nil
         }.last
 
+        // Dogfood Round 2 Continuation (Finding J): explicitly excludes a
+        // non-rep result (e.g. a distance-based Farmer's Carry) from this
+        // rep-only comparison — never coerces it to a fake zero-rep
+        // outcome. In practice unreachable here today (this function
+        // already guards above that every target in this exercise has a
+        // real fixed rep range, so its own logged history is rep-based
+        // too), but the exclusion is explicit rather than assumed.
         let latestResults = (latestStrengthResult?.setResults ?? [])
             .sorted { $0.setIndex < $1.setIndex }
-            .map { SetOutcome(reps: $0.reps, actualRir: $0.actualRir) }
+            .compactMap { result -> SetOutcome? in
+                guard let reps = result.reps else { return nil }
+                return SetOutcome(reps: reps, actualRir: result.actualRir)
+            }
 
         let engineOutput = underlying.recommend(
             ProgressionInput(

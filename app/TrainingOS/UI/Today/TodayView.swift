@@ -31,21 +31,21 @@ struct TodayView: View {
     /// Independent of the existing per-card `NavigationLink`s below —
     /// tapping a card manually is completely unaffected.
     @State private var justStartedSession: Session?
-    /// Stage TE.1 closure: the handoff's own locked navigation
-    /// ("Profile from the avatar in the Today header" —
-    /// `Training OS Handoff.dc.html` line 27/141/144) is the real,
-    /// already-designated production entry point for Training
-    /// Environment configuration — not a new tab, not new Settings
-    /// architecture. `Profile → Integrations · Settings · Advanced` is a
-    /// full hub out of this stage's scope; this presents Training
-    /// Environment configuration directly, the only piece TE.1 needs.
-    @State private var showingTrainingEnvironmentSettings = false
     /// V1 R5 (Training Environment product reconciliation), Part 1: the
     /// Session currently going through "use a different environment for
     /// this workout" — contextual metadata/action on the hero card, never
     /// a new dashboard section (this checkpoint's own "do not redesign
     /// Today" instruction).
     @State private var environmentSwitchSession: Session?
+    /// Dogfood Round 2 (Finding H): relocated from `RootTabView`'s
+    /// whole-`TabView` `.safeAreaInset` — see that file's own doc comment
+    /// for why a root-level inset there persisted through every screen
+    /// pushed inside any tab, colliding with the back/close control on
+    /// workout/exercise screens. Attached below to Today's own root
+    /// `ScrollView` (inside this NavigationStack, not wrapping it), so it
+    /// only ever renders on Today's own top-level screen.
+    @State private var calibrationViewModel = SourceRMCalibrationViewModel()
+    @State private var showingCalibrationSheet = false
 
     /// The one session this screen treats as primary — the first not-yet-
     /// finished Session if any exist, otherwise the first Session (every
@@ -141,6 +141,17 @@ struct TodayView: View {
                 .padding(Theme.screenPadding)
             }
             .background(Theme.ground)
+            // Dogfood Round 2 (Finding H): scoped to THIS view (Today's own
+            // root, inside its own NavigationStack) rather than the whole
+            // TabView — a `safeAreaInset` attached to one specific view in
+            // a stack only affects that view's own layout, so it is gone
+            // the instant anything is pushed (Week, Session, workout
+            // execution), never squeezing their nav bars.
+            .safeAreaInset(edge: .top) {
+                if calibrationViewModel.hasPendingCalibration {
+                    calibrationBanner
+                }
+            }
             // Accessibility: kept as a real (if visually secondary)
             // navigation title so VoiceOver/screen-name context is never
             // lost even though the screen's own large header carries the
@@ -151,32 +162,36 @@ struct TodayView: View {
             // instruction forbids trading away for pixel fidelity.
             .navigationTitle("Today")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showingTrainingEnvironmentSettings = true
-                    } label: {
-                        ProfileAvatarGlyph()
-                    }
-                    .accessibilityLabel("Profile")
-                }
-            }
             .navigationDestination(item: $justStartedSession) { session in
                 SessionDetailView(session: session, onChange: {
                     viewModel.load(modelContext: modelContext)
                 })
             }
         }
-        .task { viewModel.load(modelContext: modelContext) }
+        .task {
+            viewModel.load(modelContext: modelContext)
+            calibrationViewModel.load(modelContext: modelContext)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .strategicPhaseTransitionCompleted)) { _ in
+            calibrationViewModel.load(modelContext: modelContext)
+        }
+        .sheet(isPresented: $showingCalibrationSheet) {
+            SourceRMCalibrationView(viewModel: calibrationViewModel) {
+                calibrationViewModel.load(modelContext: modelContext)
+                showingCalibrationSheet = false
+            }
+        }
         .fullScreenCover(item: $readinessGateSession) { session in
             ReadinessGateFlow(session: session) {
                 readinessGateSession = nil
                 viewModel.start(session, modelContext: modelContext)
                 justStartedSession = session
+            } onCancel: {
+                // Dogfood Round 2 (Finding G): the Session is still exactly
+                // `.scheduled` — `StartSessionUseCase` never ran — so
+                // dismissing here leaves nothing to undo.
+                readinessGateSession = nil
             }
-        }
-        .sheet(isPresented: $showingTrainingEnvironmentSettings) {
-            TrainingEnvironmentSettingsView()
         }
         .sheet(item: $environmentSwitchSession) { session in
             EnvironmentSwitchSheet(session: session, viewModel: viewModel, modelContext: modelContext) {
@@ -212,6 +227,34 @@ struct TodayView: View {
     private func sessionEyebrow(for session: Session, isPrimary: Bool) -> String {
         let timeLabel = session.scheduledTime.map(SessionPresentation.scheduledTimeLabel) ?? "Anytime"
         return isPrimary ? "\(timeLabel) · up next" : timeLabel
+    }
+
+    /// Dogfood Round 1 (Finding 1): purely an invitation, never a
+    /// requirement — tapping it opens the same optional "estimate now"
+    /// screen; ignoring it changes nothing about whether the athlete can
+    /// train today. Relocated from `RootTabView` (Dogfood Round 2, Finding
+    /// H) — same content and behavior, now scoped to Today's own root only.
+    private var calibrationBanner: some View {
+        Button {
+            showingCalibrationSheet = true
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: "scalemass")
+                Text("Some exercises still need a starting weight — set it now, or we'll ask before your first set.")
+                    .font(Theme.label)
+                    .multilineTextAlignment(.leading)
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+            }
+            .foregroundStyle(Theme.textPrimary)
+            .padding(12)
+            .background(Theme.surfacePrimary, in: RoundedRectangle(cornerRadius: 12))
+            .padding(.horizontal, 12)
+            .padding(.top, 8)
+        }
+        .buttonStyle(.plain)
+        .background(Theme.ground)
     }
 }
 
@@ -353,7 +396,16 @@ private struct BlockRow: View {
                 .foregroundStyle(Theme.textInactive)
                 .frame(width: 20, alignment: .leading)
             VStack(alignment: .leading, spacing: 2) {
-                Text(BlockPresentation.blockTypeLabel(block.type))
+                // MUSCLE VERTICAL SLICE CONTINUATION, Section 16: the
+                // real dogfood defect — every block in a 5xFF Muscle-Gain
+                // week's Today preview showed the raw "STRENGTH" label
+                // regardless of the block's real, archetype-driven
+                // purpose. `SessionDetailView`/`StrengthExecutionView`/
+                // `FunctionalFitnessExecutionView` already use this same
+                // real, archetype-aware label; Today's own preview was
+                // the one remaining call site still on the generic
+                // fallback.
+                Text(BlockPresentation.functionalFitnessAwareBlockLabel(for: block))
                     .font(Theme.body.weight(.medium))
                     .foregroundStyle(Theme.textPrimary)
                 if let detail = BlockPresentation.compactDetail(for: block) {
@@ -545,25 +597,6 @@ private struct EnvironmentSwitchSheet: View {
             }
         }
         .trainingOSCard(emphasized: true)
-    }
-}
-
-/// V1 R1: a restrained circular avatar glyph in place of the bare SF
-/// Symbol toolbar icon — the artifact's own Today-header profile
-/// affordance treatment (a plain tinted circle, screen 06), without
-/// building the still-missing full Profile hub this checkpoint
-/// deliberately leaves out of scope.
-private struct ProfileAvatarGlyph: View {
-    var body: some View {
-        Circle()
-            .fill(Theme.surfaceSecondary)
-            .overlay(Circle().strokeBorder(Color.primary.opacity(0.12)))
-            .overlay(
-                Image(systemName: "person.fill")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Theme.textSecondary)
-            )
-            .frame(width: 32, height: 32)
     }
 }
 

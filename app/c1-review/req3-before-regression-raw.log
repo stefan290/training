@@ -1,0 +1,32 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild test-without-building -scheme TrainingOS -destination "platform=iOS Simulator,name=iPhone 17" "-only-testing:TrainingOSTests/AdvanceTacticalWeekCapabilityWiringTests/testAdvancementUsesTheProgramOwnersEvidenceNeverASecondUsersEvidence"
+
+Test Suite 'Selected tests' started at 2026-10-02 10:32:18.572.
+Test Suite 'TrainingOSTests.xctest' started at 2026-10-02 10:32:18.572.
+Test Suite 'AdvanceTacticalWeekCapabilityWiringTests' started at 2026-10-02 10:32:18.572.
+Test Case '-[TrainingOSTests.AdvanceTacticalWeekCapabilityWiringTests testAdvancementUsesTheProgramOwnersEvidenceNeverASecondUsersEvidence]' started.
+2026-10-02 10:32:18.874676+0200 TrainingOS[31112:76226645] [ModelContext] Illegal attempt to insert a model in to a different model context. Model PersistentIdentifier(id: SwiftData.PersistentIdentifier.ID(backing: SwiftData.PersistentIdentifier.PersistentIdentifierBacking.managedObjectID(0x8e7a77f977fcd02d <x-coredata://41A42887-0DE5-4C02-9A89-A2E8338CF6E4/Exercise/p28>))) is already bound to SwiftData.ModelContext but insert was called on SwiftData.ModelContext
+2026-10-02 10:32:18.878341+0200 TrainingOS[31112:76226645] [ModelContext] Illegal attempt to insert a model in to a different model context. Model PersistentIdentifier(id: SwiftData.PersistentIdentifier.ID(backing: SwiftData.PersistentIdentifier.PersistentIdentifierBacking.managedObjectID(0x8e7a77f970fcd02d <x-coredata://41A42887-0DE5-4C02-9A89-A2E8338CF6E4/Exercise/p36>))) is already bound to SwiftData.ModelContext but insert was called on SwiftData.ModelContext
+/Users/stefankedling/Desktop/training/app/TrainingOSTests/AdvanceTacticalWeekCapabilityWiringTests.swift:391: error: -[TrainingOSTests.AdvanceTacticalWeekCapabilityWiringTests testAdvancementUsesTheProgramOwnersEvidenceNeverASecondUsersEvidence] : XCTAssertLessThanOrEqual failed: ("8") is greater than ("3") - must use the real program owner's capacity-7 ceiling (3), never the other user's capacity-20 ceiling (8)
+/Users/stefankedling/Desktop/training/app/TrainingOSTests/AdvanceTacticalWeekCapabilityWiringTests.swift:391: error: -[TrainingOSTests.AdvanceTacticalWeekCapabilityWiringTests testAdvancementUsesTheProgramOwnersEvidenceNeverASecondUsersEvidence] : XCTAssertLessThanOrEqual failed: ("8") is greater than ("3") - must use the real program owner's capacity-7 ceiling (3), never the other user's capacity-20 ceiling (8)
+/Users/stefankedling/Desktop/training/app/TrainingOSTests/AdvanceTacticalWeekCapabilityWiringTests.swift:391: error: -[TrainingOSTests.AdvanceTacticalWeekCapabilityWiringTests testAdvancementUsesTheProgramOwnersEvidenceNeverASecondUsersEvidence] : XCTAssertLessThanOrEqual failed: ("8") is greater than ("3") - must use the real program owner's capacity-7 ceiling (3), never the other user's capacity-20 ceiling (8)
+Test Case '-[TrainingOSTests.AdvanceTacticalWeekCapabilityWiringTests testAdvancementUsesTheProgramOwnersEvidenceNeverASecondUsersEvidence]' failed (0.512 seconds).
+Test Suite 'AdvanceTacticalWeekCapabilityWiringTests' failed at 2026-10-02 10:32:19.084.
+	 Executed 1 test, with 3 failures (0 unexpected) in 0.512 (0.512) seconds
+Test Suite 'TrainingOSTests.xctest' failed at 2026-10-02 10:32:19.084.
+	 Executed 1 test, with 3 failures (0 unexpected) in 0.512 (0.512) seconds
+Test Suite 'Selected tests' failed at 2026-10-02 10:32:19.085.
+	 Executed 1 test, with 3 failures (0 unexpected) in 0.512 (0.513) seconds
+2026-10-02 10:32:28.102 xcodebuild[31106:76226437] [MT] IDETestOperationsObserverDebug: 11.264 elapsed -- Testing started completed.
+2026-10-02 10:32:28.102 xcodebuild[31106:76226437] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-02 10:32:28.102 xcodebuild[31106:76226437] [MT] IDETestOperationsObserverDebug: 11.264 sec, +11.264 sec -- end
+
+Test session results, code coverage, and logs:
+	/Users/stefankedling/Library/Developer/Xcode/DerivedData/TrainingOS-heqapafjeoqodgdjjypjihjvfkbc/Logs/Test/Test-TrainingOS-2026.10.02_10-32-16-+0200.xcresult
+
+Failing tests:
+	AdvanceTacticalWeekCapabilityWiringTests.testAdvancementUsesTheProgramOwnersEvidenceNeverASecondUsersEvidence()
+
+** TEST EXECUTE FAILED **
+
+Testing started

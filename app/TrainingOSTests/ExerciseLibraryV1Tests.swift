@@ -42,7 +42,10 @@ final class ExerciseLibraryV1Tests: XCTestCase {
     func testCatalogHas60UniqueCanonicalExercises() throws {
         _ = ExerciseCatalog.resolveOrInsert(context: context)
         let exercises = try context.fetch(FetchDescriptor<Exercise>())
-        XCTAssertEqual(exercises.count, 60, "BEFORE: 38 canonical exercises. AFTER this checkpoint: 60.")
+        // FUNCTIONAL FITNESS PROGRAMMING AUTHORITY V2, Section 6: +7
+        // (Bar Muscle-Up, Ring Muscle-Up, Handstand Walk, Rope Climb,
+        // Clean, Jerk, Snatch) — the missing canonical gated exercises.
+        XCTAssertEqual(exercises.count, 67, "BEFORE: 38 canonical exercises. AFTER Exercise Library V1: 60. AFTER Programming Authority V2: 67.")
         XCTAssertEqual(Set(exercises.map(\.canonicalName)).count, exercises.count, "every canonical name must be unique")
     }
 
@@ -58,7 +61,7 @@ final class ExerciseLibraryV1Tests: XCTestCase {
         XCTAssertEqual(second.stiffLeggedDeadlift.id, firstStiffLeggedID)
 
         let exercises = try context.fetch(FetchDescriptor<Exercise>())
-        XCTAssertEqual(exercises.count, 60, "a second resolution must never insert duplicate rows")
+        XCTAssertEqual(exercises.count, 67, "a second resolution must never insert duplicate rows")
     }
 
     // MARK: THE CRITICAL REGRESSION — Stiff-Legged Deadlift must never resolve to Dumbbell Snatch
