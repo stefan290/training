@@ -1,0 +1,15 @@
+=== final state after verification session (device A18AB0FB) ===
+ZSESSION: 5
+ZEXERCISEPRESCRIPTION: 18
+ZDAY: 8
+ZPROGRAMINSTANCE: 1
+ZGOAL: 1
+ZSETRESULT: 0
+ZWORKOUTRESULT: 0
+ZEXERCISEPERFORMANCEPROFILE: 0
+--- session statuses ---
+Week 1 — Session 4|scheduled
+Week 1 — Session 3|scheduled
+Week 1 — Session 5|scheduled
+Week 1 — Session 2|inProgress
+Week 1 — Session 1|inProgress
