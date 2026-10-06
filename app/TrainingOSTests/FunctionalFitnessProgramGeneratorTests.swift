@@ -170,7 +170,8 @@ final class FunctionalFitnessProgramGeneratorTests: XCTestCase {
             XCTAssertEqual(session.role, .strength)
             XCTAssertFalse(session.orderedBlockTemplates.contains { $0.type == .functionalFitness })
             let block = try XCTUnwrap(session.orderedBlockTemplates.first { $0.type == .hypertrophy })
-            XCTAssertFalse(block.orderedPrescriptionTemplates.isEmpty)
+            XCTAssertEqual(block.orderedPrescriptionTemplates.count, 4)
+            XCTAssertEqual(Set(block.orderedPrescriptionTemplates.compactMap { $0.exerciseSlot?.allowedMovementFunctions.first }).count, 4)
         }
     }
 
@@ -179,6 +180,9 @@ final class FunctionalFitnessProgramGeneratorTests: XCTestCase {
         for session in definition.orderedTemplateSessions {
             XCTAssertEqual(session.role, .mixed)
             XCTAssertEqual(session.orderedBlockTemplates.map(\.type), [.hypertrophy, .functionalFitness])
+            let resistance = try XCTUnwrap(session.orderedBlockTemplates.first)
+            XCTAssertEqual(resistance.orderedPrescriptionTemplates.count, 3)
+            XCTAssertEqual(session.orderedBlockTemplates.last?.functionalFitnessPrescriptionTemplate?.format, .amrap(capSeconds: 720))
         }
     }
 
@@ -289,6 +293,88 @@ final class FunctionalFitnessProgramGeneratorTests: XCTestCase {
         for week in 0..<4 {
             let assignments = recipes.flatMap { $0.weeklyPlan ?? [] }.filter { $0.relativeWeek == week && $0.genericStrengthAssignment != nil }
             XCTAssertEqual(assignments.count, GenericStrengthRequirementCalculator.remainingRequirement(sourceContribution: 0))
+        }
+    }
+
+
+    func testTimeBudgetAccountsForWorkRestWarmupAndTransitions() {
+        let strength = FunctionalStrengthSessionBudget(resistanceSeconds: FunctionalStrengthSessionBudget.resistanceEstimate(setCounts: [4, 4, 4, 4]), conditioningSeconds: 0)
+        XCTAssertEqual(strength.estimatedTotalSeconds, 49 * 60)
+        XCTAssertTrue(strength.meetsTimeTarget)
+        let combined = FunctionalStrengthSessionBudget(resistanceSeconds: FunctionalStrengthSessionBudget.resistanceEstimate(setCounts: [4, 4, 4]), conditioningSeconds: 12 * 60)
+        XCTAssertEqual(combined.estimatedTotalSeconds, 50 * 60)
+        XCTAssertTrue(combined.meetsTimeTarget)
+        XCTAssertLessThan(combined.resistanceSeconds, strength.resistanceSeconds)
+    }
+
+    func testTimeBudgetDisclosesIncompleteContentInsteadOfInventingDuration() {
+        let empty = FunctionalStrengthSessionBudget(resistanceSeconds: FunctionalStrengthSessionBudget.resistanceEstimate(setCounts: [0, 0]), conditioningSeconds: 0)
+        XCTAssertEqual(empty.estimatedTotalSeconds, WarmupPolicy.targetDurationSeconds)
+        XCTAssertFalse(empty.meetsTimeTarget)
+        let excessive = FunctionalStrengthSessionBudget(resistanceSeconds: FunctionalStrengthSessionBudget.resistanceEstimate(setCounts: [10, 10, 10, 10]), conditioningSeconds: 0)
+        XCTAssertFalse(excessive.meetsTimeTarget)
+    }
+
+    func testCompleteFunctionalStrengthMaterializesFourExercisesAndTimeBudgetAcrossAllWeeks() throws {
+        let candidates = [
+            Exercise(canonicalName: "Test Squat", modality: .hypertrophy, equipment: "barbell", movementPattern: "squat", primaryTargets: [.quadriceps, .glutes], movementFunctions: [.squatLoaded]),
+            Exercise(canonicalName: "Test Hinge", modality: .hypertrophy, equipment: "barbell", movementPattern: "hinge", primaryTargets: [.hamstrings, .glutes, .back], movementFunctions: [.hingeLoaded]),
+            Exercise(canonicalName: "Test Press", modality: .hypertrophy, equipment: "barbell", movementPattern: "press", primaryTargets: [.shoulders, .chest, .triceps], movementFunctions: [.pressLoaded]),
+            Exercise(canonicalName: "Test Pull", modality: .hypertrophy, equipment: "barbell", movementPattern: "pull", primaryTargets: [.back, .biceps], movementFunctions: [.horizontalPullLoaded])
+        ]
+        candidates.forEach { context.insert($0) }
+        let environment = TrainingEnvironmentTestSupport.full(context: context)
+        let definition = FunctionalFitnessProgramGenerator.generate(configuration: styledConfiguration(.functionalStrength, conditioning: false), provenance: .constructed(reason: "test"), context: context)
+        let instance = ProgramInstance(ownerUserID: UUID())
+        context.insert(instance)
+        instance.programDefinition = definition
+        try ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: definition, candidateExercises: candidates, environment: environment)
+        var created: [Session] = []
+        for week in 0..<4 {
+            let sessions = try FunctionalFitnessMaterializer.materializeWeek(definition: definition, instance: instance, weekIndex: week, startDate: Date(timeIntervalSince1970: 1_767_571_200), ownerUserID: instance.ownerUserID, candidateExercises: candidates, exposureHistory: [], environment: environment, context: context)
+            XCTAssertEqual(sessions.count, 3)
+            for session in sessions {
+                let prescriptions = session.orderedBlocks.flatMap(\.orderedPrescriptions)
+                XCTAssertEqual(prescriptions.count, 4)
+                XCTAssertEqual(Set(prescriptions.compactMap { $0.exercise?.id }).count, 4)
+                XCTAssertTrue(prescriptions.allSatisfy { $0.orderedSetPrescriptions.count == 4 })
+                XCTAssertTrue(prescriptions.flatMap(\.orderedSetPrescriptions).allSatisfy { $0.restAfterSetSeconds == 120 && $0.repRangeLow == 8 && $0.repRangeHigh == 12 && $0.targetRir == 3 })
+                let budget = try XCTUnwrap(session.functionalStrengthBudget)
+                XCTAssertEqual(budget.estimatedTotalSeconds, 49 * 60)
+                XCTAssertTrue(budget.meetsTimeTarget)
+            }
+            created += sessions
+        }
+        try context.save()
+        let fresh = ModelContext(container)
+        let reloaded = try fresh.fetch(FetchDescriptor<Session>()).filter { $0.programInstance?.id == instance.id }
+        XCTAssertEqual(reloaded.count, created.count)
+        XCTAssertTrue(reloaded.allSatisfy { $0.functionalStrengthBudget?.estimatedTotalSeconds == 49 * 60 })
+        XCTAssertTrue(reloaded.flatMap(\.orderedBlocks).flatMap(\.orderedPrescriptions).flatMap(\.orderedSetPrescriptions).allSatisfy { $0.restAfterSetSeconds == 120 })
+    }
+
+
+    func testFunctionalStrengthConditioningFitsSameBudgetWithProductionCatalog() throws {
+        _ = ExerciseCatalog.resolveOrInsert(context: context)
+        let candidates = try context.fetch(FetchDescriptor<Exercise>())
+        let environment = TrainingEnvironmentTestSupport.full(context: context)
+        let definition = FunctionalFitnessProgramGenerator.generate(configuration: styledConfiguration(.functionalStrength, conditioning: true), provenance: .constructed(reason: "test"), context: context)
+        let instance = ProgramInstance(ownerUserID: UUID())
+        context.insert(instance)
+        instance.programDefinition = definition
+        try ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: definition, candidateExercises: candidates, environment: environment)
+        for week in 0..<4 {
+            let sessions = try FunctionalFitnessMaterializer.materializeWeek(definition: definition, instance: instance, weekIndex: week, startDate: Date(timeIntervalSince1970: 1_767_571_200), ownerUserID: instance.ownerUserID, candidateExercises: candidates, exposureHistory: [], environment: environment, context: context)
+            XCTAssertEqual(sessions.count, 3)
+            for session in sessions {
+                let resistance = session.orderedBlocks.flatMap(\.orderedPrescriptions)
+                XCTAssertEqual(resistance.count, 3)
+                XCTAssertTrue(resistance.allSatisfy { $0.orderedSetPrescriptions.count == 4 })
+                XCTAssertEqual(session.orderedBlocks.last?.functionalFitnessPrescription?.format, .amrap(capSeconds: 720))
+                let budget = try XCTUnwrap(session.functionalStrengthBudget)
+                XCTAssertEqual(budget.estimatedTotalSeconds, 50 * 60)
+                XCTAssertTrue(budget.meetsTimeTarget)
+            }
         }
     }
 

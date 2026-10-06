@@ -6,6 +6,46 @@ Code and regression tests authored on Linux. Swift, Xcode, XCTest and the
 simulator are unavailable here. No build or test pass is claimed by the author.
 Base: PR #3, `38e7cdfe9d1b9f97ee6df6537c7fcb6496503703`.
 
+## Revision: complete functional strength sessions (generator version 2)
+
+The initial two-exercise implementation has been replaced for Functional
+Strength. The target is 45 to 60 minutes for the whole session.
+
+- Strength-only: four distinct loaded movement patterns, four sets each.
+- With conditioning: three resistance patterns, followed by a 12-minute
+  conditioning AMRAP. Conditioning replaces resistance content inside the same
+  session budget; it is not added to the full strength-only session.
+- Remaining heavy strength responsibilities use the existing generic heavy
+  strength prescription in place of one resistance pattern, with no duplicate
+  pattern. Other resistance work is TrainingOS-authored 8-12 reps at 3 RIR,
+  four sets, calibrated with the existing RM10 policy and progressed from real
+  results by the existing shared resistance resolver.
+- Two minutes of recovery between sets are stored on the actual prescribed
+  sets and shown during execution.
+- The materialized Session stores a separate original time estimate, calculated
+  from its actual materialized resistance set counts and conditioning format.
+  The Session detail shows the target and estimate. Missing content does not
+  acquire fictional minutes; estimates outside the target are explicitly shown.
+
+Planning estimates use the existing five-minute WarmupPolicy target, 45 seconds
+of work per set, actual between-set rest, and two minutes per exercise for
+setup, transitions and lift preparation. These are explicit TrainingOS planning
+assumptions, not a tempo instruction, physiological threshold, actual recorded
+workout duration or a claim about Marcus Filly's programs. Default recipes
+estimate 49 minutes without conditioning and 50 with it. Actual pace can vary.
+Warmup still uses the existing relevant-movement generator; its target is not
+forced by adding irrelevant filler.
+
+The new authored 8-12 rep resistance content has its own fixed-set authority.
+It does not use the legacy RIR-only FF deficit-fill ledger, which could shrink
+an entire session to one or two exercises. Broader weekly volume coordination
+with other selected programs remains unresolved and must not be claimed solved.
+No accepted historical session is regenerated or modified by this change.
+
+Additional additive schema fields: Session.functionalStrengthBudget and
+SetPrescription.restAfterSetSeconds. Fresh-context persistence and actual
+materialization across four weeks are included in the additional tests.
+
 ## Resulting behavior
 
 Build My Own Mix offers Functional Strength and CrossFit as separate rows,
@@ -20,7 +60,9 @@ Its optional conditioning block follows that main body. Generic heavy strength
 assignments retain their existing strength prescriptions. CrossFit retains its
 existing authored variation and strength/skill emphasis, and includes a WOD
 block even where a goal-biased legacy recipe would have omitted conditioning.
-No new numerical training prescription is invented.
+The new Functional Strength prescriptions and time assumptions are explicitly
+TrainingOS-authored above, while legacy and CrossFit numeric policies remain
+unchanged.
 
 Heavy strength exposure allocation uses the whole functional component group,
 then distributes assignments to each component's local session indices. Adding
@@ -79,7 +121,7 @@ The existing application's authored prescriptions supply all numeric dosing.
 1. Separate worktree at the published PR head, record exact full SHA. Separate
    DerivedData, one xcodebuild process at a time. Do not edit or merge.
 2. Build for testing. Run these focused classes:
-   - FunctionalFitnessProgramGeneratorTests (11 additional regression tests)
+   - FunctionalFitnessProgramGeneratorTests (15 additional regression tests across both commits)
    - GoalTrainingStyleProductModelTests (updated expected label vocabulary)
    - ExplicitWeeklyCompositionTests
    - FunctionalFitnessMultiWeekV1Tests
@@ -89,7 +131,7 @@ The existing application's authored prescriptions supply all numeric dosing.
    - FunctionalFitnessPersistenceTests
    - DogfoodRound2CompletionTests
 3. If focused tests pass, run full TrainingOSTests. Prior baseline 1896;
-   11 additions imply 1907 unless repository changes independently.
+   15 additions imply 1911 unless repository changes independently.
 4. Existing-store normal launch without erase or clean-state flags. Record
    before/after data counts and verify legacy plans still open. Disclose whether
    the store actually contains logged results. Do not claim logged-result

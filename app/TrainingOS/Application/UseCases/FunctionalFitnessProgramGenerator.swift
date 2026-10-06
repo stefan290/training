@@ -32,6 +32,7 @@ import SwiftData
 /// every endurance generator's identical finding).
 enum FunctionalFitnessProgramGenerator {
     static let currentVersion = 1
+    static let functionalStrengthGeneratorVersion = 2
 
     @discardableResult
     static func generate(
@@ -55,13 +56,21 @@ enum FunctionalFitnessProgramGenerator {
                 }
             }
         }
-        configuration.weeklyPlan = configuration.weeklyPlan?.map(configuration.resolvedIntent)
+        configuration.weeklyPlan = configuration.weeklyPlan?.map { original in
+            var intent = configuration.resolvedIntent(original)
+            if configuration.trainingStyle == .functionalStrength, intent.includeConditioningBlock {
+                intent.format = .amrap(capSeconds: FunctionalStrengthSessionBudget.conditioningAllowanceSeconds)
+                intent.stimulus.targetDurationDomain = .medium
+                intent.stimulus.scoreType = .roundsAndReps
+            }
+            return intent
+        }
         let definition = ProgramDefinition(
             name: "\(configuration.daysPerWeek)-Day \(configuration.trainingStyle?.displayName ?? "Functional Fitness") (\(configuration.sessionRole.rawValue))",
             lengthWeeks: configuration.lengthWeeks,
             intent: "Functional Fitness, \(configuration.format), \(configuration.targetStimulus.targetDurationDomain) duration domain",
             programmingSystem: .functionalFitness,
-            generatorVersion: currentVersion,
+            generatorVersion: configuration.trainingStyle == .functionalStrength ? functionalStrengthGeneratorVersion : currentVersion,
             provenance: provenance,
             functionalFitnessConfiguration: configuration
         )
@@ -89,7 +98,9 @@ enum FunctionalFitnessProgramGenerator {
                 context.insert(session)
                 definition.addTemplateSession(session)
 
-                if intent.includeStrengthBlock {
+                if configuration.trainingStyle == .functionalStrength {
+                    addTimeBudgetedFunctionalStrengthBlock(to: session, intent: intent, context: context)
+                } else if intent.includeStrengthBlock {
                     addStrengthBlock(
                         to: session, relativeWeek: intent.relativeWeek, archetype: intent.archetype,
                         family: intent.sessionFamily, requiredLoadedPattern: intent.requiredLoadedPattern,
@@ -116,7 +127,7 @@ enum FunctionalFitnessProgramGenerator {
 
                     let prescriptionTemplate = FunctionalFitnessPrescriptionTemplate(
                         stimulus: intent.stimulus,
-                        format: intent.format,
+                        format: configuration.trainingStyle == .functionalStrength ? .amrap(capSeconds: FunctionalStrengthSessionBudget.conditioningAllowanceSeconds) : intent.format,
                         requiresRecentExposureToProgress: false,
                         varianceConstraints: intent.varianceConstraints,
                         isDynamicallyComposed: true,
@@ -261,6 +272,53 @@ enum FunctionalFitnessProgramGenerator {
             case .press: return [.pressLoaded]
             case .pull: return [.horizontalPullLoaded, .verticalPullLoaded]
             }
+        }
+    }
+
+    /// Complete functional-strength session, with conditioning replacing one
+    /// resistance section inside the same time budget. Existing heavy assignments
+    /// retain their original rules. Supporting work is TrainingOS-authored 8-12
+    /// reps at 3 RIR, four sets, using the existing calibrated RM-based load and
+    /// result-driven progression. This is not imported Functional Bodybuilding.
+    private static func addTimeBudgetedFunctionalStrengthBlock(
+        to session: TemplateSession, intent: FunctionalFitnessSessionIntent,
+        context: ModelContext
+    ) {
+        let block = WorkoutBlockTemplate(type: intent.genericStrengthAssignment == nil ? .hypertrophy : .strength)
+        context.insert(block)
+        session.addBlockTemplate(block)
+        let allPatterns = FunctionalBodybuildingPattern.allCases
+        let start = (intent.relativeWeek + intent.sessionIndexInWeek) % allPatterns.count
+        let count = intent.includeConditioningBlock ? 3 : 4
+        var used: Set<Int> = []
+        if let assignment = intent.genericStrengthAssignment {
+            addGenericHighLoadStrengthPrescription(pattern: assignment, to: block, context: context)
+            let assignedPattern: FunctionalBodybuildingPattern = switch assignment {
+            case .squatLoaded: .squat
+            case .hingeLoaded: .hinge
+            case .pressLoaded: .press
+            default: .pull
+            }
+            used.insert(assignedPattern.rawValue)
+        }
+        for offset in 0..<allPatterns.count where used.count < count {
+            let pattern = allPatterns[(start + offset) % allPatterns.count]
+            guard !used.contains(pattern.rawValue) else { continue }
+            used.insert(pattern.rawValue)
+            let template = PrescriptionTemplate(rules: StrengthProgressionRules(
+                loadRule: .rmBased(RMBasedLoad(
+                    rmType: .rm10,
+                    weekOneFactor: HypertrophyProgramGenerator.primaryWeekOneFactor(for: .basicHypertrophy),
+                    laterWeekMultipliers: HypertrophyProgramGenerator.laterWeekMultipliers
+                )),
+                setCountRule: .fixed(setsByWeek: [4, 4, 4, 4]),
+                repGoalSchedule: [RepGoal(prescription: .fixedReps(8), repRangeHigh: 12, targetRir: 3)]
+            ))
+            context.insert(template)
+            block.addPrescriptionTemplate(template)
+            let slot = ExerciseSlot(name: pattern.slotName, allowedTargets: pattern.allowedTargets, allowedMovementFunctions: pattern.allowedMovementFunctions)
+            context.insert(slot)
+            template.attachExerciseSlot(slot)
         }
     }
 

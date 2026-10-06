@@ -183,3 +183,38 @@ struct FunctionalFitnessProgramConfiguration: Codable, Equatable {
         return intent
     }
 }
+
+
+/// TrainingOS-authored planning assumptions, not Marcus Filly program data.
+/// Work time is an estimate, never a tempo or a forced repetition duration.
+/// Includes recovery between sets, setup/transitions and a warmup allowance.
+struct FunctionalStrengthSessionBudget: Codable, Equatable {
+    static let minimumSeconds = 45 * 60
+    static let maximumSeconds = 60 * 60
+    static let warmupAllowanceSeconds = WarmupPolicy.targetDurationSeconds
+    static let estimatedWorkSecondsPerSet = 45
+    static let transitionSecondsPerExercise = 120
+    static let resistanceRestSeconds = 120
+    static let conditioningAllowanceSeconds = 12 * 60
+
+    var resistanceSeconds: Int
+    var conditioningSeconds: Int
+    var estimatedTotalSeconds: Int {
+        Self.warmupAllowanceSeconds + resistanceSeconds + conditioningSeconds
+    }
+    var meetsTimeTarget: Bool {
+        (Self.minimumSeconds...Self.maximumSeconds).contains(estimatedTotalSeconds)
+    }
+    var summary: String {
+        let minutes = Int(ceil(Double(estimatedTotalSeconds) / 60))
+        return "Target 45 to 60 min. Estimated \(minutes) min including warmup, set rest and transitions."
+    }
+
+    static func resistanceEstimate(setCounts: [Int]) -> Int {
+        setCounts.filter { $0 > 0 }.reduce(0) { total, count in
+            total + count * estimatedWorkSecondsPerSet
+                + max(0, count - 1) * resistanceRestSeconds
+                + transitionSecondsPerExercise
+        }
+    }
+}

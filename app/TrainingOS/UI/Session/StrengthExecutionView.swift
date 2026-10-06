@@ -281,6 +281,11 @@ struct StrengthExecutionView: View {
                 // fixed-rep prescription (including Hypertrophy V2's
                 // rep-range + explicit-RIR hybrid, which already has its
                 // own rep range on screen).
+                if let restSeconds = setPrescription.restAfterSetSeconds {
+                    Text("Rest \(restSeconds / 60) min between sets")
+                        .font(Theme.label)
+                        .foregroundStyle(Theme.textSecondary)
+                }
                 if repsText == nil, let targetRir = setPrescription.targetRir {
                     Text(StrengthSetPresentation.rirGuidance(for: targetRir))
                         .font(Theme.label)
