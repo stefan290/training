@@ -190,7 +190,7 @@ struct TrainingPreferencesSettingsView: View {
     private func trainingStyleSection(title: String, selection: Binding<Set<TrainingStyle>>, opposite: Binding<Set<TrainingStyle>>) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             SectionHeader(title: title).padding(.bottom, 10)
-            ForEach(Array(TrainingStyle.allCases.enumerated()), id: \.element) { index, style in
+            ForEach(Array(TrainingStyle.selectableCases.enumerated()), id: \.element) { index, style in
                 Toggle(isOn: Binding(
                     get: { selection.wrappedValue.contains(style) },
                     set: { isOn in
@@ -208,7 +208,7 @@ struct TrainingPreferencesSettingsView: View {
                 }
                 .tint(Theme.primary)
                 .padding(.vertical, 4)
-                if index < TrainingStyle.allCases.count - 1 { Divider().opacity(0.4) }
+                if index < TrainingStyle.selectableCases.count - 1 { Divider().opacity(0.4) }
             }
         }
         .trainingOSCard()

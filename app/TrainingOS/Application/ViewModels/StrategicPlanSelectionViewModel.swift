@@ -325,10 +325,10 @@ final class StrategicPlanSelectionViewModel {
     /// `reviewedMix`/`isCustomMixSelected` are left untouched on failure,
     /// never partially applied.
     @discardableResult
-    func buildCustomMix(selections: [(style: TrainingStyle, frequency: Int)]) -> Bool {
+    func buildCustomMix(selections: [(style: TrainingStyle, frequency: Int)], functionalStrengthIncludesConditioning: Bool = false) -> Bool {
         guard let goal, let previewPhase else { return false }
         customMixValidationError = nil
-        switch LongTermPlanner.buildCustomMix(selections: selections, capacity: weeklyCapacity, phaseType: previewPhase.type) {
+        switch LongTermPlanner.buildCustomMix(selections: selections, capacity: weeklyCapacity, phaseType: previewPhase.type, functionalStrengthIncludesConditioning: functionalStrengthIncludesConditioning) {
         case .failure(let error):
             customMixValidationError = error
             return false

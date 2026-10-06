@@ -39,8 +39,25 @@ enum FunctionalFitnessProgramGenerator {
         provenance: ProgramProvenance,
         context: ModelContext
     ) -> ProgramDefinition {
+        var configuration = configuration
+        if configuration.trainingStyle != nil, configuration.weeklyPlan == nil {
+            // A styled recipe always stores exact-week intents, including direct
+            // callers outside the planner. The materializer reads this same shape.
+            configuration.weeklyPlan = (0..<configuration.lengthWeeks).flatMap { week in
+                (0..<configuration.daysPerWeek).map { day in
+                    FunctionalFitnessSessionIntent(
+                        relativeWeek: week, sessionIndexInWeek: day,
+                        stimulus: configuration.targetStimulus, format: configuration.format,
+                        includeStrengthBlock: configuration.includeStrengthBlock,
+                        varianceConstraints: configuration.varianceConstraints,
+                        sessionRole: configuration.sessionRole
+                    )
+                }
+            }
+        }
+        configuration.weeklyPlan = configuration.weeklyPlan?.map(configuration.resolvedIntent)
         let definition = ProgramDefinition(
-            name: "\(configuration.daysPerWeek)-Day Functional Fitness (\(configuration.sessionRole.rawValue))",
+            name: "\(configuration.daysPerWeek)-Day \(configuration.trainingStyle?.displayName ?? "Functional Fitness") (\(configuration.sessionRole.rawValue))",
             lengthWeeks: configuration.lengthWeeks,
             intent: "Functional Fitness, \(configuration.format), \(configuration.targetStimulus.targetDurationDomain) duration domain",
             programmingSystem: .functionalFitness,

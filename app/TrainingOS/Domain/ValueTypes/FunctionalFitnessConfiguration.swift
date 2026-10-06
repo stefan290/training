@@ -1,5 +1,19 @@
 import Foundation
 
+/// Content identity within the shared functional-training engine.
+/// Nil on legacy configurations preserves their exact original behavior.
+enum FunctionalTrainingStyle: String, Codable, CaseIterable {
+    case functionalStrength
+    case crossFit
+
+    var displayName: String {
+        switch self {
+        case .functionalStrength: return "Functional Strength"
+        case .crossFit: return "CrossFit"
+        }
+    }
+}
+
 /// FF Multi-Week V1: one deliberately-authored session's own intent within
 /// a 4-week program — the flat, self-describing shape (`relativeWeek`
 /// tags each entry, mirroring `RunningSourceWorkout`'s own proven-safe
@@ -146,4 +160,26 @@ struct FunctionalFitnessProgramConfiguration: Codable, Equatable {
     /// the type only so decoding an old, already-persisted single-
     /// stimulus configuration remains lossless).
     var weeklyPlan: [FunctionalFitnessSessionIntent]? = nil
+    var trainingStyle: FunctionalTrainingStyle? = nil
+    /// Explicit choice for functional strength, never inferred from the goal.
+    var functionalStrengthIncludesConditioning: Bool? = nil
+
+    func resolvedIntent(_ original: FunctionalFitnessSessionIntent) -> FunctionalFitnessSessionIntent {
+        var intent = original
+        switch trainingStyle {
+        case .functionalStrength:
+            intent.includeStrengthBlock = true
+            intent.includeConditioningBlock = functionalStrengthIncludesConditioning == true
+            intent.sessionRole = intent.includeConditioningBlock ? .mixed : .strength
+            // Reuse existing authored resistance prescriptions and progression.
+            // Heavy assignments retain their own strength authority.
+            intent.archetype = intent.genericStrengthAssignment == nil ? .functionalBodybuilding : .strengthPower
+            intent.sessionFamily = .resistanceDominant
+        case .crossFit:
+            intent.includeConditioningBlock = true
+        case nil:
+            break
+        }
+        return intent
+    }
 }

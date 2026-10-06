@@ -841,7 +841,7 @@ enum LongTermPlanner {
         switch style {
         case .hypertrophy: return .hypertrophy
         case .strengthTraining: return .powerlifting
-        case .functionalFitness: return .functionalFitness
+        case .functionalFitness, .functionalStrength, .crossFit: return .functionalFitness
         // Concurrent V1 fix: `.running` now resolves to the real,
         // source-backed `.running` system (5K/2-Day V1), not generic
         // `.steadyState` — an athlete selecting "Running" in the real
@@ -949,7 +949,8 @@ enum LongTermPlanner {
         name: String = "Your Custom Mix",
         selections: [(style: TrainingStyle, frequency: Int)],
         capacity: Int,
-        phaseType: PhaseType? = nil
+        phaseType: PhaseType? = nil,
+        functionalStrengthIncludesConditioning: Bool = false
     ) -> Result<TrainingMix, CustomMixValidationError> {
         let nonZero = selections.filter { $0.frequency > 0 }
         guard !nonZero.isEmpty else { return .failure(.empty) }
@@ -1003,7 +1004,7 @@ enum LongTermPlanner {
         // own core requirement — mirrors the Muscle/Strength check above
         // exactly, using the Conditioning-side capability set instead.
         if phaseType == .fatLoss || phaseType == .enduranceEvent {
-            let selectedSystems = Set(nonZero.map { underlyingSystem(for: $0.style) })
+            let selectedSystems = Set(nonZero.filter { $0.style != .functionalStrength || functionalStrengthIncludesConditioning }.map { underlyingSystem(for: $0.style) })
             if selectedSystems.isDisjoint(with: FunctionalFitnessRequirementAllocator.conditioningCapableSystems) {
                 return .failure(.unsupportedProgrammingAssignment(
                     requiredCapability: "conditioning exposure",
@@ -1022,7 +1023,8 @@ enum LongTermPlanner {
         // silently approximated to 5 (`ProgramCapabilityRegistry
         // .isFunctionalFitnessV1Supported`'s own 1-5 range) or silently
         // accepted through the pre-V1 unbounded fallback.
-        if nonZero.contains(where: { $0.style == .functionalFitness && $0.frequency == 6 }) {
+        let functionalFrequency = nonZero.filter { underlyingSystem(for: $0.style) == .functionalFitness }.reduce(0) { $0 + $1.frequency }
+        if functionalFrequency >= 6 {
             return .failure(.unsupportedProgrammingAssignment(
                 requiredCapability: "6-day Functional Fitness recovery model",
                 reason: FunctionalFitnessRequirementAllocator.sixDayFFUnsupportedReason
@@ -1063,7 +1065,9 @@ enum LongTermPlanner {
                 // Strength Source Content V1 completion pass: content
                 // selection only, mirrors `strengthFocusedMix()`'s own
                 // wiring — `nil` (every other style) is unaffected.
-                strengthContentSelector: selection.style == .strengthTraining ? .sourceBackedGeneralStrength : nil
+                strengthContentSelector: selection.style == .strengthTraining ? .sourceBackedGeneralStrength : nil,
+                functionalTrainingStyle: selection.style.functionalTrainingStyle,
+                functionalStrengthIncludesConditioning: selection.style == .functionalStrength ? functionalStrengthIncludesConditioning : nil
             ))
         }
         return .success(mix)
@@ -1074,6 +1078,8 @@ enum LongTermPlanner {
         case .hypertrophy: return "Hypertrophy"
         case .strengthTraining: return "Strength Training"
         case .functionalFitness: return "Functional Fitness"
+        case .functionalStrength: return "Functional Strength"
+        case .crossFit: return "CrossFit"
         case .running: return "Running"
         case .cycling: return "Cycling"
         }
@@ -1094,7 +1100,8 @@ enum LongTermPlanner {
         // Training" via Build My Own Mix must get the same adaptation
         // semantics as the equivalent recommended mix.
         case .strengthTraining: return [.maxStrength]
-        case .functionalFitness: return [.workCapacity, .aerobicCapacity]
+        case .functionalFitness, .crossFit: return [.workCapacity, .aerobicCapacity]
+        case .functionalStrength: return [.muscleGain, .maxStrength]
         case .running, .cycling: return [.aerobicCapacity]
         }
     }
@@ -1463,7 +1470,7 @@ enum LongTermPlanner {
     private static func isPreferenceAligned(_ mix: TrainingMix, preferences: GoalPreferences?, bestDistinctSystems: Int) -> Bool {
         guard let preferences else { return false }
         let systems = Set(mix.orderedComponents.compactMap(\.programmingSystem))
-        let systemWideDislikes = Set(preferences.dislikedModalities.filter { $0.activityType == nil }.map(\.system))
+        let systemWideDislikes = Set(preferences.dislikedModalities.filter { $0.activityType == nil && $0.functionalTrainingStyle == nil }.map(\.system))
         guard systems.isDisjoint(with: systemWideDislikes) else { return false }
         let preferred = Set(preferences.preferredModalities.map(\.system))
         guard !systems.isDisjoint(with: preferred) else { return false }
@@ -2301,6 +2308,9 @@ enum LongTermPlanner {
 
     private static func functionalFitnessParameterCandidates(component: TrainingMixComponent) -> [(name: String, parameters: GeneratorParameters)] {
         let days = max(1, component.frequency.target)
+        if component.functionalTrainingStyle != nil, !ProgramCapabilityRegistry.isFunctionalFitnessV1Supported(daysPerWeek: days) {
+            return []
+        }
 
         if ProgramCapabilityRegistry.isFunctionalFitnessV1Supported(daysPerWeek: days),
            let authoredPlan = FunctionalFitnessAuthoredProgramLibrary.weeklyPlan(forSessionsPerWeek: days) {
@@ -2348,9 +2358,15 @@ enum LongTermPlanner {
                 // set) — never a per-pattern-precise claim this checkpoint
                 // does not have real evidence for.
                 let patternsCovered: Set<MovementFunction> = sourceContribution > 0 ? Set(GenericStrengthRequirementCalculator.strengthCapablePatterns) : []
-                genericStrengthAssignments = GenericStrengthRequirementCalculator.allocateFFAssignments(
-                    eligibleFFSessionIndices: Array(0..<days), remaining: remaining, patternsAlreadyCoveredBySource: patternsCovered
+                let functionalComponents = mix.orderedComponents.filter { $0.programmingSystem == .functionalFitness }
+                let totalDays = functionalComponents.reduce(0) { $0 + $1.frequency.target }
+                let offset = functionalComponents.prefix { $0.id != component.id }.reduce(0) { $0 + $1.frequency.target }
+                let globalAssignments = GenericStrengthRequirementCalculator.allocateFFAssignments(
+                    eligibleFFSessionIndices: Array(0..<totalDays), remaining: remaining, patternsAlreadyCoveredBySource: patternsCovered
                 )
+                for localIndex in 0..<days {
+                    genericStrengthAssignments[localIndex] = globalAssignments[offset + localIndex]
+                }
             }
             // CONDITIONING V2 — LIVE RUNNING CONTRIBUTION + MODALITY
             // SELECTION, Section 1/3-5: real source Running contribution,
@@ -2394,13 +2410,16 @@ enum LongTermPlanner {
             // required by `FunctionalFitnessProgramConfiguration`'s
             // existing shape but are IGNORED by the generator whenever
             // `weeklyPlan` is non-nil (see that type's own doc comment).
-            let configuration = FunctionalFitnessProgramConfiguration(
+            var configuration = FunctionalFitnessProgramConfiguration(
                 daysPerWeek: days, lengthWeeks: 4,
                 targetStimulus: weeklyPlan[0].stimulus, format: weeklyPlan[0].format, sessionRole: .functionalFitness,
                 varianceConstraints: VarianceConstraints(), requiresRecentExposureToProgress: false,
                 includeStrengthBlock: false, weeklyPlan: weeklyPlan
             )
-            return [("Generated \(days)-Day Functional Fitness (4-Week V1)", .functionalFitness(configuration))]
+            configuration.trainingStyle = component.functionalTrainingStyle
+            configuration.functionalStrengthIncludesConditioning = component.functionalStrengthIncludesConditioning
+            let label = component.functionalTrainingStyle?.displayName ?? "Functional Fitness"
+            return [("Generated \(days)-Day \(label) (4-Week V1)", .functionalFitness(configuration))]
         }
 
         // Pre-V1 fallback, completely unchanged — every frequency this

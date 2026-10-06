@@ -44,10 +44,12 @@ enum BodyCompositionDirection: String, Codable, CaseIterable {
 struct ModalityPreference: Codable, Equatable {
     var system: ProgrammingSystemKind
     var activityType: ActivityType?
+    var functionalTrainingStyle: FunctionalTrainingStyle?
 
-    init(system: ProgrammingSystemKind, activityType: ActivityType? = nil) {
+    init(system: ProgrammingSystemKind, activityType: ActivityType? = nil, functionalTrainingStyle: FunctionalTrainingStyle? = nil) {
         self.system = system
         self.activityType = activityType
+        self.functionalTrainingStyle = functionalTrainingStyle
     }
 }
 
@@ -68,11 +70,23 @@ struct ModalityPreference: Codable, Equatable {
 enum TrainingStyle: String, Codable, CaseIterable, Identifiable {
     case hypertrophy
     case strengthTraining
-    case functionalFitness
+    case functionalFitness // Legacy identity, retained for stored preferences.
+    case functionalStrength
+    case crossFit
     case running
     case cycling
 
     var id: String { rawValue }
+
+    static var selectableCases: [TrainingStyle] { allCases.filter { $0 != .functionalFitness } }
+
+    var functionalTrainingStyle: FunctionalTrainingStyle? {
+        switch self {
+        case .functionalStrength: return .functionalStrength
+        case .crossFit: return .crossFit
+        default: return nil
+        }
+    }
 
     /// The one place a `TrainingStyle` becomes real `ModalityPreference`
     /// vocabulary — used identically for both "especially want" and "I'd
@@ -90,6 +104,8 @@ enum TrainingStyle: String, Codable, CaseIterable, Identifiable {
             return [ModalityPreference(system: .powerlifting)]
         case .functionalFitness:
             return [ModalityPreference(system: .functionalFitness)]
+        case .functionalStrength, .crossFit:
+            return [ModalityPreference(system: .functionalFitness, functionalTrainingStyle: functionalTrainingStyle)]
         case .running:
             return [
                 ModalityPreference(system: .steadyState, activityType: .running),
