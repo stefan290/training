@@ -368,7 +368,7 @@ struct StrengthExecutionView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            if movement.appliedLoadOverlayReasonCode != nil {
+            if movement.appliedLoadOverlayReasonCode != nil || viewModel.currentExecutionLoadExplanation != nil {
                 Button {
                     showingWhy = true
                 } label: {
@@ -406,7 +406,11 @@ struct StrengthExecutionView: View {
                 .font(Theme.eyebrow)
                 .tracking(1.4)
                 .foregroundStyle(Theme.textSecondary)
-            if let code = movement.appliedLoadOverlayReasonCode {
+            if let explanation = viewModel.currentExecutionLoadExplanation {
+                Text(explanation)
+                    .font(Theme.heading)
+                    .foregroundStyle(Theme.textPrimary)
+            } else if let code = movement.appliedLoadOverlayReasonCode {
                 Text(SessionPresentation.loadOverlayReasonLabel(code))
                     .font(Theme.heading)
                     .foregroundStyle(Theme.textPrimary)

@@ -3055,6 +3055,165 @@ final class GeneralProgrammingAllocationArchitectureTests: XCTestCase {
         return nil
     }
 
+    // MARK: - Already-created same-week execution recommendations
+
+    /// The program and original exposure are production-generated. Repeat
+    /// that exact prescription in another already-materialized session of
+    /// the SAME week, before logging anything. This fixture isolates repeat
+    /// exercise execution from the generator's deliberately varied exercise
+    /// selection; the real execution ViewModel is the entry point under test.
+    private func makeSameWeekRepeat() throws -> (
+        original: ExercisePrescription, repeated: ExercisePrescription,
+        user: User, exercise: Exercise, weight: Double, equipment: EquipmentProfile
+    ) {
+        let exposure = try materializeAndRollForwardGenericStrengthExposure()
+        let original = exposure.weekZeroExercisePrescription
+        let originalSession = try XCTUnwrap(original.workoutBlock?.session)
+        let instance = try XCTUnwrap(originalSession.programInstance)
+        let later = try XCTUnwrap(instance.sessions.first { $0.id != originalSession.id })
+        let originalDate = try XCTUnwrap(originalSession.day?.date)
+        let laterDate = try XCTUnwrap(later.day?.date)
+        XCTAssertLessThan(abs(laterDate.timeIntervalSince(originalDate)), 7 * 24 * 60 * 60)
+        let block = WorkoutBlock(type: .strength)
+        context.insert(block)
+        later.addBlock(block)
+        let repeated = ExercisePrescription(exercise: exposure.exercise)
+        context.insert(repeated)
+        repeated.sourcePrescriptionTemplate = original.sourcePrescriptionTemplate
+        repeated.sourceExerciseSlot = original.sourceExerciseSlot
+        block.addPrescription(repeated)
+        for set in original.orderedSetPrescriptions {
+            let copy = SetPrescription(
+                repRangeLow: set.repRangeLow, repRangeHigh: set.repRangeHigh,
+                targetWeight: set.targetWeight, targetRir: set.targetRir,
+                targetRirHigh: set.targetRirHigh, isWarmup: set.isWarmup
+            )
+            context.insert(copy)
+            repeated.addSetPrescription(copy)
+        }
+        try context.save()
+        return (original, repeated, exposure.user, exposure.exercise, exposure.startWeight, exposure.equipmentProfile)
+    }
+
+    private func logSameWeekEvidence(
+        prescription: ExercisePrescription, user: User, weight: Double, reps: Int, rir: Int
+    ) throws {
+        let exercise = try XCTUnwrap(prescription.exercise)
+        let profile = try XCTUnwrap(user.performanceProfile)
+        for (index, set) in prescription.orderedSetPrescriptions.enumerated() {
+            try LogSetUseCase.logSet(
+                setIndex: index, weight: weight, reps: reps, targetRir: set.targetRir,
+                actualRir: rir, prBand: nil, scoringDirection: .higherIsBetter,
+                context: .rx, setPrescription: set, exercisePrescription: prescription,
+                exercise: exercise, performanceProfile: profile,
+                completedAt: date(2026, 1, 5), modelContext: context
+            )
+        }
+    }
+
+    func testAlreadyCreatedFFPassUsesLatestSameWeekResultWithoutRewritingTargets() throws {
+        let fixture = try makeSameWeekRepeat()
+        let oldTargets = fixture.repeated.orderedSetPrescriptions.map(\.targetWeight)
+        try logSameWeekEvidence(prescription: fixture.original, user: fixture.user, weight: fixture.weight, reps: 6, rir: 3)
+        let vm = StrengthExecutionViewModel(block: try XCTUnwrap(fixture.repeated.workoutBlock))
+        let expected = fixture.equipment.nextValidLoad(above: fixture.weight)
+        XCTAssertEqual(vm.effectiveTargetWeight(modelContext: context, asOf: date(2026, 1, 6)), expected)
+        XCTAssertEqual(fixture.repeated.executionLoadRecommendationReasonCode, .loadIncrease)
+        XCTAssertEqual(fixture.repeated.orderedSetPrescriptions.map(\.targetWeight), oldTargets)
+        XCTAssertEqual(fixture.original.loggedSetResults.count, 3)
+        XCTAssertTrue(fixture.repeated.loggedSetResults.isEmpty)
+    }
+
+    func testAlreadyCreatedFFPassReducesLoadFromLatestUnderTargetResult() throws {
+        let fixture = try makeSameWeekRepeat()
+        try logSameWeekEvidence(prescription: fixture.original, user: fixture.user, weight: fixture.weight, reps: 2, rir: 0)
+        let vm = StrengthExecutionViewModel(block: try XCTUnwrap(fixture.repeated.workoutBlock))
+        XCTAssertEqual(vm.effectiveTargetWeight(modelContext: context, asOf: date(2026, 1, 6)), fixture.equipment.nextValidLoad(below: fixture.weight))
+        XCTAssertEqual(fixture.repeated.executionLoadRecommendationReasonCode, .loadDecrease)
+    }
+
+    func testExecutionRecommendationIsFrozenAndSurvivesFreshContextReload() throws {
+        let fixture = try makeSameWeekRepeat()
+        try logSameWeekEvidence(prescription: fixture.original, user: fixture.user, weight: fixture.weight, reps: 6, rir: 3)
+        let vm = StrengthExecutionViewModel(block: try XCTUnwrap(fixture.repeated.workoutBlock))
+        let first = try XCTUnwrap(vm.effectiveTargetWeight(modelContext: context, asOf: date(2026, 1, 6)))
+        // New evidence arriving after execution entry must not drift the
+        // guidance already shown for this exposure.
+        for result in fixture.original.loggedSetResults { result.reps = 2; result.actualRir = 0 }
+        try context.save()
+        let repeatedID = fixture.repeated.id
+        let fresh = ModelContext(container)
+        XCTAssertFalse(fresh === context)
+        let reloaded = try XCTUnwrap(fresh.fetch(FetchDescriptor<ExercisePrescription>(predicate: #Predicate { $0.id == repeatedID })).first)
+        let newVM = StrengthExecutionViewModel(block: try XCTUnwrap(reloaded.workoutBlock))
+        XCTAssertEqual(newVM.effectiveTargetWeight(modelContext: fresh, asOf: date(2026, 1, 7)), first)
+        XCTAssertNotNil(reloaded.executionLoadRecommendationExplanation)
+    }
+
+    func testAlreadyAttemptedMovementNeverReceivesANewExecutionRecommendation() throws {
+        let fixture = try makeSameWeekRepeat()
+        try logSameWeekEvidence(prescription: fixture.original, user: fixture.user, weight: fixture.weight, reps: 6, rir: 3)
+        let set = try XCTUnwrap(fixture.repeated.orderedSetPrescriptions.first)
+        try LogSetUseCase.logSet(
+            setIndex: 0, weight: fixture.weight, reps: 4, targetRir: set.targetRir,
+            actualRir: 2, prBand: nil, scoringDirection: .higherIsBetter, context: .rx,
+            setPrescription: set, exercisePrescription: fixture.repeated,
+            exercise: fixture.exercise, performanceProfile: try XCTUnwrap(fixture.user.performanceProfile),
+            completedAt: date(2026, 1, 6), modelContext: context
+        )
+        let vm = StrengthExecutionViewModel(block: try XCTUnwrap(fixture.repeated.workoutBlock))
+        XCTAssertEqual(vm.effectiveTargetWeight(modelContext: context, asOf: date(2026, 1, 7)), fixture.weight)
+        XCTAssertNil(fixture.repeated.executionLoadRecommendationWeight)
+        XCTAssertEqual(fixture.repeated.loggedSetResults.count, 1)
+    }
+
+    func testMissingPriorResultsKeepsAlreadyCreatedPrescriptionWeight() throws {
+        let fixture = try makeSameWeekRepeat()
+        let vm = StrengthExecutionViewModel(block: try XCTUnwrap(fixture.repeated.workoutBlock))
+        XCTAssertEqual(vm.effectiveTargetWeight(modelContext: context, asOf: date(2026, 1, 6)), fixture.weight)
+        XCTAssertNil(fixture.repeated.executionLoadRecommendationWeight)
+    }
+
+    func testDifferentExerciseCannotReuseFrozenExecutionRecommendation() throws {
+        let fixture = try makeSameWeekRepeat()
+        try logSameWeekEvidence(prescription: fixture.original, user: fixture.user, weight: fixture.weight, reps: 6, rir: 3)
+        let vm = StrengthExecutionViewModel(block: try XCTUnwrap(fixture.repeated.workoutBlock))
+        _ = vm.effectiveTargetWeight(modelContext: context, asOf: date(2026, 1, 6))
+        let catalog = ExerciseCatalog.resolveOrInsert(context: context)
+        fixture.repeated.exercise = fixture.exercise.id == catalog.benchPress.id ? catalog.deadlift : catalog.benchPress
+        try context.save()
+        XCTAssertEqual(vm.effectiveTargetWeight(modelContext: context, asOf: date(2026, 1, 7)), fixture.weight)
+    }
+
+    func testDoubleProgressionExecutionUsesLatestEvidenceInAlreadyCreatedPass() throws {
+        let fixture = try makeSameWeekRepeat()
+        // Use the V2 policy tag on a separate template, without changing
+        // the production source definition or the original exposure.
+        let template = PrescriptionTemplate()
+        template.loadRuleKind = .doubleProgression
+        context.insert(template)
+        fixture.repeated.sourcePrescriptionTemplate = template
+        try context.save()
+        try logSameWeekEvidence(prescription: fixture.original, user: fixture.user, weight: fixture.weight, reps: 6, rir: 3)
+        let vm = StrengthExecutionViewModel(block: try XCTUnwrap(fixture.repeated.workoutBlock))
+        let expected = fixture.weight + (fixture.user.profile?.equipmentIncrements[fixture.exercise.equipment] ?? 2.5)
+        XCTAssertEqual(vm.effectiveTargetWeight(modelContext: context, asOf: date(2026, 1, 6)), expected)
+        XCTAssertEqual(fixture.repeated.executionLoadRecommendationReasonCode, .loadIncrease)
+        XCTAssertEqual(fixture.repeated.orderedSetPrescriptions.first?.targetWeight, fixture.weight)
+    }
+
+    func testHistoricalFFPassNeverReceivesNewExecutionGuidance() throws {
+        let fixture = try makeSameWeekRepeat()
+        try logSameWeekEvidence(prescription: fixture.original, user: fixture.user, weight: fixture.weight, reps: 6, rir: 3)
+        let block = try XCTUnwrap(fixture.repeated.workoutBlock)
+        let session = try XCTUnwrap(block.session)
+        session.status = .skipped
+        try context.save()
+        let vm = StrengthExecutionViewModel(block: block)
+        XCTAssertEqual(vm.effectiveTargetWeight(modelContext: context, asOf: date(2026, 1, 6)), fixture.weight)
+        XCTAssertNil(fixture.repeated.executionLoadRecommendationWeight)
+    }
+
     // MARK: - Completion preview / next prescription agreement
 
     /// Exercises real FF generation, logging, completion and tactical roll.
