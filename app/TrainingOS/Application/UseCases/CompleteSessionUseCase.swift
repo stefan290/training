@@ -89,6 +89,42 @@ enum CompleteSessionUseCase {
             for prescription in block.orderedPrescriptions {
                 guard let exercise = prescription.exercise, !prescription.loggedSetResults.isEmpty else { continue }
 
+                // FF-owned RM-based resistance uses the same policy as
+                // ResistanceLoadEvidenceResolver at the next tactical roll.
+                // Source-backed programs retain their existing preview path.
+                if session.programInstance?.programDefinition?.programmingSystem == .functionalFitness,
+                   let loadRule = prescription.sourcePrescriptionTemplate?.rules?.loadRule,
+                   case .rmBased = loadRule {
+                    // An adapted exposure is not evidence for the original
+                    // ask. Do not advertise an unverified next-load forecast.
+                    guard !prescription.readinessAdaptationDecisions.contains(where: { $0.userResponse == .accepted }) else { continue }
+                    let equipment = EquipmentProfile.resolved(for: exercise, userProfile: userProfile)
+                    guard let recommendation = ResistanceLoadEvidenceResolver.recommendation(
+                        for: prescription.loggedSetResults.sorted { $0.setIndex < $1.setIndex },
+                        equipmentProfile: equipment
+                    ), recommendation.evaluation != .insufficientEvidence else { continue }
+                    let reasonCode: ProgressionReasonCode
+                    let explanation: String
+                    switch recommendation.evaluation {
+                    case .aboveTarget:
+                        reasonCode = .loadIncrease
+                        explanation = "Performance exceeded the prescribed target. Next comparable exposure uses one equipment step up."
+                    case .onTarget:
+                        reasonCode = .hold
+                        explanation = "Performance matched the prescribed target. Next comparable exposure keeps the load."
+                    case .underTarget:
+                        reasonCode = .loadDecrease
+                        explanation = "Performance fell below the prescribed target. Next comparable exposure uses one equipment step down."
+                    case .insufficientEvidence:
+                        continue
+                    }
+                    items.append(ProgressionPreviewItem(
+                        exerciseName: exercise.canonicalName, reasonCode: reasonCode,
+                        recommendedWeight: recommendation.weightKg, inputsSummary: explanation
+                    ))
+                    continue
+                }
+
                 // Stage 8B (D9 fix): today's EXECUTABLE targets, not the
                 // full original prescription — excludes any set a Level 2
                 // readiness adaptation marked `isAdaptedAway` so the

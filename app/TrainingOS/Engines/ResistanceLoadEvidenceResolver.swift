@@ -11,8 +11,8 @@ import Foundation
 /// Never reachable from any source-backed (Hypertrophy/Strength/
 /// Powerlifting) generator — those keep their own unmodified
 /// `RollTacticalWindowUseCase.strengthSlotContext`/`resolveWeight` path
-/// (Section 17/18's absolute non-override). This type is called only from
-/// `FunctionalFitnessMaterializer`.
+/// (Section 17/18's absolute non-override). Materialization and
+/// completion preview share this policy.
 enum ResistanceLoadEvidenceResolver {
     enum Resolution {
         case suggested(weightKg: Double, reasonCode: StrengthReasonCode)
@@ -45,31 +45,9 @@ enum ResistanceLoadEvidenceResolver {
         if let performanceProfile,
            let exerciseProfile = performanceProfile.profile(for: exercise),
            let exposure = mostRecentCompletedExposure(in: exerciseProfile, before: date),
-           let reference = exposure.first,
-           let prescribedCount = reference.exercisePrescription?.orderedSetPrescriptions.filter({ !$0.isWarmup }).count,
-           let lastSetIndex = exposure.map(\.setIndex).max(),
-           let terminalWeight = exposure.first(where: { $0.setIndex == lastSetIndex })?.weight {
-            let workingSets = exposure.map {
-                ResultDrivenProgressionEngine.WorkingSetPerformance(
-                    setIndex: $0.setIndex, weight: $0.weight, reps: $0.reps, actualRir: $0.actualRir
-                )
-            }
-            let evaluation = ResultDrivenProgressionEngine.evaluate(
-                prescribedSetCount: prescribedCount,
-                repRangeLow: reference.setPrescription?.repRangeLow,
-                repRangeHigh: reference.setPrescription?.repRangeHigh,
-                targetRir: reference.setPrescription?.targetRir,
-                targetRirHigh: reference.setPrescription?.targetRirHigh,
-                workingSets: workingSets
-            )
-            if evaluation != .insufficientEvidence {
-                let (weightKg, reasonCode) = ResultDrivenProgressionEngine.nextSuggestedLoad(
-                    evaluation: evaluation, actualLoad: terminalWeight, equipmentProfile: equipmentProfile
-                )
-                return .suggested(weightKg: weightKg, reasonCode: reasonCode)
-            }
-            // Falls through to bootstrap below — an incomplete/insufficient
-            // exposure is never itself a recommendation (Section 27).
+           let recommendation = recommendation(for: exposure, equipmentProfile: equipmentProfile),
+           recommendation.evaluation != .insufficientEvidence {
+            return .suggested(weightKg: recommendation.weightKg, reasonCode: recommendation.reasonCode)
         }
 
         if let calibration = instance.sourceRMCalibration(for: exercise, rmType: payload.rmType) {
@@ -83,6 +61,40 @@ enum ResistanceLoadEvidenceResolver {
         }
 
         return .calibrationRequired
+    }
+
+    /// Shared by next-week materialization and the completion preview.
+    /// Keeps the existing FF policy, set filtering and equipment rounding
+    /// identical in both places. No prescription or result is modified.
+    struct Recommendation {
+        let evaluation: ExposureEvaluation
+        let weightKg: Double
+        let reasonCode: StrengthReasonCode
+    }
+
+    static func recommendation(
+        for results: [SetResult], equipmentProfile: EquipmentProfile
+    ) -> Recommendation? {
+        let exposure = results.filter { $0.setPrescription?.isWarmup != true }
+        guard let reference = exposure.first,
+              let prescribedCount = reference.exercisePrescription?.orderedSetPrescriptions.filter({ !$0.isWarmup }).count,
+              let lastSetIndex = exposure.map(\.setIndex).max(),
+              let terminalWeight = exposure.first(where: { $0.setIndex == lastSetIndex })?.weight
+        else { return nil }
+        let evaluation = ResultDrivenProgressionEngine.evaluate(
+            prescribedSetCount: prescribedCount,
+            repRangeLow: reference.setPrescription?.repRangeLow,
+            repRangeHigh: reference.setPrescription?.repRangeHigh,
+            targetRir: reference.setPrescription?.targetRir,
+            targetRirHigh: reference.setPrescription?.targetRirHigh,
+            workingSets: exposure.map {
+                .init(setIndex: $0.setIndex, weight: $0.weight, reps: $0.reps, actualRir: $0.actualRir)
+            }
+        )
+        let (weightKg, reasonCode) = ResultDrivenProgressionEngine.nextSuggestedLoad(
+            evaluation: evaluation, actualLoad: terminalWeight, equipmentProfile: equipmentProfile
+        )
+        return Recommendation(evaluation: evaluation, weightKg: weightKg, reasonCode: reasonCode)
     }
 
     /// Section 4/13/14/20: one EXPOSURE is every real non-warmup working

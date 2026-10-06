@@ -3055,6 +3055,92 @@ final class GeneralProgrammingAllocationArchitectureTests: XCTestCase {
         return nil
     }
 
+    // MARK: - Completion preview / next prescription agreement
+
+    /// Exercises real FF generation, logging, completion and tactical roll.
+    /// Expectations are independent of the shared helper under test.
+    private func assertFFPreviewMatchesNextPrescription(
+        reps: [Int], rirs: [Int?], expectedReason: ProgressionReasonCode,
+        direction: Int, file: StaticString = #filePath, line: UInt = #line
+    ) throws {
+        let exposure = try materializeAndRollForwardGenericStrengthExposure()
+        let prescription = exposure.weekZeroExercisePrescription
+        let session = try XCTUnwrap(prescription.workoutBlock?.session)
+        let profile = try XCTUnwrap(exposure.user.performanceProfile)
+        for index in reps.indices {
+            let set = prescription.orderedSetPrescriptions[index]
+            try LogSetUseCase.logSet(
+                setIndex: index, weight: exposure.startWeight, reps: reps[index],
+                targetRir: set.targetRir,
+                actualRir: rirs[index], prBand: nil, scoringDirection: .higherIsBetter,
+                context: .rx, setPrescription: set, exercisePrescription: prescription,
+                exercise: exposure.exercise, performanceProfile: profile,
+                completedAt: date(2026, 1, 5), modelContext: context
+            )
+        }
+        let originalWeights = prescription.orderedSetPrescriptions.map(\.targetWeight)
+        let summary = try CompleteSessionUseCase.complete(
+            session, context: .partial, asOf: date(2026, 1, 5),
+            userProfile: exposure.user.profile, modelContext: context
+        )
+        let preview = try XCTUnwrap(summary.progressionPreview.first { $0.exerciseName == exposure.exercise.canonicalName })
+        let expectedWeight: Double
+        if direction > 0 {
+            expectedWeight = exposure.equipmentProfile.nextValidLoad(above: exposure.startWeight)
+        } else if direction < 0 {
+            expectedWeight = exposure.equipmentProfile.nextValidLoad(below: exposure.startWeight)
+        } else {
+            expectedWeight = exposure.startWeight
+        }
+        XCTAssertEqual(preview.reasonCode, expectedReason, file: file, line: line)
+        XCTAssertEqual(preview.recommendedWeight, expectedWeight, file: file, line: line)
+
+        let newSessions = try rollForwardRealMix(mix: exposure.mix, goal: exposure.goal, asOf: date(2026, 1, 12))
+        let componentID = try XCTUnwrap(exposure.mix.orderedComponents.first { $0.programmingSystem == .functionalFitness }?.id)
+        let next = try XCTUnwrap(genericStrengthExercisePrescription(in: try XCTUnwrap(newSessions[componentID]), for: exposure.exercise))
+        XCTAssertEqual(next.orderedSetPrescriptions.first?.targetWeight, expectedWeight, file: file, line: line)
+        XCTAssertEqual(next.orderedSetPrescriptions.first?.targetWeight, preview.recommendedWeight, file: file, line: line)
+        XCTAssertEqual(prescription.orderedSetPrescriptions.map(\.targetWeight), originalWeights, "preview/advancement must not rewrite the original ask", file: file, line: line)
+        XCTAssertEqual(prescription.loggedSetResults.count, reps.count, file: file, line: line)
+    }
+
+    func testFFCompletionPreviewMatchesRollForwardWhenOneSetExceedsTarget() throws {
+        // The FF policy increases on above-target evidence; the old
+        // double-progression preview held because not ALL sets qualified.
+        try assertFFPreviewMatchesNextPrescription(
+            reps: [6, 4, 4], rirs: [3, 2, 2], expectedReason: .loadIncrease, direction: 1
+        )
+    }
+
+    func testFFCompletionPreviewMatchesRollForwardWhenOneSetMissesTarget() throws {
+        // FF reduces on one miss; the old preview held until two misses.
+        try assertFFPreviewMatchesNextPrescription(
+            reps: [4, 3, 2], rirs: [2, 2, 0], expectedReason: .loadDecrease, direction: -1
+        )
+    }
+
+    func testFFCompletionPreviewMatchesRollForwardWhenTargetIsMet() throws {
+        try assertFFPreviewMatchesNextPrescription(
+            reps: [4, 4, 4], rirs: [2, 2, 2], expectedReason: .hold, direction: 0
+        )
+    }
+
+    func testFFCompletionPreviewMatchesRollForwardWithMissingRIR() throws {
+        try assertFFPreviewMatchesNextPrescription(
+            reps: [6, 6, 6], rirs: [nil, nil, nil], expectedReason: .hold, direction: 0
+        )
+    }
+
+    func testIncompleteFFExposureDoesNotAdvertiseANextLoadDecision() throws {
+        let exposure = try materializeRealGenericStrengthExposure()
+        try logRealWorkingSet(exposure: exposure, setIndex: 0, weight: exposure.startWeight, reps: 6, actualRir: 3)
+        let session = try XCTUnwrap(exposure.exercisePrescription.workoutBlock?.session)
+        let preview = CompleteSessionUseCase.progressionPreview(
+            for: session, userProfile: exposure.user.profile, performanceProfile: exposure.user.performanceProfile
+        )
+        XCTAssertFalse(preview.contains { $0.exerciseName == exposure.exercise.canonicalName }, "incomplete evidence falls back to bootstrap on roll; do not promise a result-driven next load")
+    }
+
     /// CROSS-WEEK JOURNEY A — real ABOVE_TARGET performance rolled through
     /// the REAL `RollTacticalWindowUseCase.rollForward` production entry
     /// point (never the evaluation helper in isolation). Proves the
