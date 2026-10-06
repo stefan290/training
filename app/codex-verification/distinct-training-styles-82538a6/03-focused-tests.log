@@ -1,0 +1,660 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild test-without-building -xctestrun /private/tmp/claude-501/-Users-stefankedling-Desktop-training-app/a1012e0e-bdc0-46f2-b5c9-ec2bb523c776/scratchpad/codex-verify-pr4-derived-data/Build/Products/TrainingOS_iphonesimulator26.5-arm64.xctestrun -destination "platform=iOS Simulator,name=iPhone 17" -derivedDataPath /private/tmp/claude-501/-Users-stefankedling-Desktop-training-app/a1012e0e-bdc0-46f2-b5c9-ec2bb523c776/scratchpad/codex-verify-pr4-derived-data "-only-testing:TrainingOSTests/FunctionalFitnessProgramGeneratorTests" "-only-testing:TrainingOSTests/GoalTrainingStyleProductModelTests" "-only-testing:TrainingOSTests/ExplicitWeeklyCompositionTests" "-only-testing:TrainingOSTests/FunctionalFitnessMultiWeekV1Tests" "-only-testing:TrainingOSTests/TemplateGraphPersistenceTests" "-only-testing:TrainingOSTests/GeneralProgrammingAllocationArchitectureTests" "-only-testing:TrainingOSTests/CrossModalityFunctionalFitnessProgrammingTests" "-only-testing:TrainingOSTests/FunctionalFitnessPersistenceTests" "-only-testing:TrainingOSTests/DogfoodRound2CompletionTests" -parallel-testing-enabled NO
+
+2026-10-06 14:31:18.811 xcodebuild[87959:79095194] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+2026-10-06 14:31:18.831 xcodebuild[87959:79095194] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+2026-10-06 14:31:19.726 xcodebuild[87959:79095194] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+2026-10-06 14:31:19.977 xcodebuild[87959:79095194] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+Test Suite 'Selected tests' started at 2026-10-06 14:31:28.902.
+Test Suite 'TrainingOSTests.xctest' started at 2026-10-06 14:31:28.902.
+Test Suite 'CrossModalityFunctionalFitnessProgrammingTests' started at 2026-10-06 14:31:28.902.
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testAdaptationObjectiveRoundTripsOnTrainingMixComponent]' started.
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testAdaptationObjectiveRoundTripsOnTrainingMixComponent]' passed (0.030 seconds).
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testAdditiveFieldNeverTriggersAMigration]' started.
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testAdditiveFieldNeverTriggersAMigration]' passed (0.039 seconds).
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testCP2RControlCaseConfiguredEqualsFinalUnchangedWithRealNonEmptySlots]' started.
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testCP2RControlCaseConfiguredEqualsFinalUnchangedWithRealNonEmptySlots]' passed (0.066 seconds).
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testCP2RRealNonEmptyMovementSlotWithGenuineLoadingRepairProof]' started.
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testCP2RRealNonEmptyMovementSlotWithGenuineLoadingRepairProof]' passed (0.051 seconds).
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testEachApprovedFFBuilderGetsExactlyItsApprovedObjectives]' started.
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testEachApprovedFFBuilderGetsExactlyItsApprovedObjectives]' passed (0.025 seconds).
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testEqualPrioritySiblingsStillSeparateIntoProducerAndConsumerPasses]' started.
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testEqualPrioritySiblingsStillSeparateIntoProducerAndConsumerPasses]' passed (0.029 seconds).
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testExistingFourChecksStillRunUnchangedWhenNeitherNewCheckFires]' started.
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testExistingFourChecksStillRunUnchangedWhenNeitherNewCheckFires]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testFFOnlyMultiSessionWeekCoordinatesThroughTheSameMechanism]' started.
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testFFOnlyMultiSessionWeekCoordinatesThroughTheSameMechanism]' passed (0.022 seconds).
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testFocusedFunctionalFitnessGetsTheBroadGPPObjectiveSetExcludingUnmappedOnes]' started.
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testFocusedFunctionalFitnessGetsTheBroadGPPObjectiveSetExcludingUnmappedOnes]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testFunctionalFitnessStressMapperBehaviorIsCompletelyUnchanged]' started.
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testFunctionalFitnessStressMapperBehaviorIsCompletelyUnchanged]' passed (0.017 seconds).
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testMaintenanceMixCarriesAdaptationObjectivesForwardUnchanged]' started.
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testMaintenanceMixCarriesAdaptationObjectivesForwardUnchanged]' passed (0.021 seconds).
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testMinimalRepairChangesExactlyOneFieldAndChoosesTheNearestSufficientLoadingReduction]' started.
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testMinimalRepairChangesExactlyOneFieldAndChoosesTheNearestSufficientLoadingReduction]' passed (0.017 seconds).
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testModerateEarlyWeekStrengthStressLeavesTheRealSiblingFFSessionEligibleThroughRollForward]' started.
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testModerateEarlyWeekStrengthStressLeavesTheRealSiblingFFSessionEligibleThroughRollForward]' passed (0.025 seconds).
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testNonPrimarySiblingStressNeverProtectsAnything]' started.
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testNonPrimarySiblingStressNeverProtectsAnything]' passed (0.017 seconds).
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testNoRepairPossibleLeavesTheOriginalStimulusUntouchedAndStillEligible]' started.
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testNoRepairPossibleLeavesTheOriginalStimulusUntouchedAndStillEligible]' passed (0.017 seconds).
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testNoRepairTableExistsForAnUnusedDimension]' started.
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testNoRepairTableExistsForAnUnusedDimension]' passed (0.017 seconds).
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testPairingChangesExactlyOneField]' started.
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testPairingChangesExactlyOneField]' passed (0.017 seconds).
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testPairingNeverNudgesTowardAnObjectiveWithNoHonestFFMapping]' started.
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testPairingNeverNudgesTowardAnObjectiveWithNoHonestFFMapping]' passed (0.017 seconds).
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testPrimaryFFPlusSupportingStrengthStillGivesFFTheProducerContextItNeeds]' started.
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testPrimaryFFPlusSupportingStrengthStillGivesFFTheProducerContextItNeeds]' passed (0.025 seconds).
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testRealPeakWeekStrengthStressDiscouragesAndRepairsARealFFStimulusPreservingRealObjectives]' started.
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testRealPeakWeekStrengthStressDiscouragesAndRepairsARealFFStimulusPreservingRealObjectives]' passed (0.023 seconds).
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testRemovingCurrentWeekContextWhileHoldingEveryOtherInputIdenticalRemovesTheSameWeekPairingDecision]' started.
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testRemovingCurrentWeekContextWhileHoldingEveryOtherInputIdenticalRemovesTheSameWeekPairingDecision]' passed (0.019 seconds).
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testRepairedStimulusActuallyClearsTheDiscouragementCondition]' started.
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testRepairedStimulusActuallyClearsTheDiscouragementCondition]' passed (0.017 seconds).
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testRepairedStimulusStillServesAtLeastOneComponentObjective]' started.
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testRepairedStimulusStillServesAtLeastOneComponentObjective]' passed (0.017 seconds).
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testRollForwardRemainsIdempotentAcrossRepeatedCalls]' started.
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testRollForwardRemainsIdempotentAcrossRepeatedCalls]' passed (0.027 seconds).
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testSameWeekHighHighIsDiscouragedNeverIneligible]' started.
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testSameWeekHighHighIsDiscouragedNeverIneligible]' passed (0.017 seconds).
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testSecondSessionSeesFirstSessionsProgrammedStimulusWithoutItBeingCompleted]' started.
+Test Case '-[TrainingOSTests.CrossModalityFunctionalFitnessProgrammingTests testSecondSessionSeesFirstSessionsProgrammedStimulusWithoutItBeingCompleted]' passed (0.017 seconds).
+Test Suite 'CrossModalityFunctionalFitnessProgrammingTests' passed at 2026-10-06 14:31:29.533.
+	 Executed 26 tests, with 0 failures (0 unexpected) in 0.626 (0.631) seconds
+Test Suite 'DogfoodRound2CompletionTests' started at 2026-10-06 14:31:29.533.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testAcceptanceJourney_BuildMuscleFourHypertrophyOneFunctionalFitness]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testAcceptanceJourney_BuildMuscleFourHypertrophyOneFunctionalFitness]' passed (0.326 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testCorrection1_ExactlyFourWeekdaysSelectedPersistExactly]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testCorrection1_ExactlyFourWeekdaysSelectedPersistExactly]' passed (0.029 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testCorrection1_FourWeekdaysWithFiveRequiredSessionsConsequenceAndHistoryPreservation]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testCorrection1_FourWeekdaysWithFiveRequiredSessionsConsequenceAndHistoryPreservation]' passed (0.293 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testCorrection1_SelectedWeekdaysReachSchedulerAndUnavailableWeekdaysAreNeverUsed]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testCorrection1_SelectedWeekdaysReachSchedulerAndUnavailableWeekdaysAreNeverUsed]' passed (0.323 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding1_AdvanceTacticalWeekRespectsRealGoalPreferencesAllowsDoubleSessions]' started.
+2026-10-06 14:31:30.881832+0200 TrainingOS[88009:79096004] [ModelContext] Illegal attempt to insert a model in to a different model context. Model PersistentIdentifier(id: SwiftData.PersistentIdentifier.ID(backing: SwiftData.PersistentIdentifier.PersistentIdentifierBacking.managedObjectID(0xaf400ae57e1ce1a3 <x-coredata://01C31DDF-504F-40C1-8C52-4A4C4294FA18/Exercise/p51>))) is already bound to SwiftData.ModelContext but insert was called on SwiftData.ModelContext
+2026-10-06 14:31:30.882491+0200 TrainingOS[88009:79096004] [ModelContext] Illegal attempt to insert a model in to a different model context. Model PersistentIdentifier(id: SwiftData.PersistentIdentifier.ID(backing: SwiftData.PersistentIdentifier.PersistentIdentifierBacking.managedObjectID(0xaf400ae57efce1a3 <x-coredata://01C31DDF-504F-40C1-8C52-4A4C4294FA18/Exercise/p52>))) is already bound to SwiftData.ModelContext but insert was called on SwiftData.ModelContext
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding1_AdvanceTacticalWeekRespectsRealGoalPreferencesAllowsDoubleSessions]' passed (0.411 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding1_EvaluateConsequence_ExceedsCapacityEvenWithDoubles]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding1_EvaluateConsequence_ExceedsCapacityEvenWithDoubles]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding1_EvaluateConsequence_FitsAsIs]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding1_EvaluateConsequence_FitsAsIs]' passed (0.017 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding1_EvaluateConsequence_RequiresDoubleSessions]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding1_EvaluateConsequence_RequiresDoubleSessions]' passed (0.017 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding1_LegacyDayCountAloneNeverInfersSpecificWeekdays]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding1_LegacyDayCountAloneNeverInfersSpecificWeekdays]' passed (0.029 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding1_SaveOnlyEverPersistsGoalPreferencesNeverDuplicateStorage]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding1_SaveOnlyEverPersistsGoalPreferencesNeverDuplicateStorage]' passed (0.029 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding1_SaveRefusesAnEmptyWeekdaySelection]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding1_SaveRefusesAnEmptyWeekdaySelection]' passed (0.028 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding1_TrainingPreferencesViewModelLoadsRealPersistedValues]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding1_TrainingPreferencesViewModelLoadsRealPersistedValues]' passed (0.029 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding2_RollForwardNormalizesAsOfSoDayDatesAreMidnightAndNeverDoubleUp]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding2_RollForwardNormalizesAsOfSoDayDatesAreMidnightAndNeverDoubleUp]' passed (0.307 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding3_FFStrengthSlotResolvesARealExerciseThroughStartPhaseUseCase]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding3_FFStrengthSlotResolvesARealExerciseThroughStartPhaseUseCase]' passed (0.287 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding3_NoStrengthCandidatesMeansTheBlockIsAbsentNeverEmpty]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding3_NoStrengthCandidatesMeansTheBlockIsAbsentNeverEmpty]' passed (0.031 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding4_BiasIsKeyedOnPhaseTypeNeverGoalString]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding4_BiasIsKeyedOnPhaseTypeNeverGoalString]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding4_ComposerPrefersLoadedFunctionsForFunctionalBodybuildingArchetype]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding4_ComposerPrefersLoadedFunctionsForFunctionalBodybuildingArchetype]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding4_ConditioningFillRemainsAvailableAsSafeFallbackForFunctionalBodybuildingArchetype]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding4_ConditioningFillRemainsAvailableAsSafeFallbackForFunctionalBodybuildingArchetype]' passed (0.017 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding4_FunctionalFitnessPerformancePhaseRemainsUnbiased]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding4_FunctionalFitnessPerformancePhaseRemainsUnbiased]' passed (0.017 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding4_MuscleGainArchetypeIsFunctionalBodybuilding]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding4_MuscleGainArchetypeIsFunctionalBodybuilding]' passed (0.017 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding4_PresentationLabelsReflectRealArchetype]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding4_PresentationLabelsReflectRealArchetype]' passed (0.017 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding4_RecoveryArchetypeUnchangedFromRound1]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding4_RecoveryArchetypeUnchangedFromRound1]' passed (0.017 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding4_StrengthArchetypeIsDistinctFromMuscleGain]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding4_StrengthArchetypeIsDistinctFromMuscleGain]' passed (0.017 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding4_UnbiasedArchetypeFallsBackToGenericLabels]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding4_UnbiasedArchetypeFallsBackToGenericLabels]' passed (0.017 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding4_UnbiasedArchetypeReproducesExactPriorComposerBehavior]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFinding4_UnbiasedArchetypeReproducesExactPriorComposerBehavior]' passed (0.017 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFindingE_ConditioningRoleCountReducedForFunctionalBodybuildingArchetype]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFindingE_ConditioningRoleCountReducedForFunctionalBodybuildingArchetype]' passed (0.017 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFindingE_MainBodyRoleRespectsEnvironmentFiltering]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFindingE_MainBodyRoleRespectsEnvironmentFiltering]' passed (0.020 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFindingE_MainBodyRoleWithNoRealCandidateIsAbsentButOtherRolesStillMaterialize]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFindingE_MainBodyRoleWithNoRealCandidateIsAbsentButOtherRolesStillMaterialize]' passed (0.029 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFindingE_MuscleGainMainBodyHasMultipleDistinctRealMovements]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFindingE_MuscleGainMainBodyHasMultipleDistinctRealMovements]' passed (0.285 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFindingK_MuscleGainConditioningFormatMatchesActualShortContentAcrossAllFourWeeks]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFindingK_MuscleGainConditioningFormatMatchesActualShortContentAcrossAllFourWeeks]' passed (0.035 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFindingL_LoadedPatternRoleCorrectlyEntersExistingCalibrationLifecycle]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFindingL_LoadedPatternRoleCorrectlyEntersExistingCalibrationLifecycle]' passed (0.039 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFindingP_MuscleGainConditioningUsesARealRepeatableRoundNeverASingleMovementAMRAP]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFindingP_MuscleGainConditioningUsesARealRepeatableRoundNeverASingleMovementAMRAP]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFindingP_SingleIntervalWithNoRestNeverProducesAPhantomRecoveryPhase]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFindingP_SingleIntervalWithNoRestNeverProducesAPhantomRecoveryPhase]' passed (0.017 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFindingQ_AllCalibrationsResolveIntoRealReachableSetExecutionNeverALoop]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFindingQ_AllCalibrationsResolveIntoRealReachableSetExecutionNeverALoop]' passed (0.104 seconds).
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testProgrammingModelCorrection_MuscleGainLoadedConditioningRoleReceivesRealLoadGuidanceUnderAMRAP]' started.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testProgrammingModelCorrection_MuscleGainLoadedConditioningRoleReceivesRealLoadGuidanceUnderAMRAP]' passed (0.030 seconds).
+Test Suite 'DogfoodRound2CompletionTests' passed at 2026-10-06 14:31:32.480.
+	 Executed 35 tests, with 0 failures (0 unexpected) in 2.941 (2.947) seconds
+Test Suite 'ExplicitWeeklyCompositionTests' started at 2026-10-06 14:31:32.480.
+Test Case '-[TrainingOSTests.ExplicitWeeklyCompositionTests testAcceptedCustomMixNameSurvivesAndDiffersFromAnyPresetName]' started.
+Test Case '-[TrainingOSTests.ExplicitWeeklyCompositionTests testAcceptedCustomMixNameSurvivesAndDiffersFromAnyPresetName]' passed (0.030 seconds).
+Test Case '-[TrainingOSTests.ExplicitWeeklyCompositionTests testCaseA_FiveHypertrophy]' started.
+Test Case '-[TrainingOSTests.ExplicitWeeklyCompositionTests testCaseA_FiveHypertrophy]' passed (0.092 seconds).
+Test Case '-[TrainingOSTests.ExplicitWeeklyCompositionTests testCaseB_FourHypertrophyOneFunctionalFitness]' started.
+Test Case '-[TrainingOSTests.ExplicitWeeklyCompositionTests testCaseB_FourHypertrophyOneFunctionalFitness]' passed (0.286 seconds).
+Test Case '-[TrainingOSTests.ExplicitWeeklyCompositionTests testCaseC_ThreeHypertrophyTwoFunctionalFitness_AbsentFromCandidateCatalogButStillStartsSuccessfully]' started.
+Test Case '-[TrainingOSTests.ExplicitWeeklyCompositionTests testCaseC_ThreeHypertrophyTwoFunctionalFitness_AbsentFromCandidateCatalogButStillStartsSuccessfully]' passed (0.248 seconds).
+Test Case '-[TrainingOSTests.ExplicitWeeklyCompositionTests testCaseD_ThreeHypertrophyOneFunctionalFitnessOneRunning_NoEventRequired]' started.
+Test Case '-[TrainingOSTests.ExplicitWeeklyCompositionTests testCaseD_ThreeHypertrophyOneFunctionalFitnessOneRunning_NoEventRequired]' passed (0.391 seconds).
+Test Case '-[TrainingOSTests.ExplicitWeeklyCompositionTests testCaseE_FiveFunctionalFitness]' started.
+Test Case '-[TrainingOSTests.ExplicitWeeklyCompositionTests testCaseE_FiveFunctionalFitness]' passed (0.076 seconds).
+Test Case '-[TrainingOSTests.ExplicitWeeklyCompositionTests testCaseF_TwoStrengthTrainingTwoFunctionalFitness_RejectedHonestly]' started.
+Test Case '-[TrainingOSTests.ExplicitWeeklyCompositionTests testCaseF_TwoStrengthTrainingTwoFunctionalFitness_RejectedHonestly]' passed (0.031 seconds).
+Test Case '-[TrainingOSTests.ExplicitWeeklyCompositionTests testCaseG_TwoHypertrophyThreeFunctionalFitness_RejectedHonestly]' started.
+Test Case '-[TrainingOSTests.ExplicitWeeklyCompositionTests testCaseG_TwoHypertrophyThreeFunctionalFitness_RejectedHonestly]' passed (0.030 seconds).
+Test Case '-[TrainingOSTests.ExplicitWeeklyCompositionTests testCyclingRemainsTE1Gated]' started.
+Test Case '-[TrainingOSTests.ExplicitWeeklyCompositionTests testCyclingRemainsTE1Gated]' passed (0.035 seconds).
+Test Case '-[TrainingOSTests.ExplicitWeeklyCompositionTests testEmptyCompositionIsRejected]' started.
+Test Case '-[TrainingOSTests.ExplicitWeeklyCompositionTests testEmptyCompositionIsRejected]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.ExplicitWeeklyCompositionTests testExceedingCapacityIsRejected]' started.
+Test Case '-[TrainingOSTests.ExplicitWeeklyCompositionTests testExceedingCapacityIsRejected]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.ExplicitWeeklyCompositionTests testLegacyPreferredModalitiesFieldsRemainReadableAndWritable]' started.
+Test Case '-[TrainingOSTests.ExplicitWeeklyCompositionTests testLegacyPreferredModalitiesFieldsRemainReadableAndWritable]' passed (0.030 seconds).
+Test Case '-[TrainingOSTests.ExplicitWeeklyCompositionTests testNoDoubleContractPreservedForCustomComposition]' started.
+Test Case '-[TrainingOSTests.ExplicitWeeklyCompositionTests testNoDoubleContractPreservedForCustomComposition]' passed (0.071 seconds).
+Test Case '-[TrainingOSTests.ExplicitWeeklyCompositionTests testOnboardingStepsNoLongerIncludeModalityPreferencesOrVariety]' started.
+Test Case '-[TrainingOSTests.ExplicitWeeklyCompositionTests testOnboardingStepsNoLongerIncludeModalityPreferencesOrVariety]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.ExplicitWeeklyCompositionTests testRunningAloneWorksWithoutAnyDatedObjective]' started.
+Test Case '-[TrainingOSTests.ExplicitWeeklyCompositionTests testRunningAloneWorksWithoutAnyDatedObjective]' passed (0.209 seconds).
+Test Case '-[TrainingOSTests.ExplicitWeeklyCompositionTests testRunningAndCyclingTogetherAreRejectedAsAConflictingComposition]' started.
+Test Case '-[TrainingOSTests.ExplicitWeeklyCompositionTests testRunningAndCyclingTogetherAreRejectedAsAConflictingComposition]' passed (0.017 seconds).
+Test Case '-[TrainingOSTests.ExplicitWeeklyCompositionTests testSelectingRecommendedAfterCustomMixRestoresTheOriginalRecommendation]' started.
+Test Case '-[TrainingOSTests.ExplicitWeeklyCompositionTests testSelectingRecommendedAfterCustomMixRestoresTheOriginalRecommendation]' passed (0.029 seconds).
+Test Case '-[TrainingOSTests.ExplicitWeeklyCompositionTests testUnsupportedHypertrophyFrequencyNeverApproximatesToNearestCuratedDefinition]' started.
+Test Case '-[TrainingOSTests.ExplicitWeeklyCompositionTests testUnsupportedHypertrophyFrequencyNeverApproximatesToNearestCuratedDefinition]' passed (0.018 seconds).
+Test Suite 'ExplicitWeeklyCompositionTests' passed at 2026-10-06 14:31:34.132.
+	 Executed 18 tests, with 0 failures (0 unexpected) in 1.649 (1.652) seconds
+Test Suite 'FunctionalFitnessMultiWeekV1Tests' started at 2026-10-06 14:31:34.132.
+Test Case '-[TrainingOSTests.FunctionalFitnessMultiWeekV1Tests testCapabilityGateSupportsOneThroughFive]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessMultiWeekV1Tests testCapabilityGateSupportsOneThroughFive]' passed (0.030 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessMultiWeekV1Tests testConstrainedEnvironmentStillProducesAnExecutableOrExplicitlyIncompatibleResult]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessMultiWeekV1Tests testConstrainedEnvironmentStillProducesAnExecutableOrExplicitlyIncompatibleResult]' passed (0.022 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessMultiWeekV1Tests testIncludeStrengthBlockMaterializesBothARealStrengthBlockAndARealFFBlockInTheSameSession]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessMultiWeekV1Tests testIncludeStrengthBlockMaterializesBothARealStrengthBlockAndARealFFBlockInTheSameSession]' passed (0.030 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessMultiWeekV1Tests testLaterWeekIntentDiffersFromEarlierWeekIntentForTheSameSessionSlot]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessMultiWeekV1Tests testLaterWeekIntentDiffersFromEarlierWeekIntentForTheSameSessionSlot]' passed (0.017 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessMultiWeekV1Tests testMaterializationIsDeterministicGivenTheSameInputs]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessMultiWeekV1Tests testMaterializationIsDeterministicGivenTheSameInputs]' passed (0.024 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessMultiWeekV1Tests testOneSessionPerWeekProducesFourTotalSessions]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessMultiWeekV1Tests testOneSessionPerWeekProducesFourTotalSessions]' passed (0.025 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessMultiWeekV1Tests testPriorExposureViolatingAConfiguredWindowCausesFinalStimulusToDifferFromIntended]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessMultiWeekV1Tests testPriorExposureViolatingAConfiguredWindowCausesFinalStimulusToDifferFromIntended]' passed (0.020 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessMultiWeekV1Tests testSameInputsProduceTheSameAuthoredFourWeekStructure]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessMultiWeekV1Tests testSameInputsProduceTheSameAuthoredFourWeekStructure]' passed (0.017 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessMultiWeekV1Tests testScenarioA_OneSessionPerWeek_FourWeekDogfood]' started.
+=== SCENARIO A (1 FF/week, 4 weeks) ===
+week 1 | Week 1 — Session 1 | intended=medium/moderate | final=medium/moderate | format=Optional(TrainingOS.WorkoutFormat.roundsForTime(rounds: 5, capSeconds: Optional(600))) | strength=false | functions=["squatLoaded", "gymnasticsPull", "hingeLoaded"] | stress=moderate
+week 2 | Week 2 — Session 1 | intended=short/light | final=short/light | format=Optional(TrainingOS.WorkoutFormat.amrap(capSeconds: 240)) | strength=false | functions=["squatLoaded", "gymnasticsPull", "hingeLoaded"] | stress=high
+week 3 | Week 3 — Session 1 | intended=long/bodyweightOnly | final=long/bodyweightOnly | format=Optional(TrainingOS.WorkoutFormat.forTime(capSeconds: Optional(1800))) | strength=false | functions=["squatLoaded", "gymnasticsPull", "hingeLoaded"] | stress=low
+week 4 | Week 4 — Session 1 | intended=medium/moderate | final=medium/moderate | format=Optional(TrainingOS.WorkoutFormat.intervals(count: 4, workSeconds: 120, restSeconds: 60)) | strength=false | functions=["squatLoaded", "gymnasticsPull", "hingeLoaded"] | stress=moderate
+Test Case '-[TrainingOSTests.FunctionalFitnessMultiWeekV1Tests testScenarioA_OneSessionPerWeek_FourWeekDogfood]' passed (0.027 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessMultiWeekV1Tests testScenarioB_TwoSessionsPerWeek_FourWeekDogfood]' started.
+=== SCENARIO B (2 FF/week, 4 weeks) ===
+week 1 | Week 1 — Session 1 | intended=medium/moderate | final=medium/moderate | format=Optional(TrainingOS.WorkoutFormat.maxLoad) | strength=false | functions=["squatLoaded", "gymnasticsPull", "hingeLoaded"] | stress=moderate
+week 1 | Week 1 — Session 2 | intended=short/light | final=short/light | format=Optional(TrainingOS.WorkoutFormat.amrap(capSeconds: 240)) | strength=false | functions=["gymnasticsPush", "pressLoaded", "monostructural"] | stress=high
+week 2 | Week 2 — Session 1 | intended=medium/heavy | final=medium/heavy | format=Optional(TrainingOS.WorkoutFormat.forTime(capSeconds: Optional(600))) | strength=false | functions=["squatLoaded", "gymnasticsPull", "hingeLoaded"] | stress=moderate
+week 2 | Week 2 — Session 2 | intended=long/bodyweightOnly | final=long/bodyweightOnly | format=Optional(TrainingOS.WorkoutFormat.chipper(capSeconds: Optional(1500))) | strength=false | functions=["gymnasticsPush", "pressLoaded", "monostructural"] | stress=moderate
+week 3 | Week 3 — Session 1 | intended=short/moderate | final=short/moderate | format=Optional(TrainingOS.WorkoutFormat.maxReps(capSeconds: 240)) | strength=false | functions=["squatLoaded", "gymnasticsPull", "hingeLoaded"] | stress=moderate
+week 3 | Week 3 — Session 2 | intended=medium/light | final=medium/light | format=Optional(TrainingOS.WorkoutFormat.roundsForTime(rounds: 4, capSeconds: Optional(600))) | strength=false | functions=["gymnasticsPush", "pressLoaded", "monostructural"] | stress=high
+week 4 | Week 4 — Session 1 | intended=medium/moderate | final=medium/moderate | format=Optional(TrainingOS.WorkoutFormat.ladder(direction: TrainingOS.LadderDirection.ascending, capSeconds: Optional(600))) | strength=false | functions=["squatLoaded", "gymnasticsPull", "hingeLoaded"] | stress=moderate
+week 4 | Week 4 — Session 2 | intended=long/bodyweightOnly | final=long/bodyweightOnly | format=Optional(TrainingOS.WorkoutFormat.forTime(capSeconds: Optional(2400))) | strength=false | functions=["gymnasticsPush", "pressLoaded", "monostructural"] | stress=low
+Test Case '-[TrainingOSTests.FunctionalFitnessMultiWeekV1Tests testScenarioB_TwoSessionsPerWeek_FourWeekDogfood]' passed (0.033 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessMultiWeekV1Tests testScenarioC_ThreeSessionsPerWeek_FourWeekDogfood]' started.
+=== SCENARIO C (3 FF/week, 4 weeks) ===
+week 1 | Week 1 — Session 1 | intended=medium/heavy | final=medium/heavy | format=Optional(TrainingOS.WorkoutFormat.maxLoad) | strength=false | functions=["squatLoaded", "gymnasticsPull", "hingeLoaded"] | stress=moderate
+week 1 | Week 1 — Session 2 | intended=short/bodyweightOnly | final=short/bodyweightOnly | format=Optional(TrainingOS.WorkoutFormat.emom(intervalSeconds: 60, totalSeconds: 240)) | strength=false | functions=["gymnasticsPush", "pressLoaded", "monostructural"] | stress=moderate
+week 1 | Week 1 — Session 3 | intended=long/light | final=long/light | format=Optional(TrainingOS.WorkoutFormat.chipper(capSeconds: Optional(1800))) | strength=false | functions=["monostructural", "squatLoaded", "hingeLoaded"] | stress=high
+week 2 | Week 2 — Session 1 | intended=short/heavy | final=short/heavy | format=Optional(TrainingOS.WorkoutFormat.maxReps(capSeconds: 240)) | strength=false | functions=["squatLoaded", "gymnasticsPull", "hingeLoaded"] | stress=moderate
+week 2 | Week 2 — Session 2 | intended=medium/light | final=medium/light | format=Optional(TrainingOS.WorkoutFormat.roundsForTime(rounds: 4, capSeconds: Optional(600))) | strength=false | functions=["gymnasticsPush", "pressLoaded", "monostructural"] | stress=moderate
+week 2 | Week 2 — Session 3 | intended=long/bodyweightOnly | final=long/bodyweightOnly | format=Optional(TrainingOS.WorkoutFormat.forTime(capSeconds: Optional(2100))) | strength=false | functions=["monostructural", "squatLoaded", "hingeLoaded"] | stress=low
+week 3 | Week 3 — Session 1 | intended=medium/moderate | final=medium/moderate | format=Optional(TrainingOS.WorkoutFormat.ladder(direction: TrainingOS.LadderDirection.descending, capSeconds: Optional(600))) | strength=false | functions=["squatLoaded", "gymnasticsPull", "hingeLoaded"] | stress=moderate
+week 3 | Week 3 — Session 2 | intended=short/bodyweightOnly | final=short/bodyweightOnly | format=Optional(TrainingOS.WorkoutFormat.emom(intervalSeconds: 45, totalSeconds: 240)) | strength=false | functions=["gymnasticsPush", "pressLoaded", "monostructural"] | stress=high
+week 3 | Week 3 — Session 3 | intended=long/light | final=long/light | format=Optional(TrainingOS.WorkoutFormat.intervals(count: 6, workSeconds: 240, restSeconds: 90)) | strength=false | functions=["monostructural", "squatLoaded", "hingeLoaded"] | stress=moderate
+week 4 | Week 4 — Session 1 | intended=medium/heavy | final=medium/heavy | format=Optional(TrainingOS.WorkoutFormat.maxLoad) | strength=false | functions=["squatLoaded", "gymnasticsPull", "hingeLoaded"] | stress=moderate
+week 4 | Week 4 — Session 2 | intended=medium/bodyweightOnly | final=medium/bodyweightOnly | format=Optional(TrainingOS.WorkoutFormat.amrap(capSeconds: 720)) | strength=false | functions=["gymnasticsPush", "pressLoaded", "monostructural"] | stress=moderate
+week 4 | Week 4 — Session 3 | intended=long/light | final=long/light | format=Optional(TrainingOS.WorkoutFormat.forTime(capSeconds: Optional(2700))) | strength=false | functions=["monostructural", "squatLoaded", "hingeLoaded"] | stress=high
+Test Case '-[TrainingOSTests.FunctionalFitnessMultiWeekV1Tests testScenarioC_ThreeSessionsPerWeek_FourWeekDogfood]' passed (0.038 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessMultiWeekV1Tests testSessionOneAndTwoOfATwoSessionWeekAreIntentionallyDifferentBeforeResolution]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessMultiWeekV1Tests testSessionOneAndTwoOfATwoSessionWeekAreIntentionallyDifferentBeforeResolution]' passed (0.017 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessMultiWeekV1Tests testThreeSessionsPerWeekProducesTwelveTotalSessions]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessMultiWeekV1Tests testThreeSessionsPerWeekProducesTwelveTotalSessions]' passed (0.036 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessMultiWeekV1Tests testTwoSessionsPerWeekProducesEightTotalSessions]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessMultiWeekV1Tests testTwoSessionsPerWeekProducesEightTotalSessions]' passed (0.032 seconds).
+Test Suite 'FunctionalFitnessMultiWeekV1Tests' passed at 2026-10-06 14:31:34.503.
+	 Executed 14 tests, with 0 failures (0 unexpected) in 0.369 (0.371) seconds
+Test Suite 'FunctionalFitnessPersistenceTests' started at 2026-10-06 14:31:34.504.
+Test Case '-[TrainingOSTests.FunctionalFitnessPersistenceTests testDeletingWorkoutBlockTemplateCascadesItsFunctionalFitnessPrescriptionTemplate]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessPersistenceTests testDeletingWorkoutBlockTemplateCascadesItsFunctionalFitnessPrescriptionTemplate]' passed (0.020 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessPersistenceTests testExerciseMovementFunctionsAndFunctionalModalitySurviveRoundTrip]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessPersistenceTests testExerciseMovementFunctionsAndFunctionalModalitySurviveRoundTrip]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessPersistenceTests testFunctionalFitnessPrescriptionTemplateSurvivesRoundTrip]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessPersistenceTests testFunctionalFitnessPrescriptionTemplateSurvivesRoundTrip]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessPersistenceTests testTwoSiblingExerciseRowsWithDifferentFunctionalModalitiesBothSurviveRoundTrip]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessPersistenceTests testTwoSiblingExerciseRowsWithDifferentFunctionalModalitiesBothSurviveRoundTrip]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessPersistenceTests testTwoSiblingRowsWithDifferentFormatsAndStimuliBothSurviveRoundTrip]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessPersistenceTests testTwoSiblingRowsWithDifferentFormatsAndStimuliBothSurviveRoundTrip]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessPersistenceTests testWorkoutBlockTemplateFunctionalFitnessRelationshipAndMovementSlotsSurviveRoundTrip]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessPersistenceTests testWorkoutBlockTemplateFunctionalFitnessRelationshipAndMovementSlotsSurviveRoundTrip]' passed (0.019 seconds).
+Test Suite 'FunctionalFitnessPersistenceTests' passed at 2026-10-06 14:31:34.615.
+	 Executed 6 tests, with 0 failures (0 unexpected) in 0.111 (0.112) seconds
+Test Suite 'FunctionalFitnessProgramGeneratorTests' started at 2026-10-06 14:31:34.615.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests test12MinuteAMRAPTriplet]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests test12MinuteAMRAPTriplet]' passed (0.017 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests test21_15_9ForTime]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests test21_15_9ForTime]' passed (0.017 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests test5RoundForTime]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests test5RoundForTime]' passed (0.017 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testAscendingLadder]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testAscendingLadder]' passed (0.017 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testChipper]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testChipper]' passed (0.021 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testCombinedFunctionalFrequencyCannotBypassExistingFiveDayCapability]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testCombinedFunctionalFrequencyCannotBypassExistingFiveDayCapability]' passed (0.017 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testCompleteFunctionalStrengthMaterializesFourExercisesAndTimeBudgetAcrossAllWeeks]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testCompleteFunctionalStrengthMaterializesFourExercisesAndTimeBudgetAcrossAllWeeks]' passed (0.088 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testCrossFitKeepsWODWhenGoalBiasedIntentHadOmittedConditioning]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testCrossFitKeepsWODWhenGoalBiasedIntentHadOmittedConditioning]' passed (0.020 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testCustomMixStoresTwoIndependentFunctionalFormsAndConditioningChoice]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testCustomMixStoresTwoIndependentFunctionalFormsAndConditioningChoice]' passed (0.020 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testEMOMRotation]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testEMOMRotation]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testFunctionalStrengthConditioningFitsSameBudgetWithProductionCatalog]' started.
+/tmp/claude-501/-Users-stefankedling-Desktop-training-app/a1012e0e-bdc0-46f2-b5c9-ec2bb523c776/scratchpad/codex-verify-pr4/training/app/TrainingOSTests/FunctionalFitnessProgramGeneratorTests.swift:367: error: -[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testFunctionalStrengthConditioningFitsSameBudgetWithProductionCatalog] : failed: caught error: "environmentIncompatible(slot: "Functional Fitness Session", missingEquipment: [])"
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testFunctionalStrengthConditioningFitsSameBudgetWithProductionCatalog]' failed (0.479 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testFunctionalStrengthOptOutDoesNotClaimConditioningCapability]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testFunctionalStrengthOptOutDoesNotClaimConditioningCapability]' passed (0.021 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testFunctionalStrengthWithConditioningKeepsResistanceBeforeConditioning]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testFunctionalStrengthWithConditioningKeepsResistanceBeforeConditioning]' passed (0.038 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testFunctionalStrengthWithoutConditioningHasRealResistanceContentEverySession]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testFunctionalStrengthWithoutConditioningHasRealResistanceContentEverySession]' passed (0.022 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testLegacyRecipeDecodesWithoutNewFieldsAndPreservesItsIntents]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testLegacyRecipeDecodesWithoutNewFieldsAndPreservesItsIntents]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testMaxLoad]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testMaxLoad]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testMaxReps]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testMaxReps]' passed (0.017 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testNewStylePreferencesRemainDistinctAndLegacyPreferencesDecode]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testNewStylePreferencesRemainDistinctAndLegacyPreferencesDecode]' passed (0.017 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testPlannerResolvesBothFormsAndAllocatesHeavyStrengthOnceAcrossMix]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testPlannerResolvesBothFormsAndAllocatesHeavyStrengthOnceAcrossMix]' passed (0.027 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testSameFormatWithDifferentStimuliAreNotConflated]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testSameFormatWithDifferentStimuliAreNotConflated]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testSingleModalityConditioningWorkout]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testSingleModalityConditioningWorkout]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testStrengthPlusMetconSessionComposition]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testStrengthPlusMetconSessionComposition]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testStyledRecipeAndBlocksSurviveFreshModelContext]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testStyledRecipeAndBlocksSurviveFreshModelContext]' passed (0.082 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testStyledRecurringInputIsNormalizedToExactWeekIntents]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testStyledRecurringInputIsNormalizedToExactWeekIntents]' passed (0.021 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testTimeBudgetAccountsForWorkRestWarmupAndTransitions]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testTimeBudgetAccountsForWorkRestWarmupAndTransitions]' passed (0.017 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testTimeBudgetDisclosesIncompleteContentInsteadOfInventingDuration]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testTimeBudgetDisclosesIncompleteContentInsteadOfInventingDuration]' passed (0.017 seconds).
+Test Suite 'FunctionalFitnessProgramGeneratorTests' failed at 2026-10-06 14:31:35.721.
+	 Executed 26 tests, with 1 failure (1 unexpected) in 1.101 (1.106) seconds
+Test Suite 'GeneralProgrammingAllocationArchitectureTests' started at 2026-10-06 14:31:35.721.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testAllocationMagnitude_FourHypertrophyOneFF_IsLow]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testAllocationMagnitude_FourHypertrophyOneFF_IsLow]' passed (0.064 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testAllocationMagnitude_ThreeFFAlone_IsHigh]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testAllocationMagnitude_ThreeFFAlone_IsHigh]' passed (0.030 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testAllocationMagnitude_ThreeHypertrophyTwoFF_IsMedium]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testAllocationMagnitude_ThreeHypertrophyTwoFF_IsMedium]' passed (0.030 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testAlreadyAttemptedMovementNeverReceivesANewExecutionRecommendation]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testAlreadyAttemptedMovementNeverReceivesANewExecutionRecommendation]' passed (0.141 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testAlreadyCreatedFFPassReducesLoadFromLatestUnderTargetResult]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testAlreadyCreatedFFPassReducesLoadFromLatestUnderTargetResult]' passed (0.057 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testAlreadyCreatedFFPassUsesLatestSameWeekResultWithoutRewritingTargets]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testAlreadyCreatedFFPassUsesLatestSameWeekResultWithoutRewritingTargets]' passed (0.060 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testConditioningDoseAuthority_5FFConditioningWeek_HistoricalBugCannotRecurAndDurationsGenuinelyVary]' started.
+CONDITIONING DOSE AUTHORITY V1 — 5FF week formats: ["shortMixedModal: amrap(capSeconds: 240)", "mediumMixedModal: roundsForTime(rounds: 4, capSeconds: Optional(600))", "aerobicEngine: forTime(capSeconds: Optional(1440))", "mixedResistanceWorkCapacity: intervals(count: 6, workSeconds: 30, restSeconds: 90)", "lowerFatigueComplementary: forTime(capSeconds: Optional(1800))"]
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testConditioningDoseAuthority_5FFConditioningWeek_HistoricalBugCannotRecurAndDurationsGenuinelyVary]' passed (0.061 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testConditioningDoseAuthority_DurationSequencesAreDeterministic]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testConditioningDoseAuthority_DurationSequencesAreDeterministic]' passed (0.019 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testConditioningDoseAuthority_FiveFFConditioningWeekProducesGenuinelyDistinctDoseStructures]' started.
+FIXTURE — CONDITIONING 5FF real resolved doses: ["shortMixedModal: amrap(capSeconds: 240)", "mediumMixedModal: roundsForTime(rounds: 4, capSeconds: Optional(600))", "aerobicEngine: forTime(capSeconds: Optional(1440))", "mixedResistanceWorkCapacity: intervals(count: 6, workSeconds: 30, restSeconds: 90)", "lowerFatigueComplementary: forTime(capSeconds: Optional(1800))"]
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testConditioningDoseAuthority_FiveFFConditioningWeekProducesGenuinelyDistinctDoseStructures]' passed (0.054 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testConditioningDoseAuthority_IntervalPrescriptionsAreLocked]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testConditioningDoseAuthority_IntervalPrescriptionsAreLocked]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testConditioningPriorityFF_RemainsUnbiasedMixedModal_UnaffectedByThisCheckpoint]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testConditioningPriorityFF_RemainsUnbiasedMixedModal_UnaffectedByThisCheckpoint]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testCrossWeekJourneyA_StrengthIncrease_RealRollForwardConsumesResultDrivenRecommendation]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testCrossWeekJourneyA_StrengthIncrease_RealRollForwardConsumesResultDrivenRecommendation]' passed (0.058 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testCrossWeekJourneyC_StrengthReduce_RealRollForwardStepsDownNeverRewritesCalibration]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testCrossWeekJourneyC_StrengthReduce_RealRollForwardStepsDownNeverRewritesCalibration]' passed (0.056 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testCrossWeekJourneyE_NoPriorPerformance_UsesBootstrapNeverArbitraryProgression]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testCrossWeekJourneyE_NoPriorPerformance_UsesBootstrapNeverArbitraryProgression]' passed (0.056 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testCrossWeekJourneyG_DifferentExercise_NeverTransfersAnotherExercisesRecommendation]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testCrossWeekJourneyG_DifferentExercise_NeverTransfersAnotherExercisesRecommendation]' passed (0.055 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testCrossWeekJourneyH_SourceHypertrophyNonOverride_RealRollForwardUnaffectedByFFEvidence]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testCrossWeekJourneyH_SourceHypertrophyNonOverride_RealRollForwardUnaffectedByFFEvidence]' passed (0.132 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testDeterminism_IdenticalInputsProduceIdenticalMaterializedWeek]' started.
+DETERMINISM: two independent athletes with identical real inputs produce byte-identical materialized weeks (5 sessions each)
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testDeterminism_IdenticalInputsProduceIdenticalMaterializedWeek]' passed (0.132 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testDifferentExerciseCannotReuseFrozenExecutionRecommendation]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testDifferentExerciseCannotReuseFrozenExecutionRecommendation]' passed (0.061 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testDoubleProgressionExecutionUsesLatestEvidenceInAlreadyCreatedPass]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testDoubleProgressionExecutionUsesLatestEvidenceInAlreadyCreatedPass]' passed (0.059 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testExecutionRecommendationIsFrozenAndSurvivesFreshContextReload]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testExecutionRecommendationIsFrozenAndSurvivesFreshContextReload]' passed (0.056 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFFCompletionPreviewMatchesRollForwardWhenOneSetExceedsTarget]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFFCompletionPreviewMatchesRollForwardWhenOneSetExceedsTarget]' passed (0.060 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFFCompletionPreviewMatchesRollForwardWhenOneSetMissesTarget]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFFCompletionPreviewMatchesRollForwardWhenOneSetMissesTarget]' passed (0.059 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFFCompletionPreviewMatchesRollForwardWhenTargetIsMet]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFFCompletionPreviewMatchesRollForwardWhenTargetIsMet]' passed (0.058 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFFCompletionPreviewMatchesRollForwardWithMissingRIR]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFFCompletionPreviewMatchesRollForwardWithMissingRIR]' passed (0.063 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFindingQ_StillReachesRealSetExecutionAfterThisCheckpointsFFChanges]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFindingQ_StillReachesRealSetExecutionAfterThisCheckpointsFFChanges]' passed (0.100 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureA_ConditioningBlockNeverContainsAnUnexecutableMovement]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureA_ConditioningBlockNeverContainsAnUnexecutableMovement]' passed (0.285 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureA_MuscleFourHypertrophyOneFF]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureA_MuscleFourHypertrophyOneFF]' passed (0.287 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureA_TimedConditioningBlockRequiresExplicitStartAndResumesTruthfully]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureA_TimedConditioningBlockRequiresExplicitStartAndResumesTruthfully]' passed (0.285 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureB_MuscleThreeHypertrophyTwoFF]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureB_MuscleThreeHypertrophyTwoFF]' passed (0.247 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureC_1_MuscleTwoFFAlone]' started.
+FIXTURE C.1 — MUSCLE, 2 FF alone: session0=resistanceDominant, session1=mixedResistanceWorkCapacity, 0 validator issues
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureC_1_MuscleTwoFFAlone]' passed (0.078 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureC_2_MuscleFourFFAlone]' started.
+FIXTURE C.2 — MUSCLE, 4 FF alone: 0 validator issues
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureC_2_MuscleFourFFAlone]' passed (0.118 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureC_MuscleThreeFFAlone]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureC_MuscleThreeFFAlone]' passed (0.090 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureD_ExerciseAllocationIsCommittedBeforeMaterializationEverReads]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureD_ExerciseAllocationIsCommittedBeforeMaterializationEverReads]' passed (0.131 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureD_MuscleFiveFFAlone]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureD_MuscleFiveFFAlone]' passed (0.133 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureE_StrengthFourPowerliftingOneFF]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureE_StrengthFourPowerliftingOneFF]' passed (0.075 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureF_1_StrengthTwoFFAlone]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureF_1_StrengthTwoFFAlone]' passed (0.047 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureF_2_StrengthFourFFAlone]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureF_2_StrengthFourFFAlone]' passed (0.058 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureF_StrengthThreeFFAlone]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureF_StrengthThreeFFAlone]' passed (0.052 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureG_StrengthFiveFFAlone]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureG_StrengthFiveFFAlone]' passed (0.069 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureH_2_ConditioningSessionCountTwoNowMaterializesCoherentlyUnderOwnershipFix]' started.
+PART XXXII FIX VERIFIED — CONDITIONING, 2 FF (sessionCount 2): session0=shortMixedModal(.short), session1=mediumMixedModal(.medium) — both materialize, ownership boundary holds
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureH_2_ConditioningSessionCountTwoNowMaterializesCoherentlyUnderOwnershipFix]' passed (0.042 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureH_3_ConditioningThreeFFAlone]' started.
+FIXTURE H.3 — CONDITIONING, 3 FF alone: session0=shortMixedModal, session1=mediumMixedModal, session2=aerobicEngine, 0 validator issues
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureH_3_ConditioningThreeFFAlone]' passed (0.046 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureH_4_ConditioningFourFFAlone]' started.
+FIXTURE H.4 — CONDITIONING, 4 FF alone: 0 validator issues
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureH_4_ConditioningFourFFAlone]' passed (0.049 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureH_5_ConditioningFiveFFAlone]' started.
+FIXTURE H.5 — CONDITIONING, 5 FF alone: 0 validator issues
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureH_5_ConditioningFiveFFAlone]' passed (0.053 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureH_ConditioningTwoRunningOneFF]' started.
+FIXTURE H — CONDITIONING, 2 Running + 1 FF: allocation=.medium; session0=mediumMixedModal(roundsForTime4x900, 3 roles); no strength block
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureH_ConditioningTwoRunningOneFF]' passed (0.176 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureI_ConditioningOneFFAlone]' started.
+FIXTURE I — CONDITIONING, 1 FF alone: allocation=.high; session0=mediumMixedModal(roundsForTime4x600); no strength block
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureI_ConditioningOneFFAlone]' passed (0.038 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureJ_ThreeProgrammingSystemMix]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureJ_ThreeProgrammingSystemMix]' passed (0.195 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureK_SixFunctionalFitnessSessionsIsTypedUnsupported]' started.
+FIXTURE K — 6 FF/week: rejected as .unsupportedProgrammingAssignment(reason: RECOVERY_MODEL_INSUFFICIENT_FOR_SIX_DAY_FF) at both the LongTermPlanner and ViewModel layers; 5/week unaffected
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureK_SixFunctionalFitnessSessionsIsTypedUnsupported]' passed (0.030 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureM_EnvironmentConstrainedWeekStillMaterializesCoherently]' started.
+FIXTURE M — MUSCLE, 3 FF alone, environment-constrained (no barbell/rack): 3 sessions materialize, every main-body exercise respects the constrained environment, 0 validator issues
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureM_EnvironmentConstrainedWeekStillMaterializesCoherently]' passed (0.065 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureN_CapabilityScaledWeekNeverAutoPrescribesTheAdvancedVariant]' started.
+FIXTURE N — MUSCLE, 5 FF alone, capability-scaled: the advanced Chest-to-Bar Pull-up never appears in 3 real resolved conditioning movements; role preserved via the ordinary Pull-up fallback
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureN_CapabilityScaledWeekNeverAutoPrescribesTheAdvancedVariant]' passed (0.080 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureO_DeliberatelyInvalidMixFailsExplicitlyAndClassifiesCorrectly]' started.
+FIXTURE O — STRENGTH goal, Running only (deliberately invalid): rejected explicitly, classified as UNSUPPORTED_PROGRAMMING_ASSIGNMENT: resistance-training exposure: None of the selected Training Forms (running) can provide the resistance stimulus this phase requires.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testFixtureO_DeliberatelyInvalidMixFailsExplicitlyAndClassifiesCorrectly]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testGenericStrength_KnownOneRepMax_SuggestedLoadResolvesThroughSharedPolicyNeverAHardcodedNumber]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testGenericStrength_KnownOneRepMax_SuggestedLoadResolvesThroughSharedPolicyNeverAHardcodedNumber]' passed (0.049 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testGenericStrength_RealPrescription_ThreeSetsThreeToSixRepsTwoToThreeRIR_CalibrationRequiredLoad]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testGenericStrength_RealPrescription_ThreeSetsThreeToSixRepsTwoToThreeRIR_CalibrationRequiredLoad]' passed (0.046 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testGenericStrength_SourceProgramNonOverride_PowerliftingPrescriptionsUnaffected]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testGenericStrength_SourceProgramNonOverride_PowerliftingPrescriptionsUnaffected]' passed (0.029 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testGenericStrengthJourneyA_5FFNoSource_ExactlyTwoOfFiveSessionsAssignedNeverFive]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testGenericStrengthJourneyA_5FFNoSource_ExactlyTwoOfFiveSessionsAssignedNeverFive]' passed (0.019 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testGenericStrengthJourneyB_SourcePartial_ExactlyOneRemainingExposureAllocated]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testGenericStrengthJourneyB_SourcePartial_ExactlyOneRemainingExposureAllocated]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testGenericStrengthJourneyC_SourceSatisfied_ZeroFFAssignmentsSourceUnchanged]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testGenericStrengthJourneyC_SourceSatisfied_ZeroFFAssignmentsSourceUnchanged]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testGenericStrengthJourneyD_FrequencyDoesNotMultiplyRequirement]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testGenericStrengthJourneyD_FrequencyDoesNotMultiplyRequirement]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testGenericStrengthJourneyE_PatternCoherence_PrefersSquatThenHingeNeverForcesPushPull]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testGenericStrengthJourneyE_PatternCoherence_PrefersSquatThenHingeNeverForcesPushPull]' passed (0.017 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testGenericStrengthJourneyF_SourceSquatAlreadyCovered_FFAssignmentPrefersHinge]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testGenericStrengthJourneyF_SourceSquatAlreadyCovered_FFAssignmentPrefersHinge]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testGenericStrengthOrderIndependence_ReversedSessionInputProducesIdenticalAssignment]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testGenericStrengthOrderIndependence_ReversedSessionInputProducesIdenticalAssignment]' passed (0.017 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testGetStrongerWithFunctionalFitness_StrengthPriorityFFNowGetsRealHeavyStrengthAuthority]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testGetStrongerWithFunctionalFitness_StrengthPriorityFFNowGetsRealHeavyStrengthAuthority]' passed (0.017 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testHistoricalFFPassNeverReceivesNewExecutionGuidance]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testHistoricalFFPassNeverReceivesNewExecutionGuidance]' passed (0.054 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testIncompleteFFExposureDoesNotAdvertiseANextLoadDecision]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testIncompleteFFExposureDoesNotAdvertiseANextLoadDecision]' passed (0.049 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testInitialWindowParity_Week0AlreadyReflectsTheRealAllocation]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testInitialWindowParity_Week0AlreadyReflectsTheRealAllocation]' passed (0.259 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testInvalidMixFixture_DirectLongTermPlannerCheck]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testInvalidMixFixture_DirectLongTermPlannerCheck]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testInvalidMixFixture_MuscleGoalWithOnlyRunning_IsRejectedWithTypedIncompatibility]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testInvalidMixFixture_MuscleGoalWithOnlyRunning_IsRejectedWithTypedIncompatibility]' passed (0.029 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testInvalidMixFixture_NoPhaseTypeMeansCheckDoesNotApply]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testInvalidMixFixture_NoPhaseTypeMeansCheckDoesNotApply]' passed (0.017 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testInvalidMixFixture_StrengthGoalWithOnlyRunning_IsAlsoRejected]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testInvalidMixFixture_StrengthGoalWithOnlyRunning_IsAlsoRejected]' passed (0.017 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testInvariant17_ConditioningGoalWithOnlyHypertrophy_IsRejectedWithTypedIncompatibility]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testInvariant17_ConditioningGoalWithOnlyHypertrophy_IsRejectedWithTypedIncompatibility]' passed (0.017 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testJourneyA_SourceAuthorityReuse_70kg10RMResolvesThroughSharedHypertrophyPolicyNeverAHardcodedNumber]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testJourneyA_SourceAuthorityReuse_70kg10RMResolvesThroughSharedHypertrophyPolicyNeverAHardcodedNumber]' passed (0.093 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testJourneyD_SameSessionPatternCoherence_ConditioningAvoidsDuplicatingMainBodysSquatPatternWhenAComplementaryAlternativeExists]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testJourneyD_SameSessionPatternCoherence_ConditioningAvoidsDuplicatingMainBodysSquatPatternWhenAComplementaryAlternativeExists]' passed (0.282 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testMesocycleCoherence_RealFourWeekRollForwardShowsStableStructureAndRealPatternVariation]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testMesocycleCoherence_RealFourWeekRollForwardShowsStableStructureAndRealPatternVariation]' passed (0.112 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testMissingPriorResultsKeepsAlreadyCreatedPrescriptionWeight]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testMissingPriorResultsKeepsAlreadyCreatedPrescriptionWeight]' passed (0.052 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testMuscleFF5_DedicatedProductionJourney_ResistancePreservedConditioningOnlyWhereAssigned]' started.
+MUSCLE+5FF DEDICATED JOURNEY — familiesWithConditioning=[TrainingOS.FunctionalFitnessSessionFamily.mixedResistanceWorkCapacity, TrainingOS.FunctionalFitnessSessionFamily.lowerFatigueComplementary], mainBodySessions=5/5, conditioningSessions=2/5
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testMuscleFF5_DedicatedProductionJourney_ResistancePreservedConditioningOnlyWhereAssigned]' passed (0.129 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testMuscleVolumeJourneyA_FFHypertrophySetCountDerivesFromWeeklyLedgerNeverOldFixedFour]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testMuscleVolumeJourneyA_FFHypertrophySetCountDerivesFromWeeklyLedgerNeverOldFixedFour]' passed (0.283 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testMuscleVolumeJourneyC_FiveFFAloneNoSessionIndependentlyTargetsTheFullWeeklyLedger]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testMuscleVolumeJourneyC_FiveFFAloneNoSessionIndependentlyTargetsTheFullWeeklyLedger]' passed (0.133 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testOrderIndependence_AllocationMagnitudeNeverDependsOnSchedulingOrder]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testOrderIndependence_AllocationMagnitudeNeverDependsOnSchedulingOrder]' passed (0.103 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testPartXV_ProofA_MuscleFFOnlyTwoSessionsCoversSquatAndHingeAcrossWeek]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testPartXV_ProofA_MuscleFFOnlyTwoSessionsCoversSquatAndHingeAcrossWeek]' passed (0.054 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testPartXV_ProofB_StrengthFFOnlyTwoSessionsCoversSquatAndHingeAcrossWeek]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testPartXV_ProofB_StrengthFFOnlyTwoSessionsCoversSquatAndHingeAcrossWeek]' passed (0.046 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testPartXV_ProofC_MuscleMixedWeek_SourceAlreadyCoversBothPatterns_FFForcesNeither]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testPartXV_ProofC_MuscleMixedWeek_SourceAlreadyCoversBothPatterns_FFForcesNeither]' passed (0.086 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testPartXV_ProofD_StrengthMixedWeek_SourceAlreadyCoversBothPatterns_FFForcesNeither]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testPartXV_ProofD_StrengthMixedWeek_SourceAlreadyCoversBothPatterns_FFForcesNeither]' passed (0.073 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testPartXV_ProofE_SingleResistanceCapableSessionNeverForcesBothPatterns]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testPartXV_ProofE_SingleResistanceCapableSessionNeverForcesBothPatterns]' passed (0.038 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testPartXV_ProofF_PatternOverrideAssignmentIsOrderIndependent]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testPartXV_ProofF_PatternOverrideAssignmentIsOrderIndependent]' passed (0.017 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testPartXXII_AdversarialResistanceDosing_EmptyMainBodyIsCaughtByValidator]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testPartXXII_AdversarialResistanceDosing_EmptyMainBodyIsCaughtByValidator]' passed (0.041 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testPartXXIV_ConditioningProgressionProof_RealFourWeekRollForwardNeverRecruitsResistanceVolume]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testPartXXIV_ConditioningProgressionProof_RealFourWeekRollForwardNeverRecruitsResistanceVolume]' passed (0.060 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testPartXXIV_StrengthProgressionProof_RealFourWeekRollForwardVariesLoadPatternNeverConditioning]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testPartXXIV_StrengthProgressionProof_RealFourWeekRollForwardVariesLoadPatternNeverConditioning]' passed (0.067 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testProductionJourney_3H2FFMuscle_SharedLedgerAcrossRealFFSessions]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testProductionJourney_3H2FFMuscle_SharedLedgerAcrossRealFFSessions]' passed (0.247 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testProductionJourney_InitialWindowVsRollForward_SameMuscleLedgerContract]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testProductionJourney_InitialWindowVsRollForward_SameMuscleLedgerContract]' passed (0.267 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testProductionJourney_OrderIndependence_ReversedSelectionsProduceIdenticalProgramming]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testProductionJourney_OrderIndependence_ReversedSelectionsProduceIdenticalProgramming]' passed (0.500 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testProductionJourney_SourceOverage_LegsSplitExceedsFallbackWithoutTruncation]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testProductionJourney_SourceOverage_LegsSplitExceedsFallbackWithoutTruncation]' passed (0.036 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testProgrammingValidator_ClassifyMapsCapabilityIncompatibility]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testProgrammingValidator_ClassifyMapsCapabilityIncompatibility]' passed (0.017 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testProgrammingValidator_ClassifyMapsEnvironmentIncompatibility]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testProgrammingValidator_ClassifyMapsEnvironmentIncompatibility]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testProgrammingValidator_ClassifyMapsIncoherentFormat]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testProgrammingValidator_ClassifyMapsIncoherentFormat]' passed (0.017 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testProgrammingValidator_ClassifyMapsUnsupportedSourceFrequency]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testProgrammingValidator_ClassifyMapsUnsupportedSourceFrequency]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testProgrammingValidator_DetectsExcessiveAccidentalMovementRepetition]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testProgrammingValidator_DetectsExcessiveAccidentalMovementRepetition]' passed (0.032 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testProgrammingValidator_DetectsExcessivePrimaryGoalInterference]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testProgrammingValidator_DetectsExcessivePrimaryGoalInterference]' passed (0.033 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testProgrammingValidator_DetectsIncoherentScore]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testProgrammingValidator_DetectsIncoherentScore]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testProgrammingValidator_DetectsStressClusterInDirectlyConstructedThreeSessionWeek]' started.
+PROGRAMMING VALIDATOR — directly-constructed 3-session high-demand cluster: [INCOMPATIBLE_DURATION_DOMAIN (session 0): Estimated duration (600s, medium) does not match the target duration domain (short). Loading-role validation deferred: `loadingRole` is a generation-time-only, informational field that Stage CP.2 may legitimately diverge from the live target stimulus's loading; it was never a hard substitution filter and gates nothing downstream. Skill-demand validation deferred: no per-Exercise skill classification exists yet (§36)., INCOMPATIBLE_DURATION_DOMAIN (session 1): Estimated duration (600s, medium) does not match the target duration domain (short). Loading-role validation deferred: `loadingRole` is a generation-time-only, informational field that Stage CP.2 may legitimately diverge from the live target stimulus's loading; it was never a hard substitution filter and gates nothing downstream. Skill-demand validation deferred: no per-Exercise skill classification exists yet (§36)., INCOMPATIBLE_DURATION_DOMAIN (session 2): Estimated duration (600s, medium) does not match the target duration domain (short). Loading-role validation deferred: `loadingRole` is a generation-time-only, informational field that Stage CP.2 may legitimately diverge from the live target stimulus's loading; it was never a hard substitution filter and gates nothing downstream. Skill-demand validation deferred: no per-Exercise skill classification exists yet (§36)., UNSATISFIED_PRIMARY_REQUIREMENT: Conditioning goal week has no session with real conditioning content., UNRECOVERABLE_STRESS_CLUSTER: Sessions 0-2 are 3+ consecutive high-systemic-demand FF sessions with no lower-demand session between them.]
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testProgrammingValidator_DetectsStressClusterInDirectlyConstructedThreeSessionWeek]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testProgrammingValidator_FiveSessionConditioningWeekNoLongerFalselyFlagsAerobicEngineAsHighDemand]' started.
+PROGRAMMING VALIDATOR — real 5-session Conditioning week, post-fix: []
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testProgrammingValidator_FiveSessionConditioningWeekNoLongerFalselyFlagsAerobicEngineAsHighDemand]' passed (0.053 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testProgrammingValidator_RealValidFixturesProduceZeroIssues]' started.
+PROGRAMMING VALIDATOR — Fixtures A/D/E/H: 0 issues each (real production materialization)
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testProgrammingValidator_RealValidFixturesProduceZeroIssues]' passed (0.323 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testResultDrivenProgression_FrozenGap_LaterWeekLoadIgnoresActualLoggedResults]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testResultDrivenProgression_FrozenGap_LaterWeekLoadIgnoresActualLoggedResults]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testResultProgressionJourneyA_StrengthAboveTarget_RecommendsOneRealEquipmentStepUp]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testResultProgressionJourneyA_StrengthAboveTarget_RecommendsOneRealEquipmentStepUp]' passed (0.048 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testResultProgressionJourneyB_StrengthOnTarget_HoldsCurrentLoad]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testResultProgressionJourneyB_StrengthOnTarget_HoldsCurrentLoad]' passed (0.048 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testResultProgressionJourneyC_StrengthUnderTarget_RecommendsOneRealEquipmentStepDown_NeverRewritesCalibration]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testResultProgressionJourneyC_StrengthUnderTarget_RecommendsOneRealEquipmentStepDown_NeverRewritesCalibration]' passed (0.049 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testResultProgressionJourneyD_EasyButBelowRepCeiling_StillAboveTarget]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testResultProgressionJourneyD_EasyButBelowRepCeiling_StillAboveTarget]' passed (0.049 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testResultProgressionJourneyE_ConflictingSets_LaterUnderTargetEvidenceWins]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testResultProgressionJourneyE_ConflictingSets_LaterUnderTargetEvidenceWins]' passed (0.049 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testResultProgressionJourneyF_ManualLoadOverride_LearnsFromActualPerformedLoadNotStaleSuggestion]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testResultProgressionJourneyF_ManualLoadOverride_LearnsFromActualPerformedLoadNotStaleSuggestion]' passed (0.048 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testResultProgressionJourneyG_IncompleteExposure_InsufficientEvidenceNeverUnderTarget]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testResultProgressionJourneyG_IncompleteExposure_InsufficientEvidenceNeverUnderTarget]' passed (0.049 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testResultProgressionJourneyH_MissingRIR_NeverFabricatedNeverAboveTargetFromRepsAlone]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testResultProgressionJourneyH_MissingRIR_NeverFabricatedNeverAboveTargetFromRepsAlone]' passed (0.048 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testRunningContribution_WeeklyAPIReflectsRealDistinguishingSourceContent]' started.
+RUNNING CONTRIBUTION — week1=RunningWeeklyContribution(includesSustainedAerobic: true, includesHighIntensityInterval: false, hasRunningImpact: true) week9=RunningWeeklyContribution(includesSustainedAerobic: true, includesHighIntensityInterval: true, hasRunningImpact: true) wholeProgram=RunningWeeklyContribution(includesSustainedAerobic: true, includesHighIntensityInterval: true, hasRunningImpact: true)
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testRunningContribution_WeeklyAPIReflectsRealDistinguishingSourceContent]' passed (0.019 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testRunningJourney1_ConditioningRunningTwoFFThree_DoesNotDuplicateSustainedAerobic]' started.
+RUNNING JOURNEY 1 — Running(2)+FF(3) Conditioning: families=[TrainingOS.FunctionalFitnessSessionFamily.shortMixedModal, TrainingOS.FunctionalFitnessSessionFamily.mediumMixedModal, TrainingOS.FunctionalFitnessSessionFamily.lowerFatigueComplementary], Running source unchanged, no duplicate SUSTAINED_AEROBIC
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testRunningJourney1_ConditioningRunningTwoFFThree_DoesNotDuplicateSustainedAerobic]' passed (0.165 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testRunningJourney2_OnlyOneRealRunningConfigurationExists_WholeProgramAggregateIsInvariant]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testRunningJourney2_OnlyOneRealRunningConfigurationExists_WholeProgramAggregateIsInvariant]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testRunningSourceImmutability_ContributionAwareFFAllocationNeverMutatesRunningSource]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testRunningSourceImmutability_ContributionAwareFFAllocationNeverMutatesRunningSource]' passed (0.174 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testSameSessionCoherence_MainBodyAndConditioningNeverShareTheSameLoadedExerciseWhenAnAlternativeExists]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testSameSessionCoherence_MainBodyAndConditioningNeverShareTheSameLoadedExerciseWhenAnAlternativeExists]' passed (0.290 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testSharedMuscleLedger_SquatAndHingeConsumeTheSameGlutesLedgerNotIndependentCopies]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testSharedMuscleLedger_SquatAndHingeConsumeTheSameGlutesLedgerNotIndependentCopies]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testStrengthFF5_DedicatedProductionJourney_HeavyWorkProtectedConditioningComplementary]' started.
+STRENGTH+5FF DEDICATED JOURNEY — heavyExposureSessions=2/5, conditioningSessions=1/5
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testStrengthFF5_DedicatedProductionJourney_HeavyWorkProtectedConditioningComplementary]' passed (0.069 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testTechnicalCapacityDoseAuthority_RepeatedDoseCeilingBands]' started.
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testTechnicalCapacityDoseAuthority_RepeatedDoseCeilingBands]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testWeekFirstProgramming_ReversingSessionArrayOrderNeverChangesAnySessionsResolvedFamily]' started.
+WEEK-FIRST / ORDER INDEPENDENCE: 3-session plan resolves identically regardless of input array order (12 sessions verified)
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testWeekFirstProgramming_ReversingSessionArrayOrderNeverChangesAnySessionsResolvedFamily]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testWeekIsolation_WeeklyContributionDiffersByRealWeekNeverAnAggregate]' started.
+WEEK-ISOLATION PROOF: week1=RunningWeeklyContribution(includesSustainedAerobic: true, includesHighIntensityInterval: false, hasRunningImpact: true) week9=RunningWeeklyContribution(includesSustainedAerobic: true, includesHighIntensityInterval: true, hasRunningImpact: true) aggregate=RunningWeeklyContribution(includesSustainedAerobic: true, includesHighIntensityInterval: true, hasRunningImpact: true)
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testWeekIsolation_WeeklyContributionDiffersByRealWeekNeverAnAggregate]' passed (0.019 seconds).
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testWeekScopedDuplicationAvoidance_RunningContributionInOneWeekNeverAffectsAnotherWeek]' started.
+WEEK-SCOPED DUPLICATION AVOIDANCE: week0(with Running)=Optional(TrainingOS.FunctionalFitnessSessionFamily.lowerFatigueComplementary), weeks1-3(without)=aerobicEngine unaffected
+Test Case '-[TrainingOSTests.GeneralProgrammingAllocationArchitectureTests testWeekScopedDuplicationAvoidance_RunningContributionInOneWeekNeverAffectsAnotherWeek]' passed (0.018 seconds).
+Test Suite 'GeneralProgrammingAllocationArchitectureTests' passed at 2026-10-06 14:31:45.266.
+	 Executed 120 tests, with 0 failures (0 unexpected) in 9.525 (9.545) seconds
+Test Suite 'GoalTrainingStyleProductModelTests' started at 2026-10-06 14:31:45.266.
+Test Case '-[TrainingOSTests.GoalTrainingStyleProductModelTests testBuildMuscleWithHypertrophyAndRunningPreferenceReachesRealRecommendation]' started.
+Test Case '-[TrainingOSTests.GoalTrainingStyleProductModelTests testBuildMuscleWithHypertrophyAndRunningPreferenceReachesRealRecommendation]' passed (0.030 seconds).
+Test Case '-[TrainingOSTests.GoalTrainingStyleProductModelTests testDislikedFunctionalFitnessIsNeverPromotedForStrengthGoal]' started.
+Test Case '-[TrainingOSTests.GoalTrainingStyleProductModelTests testDislikedFunctionalFitnessIsNeverPromotedForStrengthGoal]' passed (0.031 seconds).
+Test Case '-[TrainingOSTests.GoalTrainingStyleProductModelTests testGeneralStrengthRecommendationResolvesToStrengthSourceContentNotPowerlifting]' started.
+Test Case '-[TrainingOSTests.GoalTrainingStyleProductModelTests testGeneralStrengthRecommendationResolvesToStrengthSourceContentNotPowerlifting]' passed (0.035 seconds).
+Test Case '-[TrainingOSTests.GoalTrainingStyleProductModelTests testGeneralStrengthWithHypertrophyAndFunctionalFitnessPreferenceReachesRealRecommendation]' started.
+Test Case '-[TrainingOSTests.GoalTrainingStyleProductModelTests testGeneralStrengthWithHypertrophyAndFunctionalFitnessPreferenceReachesRealRecommendation]' passed (0.029 seconds).
+Test Case '-[TrainingOSTests.GoalTrainingStyleProductModelTests testGeneralStrengthWithNoPreferenceStillRecommendsFocusedStrengthTrainingRegression]' started.
+Test Case '-[TrainingOSTests.GoalTrainingStyleProductModelTests testGeneralStrengthWithNoPreferenceStillRecommendsFocusedStrengthTrainingRegression]' passed (0.029 seconds).
+Test Case '-[TrainingOSTests.GoalTrainingStyleProductModelTests testMainGoalOptionsExcludeFunctionalFitnessAndUseOutcomePhrasing]' started.
+Test Case '-[TrainingOSTests.GoalTrainingStyleProductModelTests testMainGoalOptionsExcludeFunctionalFitnessAndUseOutcomePhrasing]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.GoalTrainingStyleProductModelTests testOnboardingViewModelKeepsMainGoalTrainingStylesAndWorkingTowardAsDistinctState]' started.
+Test Case '-[TrainingOSTests.GoalTrainingStyleProductModelTests testOnboardingViewModelKeepsMainGoalTrainingStylesAndWorkingTowardAsDistinctState]' passed (0.027 seconds).
+Test Case '-[TrainingOSTests.GoalTrainingStyleProductModelTests testOtherCompatibleOptionsAreRealCandidatesForTheStrengthScenario]' started.
+Test Case '-[TrainingOSTests.GoalTrainingStyleProductModelTests testOtherCompatibleOptionsAreRealCandidatesForTheStrengthScenario]' passed (0.030 seconds).
+Test Case '-[TrainingOSTests.GoalTrainingStyleProductModelTests testPowerliftingComponentWithoutSelectorStillResolvesToPowerliftingBuiltInLibrary]' started.
+Test Case '-[TrainingOSTests.GoalTrainingStyleProductModelTests testPowerliftingComponentWithoutSelectorStillResolvesToPowerliftingBuiltInLibrary]' passed (0.031 seconds).
+Test Case '-[TrainingOSTests.GoalTrainingStyleProductModelTests testRecommendationExplanationNamesRealGoalAndMatchedPreferredStyles]' started.
+Test Case '-[TrainingOSTests.GoalTrainingStyleProductModelTests testRecommendationExplanationNamesRealGoalAndMatchedPreferredStyles]' passed (0.030 seconds).
+Test Case '-[TrainingOSTests.GoalTrainingStyleProductModelTests testRunningSelectableAsTrainingStyleIndependentOfAnyDatedObjective]' started.
+Test Case '-[TrainingOSTests.GoalTrainingStyleProductModelTests testRunningSelectableAsTrainingStyleIndependentOfAnyDatedObjective]' passed (0.029 seconds).
+Test Case '-[TrainingOSTests.GoalTrainingStyleProductModelTests testSelectingAlternativeStartsExactlyThatMixForTheStrengthScenario]' started.
+Test Case '-[TrainingOSTests.GoalTrainingStyleProductModelTests testSelectingAlternativeStartsExactlyThatMixForTheStrengthScenario]' passed (0.075 seconds).
+Test Case '-[TrainingOSTests.GoalTrainingStyleProductModelTests testSteadyStateAndIntervalNeverAppearAsTrainingStyleLabels]' started.
+Test Case '-[TrainingOSTests.GoalTrainingStyleProductModelTests testSteadyStateAndIntervalNeverAppearAsTrainingStyleLabels]' passed (0.017 seconds).
+Test Case '-[TrainingOSTests.GoalTrainingStyleProductModelTests testTrainingStyleMapsDeterministicallyToRealDomainPreferences]' started.
+Test Case '-[TrainingOSTests.GoalTrainingStyleProductModelTests testTrainingStyleMapsDeterministicallyToRealDomainPreferences]' passed (0.017 seconds).
+Test Suite 'GoalTrainingStyleProductModelTests' passed at 2026-10-06 14:31:45.697.
+	 Executed 14 tests, with 0 failures (0 unexpected) in 0.429 (0.431) seconds
+Test Suite 'TemplateGraphPersistenceTests' started at 2026-10-06 14:31:45.697.
+Test Case '-[TrainingOSTests.TemplateGraphPersistenceTests testDeletingPairedSlotNullifiesRatherThanCrashing]' started.
+Test Case '-[TrainingOSTests.TemplateGraphPersistenceTests testDeletingPairedSlotNullifiesRatherThanCrashing]' passed (0.029 seconds).
+Test Case '-[TrainingOSTests.TemplateGraphPersistenceTests testDiagnosticTwoSiblingRowsWithDifferentLoadRuleCases]' started.
+Test Case '-[TrainingOSTests.TemplateGraphPersistenceTests testDiagnosticTwoSiblingRowsWithDifferentLoadRuleCases]' passed (0.019 seconds).
+Test Case '-[TrainingOSTests.TemplateGraphPersistenceTests testDiagnosticTwoSiblingRowsWithDifferentNonEmptyLoadRuleCases]' started.
+Test Case '-[TrainingOSTests.TemplateGraphPersistenceTests testDiagnosticTwoSiblingRowsWithDifferentNonEmptyLoadRuleCases]' passed (0.020 seconds).
+Test Case '-[TrainingOSTests.TemplateGraphPersistenceTests testDiagnosticTwoSiblingSteadyStatePrescriptionsWithDifferentIntensityTargetCases]' started.
+Test Case '-[TrainingOSTests.TemplateGraphPersistenceTests testDiagnosticTwoSiblingSteadyStatePrescriptionsWithDifferentIntensityTargetCases]' passed (0.021 seconds).
+Test Case '-[TrainingOSTests.TemplateGraphPersistenceTests testExerciseSlotResolutionSurvivesRoundTrip]' started.
+Test Case '-[TrainingOSTests.TemplateGraphPersistenceTests testExerciseSlotResolutionSurvivesRoundTrip]' passed (0.019 seconds).
+Test Case '-[TrainingOSTests.TemplateGraphPersistenceTests testFullTemplateGraphSurvivesRoundTrip]' started.
+Test Case '-[TrainingOSTests.TemplateGraphPersistenceTests testFullTemplateGraphSurvivesRoundTrip]' passed (0.022 seconds).
+Test Case '-[TrainingOSTests.TemplateGraphPersistenceTests testFunctionalFitnessWeeklyPlanSurvivesRoundTrip]' started.
+Test Case '-[TrainingOSTests.TemplateGraphPersistenceTests testFunctionalFitnessWeeklyPlanSurvivesRoundTrip]' passed (0.019 seconds).
+Test Case '-[TrainingOSTests.TemplateGraphPersistenceTests testNoLoadRuleAndDeloadWeekSurviveRoundTrip]' started.
+Test Case '-[TrainingOSTests.TemplateGraphPersistenceTests testNoLoadRuleAndDeloadWeekSurviveRoundTrip]' passed (0.021 seconds).
+Test Case '-[TrainingOSTests.TemplateGraphPersistenceTests testRealGeneratedThreeSessionsPerWeekPlanSurvivesRoundTrip]' started.
+Test Case '-[TrainingOSTests.TemplateGraphPersistenceTests testRealGeneratedThreeSessionsPerWeekPlanSurvivesRoundTrip]' passed (0.026 seconds).
+Test Case '-[TrainingOSTests.TemplateGraphPersistenceTests testReproduction_BareSiblingFunctionalFitnessPrescriptionsWithMixedFormatsIncludingNil]' started.
+Test Case '-[TrainingOSTests.TemplateGraphPersistenceTests testReproduction_BareSiblingFunctionalFitnessPrescriptionsWithMixedFormatsIncludingNil]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.TemplateGraphPersistenceTests testReproduction_MultiWeekMaterializedPrescriptionsWithMixedFormatsIncludingNilSurviveFreshFetch]' started.
+Test Case '-[TrainingOSTests.TemplateGraphPersistenceTests testReproduction_MultiWeekMaterializedPrescriptionsWithMixedFormatsIncludingNilSurviveFreshFetch]' passed (0.033 seconds).
+Test Case '-[TrainingOSTests.TemplateGraphPersistenceTests testReproduction_RealLegacyFallbackThroughRollTacticalWindowUseCase]' started.
+Test Case '-[TrainingOSTests.TemplateGraphPersistenceTests testReproduction_RealLegacyFallbackThroughRollTacticalWindowUseCase]' passed (0.035 seconds).
+Test Case '-[TrainingOSTests.TemplateGraphPersistenceTests testReproduction_SiblingRowsWithOneNilOptionalPayloadCase]' started.
+Test Case '-[TrainingOSTests.TemplateGraphPersistenceTests testReproduction_SiblingRowsWithOneNilOptionalPayloadCase]' passed (0.019 seconds).
+Test Case '-[TrainingOSTests.TemplateGraphPersistenceTests testSourcedProvenanceSurvivesRoundTrip]' started.
+Test Case '-[TrainingOSTests.TemplateGraphPersistenceTests testSourcedProvenanceSurvivesRoundTrip]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.TemplateGraphPersistenceTests testStageFourBDeloadOverridesAndAutoregulationExtensionsSurviveRoundTrip]' started.
+Test Case '-[TrainingOSTests.TemplateGraphPersistenceTests testStageFourBDeloadOverridesAndAutoregulationExtensionsSurviveRoundTrip]' passed (0.019 seconds).
+Test Case '-[TrainingOSTests.TemplateGraphPersistenceTests testTwoSiblingFunctionalFitnessTemplatesWithDifferentWorkoutFormatCasesSurviveRoundTrip]' started.
+Test Case '-[TrainingOSTests.TemplateGraphPersistenceTests testTwoSiblingFunctionalFitnessTemplatesWithDifferentWorkoutFormatCasesSurviveRoundTrip]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.TemplateGraphPersistenceTests testWorkoutFormatFixRegressionMatrixAllCasesAcrossRealMaterializedWeeks]' started.
+Test Case '-[TrainingOSTests.TemplateGraphPersistenceTests testWorkoutFormatFixRegressionMatrixAllCasesAcrossRealMaterializedWeeks]' passed (0.058 seconds).
+Test Suite 'TemplateGraphPersistenceTests' passed at 2026-10-06 14:31:46.116.
+	 Executed 17 tests, with 0 failures (0 unexpected) in 0.416 (0.419) seconds
+Test Suite 'TrainingOSTests.xctest' failed at 2026-10-06 14:31:46.116.
+	 Executed 276 tests, with 1 failure (1 unexpected) in 17.168 (17.215) seconds
+Test Suite 'Selected tests' failed at 2026-10-06 14:31:46.117.
+	 Executed 276 tests, with 1 failure (1 unexpected) in 17.168 (17.215) seconds
+2026-10-06 14:31:55.711 xcodebuild[87959:79095194] [MT] IDETestOperationsObserverDebug: 35.975 elapsed -- Testing started completed.
+2026-10-06 14:31:55.711 xcodebuild[87959:79095194] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-06 14:31:55.711 xcodebuild[87959:79095194] [MT] IDETestOperationsObserverDebug: 35.975 sec, +35.975 sec -- end
+
+Test session results, code coverage, and logs:
+	/tmp/claude-501/-Users-stefankedling-Desktop-training-app/a1012e0e-bdc0-46f2-b5c9-ec2bb523c776/scratchpad/codex-verify-pr4-derived-data/Logs/Test/Test-TrainingOS-2026.10.06_14-31-18-+0200.xcresult
+
+Failing tests:
+	FunctionalFitnessProgramGeneratorTests.testFunctionalStrengthConditioningFitsSameBudgetWithProductionCatalog()
+
+** TEST EXECUTE FAILED **
+
+Testing started
