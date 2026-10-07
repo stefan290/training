@@ -29,6 +29,8 @@ import Observation
 @MainActor
 @Observable
 final class StrategicPlanSelectionViewModel {
+    // Retain the successful transaction context while its selected mix is displayed.
+    private var acceptedContext: ModelContext?
     private(set) var goal: Goal?
     private(set) var proposal: StrategicPlanProposal?
     /// The ONE `TrainingMix` candidate resolved during `load` — an
@@ -363,12 +365,25 @@ final class StrategicPlanSelectionViewModel {
 
         let retrySelections = customMixSelections
         let retryConditioning = mix.orderedComponents.first { $0.functionalTrainingStyle == .functionalStrength }?.functionalStrengthIncludesConditioning == true
-        var hasAcceptanceBaseline = false
+        var stagedContext: ModelContext?
         do {
-            // Persist existing user work before staging a new plan. On failure,
-            // rollback removes only this acceptance's unsaved partial graph.
+            // Keep pre-existing user work durable, then stage acceptance in an
+            // isolated context. A shared-context rollback can leave a cached
+            // Goal.plans inverse referencing a discarded insertion; the next
+            // save can resurrect that plan. Never attach a partial plan to the
+            // caller's goal in the first place.
             try modelContext.save()
-            hasAcceptanceBaseline = true
+            let transaction = ModelContext(modelContext.container)
+            transaction.autosaveEnabled = false
+            stagedContext = transaction
+            let goalID = goal.id
+            guard let transactionGoal = try transaction.fetch(FetchDescriptor<Goal>(
+                predicate: #Predicate { $0.id == goalID }
+            )).first else {
+                throw StartPhaseError.noExecutableComponents
+            }
+            var transactionProposal = proposal
+            transactionProposal.goal = transactionGoal
             // V1 "Explicit Weekly Composition" checkpoint: a custom mix's
             // Running/Cycling component has no per-component `ActivityType`
             // of its own — `proposeProgram`'s `preferredActivityType` resolves
@@ -378,14 +393,14 @@ final class StrategicPlanSelectionViewModel {
             // becomes authoritative — additively (never removing an existing
             // stated preference), never at mere construction/review time.
             if isCustomMixSelected {
-                var preferences = goal.preferences ?? GoalPreferences()
+                var preferences = transactionGoal.preferences ?? GoalPreferences()
                 let required = LongTermPlanner.requiredModalityPreferences(for: customMixSelections)
                 for preference in required where !preferences.preferredModalities.contains(preference) {
                     preferences.preferredModalities.append(preference)
                 }
-                goal.preferences = preferences
+                transactionGoal.preferences = preferences
             }
-            let plan = try AcceptStrategicPlanUseCase.accept(proposal, context: modelContext, decidedAt: referenceDate)
+            let plan = try AcceptStrategicPlanUseCase.accept(transactionProposal, context: transaction, decidedAt: referenceDate)
             guard let firstPhase = plan.orderedPhases.first else {
                 throw StartPhaseError.noExecutableComponents
             }
@@ -396,11 +411,11 @@ final class StrategicPlanSelectionViewModel {
             // same KNOWN DOMAIN GAP (no persisted equipment-inventory
             // model yet, tracked as a pre-existing FOLLOW-UP, not
             // introduced here).
-            let exercises = (try? modelContext.fetch(FetchDescriptor<Exercise>())) ?? []
-            let users = (try? modelContext.fetch(FetchDescriptor<User>())) ?? []
+            let exercises = (try? transaction.fetch(FetchDescriptor<Exercise>())) ?? []
+            let users = (try? transaction.fetch(FetchDescriptor<User>())) ?? []
             let user = users.first
             let environment = user?.profile?.defaultTrainingEnvironment
-            let preferences = goal.preferences
+            let preferences = transactionGoal.preferences
             // Dogfood Round 2 Continuation (Finding A): the athlete's real,
             // onboarding-selected weekdays must reach the FIRST tactical
             // materialization too — mirrors the exact pattern already
@@ -418,13 +433,13 @@ final class StrategicPlanSelectionViewModel {
             )
 
             let result = try StartPhaseUseCase.start(
-                phase: firstPhase, mix: mix, asOf: referenceDate, ownerUserID: goal.ownerUserID,
+                phase: firstPhase, mix: mix, asOf: referenceDate, ownerUserID: transactionGoal.ownerUserID,
                 performanceProfile: user?.performanceProfile,
                 availability: UserAvailability(
                     trainingDaysPerWeek: trainingDays, availableWeekdays: availableWeekdays,
                     allowsDoubleSessions: allowsDoubles, maxSessionsPerDay: allowsDoubles ? 2 : 1
                 ),
-                materializationContext: materializationContext, context: modelContext
+                materializationContext: materializationContext, context: transaction
             )
             componentsAwaitingCalibrationCount = result.componentsAwaitingCalibration.count
             // Explicit save — this single write unlocks the entire rest of
@@ -436,7 +451,7 @@ final class StrategicPlanSelectionViewModel {
             // never depend on SwiftUI's own autosave timing for something
             // this durability-critical (mirrors CLAUDE.md rule 20's "durable
             // at each meaningful action" discipline).
-            try modelContext.save()
+            try transaction.save()
             // FINAL DIAGNOSTIC CLOSURE, Section A: debug/dogfood-only —
             // reads back the SAME just-persisted materialization the UI
             // renders next; see `DogfoodTraceDump`'s own doc comment.
@@ -444,12 +459,20 @@ final class StrategicPlanSelectionViewModel {
             DogfoodTraceDump.dump(phase: firstPhase, performanceProfile: user?.performanceProfile)
             errorMessage = nil
             needsTrainingEnvironment = false
+            acceptedContext = transaction
+            // Refresh the caller's goal before Today/root state traverses its
+            // cached plans relationship. The selected mix remains the exact
+            // reviewed candidate, now persisted by the transaction.
+            self.goal = (try? modelContext.fetch(FetchDescriptor<Goal>(
+                predicate: #Predicate { $0.id == goalID }
+            )))?.first ?? goal
             didSucceed = true
             return true
         } catch {
-            if hasAcceptanceBaseline {
-                modelContext.rollback()
-                // Rolled-back inserted models cannot be reused on retry.
+            if let stagedContext {
+                stagedContext.rollback()
+                // Discard the staged mix graph; reload against the untouched
+                // caller context before constructing a fresh retry candidate.
                 load(modelContext: modelContext, referenceDate: referenceDate)
                 if !retrySelections.isEmpty {
                     _ = buildCustomMix(selections: retrySelections, functionalStrengthIncludesConditioning: retryConditioning)

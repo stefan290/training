@@ -571,6 +571,13 @@ final class StrategicPlanSelectionTests: XCTestCase {
         XCTAssertTrue(try context.fetch(FetchDescriptor<Session>()).isEmpty)
         XCTAssertTrue(try context.fetch(FetchDescriptor<ProgramInstance>()).isEmpty)
         XCTAssertTrue(viewModel.isCustomMixSelected)
+        // A later caller save must not resurrect a plan through a cached inverse.
+        try context.save()
+        let afterFailure = ModelContext(container)
+        XCTAssertTrue(try afterFailure.fetch(FetchDescriptor<TrainingPlan>()).isEmpty)
+        XCTAssertTrue(try afterFailure.fetch(FetchDescriptor<TrainingPhase>()).isEmpty)
+        XCTAssertTrue(try afterFailure.fetch(FetchDescriptor<ProgramInstance>()).isEmpty)
+        XCTAssertTrue(try afterFailure.fetch(FetchDescriptor<Session>()).isEmpty)
         let restoredUser = try XCTUnwrap(context.fetch(FetchDescriptor<User>()).first)
         restoredUser.profile?.defaultTrainingEnvironment = restoredUser.profile?.trainingEnvironments.first
         try context.save()
@@ -580,6 +587,12 @@ final class StrategicPlanSelectionTests: XCTestCase {
         XCTAssertFalse(viewModel.needsTrainingEnvironment)
         XCTAssertEqual(try context.fetch(FetchDescriptor<TrainingPlan>()).count, 1)
         XCTAssertEqual(try context.fetch(FetchDescriptor<Session>()).count, 4)
+        try context.save()
+        let afterRetry = ModelContext(container)
+        XCTAssertEqual(try afterRetry.fetch(FetchDescriptor<TrainingPlan>()).count, 1)
+        XCTAssertEqual(try afterRetry.fetch(FetchDescriptor<Session>()).count, 4)
+        let persistedGoal = try XCTUnwrap(afterRetry.fetch(FetchDescriptor<Goal>()).first)
+        XCTAssertEqual(persistedGoal.plans.count, 1)
         XCTAssertFalse(viewModel.acceptAndStart(modelContext: context))
         XCTAssertNil(viewModel.errorMessage)
     }

@@ -1,3 +1,32 @@
+# Round 4: isolate failed acceptance from the caller's cached graph
+
+The round-3 verification at ef52b47 reproduced a duplicate TrainingPlan on
+failure followed by retry. Acceptance now stages against a separate
+ModelContext with autosave disabled, using that context's own fetched Goal,
+User, environment and exercise catalog. The reviewed, uninserted mix and exact
+proposal phase values are preserved. Only one final save commits the plan and
+first sessions. Failed work never attaches a plan to the caller's Goal.
+
+The existing retry regression additionally saves the caller after failure and
+after success, then checks fresh contexts and the persisted Goal.plans inverse.
+No new test method is added: expected full suite count remains 1914.
+
+Mac verification:
+1. Confirm exact published SHA. Separate worktree and DerivedData. Include an
+   explicit absolute -project path in EVERY xcodebuild command.
+2. First run StrategicPlanSelectionTests/testFailedAcceptanceRollsBackPartialPlanAndRetryClearsError
+   in isolation. Then all StrategicPlanSelectionTests, J5, and the existing
+   focused classes below. Run the full TrainingOSTests suite if they pass.
+3. Confirm fresh-context counts after caller saves: zero plans/phases/instances/
+   sessions after failure; one plan, four sessions and one Goal.plans entry after
+   retry. Verify successful first-attempt acceptance still reaches Today.
+4. Recheck mixed Functional Strength/CrossFit WOD content and restart persistence.
+   Preserve existing data. Disclose if logged result tables are empty.
+5. Publish exact SHA, commands, raw logs and observed simulator results. No code
+   changes or merge. Do not loop on inaccessible UI failure injection.
+
+Xcode and SwiftData execution remain unverified in the Linux authoring environment.
+
 # Round 3: CrossFit WOD and acceptance recovery
 
 Independent round-2 evidence at `verify/codex-distinct-training-styles-8e8adc2`
