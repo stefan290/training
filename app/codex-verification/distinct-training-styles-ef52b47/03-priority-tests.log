@@ -1,0 +1,147 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild test-without-building -xctestrun /private/tmp/claude-501/-Users-stefankedling-Desktop-training-app/a1012e0e-bdc0-46f2-b5c9-ec2bb523c776/scratchpad/codex-verify-pr4c-derived-data/Build/Products/TrainingOS_iphonesimulator26.5-arm64.xctestrun -destination "platform=iOS Simulator,name=iPhone 17" -derivedDataPath /private/tmp/claude-501/-Users-stefankedling-Desktop-training-app/a1012e0e-bdc0-46f2-b5c9-ec2bb523c776/scratchpad/codex-verify-pr4c-derived-data "-only-testing:TrainingOSTests/RunningAthleteJourneyCompletionScenarioTests/testJ5_HybridMixRunningComponentBecomesExecutableWithoutChangingTheMix" "-only-testing:TrainingOSTests/StrategicPlanSelectionTests" "-only-testing:TrainingOSTests/FunctionalFitnessProgramGeneratorTests" -parallel-testing-enabled NO
+
+2026-10-07 12:37:07.395 xcodebuild[78907:80128108] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+2026-10-07 12:37:07.429 xcodebuild[78907:80128108] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+2026-10-07 12:37:08.374 xcodebuild[78907:80128108] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+2026-10-07 12:37:08.654 xcodebuild[78907:80128108] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+Test Suite 'Selected tests' started at 2026-10-07 12:37:15.655.
+Test Suite 'TrainingOSTests.xctest' started at 2026-10-07 12:37:15.655.
+Test Suite 'FunctionalFitnessProgramGeneratorTests' started at 2026-10-07 12:37:15.656.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests test12MinuteAMRAPTriplet]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests test12MinuteAMRAPTriplet]' passed (0.051 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests test21_15_9ForTime]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests test21_15_9ForTime]' passed (0.022 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests test5RoundForTime]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests test5RoundForTime]' passed (0.021 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testAscendingLadder]' started.
+objc[78939]: Class UIAccessibilityLoaderWebShared is implemented in both /Library/Developer/CoreSimulator/Volumes/iOS_23F77/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.5.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebCore.axbundle/WebCore (0x115458310) and /Library/Developer/CoreSimulator/Volumes/iOS_23F77/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.5.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebKit.axbundle/WebKit (0x11565c398). This may cause spurious casting failures and mysterious crashes. One of the duplicates must be removed or renamed.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testAscendingLadder]' passed (0.027 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testChipper]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testChipper]' passed (0.020 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testCombinedFunctionalFrequencyCannotBypassExistingFiveDayCapability]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testCombinedFunctionalFrequencyCannotBypassExistingFiveDayCapability]' passed (0.019 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testCompleteFunctionalStrengthMaterializesFourExercisesAndTimeBudgetAcrossAllWeeks]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testCompleteFunctionalStrengthMaterializesFourExercisesAndTimeBudgetAcrossAllWeeks]' passed (0.367 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testCrossFitKeepsWODWhenGoalBiasedIntentHadOmittedConditioning]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testCrossFitKeepsWODWhenGoalBiasedIntentHadOmittedConditioning]' passed (0.034 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testCustomMixStoresTwoIndependentFunctionalFormsAndConditioningChoice]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testCustomMixStoresTwoIndependentFunctionalFormsAndConditioningChoice]' passed (0.052 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testEMOMRotation]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testEMOMRotation]' passed (0.021 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testFunctionalStrengthConditioningFitsSameBudgetWithProductionCatalog]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testFunctionalStrengthConditioningFitsSameBudgetWithProductionCatalog]' passed (0.077 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testFunctionalStrengthOptOutDoesNotClaimConditioningCapability]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testFunctionalStrengthOptOutDoesNotClaimConditioningCapability]' passed (0.020 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testFunctionalStrengthResolvedFamilyMatchesConditioningChoiceWithAndWithoutHeavyAssignment]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testFunctionalStrengthResolvedFamilyMatchesConditioningChoiceWithAndWithoutHeavyAssignment]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testFunctionalStrengthWithConditioningKeepsResistanceBeforeConditioning]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testFunctionalStrengthWithConditioningKeepsResistanceBeforeConditioning]' passed (0.022 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testFunctionalStrengthWithoutConditioningHasRealResistanceContentEverySession]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testFunctionalStrengthWithoutConditioningHasRealResistanceContentEverySession]' passed (0.023 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testLegacyRecipeDecodesWithoutNewFieldsAndPreservesItsIntents]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testLegacyRecipeDecodesWithoutNewFieldsAndPreservesItsIntents]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testMaxLoad]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testMaxLoad]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testMaxReps]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testMaxReps]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testNewStylePreferencesRemainDistinctAndLegacyPreferencesDecode]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testNewStylePreferencesRemainDistinctAndLegacyPreferencesDecode]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testPlannerResolvesBothFormsAndAllocatesHeavyStrengthOnceAcrossMix]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testPlannerResolvesBothFormsAndAllocatesHeavyStrengthOnceAcrossMix]' passed (0.030 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testSameFormatWithDifferentStimuliAreNotConflated]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testSameFormatWithDifferentStimuliAreNotConflated]' passed (0.018 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testSingleModalityConditioningWorkout]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testSingleModalityConditioningWorkout]' passed (0.020 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testStrengthPlusMetconSessionComposition]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testStrengthPlusMetconSessionComposition]' passed (0.021 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testStyledRecipeAndBlocksSurviveFreshModelContext]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testStyledRecipeAndBlocksSurviveFreshModelContext]' passed (0.063 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testStyledRecurringInputIsNormalizedToExactWeekIntents]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testStyledRecurringInputIsNormalizedToExactWeekIntents]' passed (0.024 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testTimeBudgetAccountsForWorkRestWarmupAndTransitions]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testTimeBudgetAccountsForWorkRestWarmupAndTransitions]' passed (0.019 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testTimeBudgetDisclosesIncompleteContentInsteadOfInventingDuration]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testTimeBudgetDisclosesIncompleteContentInsteadOfInventingDuration]' passed (0.019 seconds).
+Test Suite 'FunctionalFitnessProgramGeneratorTests' passed at 2026-10-07 12:37:16.742.
+	 Executed 27 tests, with 0 failures (0 unexpected) in 1.078 (1.087) seconds
+Test Suite 'RunningAthleteJourneyCompletionScenarioTests' started at 2026-10-07 12:37:16.742.
+Test Case '-[TrainingOSTests.RunningAthleteJourneyCompletionScenarioTests testJ5_HybridMixRunningComponentBecomesExecutableWithoutChangingTheMix]' started.
+Test Case '-[TrainingOSTests.RunningAthleteJourneyCompletionScenarioTests testJ5_HybridMixRunningComponentBecomesExecutableWithoutChangingTheMix]' passed (0.449 seconds).
+Test Suite 'RunningAthleteJourneyCompletionScenarioTests' passed at 2026-10-07 12:37:17.192.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.449 (0.450) seconds
+Test Suite 'StrategicPlanSelectionTests' started at 2026-10-07 12:37:17.192.
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testAcceptAndStartUsesRealUseCasesAndCreatesRealProgramInstancesAndSessions]' started.
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testAcceptAndStartUsesRealUseCasesAndCreatesRealProgramInstancesAndSessions]' passed (0.088 seconds).
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testAfterStartTodayAndPlanSeeTheRealNewlyCreatedState]' started.
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testAfterStartTodayAndPlanSeeTheRealNewlyCreatedState]' passed (0.051 seconds).
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testAfterSuccessfulStartResolverReachesActiveTrainingAndRelaunchPreservesIt]' started.
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testAfterSuccessfulStartResolverReachesActiveTrainingAndRelaunchPreservesIt]' passed (0.079 seconds).
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testAlternativesAreRealPlannerReturnedCandidates]' started.
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testAlternativesAreRealPlannerReturnedCandidates]' passed (0.030 seconds).
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testCapacityOneRetainsOnlyTheHigherPriorityComponent]' started.
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testCapacityOneRetainsOnlyTheHigherPriorityComponent]' passed (0.030 seconds).
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testCapacityScalingNeverErasesAPreferredNonPrimaryModality]' started.
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testCapacityScalingNeverErasesAPreferredNonPrimaryModality]' passed (0.031 seconds).
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testCompletedOnboardingNoPlanResolvesReadyForPlan]' started.
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testCompletedOnboardingNoPlanResolvesReadyForPlan]' passed (0.032 seconds).
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testDislikedRunningSpecificallyExcludesRunningFromMaterializedActivity]' started.
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testDislikedRunningSpecificallyExcludesRunningFromMaterializedActivity]' passed (0.120 seconds).
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testDoubleAcceptCannotCreateDuplicatePlans]' started.
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testDoubleAcceptCannotCreateDuplicatePlans]' passed (0.078 seconds).
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testExistingStrategicLifecycleRegressionUnaffected]' started.
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testExistingStrategicLifecycleRegressionUnaffected]' passed (0.033 seconds).
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testFailedAcceptanceRollsBackPartialPlanAndRetryClearsError]' started.
+/tmp/claude-501/-Users-stefankedling-Desktop-training-app/a1012e0e-bdc0-46f2-b5c9-ec2bb523c776/scratchpad/codex-verify-pr4c/training/app/TrainingOSTests/StrategicPlanSelectionTests.swift:581: error: -[TrainingOSTests.StrategicPlanSelectionTests testFailedAcceptanceRollsBackPartialPlanAndRetryClearsError] : XCTAssertEqual failed: ("2") is not equal to ("1")
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testFailedAcceptanceRollsBackPartialPlanAndRetryClearsError]' failed (0.581 seconds).
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testFiveDayAllowsDoublesLeavesTheRealTemplateUntouched]' started.
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testFiveDayAllowsDoublesLeavesTheRealTemplateUntouched]' passed (0.124 seconds).
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testFiveDayNoDoublesCapacityScalingProducesFiveHypertrophy]' started.
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testFiveDayNoDoublesCapacityScalingProducesFiveHypertrophy]' passed (0.030 seconds).
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testFiveDayNoDoublesMuscleGainRecommendationFitsCapacityWithNoDoubleBookedDays]' started.
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testFiveDayNoDoublesMuscleGainRecommendationFitsCapacityWithNoDoubleBookedDays]' passed (0.286 seconds).
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testIncompatibleTrainingEnvironmentProducesTruthfulRecoveryNeverFakePrescription]' started.
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testIncompatibleTrainingEnvironmentProducesTruthfulRecoveryNeverFakePrescription]' passed (0.077 seconds).
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testLoadProducesRealRecommendationFromTheAthletesActualGoalWithoutCreatingAnActivePlan]' started.
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testLoadProducesRealRecommendationFromTheAthletesActualGoalWithoutCreatingAnActivePlan]' passed (0.031 seconds).
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testLoadSurfacesAnObjectivesConflictDistinctlyAndNeverBuildsAMix]' started.
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testLoadSurfacesAnObjectivesConflictDistinctlyAndNeverBuildsAMix]' passed (0.031 seconds).
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testLoadSurfacesCompressedObjectivePrepWhenAnEarlierObjectiveRunsLateIntoTheNext]' started.
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testLoadSurfacesCompressedObjectivePrepWhenAnEarlierObjectiveRunsLateIntoTheNext]' passed (0.030 seconds).
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testNoComponentEverExceedsItsOriginalTemplateTarget]' started.
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testNoComponentEverExceedsItsOriginalTemplateTarget]' passed (0.088 seconds).
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testNoModalityPreferenceLeavesGoalFirstRankingValid]' started.
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testNoModalityPreferenceLeavesGoalFirstRankingValid]' passed (0.033 seconds).
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testOnlyFeasibleAlternativesAreSelectableAndSelectionReplacesTheReviewedMix]' started.
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testOnlyFeasibleAlternativesAreSelectableAndSelectionReplacesTheReviewedMix]' passed (0.030 seconds).
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testPreferredFunctionalFitnessReachesRealPlannerRanking]' started.
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testPreferredFunctionalFitnessReachesRealPlannerRanking]' passed (0.031 seconds).
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testRecommendedMixIsNotYetSelectedBeforeAcceptance]' started.
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testRecommendedMixIsNotYetSelectedBeforeAcceptance]' passed (0.031 seconds).
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testRequiredCalibrationRemainsRequiredAndNoFakeRMIsInserted]' started.
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testRequiredCalibrationRemainsRequiredAndNoFakeRMIsInserted]' passed (0.089 seconds).
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testStyledMixAcceptsCompleteCrossFitWODAlongsideFunctionalStrength]' started.
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testStyledMixAcceptsCompleteCrossFitWODAlongsideFunctionalStrength]' passed (0.146 seconds).
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testThreeDayNoDoublesCapacityScalingProducesThreeHypertrophy]' started.
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testThreeDayNoDoublesCapacityScalingProducesThreeHypertrophy]' passed (0.030 seconds).
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testThreeDayNoDoublesNeverPresentsAnInfeasibleMixAsRecommended]' started.
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testThreeDayNoDoublesNeverPresentsAnInfeasibleMixAsRecommended]' passed (0.030 seconds).
+Test Suite 'StrategicPlanSelectionTests' failed at 2026-10-07 12:37:19.467.
+	 Executed 27 tests, with 1 failure (0 unexpected) in 2.270 (2.274) seconds
+Test Suite 'TrainingOSTests.xctest' failed at 2026-10-07 12:37:19.467.
+	 Executed 55 tests, with 1 failure (0 unexpected) in 3.797 (3.811) seconds
+Test Suite 'Selected tests' failed at 2026-10-07 12:37:19.467.
+	 Executed 55 tests, with 1 failure (0 unexpected) in 3.797 (3.812) seconds
+2026-10-07 12:37:28.388 xcodebuild[78907:80128108] [MT] IDETestOperationsObserverDebug: 20.004 elapsed -- Testing started completed.
+2026-10-07 12:37:28.389 xcodebuild[78907:80128108] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-07 12:37:28.389 xcodebuild[78907:80128108] [MT] IDETestOperationsObserverDebug: 20.004 sec, +20.004 sec -- end
+
+Test session results, code coverage, and logs:
+	/tmp/claude-501/-Users-stefankedling-Desktop-training-app/a1012e0e-bdc0-46f2-b5c9-ec2bb523c776/scratchpad/codex-verify-pr4c-derived-data/Logs/Test/Test-TrainingOS-2026.10.07_12-37-07-+0200.xcresult
+
+Failing tests:
+	StrategicPlanSelectionTests.testFailedAcceptanceRollsBackPartialPlanAndRetryClearsError()
+
+** TEST EXECUTE FAILED **
+
+Testing started

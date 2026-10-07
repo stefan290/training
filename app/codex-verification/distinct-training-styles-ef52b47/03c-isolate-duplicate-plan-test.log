@@ -1,0 +1,33 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild test-without-building -xctestrun /private/tmp/claude-501/-Users-stefankedling-Desktop-training-app/a1012e0e-bdc0-46f2-b5c9-ec2bb523c776/scratchpad/codex-verify-pr4c-derived-data/Build/Products/TrainingOS_iphonesimulator26.5-arm64.xctestrun -destination "platform=iOS Simulator,name=iPhone 17" -derivedDataPath /private/tmp/claude-501/-Users-stefankedling-Desktop-training-app/a1012e0e-bdc0-46f2-b5c9-ec2bb523c776/scratchpad/codex-verify-pr4c-derived-data "-only-testing:TrainingOSTests/StrategicPlanSelectionTests/testFailedAcceptanceRollsBackPartialPlanAndRetryClearsError" -parallel-testing-enabled NO
+
+2026-10-07 12:38:17.912 xcodebuild[79114:80133934] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+2026-10-07 12:38:17.923 xcodebuild[79114:80133934] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+2026-10-07 12:38:18.878 xcodebuild[79114:80133934] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+2026-10-07 12:38:19.144 xcodebuild[79114:80133934] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+Test Suite 'Selected tests' started at 2026-10-07 12:38:21.095.
+Test Suite 'TrainingOSTests.xctest' started at 2026-10-07 12:38:21.096.
+Test Suite 'StrategicPlanSelectionTests' started at 2026-10-07 12:38:21.096.
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testFailedAcceptanceRollsBackPartialPlanAndRetryClearsError]' started.
+objc[79123]: Class UIAccessibilityLoaderWebShared is implemented in both /Library/Developer/CoreSimulator/Volumes/iOS_23F77/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.5.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebCore.axbundle/WebCore (0x115c00310) and /Library/Developer/CoreSimulator/Volumes/iOS_23F77/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.5.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebKit.axbundle/WebKit (0x114698398). This may cause spurious casting failures and mysterious crashes. One of the duplicates must be removed or renamed.
+/tmp/claude-501/-Users-stefankedling-Desktop-training-app/a1012e0e-bdc0-46f2-b5c9-ec2bb523c776/scratchpad/codex-verify-pr4c/training/app/TrainingOSTests/StrategicPlanSelectionTests.swift:581: error: -[TrainingOSTests.StrategicPlanSelectionTests testFailedAcceptanceRollsBackPartialPlanAndRetryClearsError] : XCTAssertEqual failed: ("2") is not equal to ("1")
+Test Case '-[TrainingOSTests.StrategicPlanSelectionTests testFailedAcceptanceRollsBackPartialPlanAndRetryClearsError]' failed (0.707 seconds).
+Test Suite 'StrategicPlanSelectionTests' failed at 2026-10-07 12:38:21.805.
+	 Executed 1 test, with 1 failure (0 unexpected) in 0.707 (0.709) seconds
+Test Suite 'TrainingOSTests.xctest' failed at 2026-10-07 12:38:21.805.
+	 Executed 1 test, with 1 failure (0 unexpected) in 0.707 (0.709) seconds
+Test Suite 'Selected tests' failed at 2026-10-07 12:38:21.805.
+	 Executed 1 test, with 1 failure (0 unexpected) in 0.707 (0.710) seconds
+2026-10-07 12:38:30.821 xcodebuild[79114:80133934] [MT] IDETestOperationsObserverDebug: 11.933 elapsed -- Testing started completed.
+2026-10-07 12:38:30.821 xcodebuild[79114:80133934] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-07 12:38:30.821 xcodebuild[79114:80133934] [MT] IDETestOperationsObserverDebug: 11.933 sec, +11.933 sec -- end
+
+Test session results, code coverage, and logs:
+	/tmp/claude-501/-Users-stefankedling-Desktop-training-app/a1012e0e-bdc0-46f2-b5c9-ec2bb523c776/scratchpad/codex-verify-pr4c-derived-data/Logs/Test/Test-TrainingOS-2026.10.07_12-38-17-+0200.xcresult
+
+Failing tests:
+	StrategicPlanSelectionTests.testFailedAcceptanceRollsBackPartialPlanAndRetryClearsError()
+
+** TEST EXECUTE FAILED **
+
+Testing started
