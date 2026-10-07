@@ -537,4 +537,51 @@ final class StrategicPlanSelectionTests: XCTestCase {
         XCTAssertTrue(viewModel.hasCompressedObjectivePrep)
         XCTAssertFalse(viewModel.isInfeasible, "an event being soon must never block plan creation")
     }
+    func testStyledMixAcceptsCompleteCrossFitWODAlongsideFunctionalStrength() throws {
+        try makeOnboardedAthlete(goalType: .muscleGain, trainingDays: 4)
+        let viewModel = StrategicPlanSelectionViewModel()
+        viewModel.load(modelContext: context)
+        XCTAssertTrue(viewModel.buildCustomMix(selections: [(.functionalStrength, 3), (.crossFit, 1)], functionalStrengthIncludesConditioning: true))
+        XCTAssertTrue(viewModel.acceptAndStart(modelContext: context))
+        XCTAssertTrue(viewModel.didSucceed)
+        XCTAssertNil(viewModel.errorMessage)
+        let mix = try XCTUnwrap(viewModel.reviewedMix)
+        let crossFit = try XCTUnwrap(mix.orderedComponents.first { $0.functionalTrainingStyle == .crossFit }?.programInstance)
+        XCTAssertEqual(crossFit.sessions.count, 1)
+        for session in crossFit.sessions {
+            let wod = try XCTUnwrap(session.orderedBlocks.first { $0.type == .functionalFitness }?.functionalFitnessPrescription)
+            XCTAssertFalse(wod.stimulus.movementFunctions.isEmpty)
+        }
+        let fresh = ModelContext(container)
+        XCTAssertEqual(try fresh.fetch(FetchDescriptor<TrainingPlan>()).count, 1)
+        XCTAssertEqual(try fresh.fetch(FetchDescriptor<Session>()).count, 4)
+    }
+
+    func testFailedAcceptanceRollsBackPartialPlanAndRetryClearsError() throws {
+        let (user, _) = try makeOnboardedAthlete(goalType: .muscleGain, trainingDays: 4)
+        user.profile?.defaultTrainingEnvironment = nil
+        try context.save()
+        let viewModel = StrategicPlanSelectionViewModel()
+        viewModel.load(modelContext: context)
+        XCTAssertTrue(viewModel.buildCustomMix(selections: [(.functionalStrength, 3), (.crossFit, 1)], functionalStrengthIncludesConditioning: true))
+        XCTAssertFalse(viewModel.acceptAndStart(modelContext: context))
+        XCTAssertFalse(viewModel.didSucceed)
+        XCTAssertNotNil(viewModel.errorMessage)
+        XCTAssertTrue(try context.fetch(FetchDescriptor<TrainingPlan>()).isEmpty)
+        XCTAssertTrue(try context.fetch(FetchDescriptor<Session>()).isEmpty)
+        XCTAssertTrue(try context.fetch(FetchDescriptor<ProgramInstance>()).isEmpty)
+        XCTAssertTrue(viewModel.isCustomMixSelected)
+        let restoredUser = try XCTUnwrap(context.fetch(FetchDescriptor<User>()).first)
+        restoredUser.profile?.defaultTrainingEnvironment = restoredUser.profile?.trainingEnvironments.first
+        try context.save()
+        XCTAssertTrue(viewModel.acceptAndStart(modelContext: context))
+        XCTAssertTrue(viewModel.didSucceed)
+        XCTAssertNil(viewModel.errorMessage)
+        XCTAssertFalse(viewModel.needsTrainingEnvironment)
+        XCTAssertEqual(try context.fetch(FetchDescriptor<TrainingPlan>()).count, 1)
+        XCTAssertEqual(try context.fetch(FetchDescriptor<Session>()).count, 4)
+        XCTAssertFalse(viewModel.acceptAndStart(modelContext: context))
+        XCTAssertNil(viewModel.errorMessage)
+    }
+
 }

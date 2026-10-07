@@ -179,6 +179,16 @@ struct FunctionalFitnessProgramConfiguration: Codable, Equatable {
             intent.sessionFamily = intent.includeConditioningBlock ? .mixedResistanceWorkCapacity : .resistanceDominant
         case .crossFit:
             intent.includeConditioningBlock = true
+            switch intent.sessionFamily {
+            case .resistanceDominant, .heavyStrength, .powerAthletic:
+                // Keep the resistance assignment, but give its WOD the existing
+                // authored work-capacity shape and a family with real roles.
+                intent.sessionFamily = .mixedResistanceWorkCapacity
+                let relativeWeek = intent.relativeWeek
+                FunctionalFitnessPhaseBiasPolicy.applyWorkCapacityShape(to: &intent, relativeWeek: relativeWeek)
+            default:
+                break
+            }
         case nil:
             break
         }

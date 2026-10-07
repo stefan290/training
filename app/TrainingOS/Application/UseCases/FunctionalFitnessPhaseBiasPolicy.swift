@@ -233,7 +233,7 @@ enum FunctionalFitnessPhaseBiasPolicy {
     /// `.amrap(240)` format — the same real, reproduced failure class
     /// `.lowerFatigueComplementary`'s own dedicated shape below exists to
     /// prevent.
-    private static func applyWorkCapacityShape(to biased: inout FunctionalFitnessSessionIntent, relativeWeek: Int) {
+    static func applyWorkCapacityShape(to biased: inout FunctionalFitnessSessionIntent, relativeWeek: Int) {
         // CONDITIONING DOSE AUTHORITY V1, Section 2: the historical
         // unconditional `240` is gone — this is now the real
         // SHORT_HIGH_OUTPUT dose resolver's own 4/6/8-minute cycle.

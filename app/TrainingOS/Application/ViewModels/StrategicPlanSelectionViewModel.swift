@@ -361,28 +361,33 @@ final class StrategicPlanSelectionViewModel {
         errorMessage = nil
         needsTrainingEnvironment = false
 
-        // V1 "Explicit Weekly Composition" checkpoint: a custom mix's
-        // Running/Cycling component has no per-component `ActivityType`
-        // of its own — `proposeProgram`'s `preferredActivityType` resolves
-        // it from `Goal.preferences.preferredModalities` (the same
-        // existing mechanism `TrainingStyle`'s own soft-preference path
-        // already uses). Merged here — the one moment this composition
-        // becomes authoritative — additively (never removing an existing
-        // stated preference), never at mere construction/review time.
-        if isCustomMixSelected {
-            var preferences = goal.preferences ?? GoalPreferences()
-            let required = LongTermPlanner.requiredModalityPreferences(for: customMixSelections)
-            for preference in required where !preferences.preferredModalities.contains(preference) {
-                preferences.preferredModalities.append(preference)
-            }
-            goal.preferences = preferences
-        }
-
+        let retrySelections = customMixSelections
+        let retryConditioning = mix.orderedComponents.first { $0.functionalTrainingStyle == .functionalStrength }?.functionalStrengthIncludesConditioning == true
+        var hasAcceptanceBaseline = false
         do {
+            // Persist existing user work before staging a new plan. On failure,
+            // rollback removes only this acceptance's unsaved partial graph.
+            try modelContext.save()
+            hasAcceptanceBaseline = true
+            // V1 "Explicit Weekly Composition" checkpoint: a custom mix's
+            // Running/Cycling component has no per-component `ActivityType`
+            // of its own — `proposeProgram`'s `preferredActivityType` resolves
+            // it from `Goal.preferences.preferredModalities` (the same
+            // existing mechanism `TrainingStyle`'s own soft-preference path
+            // already uses). Merged here — the one moment this composition
+            // becomes authoritative — additively (never removing an existing
+            // stated preference), never at mere construction/review time.
+            if isCustomMixSelected {
+                var preferences = goal.preferences ?? GoalPreferences()
+                let required = LongTermPlanner.requiredModalityPreferences(for: customMixSelections)
+                for preference in required where !preferences.preferredModalities.contains(preference) {
+                    preferences.preferredModalities.append(preference)
+                }
+                goal.preferences = preferences
+            }
             let plan = try AcceptStrategicPlanUseCase.accept(proposal, context: modelContext, decidedAt: referenceDate)
             guard let firstPhase = plan.orderedPhases.first else {
-                errorMessage = "Your plan could not be started. Nothing was changed."
-                return false
+                throw StartPhaseError.noExecutableComponents
             }
 
             // Same established candidate-pool pattern every other real
@@ -431,15 +436,25 @@ final class StrategicPlanSelectionViewModel {
             // never depend on SwiftUI's own autosave timing for something
             // this durability-critical (mirrors CLAUDE.md rule 20's "durable
             // at each meaningful action" discipline).
-            try? modelContext.save()
+            try modelContext.save()
             // FINAL DIAGNOSTIC CLOSURE, Section A: debug/dogfood-only —
             // reads back the SAME just-persisted materialization the UI
             // renders next; see `DogfoodTraceDump`'s own doc comment.
             // Zero effect unless `-FFDogfoodTrace` is passed.
             DogfoodTraceDump.dump(phase: firstPhase, performanceProfile: user?.performanceProfile)
+            errorMessage = nil
+            needsTrainingEnvironment = false
             didSucceed = true
             return true
         } catch {
+            if hasAcceptanceBaseline {
+                modelContext.rollback()
+                // Rolled-back inserted models cannot be reused on retry.
+                load(modelContext: modelContext, referenceDate: referenceDate)
+                if !retrySelections.isEmpty {
+                    _ = buildCustomMix(selections: retrySelections, functionalStrengthIncludesConditioning: retryConditioning)
+                }
+            }
             if let recoveryMessage = trainingEnvironmentRecoveryMessage(for: error) {
                 needsTrainingEnvironment = true
                 errorMessage = recoveryMessage

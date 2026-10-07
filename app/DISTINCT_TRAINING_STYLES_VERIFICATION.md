@@ -1,3 +1,33 @@
+# Round 3: CrossFit WOD and acceptance recovery
+
+Independent round-2 evidence at `verify/codex-distinct-training-styles-8e8adc2`
+confirmed functional strength conditioning, but an empty CrossFit WOD and a
+failed acceptance leaving a partial active plan. CrossFit resistance-only
+families now use the existing authored mixed work-capacity WOD shape; heavy
+resistance assignments stay separate and unchanged. Acceptance saves existing
+work first, rolls back unsaved partial acceptance on error, rebuilds the
+review selection for retry, and requires the final save to succeed.
+
+The J5 raw failure was `RPE 3-3`: it selected the first non-nil intensity from
+an unordered relationship, including legitimate source RPE warmup/cooldown
+blocks. The test now requires all threshold targets to resolve to pace and
+RPE targets to remain RPE. No running prescription or calibration code changed.
+An isolated repeated failure establishes reproducibility on that build, but
+not causation by a change scoped to functional-strength recipes.
+
+Mac verification required, no author Xcode pass claimed:
+1. Build exact new PR head in separate worktree/DerivedData.
+2. Run J5, StrategicPlanSelectionTests (including both new integration tests),
+   and FunctionalFitnessProgramGeneratorTests, then all prior focused classes.
+3. If those pass, run full suite. Expected count 1914; report actual result.
+4. On a NEW proposed mix, inspect 3 Functional Strength with conditioning +
+   1 CrossFit: first acceptance succeeds, confirmation exits, real WOD content
+   persists after restart. Existing accepted historical sessions are not rewritten.
+5. Exercise missing-environment failure and recovery: no partial active plan,
+   selection retained, corrected retry succeeds without stale error or duplicates.
+6. Preserve existing store and publish commands/raw logs/screenshots/exact SHA.
+   No code changes, merge, data erase or indefinite automation retries.
+
 # Distinct functional training forms
 
 ## Author status
