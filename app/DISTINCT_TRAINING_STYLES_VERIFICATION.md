@@ -6,6 +6,25 @@ Code and regression tests authored on Linux. Swift, Xcode, XCTest and the
 simulator are unavailable here. No build or test pass is claimed by the author.
 Base: PR #3, `38e7cdfe9d1b9f97ee6df6537c7fcb6496503703`.
 
+## Follow-up: conditioning family correction
+
+The verification of `82538a6` found a real failure in
+`testFunctionalStrengthConditioningFitsSameBudgetWithProductionCatalog`:
+`environmentIncompatible` with no missing equipment. The conditioning opt-in
+had retained `resistanceDominant`, whose composer intentionally requests zero
+conditioning roles. Functional Strength now resolves to
+`mixedResistanceWorkCapacity` when conditioning is selected, reusing its
+existing two-role finisher. Strength-only retains `resistanceDominant`.
+No existing accepted sessions or results are rewritten.
+
+Verify the new PR head, not `82538a6`. Run the previously failing test and
+`testFunctionalStrengthResolvedFamilyMatchesConditioningChoiceWithAndWithoutHeavyAssignment`
+first, then the focused classes and full suite below. The existing four-week
+production-catalog test must produce real two-role conditioning in every
+session, three resistance exercises and the 50-minute total. Complete the
+previously unconfirmed live conditioning, CrossFit WOD, rest and restart
+checks. Do not erase the existing-store simulator. Report UI blockers once.
+
 ## Revision: complete functional strength sessions (generator version 2)
 
 The initial two-exercise implementation has been replaced for Functional
@@ -121,7 +140,7 @@ The existing application's authored prescriptions supply all numeric dosing.
 1. Separate worktree at the published PR head, record exact full SHA. Separate
    DerivedData, one xcodebuild process at a time. Do not edit or merge.
 2. Build for testing. Run these focused classes:
-   - FunctionalFitnessProgramGeneratorTests (15 additional regression tests across both commits)
+   - FunctionalFitnessProgramGeneratorTests (16 additional regression tests across the PR)
    - GoalTrainingStyleProductModelTests (updated expected label vocabulary)
    - ExplicitWeeklyCompositionTests
    - FunctionalFitnessMultiWeekV1Tests
@@ -131,7 +150,7 @@ The existing application's authored prescriptions supply all numeric dosing.
    - FunctionalFitnessPersistenceTests
    - DogfoodRound2CompletionTests
 3. If focused tests pass, run full TrainingOSTests. Prior baseline 1896;
-   15 additions imply 1911 unless repository changes independently.
+   16 additions imply 1912 unless repository changes independently.
 4. Existing-store normal launch without erase or clean-state flags. Record
    before/after data counts and verify legacy plans still open. Disclose whether
    the store actually contains logged results. Do not claim logged-result

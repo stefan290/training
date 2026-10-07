@@ -174,7 +174,9 @@ struct FunctionalFitnessProgramConfiguration: Codable, Equatable {
             // Reuse existing authored resistance prescriptions and progression.
             // Heavy assignments retain their own strength authority.
             intent.archetype = intent.genericStrengthAssignment == nil ? .functionalBodybuilding : .strengthPower
-            intent.sessionFamily = .resistanceDominant
+            // A conditioning block must use a family with actual conditioning
+            // roles. Resistance-only families deliberately compose zero roles.
+            intent.sessionFamily = intent.includeConditioningBlock ? .mixedResistanceWorkCapacity : .resistanceDominant
         case .crossFit:
             intent.includeConditioningBlock = true
         case nil:

@@ -163,6 +163,22 @@ final class FunctionalFitnessProgramGeneratorTests: XCTestCase {
         )
     }
 
+    func testFunctionalStrengthResolvedFamilyMatchesConditioningChoiceWithAndWithoutHeavyAssignment() throws {
+        let assignments: [MovementFunction?] = [nil, .squatLoaded]
+        for conditioning in [false, true] {
+            for assignment in assignments {
+                let configuration = styledConfiguration(.functionalStrength, conditioning: conditioning)
+                var original = try XCTUnwrap(configuration.weeklyPlan?.first)
+                original.genericStrengthAssignment = assignment
+                let intent = configuration.resolvedIntent(original)
+                XCTAssertEqual(intent.includeConditioningBlock, conditioning)
+                XCTAssertEqual(intent.sessionFamily, conditioning ? .mixedResistanceWorkCapacity : .resistanceDominant)
+                XCTAssertEqual(intent.genericStrengthAssignment, assignment)
+                XCTAssertEqual(intent.archetype, assignment == nil ? .functionalBodybuilding : .strengthPower)
+            }
+        }
+    }
+
     func testFunctionalStrengthWithoutConditioningHasRealResistanceContentEverySession() throws {
         let definition = FunctionalFitnessProgramGenerator.generate(configuration: styledConfiguration(.functionalStrength, conditioning: false), provenance: .constructed(reason: "test"), context: context)
         XCTAssertEqual(definition.orderedTemplateSessions.count, 12)
@@ -370,7 +386,10 @@ final class FunctionalFitnessProgramGeneratorTests: XCTestCase {
                 let resistance = session.orderedBlocks.flatMap(\.orderedPrescriptions)
                 XCTAssertEqual(resistance.count, 3)
                 XCTAssertTrue(resistance.allSatisfy { $0.orderedSetPrescriptions.count == 4 })
-                XCTAssertEqual(session.orderedBlocks.last?.functionalFitnessPrescription?.format, .amrap(capSeconds: 720))
+                let conditioning = try XCTUnwrap(session.orderedBlocks.last?.functionalFitnessPrescription)
+                XCTAssertEqual(conditioning.format, .amrap(capSeconds: 720))
+                XCTAssertEqual(conditioning.sessionFamily, .mixedResistanceWorkCapacity)
+                XCTAssertEqual(conditioning.stimulus.movementFunctions.count, 2)
                 let budget = try XCTUnwrap(session.functionalStrengthBudget)
                 XCTAssertEqual(budget.estimatedTotalSeconds, 50 * 60)
                 XCTAssertTrue(budget.meetsTimeTarget)
