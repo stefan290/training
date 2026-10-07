@@ -1,0 +1,32 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild test-without-building -xctestrun /private/tmp/claude-501/-Users-stefankedling-Desktop-training-app/a1012e0e-bdc0-46f2-b5c9-ec2bb523c776/scratchpad/codex-verify-pr4b-derived-data/Build/Products/TrainingOS_iphonesimulator26.5-arm64.xctestrun -destination "platform=iOS Simulator,name=iPhone 17" -derivedDataPath /private/tmp/claude-501/-Users-stefankedling-Desktop-training-app/a1012e0e-bdc0-46f2-b5c9-ec2bb523c776/scratchpad/codex-verify-pr4b-derived-data "-only-testing:TrainingOSTests/RunningAthleteJourneyCompletionScenarioTests/testJ5_HybridMixRunningComponentBecomesExecutableWithoutChangingTheMix" -parallel-testing-enabled NO
+
+2026-10-07 10:02:05.195 xcodebuild[60503:79890276] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+2026-10-07 10:02:05.214 xcodebuild[60503:79890276] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+2026-10-07 10:02:06.206 xcodebuild[60503:79890276] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+2026-10-07 10:02:06.484 xcodebuild[60503:79890276] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+Test Suite 'Selected tests' started at 2026-10-07 10:02:08.734.
+Test Suite 'TrainingOSTests.xctest' started at 2026-10-07 10:02:08.734.
+Test Suite 'RunningAthleteJourneyCompletionScenarioTests' started at 2026-10-07 10:02:08.734.
+Test Case '-[TrainingOSTests.RunningAthleteJourneyCompletionScenarioTests testJ5_HybridMixRunningComponentBecomesExecutableWithoutChangingTheMix]' started.
+/tmp/claude-501/-Users-stefankedling-Desktop-training-app/a1012e0e-bdc0-46f2-b5c9-ec2bb523c776/scratchpad/codex-verify-pr4b/training/app/TrainingOSTests/RunningAthleteJourneyCompletionTests.swift:336: error: -[TrainingOSTests.RunningAthleteJourneyCompletionScenarioTests testJ5_HybridMixRunningComponentBecomesExecutableWithoutChangingTheMix] : XCTAssertTrue failed - Running component must resolve to an actual pace within the hybrid mix — got: RPE 3-3
+Test Case '-[TrainingOSTests.RunningAthleteJourneyCompletionScenarioTests testJ5_HybridMixRunningComponentBecomesExecutableWithoutChangingTheMix]' failed (0.701 seconds).
+Test Suite 'RunningAthleteJourneyCompletionScenarioTests' failed at 2026-10-07 10:02:09.435.
+	 Executed 1 test, with 1 failure (0 unexpected) in 0.701 (0.701) seconds
+Test Suite 'TrainingOSTests.xctest' failed at 2026-10-07 10:02:09.435.
+	 Executed 1 test, with 1 failure (0 unexpected) in 0.701 (0.701) seconds
+Test Suite 'Selected tests' failed at 2026-10-07 10:02:09.435.
+	 Executed 1 test, with 1 failure (0 unexpected) in 0.701 (0.702) seconds
+2026-10-07 10:02:18.149 xcodebuild[60503:79890276] [MT] IDETestOperationsObserverDebug: 11.933 elapsed -- Testing started completed.
+2026-10-07 10:02:18.149 xcodebuild[60503:79890276] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-07 10:02:18.149 xcodebuild[60503:79890276] [MT] IDETestOperationsObserverDebug: 11.933 sec, +11.933 sec -- end
+
+Test session results, code coverage, and logs:
+	/tmp/claude-501/-Users-stefankedling-Desktop-training-app/a1012e0e-bdc0-46f2-b5c9-ec2bb523c776/scratchpad/codex-verify-pr4b-derived-data/Logs/Test/Test-TrainingOS-2026.10.07_10-02-05-+0200.xcresult
+
+Failing tests:
+	RunningAthleteJourneyCompletionScenarioTests.testJ5_HybridMixRunningComponentBecomesExecutableWithoutChangingTheMix()
+
+** TEST EXECUTE FAILED **
+
+Testing started

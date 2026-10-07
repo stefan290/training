@@ -1,0 +1,31 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild test-without-building -xctestrun /private/tmp/claude-501/-Users-stefankedling-Desktop-training-app/a1012e0e-bdc0-46f2-b5c9-ec2bb523c776/scratchpad/codex-verify-pr4b-derived-data/Build/Products/TrainingOS_iphonesimulator26.5-arm64.xctestrun -destination "platform=iOS Simulator,name=iPhone 17" -derivedDataPath /private/tmp/claude-501/-Users-stefankedling-Desktop-training-app/a1012e0e-bdc0-46f2-b5c9-ec2bb523c776/scratchpad/codex-verify-pr4b-derived-data "-only-testing:TrainingOSTests/FunctionalFitnessProgramGeneratorTests/testFunctionalStrengthConditioningFitsSameBudgetWithProductionCatalog" "-only-testing:TrainingOSTests/FunctionalFitnessProgramGeneratorTests/testFunctionalStrengthResolvedFamilyMatchesConditioningChoiceWithAndWithoutHeavyAssignment" -parallel-testing-enabled NO
+
+2026-10-07 09:59:03.305 xcodebuild[60044:79880468] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+2026-10-07 09:59:03.325 xcodebuild[60044:79880468] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+2026-10-07 09:59:04.328 xcodebuild[60044:79880468] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+2026-10-07 09:59:04.604 xcodebuild[60044:79880468] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+Test Suite 'Selected tests' started at 2026-10-07 09:59:13.845.
+Test Suite 'TrainingOSTests.xctest' started at 2026-10-07 09:59:13.845.
+Test Suite 'FunctionalFitnessProgramGeneratorTests' started at 2026-10-07 09:59:13.845.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testFunctionalStrengthConditioningFitsSameBudgetWithProductionCatalog]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testFunctionalStrengthConditioningFitsSameBudgetWithProductionCatalog]' passed (0.228 seconds).
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testFunctionalStrengthResolvedFamilyMatchesConditioningChoiceWithAndWithoutHeavyAssignment]' started.
+Test Case '-[TrainingOSTests.FunctionalFitnessProgramGeneratorTests testFunctionalStrengthResolvedFamilyMatchesConditioningChoiceWithAndWithoutHeavyAssignment]' passed (0.022 seconds).
+Test Suite 'FunctionalFitnessProgramGeneratorTests' passed at 2026-10-07 09:59:14.097.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.249 (0.251) seconds
+Test Suite 'TrainingOSTests.xctest' passed at 2026-10-07 09:59:14.097.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.249 (0.252) seconds
+Test Suite 'Selected tests' passed at 2026-10-07 09:59:14.097.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.249 (0.252) seconds
+objc[60072]: Class UIAccessibilityLoaderWebShared is implemented in both /Library/Developer/CoreSimulator/Volumes/iOS_23F77/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.5.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebCore.axbundle/WebCore (0x10f2f4310) and /Library/Developer/CoreSimulator/Volumes/iOS_23F77/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.5.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebKit.axbundle/WebKit (0x10f518398). This may cause spurious casting failures and mysterious crashes. One of the duplicates must be removed or renamed.
+2026-10-07 09:59:14.385 xcodebuild[60044:79880468] [MT] IDETestOperationsObserverDebug: 10.047 elapsed -- Testing started completed.
+2026-10-07 09:59:14.385 xcodebuild[60044:79880468] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-07 09:59:14.385 xcodebuild[60044:79880468] [MT] IDETestOperationsObserverDebug: 10.047 sec, +10.047 sec -- end
+
+Test session results, code coverage, and logs:
+	/tmp/claude-501/-Users-stefankedling-Desktop-training-app/a1012e0e-bdc0-46f2-b5c9-ec2bb523c776/scratchpad/codex-verify-pr4b-derived-data/Logs/Test/Test-TrainingOS-2026.10.07_09-59-03-+0200.xcresult
+
+** TEST EXECUTE SUCCEEDED **
+
+Testing started

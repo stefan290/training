@@ -1,0 +1,1 @@
+xcodebuild build-for-testing -scheme TrainingOS -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath /private/tmp/claude-501/-Users-stefankedling-Desktop-training-app/a1012e0e-bdc0-46f2-b5c9-ec2bb523c776/scratchpad/codex-verify-pr4b-derived-data -only-testing:TrainingOSTests
