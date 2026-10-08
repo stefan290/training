@@ -1,3 +1,32 @@
+# Round 5: one context for acceptance, calibration and execution
+
+Round 4's isolated acceptance context passed the retry check but regressed
+Finding Q set logging and J3 running calibration. It also passed the original
+reviewed mix graph into another context. Acceptance now uses the caller context
+throughout, disables autosave during the synchronous attempt, and explicitly
+restores the original Goal.plans inverse before and after rollback. Existing
+plans and pre-acceptance user work are preserved. No inserted model is reused
+on retry. The successful reviewed mix retains the caller context identity.
+
+These are proposed repairs, NOT Mac-verified. Do not approve from static review.
+Expected suite count remains 1914; existing assertions are strengthened.
+
+1. Verify the exact published SHA in a separate worktree and DerivedData.
+   Every build command must use an explicit absolute -project path.
+   For test-without-building -xctestrun use the absolute artifact from that build
+   (xcodebuild prohibits combining -xctestrun and -project).
+2. Run independently first:
+   - StrategicPlanSelectionTests/testFailedAcceptanceRollsBackPartialPlanAndRetryClearsError
+   - DogfoodRound2CompletionTests/testFindingQ_AllCalibrationsResolveIntoRealReachableSetExecutionNeverALoop
+   - RunningAthleteJourneyCompletionScenarioTests/testJ3_BuildMusclePlusExactTwoRunningSessionsBecomesExecutable
+3. Run all StrategicPlanSelectionTests and the existing focused classes below,
+   including J5, then the entire TrainingOSTests suite if focused checks pass.
+4. Preserve existing stores. Check acceptance to Today, conditioning and CrossFit
+   content, then calibration and logging a real set in the accepted plan, including
+   relaunch and confirmation the result persists. Disclose any UI limitations.
+5. Publish exact commands, raw logs, SHA, screenshots and database evidence.
+   No code changes, no merge, no indefinite automation loops.
+
 # Round 4: isolate failed acceptance from the caller's cached graph
 
 The round-3 verification at ef52b47 reproduced a duplicate TrainingPlan on

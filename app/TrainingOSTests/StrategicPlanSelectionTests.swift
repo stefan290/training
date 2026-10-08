@@ -546,7 +546,10 @@ final class StrategicPlanSelectionTests: XCTestCase {
         XCTAssertTrue(viewModel.didSucceed)
         XCTAssertNil(viewModel.errorMessage)
         let mix = try XCTUnwrap(viewModel.reviewedMix)
+        XCTAssertTrue(mix.modelContext === context, "Accepted mix must stay in the caller context")
         let crossFit = try XCTUnwrap(mix.orderedComponents.first { $0.functionalTrainingStyle == .crossFit }?.programInstance)
+        XCTAssertTrue(crossFit.modelContext === context)
+        XCTAssertTrue(crossFit.sessions.allSatisfy { $0.modelContext === context })
         XCTAssertEqual(crossFit.sessions.count, 1)
         for session in crossFit.sessions {
             let wod = try XCTUnwrap(session.orderedBlocks.first { $0.type == .functionalFitness }?.functionalFitnessPrescription)
@@ -558,7 +561,7 @@ final class StrategicPlanSelectionTests: XCTestCase {
     }
 
     func testFailedAcceptanceRollsBackPartialPlanAndRetryClearsError() throws {
-        let (user, _) = try makeOnboardedAthlete(goalType: .muscleGain, trainingDays: 4)
+        let (user, goal) = try makeOnboardedAthlete(goalType: .muscleGain, trainingDays: 4)
         user.profile?.defaultTrainingEnvironment = nil
         try context.save()
         let viewModel = StrategicPlanSelectionViewModel()
@@ -571,6 +574,7 @@ final class StrategicPlanSelectionTests: XCTestCase {
         XCTAssertTrue(try context.fetch(FetchDescriptor<Session>()).isEmpty)
         XCTAssertTrue(try context.fetch(FetchDescriptor<ProgramInstance>()).isEmpty)
         XCTAssertTrue(viewModel.isCustomMixSelected)
+        XCTAssertTrue(goal.plans.isEmpty, "Failure must clear the original caller goal inverse")
         // A later caller save must not resurrect a plan through a cached inverse.
         try context.save()
         let afterFailure = ModelContext(container)
