@@ -150,4 +150,251 @@ final class FunctionalFitnessProgramGeneratorTests: XCTestCase {
         XCTAssertEqual(try! ffTemplate(in: definitionA).format, try! ffTemplate(in: definitionB).format, "both are the same format...")
         XCTAssertNotEqual(try! ffTemplate(in: definitionA).stimulus, try! ffTemplate(in: definitionB).stimulus, "...but must never be treated as 'the same kind of workout' just because the format matches")
     }
+
+    // Distinct training forms use the real generator and persisted recipe.
+    private func styledConfiguration(_ style: FunctionalTrainingStyle?, conditioning: Bool? = nil) -> FunctionalFitnessProgramConfiguration {
+        FunctionalFitnessProgramConfiguration(
+            daysPerWeek: 3, lengthWeeks: 4, targetStimulus: makeStimulus(),
+            format: .amrap(capSeconds: 720), sessionRole: .functionalFitness,
+            varianceConstraints: VarianceConstraints(), requiresRecentExposureToProgress: false,
+            includeStrengthBlock: false,
+            weeklyPlan: FunctionalFitnessAuthoredProgramLibrary.weeklyPlan(forSessionsPerWeek: 3),
+            trainingStyle: style, functionalStrengthIncludesConditioning: conditioning
+        )
+    }
+
+    func testFunctionalStrengthResolvedFamilyMatchesConditioningChoiceWithAndWithoutHeavyAssignment() throws {
+        let assignments: [MovementFunction?] = [nil, .squatLoaded]
+        for conditioning in [false, true] {
+            for assignment in assignments {
+                let configuration = styledConfiguration(.functionalStrength, conditioning: conditioning)
+                var original = try XCTUnwrap(configuration.weeklyPlan?.first)
+                original.genericStrengthAssignment = assignment
+                let intent = configuration.resolvedIntent(original)
+                XCTAssertEqual(intent.includeConditioningBlock, conditioning)
+                XCTAssertEqual(intent.sessionFamily, conditioning ? .mixedResistanceWorkCapacity : .resistanceDominant)
+                XCTAssertEqual(intent.genericStrengthAssignment, assignment)
+                XCTAssertEqual(intent.archetype, assignment == nil ? .functionalBodybuilding : .strengthPower)
+            }
+        }
+    }
+
+    func testFunctionalStrengthWithoutConditioningHasRealResistanceContentEverySession() throws {
+        let definition = FunctionalFitnessProgramGenerator.generate(configuration: styledConfiguration(.functionalStrength, conditioning: false), provenance: .constructed(reason: "test"), context: context)
+        XCTAssertEqual(definition.orderedTemplateSessions.count, 12)
+        for session in definition.orderedTemplateSessions {
+            XCTAssertEqual(session.role, .strength)
+            XCTAssertFalse(session.orderedBlockTemplates.contains { $0.type == .functionalFitness })
+            let block = try XCTUnwrap(session.orderedBlockTemplates.first { $0.type == .hypertrophy })
+            XCTAssertEqual(block.orderedPrescriptionTemplates.count, 4)
+            XCTAssertEqual(Set(block.orderedPrescriptionTemplates.compactMap { $0.exerciseSlot?.allowedMovementFunctions.first }).count, 4)
+        }
+    }
+
+    func testFunctionalStrengthWithConditioningKeepsResistanceBeforeConditioning() throws {
+        let definition = FunctionalFitnessProgramGenerator.generate(configuration: styledConfiguration(.functionalStrength, conditioning: true), provenance: .constructed(reason: "test"), context: context)
+        for session in definition.orderedTemplateSessions {
+            XCTAssertEqual(session.role, .mixed)
+            XCTAssertEqual(session.orderedBlockTemplates.map(\.type), [.hypertrophy, .functionalFitness])
+            let resistance = try XCTUnwrap(session.orderedBlockTemplates.first)
+            XCTAssertEqual(resistance.orderedPrescriptionTemplates.count, 3)
+            XCTAssertEqual(session.orderedBlockTemplates.last?.functionalFitnessPrescriptionTemplate?.format, .amrap(capSeconds: 720))
+        }
+    }
+
+    func testCrossFitKeepsWODWhenGoalBiasedIntentHadOmittedConditioning() throws {
+        var configuration = styledConfiguration(.crossFit)
+        configuration.weeklyPlan = configuration.weeklyPlan?.map { intent in
+            var result = intent
+            result.includeConditioningBlock = false
+            return result
+        }
+        let definition = FunctionalFitnessProgramGenerator.generate(configuration: configuration, provenance: .constructed(reason: "test"), context: context)
+        XCTAssertTrue(definition.name.contains("CrossFit"))
+        for session in definition.orderedTemplateSessions {
+            XCTAssertNotNil(session.orderedBlockTemplates.first { $0.type == .functionalFitness }?.functionalFitnessPrescriptionTemplate)
+        }
+    }
+
+    func testStyledRecurringInputIsNormalizedToExactWeekIntents() throws {
+        var configuration = styledConfiguration(.functionalStrength, conditioning: false)
+        configuration.weeklyPlan = nil
+        let definition = FunctionalFitnessProgramGenerator.generate(configuration: configuration, provenance: .constructed(reason: "test"), context: context)
+        XCTAssertEqual(definition.functionalFitnessConfiguration?.weeklyPlan?.count, 12)
+        XCTAssertEqual(definition.orderedTemplateSessions.filter { $0.activeFromWeek == 3 }.count, 3)
+        XCTAssertFalse(definition.orderedTemplateSessions.flatMap(\.orderedBlockTemplates).contains { $0.type == .functionalFitness })
+    }
+
+    func testStyledRecipeAndBlocksSurviveFreshModelContext() throws {
+        let definition = FunctionalFitnessProgramGenerator.generate(configuration: styledConfiguration(.functionalStrength, conditioning: false), provenance: .constructed(reason: "test"), context: context)
+        let id = definition.id
+        try context.save()
+        let fresh = ModelContext(container)
+        let reloaded = try XCTUnwrap(fresh.fetch(FetchDescriptor<ProgramDefinition>()).first { $0.id == id })
+        XCTAssertEqual(reloaded.functionalFitnessConfiguration?.trainingStyle, .functionalStrength)
+        XCTAssertEqual(reloaded.functionalFitnessConfiguration?.functionalStrengthIncludesConditioning, false)
+        XCTAssertTrue(reloaded.functionalFitnessConfiguration?.weeklyPlan?.allSatisfy { $0.includeStrengthBlock && !$0.includeConditioningBlock } == true)
+        XCTAssertEqual(reloaded.orderedTemplateSessions.count, 12)
+        XCTAssertFalse(reloaded.orderedTemplateSessions.flatMap(\.orderedBlockTemplates).contains { $0.type == .functionalFitness })
+    }
+
+    func testLegacyRecipeDecodesWithoutNewFieldsAndPreservesItsIntents() throws {
+        let original = styledConfiguration(nil)
+        let data = try JSONEncoder().encode(original)
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        object.removeValue(forKey: "trainingStyle")
+        object.removeValue(forKey: "functionalStrengthIncludesConditioning")
+        let legacy = try JSONDecoder().decode(FunctionalFitnessProgramConfiguration.self, from: JSONSerialization.data(withJSONObject: object))
+        XCTAssertNil(legacy.trainingStyle)
+        XCTAssertNil(legacy.functionalStrengthIncludesConditioning)
+        for intent in try XCTUnwrap(legacy.weeklyPlan) {
+            XCTAssertEqual(legacy.resolvedIntent(intent), intent)
+        }
+    }
+
+    func testCustomMixStoresTwoIndependentFunctionalFormsAndConditioningChoice() throws {
+        let result = LongTermPlanner.buildCustomMix(selections: [(.functionalStrength, 2), (.crossFit, 2)], capacity: 4, phaseType: .muscleGain, functionalStrengthIncludesConditioning: false)
+        let mix = try result.get()
+        XCTAssertEqual(mix.orderedComponents.map(\.functionalTrainingStyle), [.functionalStrength, .crossFit])
+        XCTAssertEqual(mix.orderedComponents.map(\.label), ["Functional Strength", "CrossFit"])
+        XCTAssertEqual(mix.orderedComponents[0].functionalStrengthIncludesConditioning, false)
+        XCTAssertNil(mix.orderedComponents[1].functionalStrengthIncludesConditioning)
+        context.insert(mix)
+        try context.save()
+        let fresh = ModelContext(container)
+        let restored = try XCTUnwrap(fresh.fetch(FetchDescriptor<TrainingMix>()).first { $0.id == mix.id })
+        XCTAssertEqual(restored.orderedComponents.map(\.functionalTrainingStyle), [.functionalStrength, .crossFit])
+        XCTAssertEqual(restored.orderedComponents[0].functionalStrengthIncludesConditioning, false)
+    }
+
+    func testFunctionalStrengthOptOutDoesNotClaimConditioningCapability() throws {
+        let optedOut = LongTermPlanner.buildCustomMix(selections: [(.functionalStrength, 3)], capacity: 3, phaseType: .enduranceEvent, functionalStrengthIncludesConditioning: false)
+        if case .success = optedOut { XCTFail("Strength without conditioning cannot carry a conditioning-only assignment") }
+        let optedIn = LongTermPlanner.buildCustomMix(selections: [(.functionalStrength, 3)], capacity: 3, phaseType: .enduranceEvent, functionalStrengthIncludesConditioning: true)
+        XCTAssertNoThrow(try optedIn.get())
+        let crossFit = LongTermPlanner.buildCustomMix(selections: [(.crossFit, 3)], capacity: 3, phaseType: .enduranceEvent)
+        XCTAssertNoThrow(try crossFit.get())
+    }
+
+    func testCombinedFunctionalFrequencyCannotBypassExistingFiveDayCapability() {
+        let result = LongTermPlanner.buildCustomMix(selections: [(.functionalStrength, 3), (.crossFit, 3)], capacity: 6)
+        if case .success = result { XCTFail("Two component identities must not bypass the existing unsupported six-day rule") }
+    }
+
+    func testNewStylePreferencesRemainDistinctAndLegacyPreferencesDecode() throws {
+        XCTAssertNotEqual(TrainingStyle.functionalStrength.modalityPreferences, TrainingStyle.crossFit.modalityPreferences)
+        XCTAssertFalse(TrainingStyle.selectableCases.contains(.functionalFitness))
+        XCTAssertTrue(TrainingStyle.selectableCases.contains(.functionalStrength))
+        XCTAssertTrue(TrainingStyle.selectableCases.contains(.crossFit))
+        let legacy = try JSONDecoder().decode(ModalityPreference.self, from: Data(#"{"system":"functionalFitness"}"#.utf8))
+        XCTAssertNil(legacy.functionalTrainingStyle)
+        XCTAssertEqual(legacy, ModalityPreference(system: .functionalFitness))
+    }
+
+
+    func testPlannerResolvesBothFormsAndAllocatesHeavyStrengthOnceAcrossMix() throws {
+        let mix = try LongTermPlanner.buildCustomMix(selections: [(.functionalStrength, 2), (.crossFit, 2)], capacity: 4, phaseType: .strength).get()
+        let phase = TrainingPhase(type: .strength, startDate: Date(timeIntervalSince1970: 1_767_571_200), priorityRule: .strength)
+        context.insert(phase)
+        phase.addTrainingMix(mix)
+        var recipes: [FunctionalFitnessProgramConfiguration] = []
+        for component in mix.orderedComponents {
+            let proposal = LongTermPlanner.proposeProgram(component: component, profile: nil, availability: UserAvailability(trainingDaysPerWeek: 4, allowsDoubleSessions: false, maxSessionsPerDay: 1), context: context)
+            XCTAssertTrue(proposal.gaps.isEmpty)
+            let definition = try XCTUnwrap(proposal.candidates.first?.programDefinition)
+            let recipe = try XCTUnwrap(definition.functionalFitnessConfiguration)
+            XCTAssertEqual(recipe.trainingStyle, component.functionalTrainingStyle)
+            recipes.append(recipe)
+        }
+        for week in 0..<4 {
+            let assignments = recipes.flatMap { $0.weeklyPlan ?? [] }.filter { $0.relativeWeek == week && $0.genericStrengthAssignment != nil }
+            XCTAssertEqual(assignments.count, GenericStrengthRequirementCalculator.remainingRequirement(sourceContribution: 0))
+        }
+    }
+
+
+    func testTimeBudgetAccountsForWorkRestWarmupAndTransitions() {
+        let strength = FunctionalStrengthSessionBudget(resistanceSeconds: FunctionalStrengthSessionBudget.resistanceEstimate(setCounts: [4, 4, 4, 4]), conditioningSeconds: 0)
+        XCTAssertEqual(strength.estimatedTotalSeconds, 49 * 60)
+        XCTAssertTrue(strength.meetsTimeTarget)
+        let combined = FunctionalStrengthSessionBudget(resistanceSeconds: FunctionalStrengthSessionBudget.resistanceEstimate(setCounts: [4, 4, 4]), conditioningSeconds: 12 * 60)
+        XCTAssertEqual(combined.estimatedTotalSeconds, 50 * 60)
+        XCTAssertTrue(combined.meetsTimeTarget)
+        XCTAssertLessThan(combined.resistanceSeconds, strength.resistanceSeconds)
+    }
+
+    func testTimeBudgetDisclosesIncompleteContentInsteadOfInventingDuration() {
+        let empty = FunctionalStrengthSessionBudget(resistanceSeconds: FunctionalStrengthSessionBudget.resistanceEstimate(setCounts: [0, 0]), conditioningSeconds: 0)
+        XCTAssertEqual(empty.estimatedTotalSeconds, WarmupPolicy.targetDurationSeconds)
+        XCTAssertFalse(empty.meetsTimeTarget)
+        let excessive = FunctionalStrengthSessionBudget(resistanceSeconds: FunctionalStrengthSessionBudget.resistanceEstimate(setCounts: [10, 10, 10, 10]), conditioningSeconds: 0)
+        XCTAssertFalse(excessive.meetsTimeTarget)
+    }
+
+    func testCompleteFunctionalStrengthMaterializesFourExercisesAndTimeBudgetAcrossAllWeeks() throws {
+        let candidates = [
+            Exercise(canonicalName: "Test Squat", modality: .hypertrophy, equipment: "barbell", movementPattern: "squat", primaryTargets: [.quadriceps, .glutes], movementFunctions: [.squatLoaded]),
+            Exercise(canonicalName: "Test Hinge", modality: .hypertrophy, equipment: "barbell", movementPattern: "hinge", primaryTargets: [.hamstrings, .glutes, .back], movementFunctions: [.hingeLoaded]),
+            Exercise(canonicalName: "Test Press", modality: .hypertrophy, equipment: "barbell", movementPattern: "press", primaryTargets: [.shoulders, .chest, .triceps], movementFunctions: [.pressLoaded]),
+            Exercise(canonicalName: "Test Pull", modality: .hypertrophy, equipment: "barbell", movementPattern: "pull", primaryTargets: [.back, .biceps], movementFunctions: [.horizontalPullLoaded])
+        ]
+        candidates.forEach { context.insert($0) }
+        let environment = TrainingEnvironmentTestSupport.full(context: context)
+        let definition = FunctionalFitnessProgramGenerator.generate(configuration: styledConfiguration(.functionalStrength, conditioning: false), provenance: .constructed(reason: "test"), context: context)
+        let instance = ProgramInstance(ownerUserID: UUID())
+        context.insert(instance)
+        instance.programDefinition = definition
+        try ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: definition, candidateExercises: candidates, environment: environment)
+        var created: [Session] = []
+        for week in 0..<4 {
+            let sessions = try FunctionalFitnessMaterializer.materializeWeek(definition: definition, instance: instance, weekIndex: week, startDate: Date(timeIntervalSince1970: 1_767_571_200), ownerUserID: instance.ownerUserID, candidateExercises: candidates, exposureHistory: [], environment: environment, context: context)
+            XCTAssertEqual(sessions.count, 3)
+            for session in sessions {
+                let prescriptions = session.orderedBlocks.flatMap(\.orderedPrescriptions)
+                XCTAssertEqual(prescriptions.count, 4)
+                XCTAssertEqual(Set(prescriptions.compactMap { $0.exercise?.id }).count, 4)
+                XCTAssertTrue(prescriptions.allSatisfy { $0.orderedSetPrescriptions.count == 4 })
+                XCTAssertTrue(prescriptions.flatMap(\.orderedSetPrescriptions).allSatisfy { $0.restAfterSetSeconds == 120 && $0.repRangeLow == 8 && $0.repRangeHigh == 12 && $0.targetRir == 3 })
+                let budget = try XCTUnwrap(session.functionalStrengthBudget)
+                XCTAssertEqual(budget.estimatedTotalSeconds, 49 * 60)
+                XCTAssertTrue(budget.meetsTimeTarget)
+            }
+            created += sessions
+        }
+        try context.save()
+        let fresh = ModelContext(container)
+        let reloaded = try fresh.fetch(FetchDescriptor<Session>()).filter { $0.programInstance?.id == instance.id }
+        XCTAssertEqual(reloaded.count, created.count)
+        XCTAssertTrue(reloaded.allSatisfy { $0.functionalStrengthBudget?.estimatedTotalSeconds == 49 * 60 })
+        XCTAssertTrue(reloaded.flatMap(\.orderedBlocks).flatMap(\.orderedPrescriptions).flatMap(\.orderedSetPrescriptions).allSatisfy { $0.restAfterSetSeconds == 120 })
+    }
+
+
+    func testFunctionalStrengthConditioningFitsSameBudgetWithProductionCatalog() throws {
+        _ = ExerciseCatalog.resolveOrInsert(context: context)
+        let candidates = try context.fetch(FetchDescriptor<Exercise>())
+        let environment = TrainingEnvironmentTestSupport.full(context: context)
+        let definition = FunctionalFitnessProgramGenerator.generate(configuration: styledConfiguration(.functionalStrength, conditioning: true), provenance: .constructed(reason: "test"), context: context)
+        let instance = ProgramInstance(ownerUserID: UUID())
+        context.insert(instance)
+        instance.programDefinition = definition
+        try ResolveProgramInstanceExerciseSlotsUseCase.resolve(definition: definition, candidateExercises: candidates, environment: environment)
+        for week in 0..<4 {
+            let sessions = try FunctionalFitnessMaterializer.materializeWeek(definition: definition, instance: instance, weekIndex: week, startDate: Date(timeIntervalSince1970: 1_767_571_200), ownerUserID: instance.ownerUserID, candidateExercises: candidates, exposureHistory: [], environment: environment, context: context)
+            XCTAssertEqual(sessions.count, 3)
+            for session in sessions {
+                let resistance = session.orderedBlocks.flatMap(\.orderedPrescriptions)
+                XCTAssertEqual(resistance.count, 3)
+                XCTAssertTrue(resistance.allSatisfy { $0.orderedSetPrescriptions.count == 4 })
+                let conditioning = try XCTUnwrap(session.orderedBlocks.last?.functionalFitnessPrescription)
+                XCTAssertEqual(conditioning.format, .amrap(capSeconds: 720))
+                XCTAssertEqual(conditioning.sessionFamily, .mixedResistanceWorkCapacity)
+                XCTAssertEqual(conditioning.stimulus.movementFunctions.count, 2)
+                let budget = try XCTUnwrap(session.functionalStrengthBudget)
+                XCTAssertEqual(budget.estimatedTotalSeconds, 50 * 60)
+                XCTAssertTrue(budget.meetsTimeTarget)
+            }
+        }
+    }
+
 }

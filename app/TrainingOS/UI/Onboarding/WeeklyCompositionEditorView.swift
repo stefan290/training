@@ -34,11 +34,12 @@ struct WeeklyCompositionEditorView: View {
     /// it to `reviewedMix`); `false` means validation failed and
     /// `validationMessage` explains why — the editor stays open either
     /// way so the athlete can adjust.
-    let onUse: ([(style: TrainingStyle, frequency: Int)]) -> Bool
+    let onUse: ([(style: TrainingStyle, frequency: Int)], Bool) -> Bool
 
     @State private var selections: [TrainingStyle: Int] = [
-        .hypertrophy: 0, .strengthTraining: 0, .functionalFitness: 0, .running: 0, .cycling: 0,
+        .hypertrophy: 0, .strengthTraining: 0, .functionalStrength: 0, .crossFit: 0, .running: 0, .cycling: 0,
     ]
+    @State private var functionalStrengthIncludesConditioning = false
     @State private var validationMessage: String?
 
     private var total: Int { selections.values.reduce(0, +) }
@@ -60,11 +61,20 @@ struct WeeklyCompositionEditorView: View {
                     capacitySummary
 
                     VStack(spacing: 10) {
-                        ForEach(TrainingStyle.allCases) { style in
+                        ForEach(TrainingStyle.selectableCases) { style in
                             if style != .cycling || cyclingAvailable {
                                 row(for: style)
                             }
                         }
+                    }
+
+                    if (selections[.functionalStrength] ?? 0) > 0 {
+                        Toggle("Include conditioning in Functional Strength", isOn: $functionalStrengthIncludesConditioning)
+                            .tint(Theme.primary)
+                            .trainingOSCard()
+                        Text("Strength is the main part of these sessions. Conditioning is optional. CrossFit keeps its WOD structure.")
+                            .font(Theme.label)
+                            .foregroundStyle(Theme.textSecondary)
                     }
 
                     if !cyclingAvailable {
@@ -80,10 +90,10 @@ struct WeeklyCompositionEditorView: View {
                     }
 
                     Button("Use This Mix") {
-                        let nonZero = selections.compactMap { style, frequency in
-                            frequency > 0 ? (style: style, frequency: frequency) : nil
-                        }
-                        if !onUse(nonZero) {
+                        if !onUse(TrainingStyle.selectableCases.compactMap { style in
+                            let frequency = selections[style] ?? 0
+                            return frequency > 0 ? (style: style, frequency: frequency) : nil
+                        }, functionalStrengthIncludesConditioning) {
                             validationMessage = "This exact combination isn't supported yet — try a different mix."
                         }
                     }
@@ -180,9 +190,11 @@ struct WeeklyCompositionEditorView: View {
 
         let otherTotal = total - (selections[style] ?? 0)
         let remainingForThisRow = max(0, capacity - otherTotal)
+        let otherFunctionalTotal = selections.filter { $0.key.functionalTrainingStyle != nil && $0.key != style }.values.reduce(0, +)
+        let styledCapacity = max(0, min(remainingForThisRow, 5 - otherFunctionalTotal))
         let system = LongTermPlanner.underlyingSystem(for: style)
         guard let supported = ProgramCapabilityRegistry.supportedFrequencies(for: system) else {
-            return Array(0...remainingForThisRow)
+            return Array(0...(style.functionalTrainingStyle == nil ? remainingForThisRow : styledCapacity))
         }
         return [0] + supported.filter { $0 <= remainingForThisRow }
     }

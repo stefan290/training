@@ -37,6 +37,8 @@ final class SetPrescription {
     /// including every existing row, unaffected.
     var targetDistanceMeters: Double?
     var targetDurationSeconds: Int?
+    /// Prescribed recovery for time-budgeted sessions. Nil keeps legacy behavior.
+    var restAfterSetSeconds: Int?
     var isWarmup: Bool
     /// Stage 8B addition: `true` when a Level 2 readiness adaptation
     /// removed this set from TODAY's executable prescription

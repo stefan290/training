@@ -31,6 +31,8 @@ final class Session {
     /// (the pre-existing UI grouping tag). `nil` is the common case for
     /// every Session that existed before this pass.
     var role: SessionRole?
+    /// Original time estimate, preserved separately from performed duration.
+    var functionalStrengthBudget: FunctionalStrengthSessionBudget?
     /// Stage 4F addition: which `ConcurrentScheduler` version last placed
     /// this Session's `day` — mirrors `ProgramDefinition.generatorVersion`.
     /// `nil` means this Session has never been placed by

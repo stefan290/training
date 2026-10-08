@@ -1,5 +1,19 @@
 import Foundation
 
+/// Content identity within the shared functional-training engine.
+/// Nil on legacy configurations preserves their exact original behavior.
+enum FunctionalTrainingStyle: String, Codable, CaseIterable {
+    case functionalStrength
+    case crossFit
+
+    var displayName: String {
+        switch self {
+        case .functionalStrength: return "Functional Strength"
+        case .crossFit: return "CrossFit"
+        }
+    }
+}
+
 /// FF Multi-Week V1: one deliberately-authored session's own intent within
 /// a 4-week program — the flat, self-describing shape (`relativeWeek`
 /// tags each entry, mirroring `RunningSourceWorkout`'s own proven-safe
@@ -146,4 +160,73 @@ struct FunctionalFitnessProgramConfiguration: Codable, Equatable {
     /// the type only so decoding an old, already-persisted single-
     /// stimulus configuration remains lossless).
     var weeklyPlan: [FunctionalFitnessSessionIntent]? = nil
+    var trainingStyle: FunctionalTrainingStyle? = nil
+    /// Explicit choice for functional strength, never inferred from the goal.
+    var functionalStrengthIncludesConditioning: Bool? = nil
+
+    func resolvedIntent(_ original: FunctionalFitnessSessionIntent) -> FunctionalFitnessSessionIntent {
+        var intent = original
+        switch trainingStyle {
+        case .functionalStrength:
+            intent.includeStrengthBlock = true
+            intent.includeConditioningBlock = functionalStrengthIncludesConditioning == true
+            intent.sessionRole = intent.includeConditioningBlock ? .mixed : .strength
+            // Reuse existing authored resistance prescriptions and progression.
+            // Heavy assignments retain their own strength authority.
+            intent.archetype = intent.genericStrengthAssignment == nil ? .functionalBodybuilding : .strengthPower
+            // A conditioning block must use a family with actual conditioning
+            // roles. Resistance-only families deliberately compose zero roles.
+            intent.sessionFamily = intent.includeConditioningBlock ? .mixedResistanceWorkCapacity : .resistanceDominant
+        case .crossFit:
+            intent.includeConditioningBlock = true
+            switch intent.sessionFamily {
+            case .resistanceDominant, .heavyStrength, .powerAthletic:
+                // Keep the resistance assignment, but give its WOD the existing
+                // authored work-capacity shape and a family with real roles.
+                intent.sessionFamily = .mixedResistanceWorkCapacity
+                let relativeWeek = intent.relativeWeek
+                FunctionalFitnessPhaseBiasPolicy.applyWorkCapacityShape(to: &intent, relativeWeek: relativeWeek)
+            default:
+                break
+            }
+        case nil:
+            break
+        }
+        return intent
+    }
+}
+
+
+/// TrainingOS-authored planning assumptions, not Marcus Filly program data.
+/// Work time is an estimate, never a tempo or a forced repetition duration.
+/// Includes recovery between sets, setup/transitions and a warmup allowance.
+struct FunctionalStrengthSessionBudget: Codable, Equatable {
+    static let minimumSeconds = 45 * 60
+    static let maximumSeconds = 60 * 60
+    static let warmupAllowanceSeconds = WarmupPolicy.targetDurationSeconds
+    static let estimatedWorkSecondsPerSet = 45
+    static let transitionSecondsPerExercise = 120
+    static let resistanceRestSeconds = 120
+    static let conditioningAllowanceSeconds = 12 * 60
+
+    var resistanceSeconds: Int
+    var conditioningSeconds: Int
+    var estimatedTotalSeconds: Int {
+        Self.warmupAllowanceSeconds + resistanceSeconds + conditioningSeconds
+    }
+    var meetsTimeTarget: Bool {
+        (Self.minimumSeconds...Self.maximumSeconds).contains(estimatedTotalSeconds)
+    }
+    var summary: String {
+        let minutes = Int(ceil(Double(estimatedTotalSeconds) / 60))
+        return "Target 45 to 60 min. Estimated \(minutes) min including warmup, set rest and transitions."
+    }
+
+    static func resistanceEstimate(setCounts: [Int]) -> Int {
+        setCounts.filter { $0 > 0 }.reduce(0) { total, count in
+            total + count * estimatedWorkSecondsPerSet
+                + max(0, count - 1) * resistanceRestSeconds
+                + transitionSecondsPerExercise
+        }
+    }
 }

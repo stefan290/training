@@ -367,6 +367,18 @@ enum FunctionalFitnessMaterializer {
             }
         }
 
+        if definition.functionalFitnessConfiguration?.trainingStyle == .functionalStrength {
+            for session in sessions {
+                let counts = session.orderedBlocks.flatMap { $0.orderedPrescriptions }.map { $0.orderedSetPrescriptions.count }
+                let conditioningSeconds = session.orderedBlocks.compactMap { $0.functionalFitnessPrescription }.reduce(0) { total, prescription in
+                    total + (FunctionalFitnessStimulusValidator.estimatedDurationSeconds(for: prescription.format) ?? 0)
+                }
+                session.functionalStrengthBudget = FunctionalStrengthSessionBudget(
+                    resistanceSeconds: FunctionalStrengthSessionBudget.resistanceEstimate(setCounts: counts),
+                    conditioningSeconds: conditioningSeconds
+                )
+            }
+        }
         return sessions
     }
 
@@ -1234,6 +1246,9 @@ enum FunctionalFitnessMaterializer {
                     targetRirHigh: targetRirHigh,
                     targetDistanceMeters: targetDistanceMeters, targetDurationSeconds: targetDurationSeconds
                 )
+                if instance.programDefinition?.functionalFitnessConfiguration?.trainingStyle == .functionalStrength {
+                    setPrescription.restAfterSetSeconds = FunctionalStrengthSessionBudget.resistanceRestSeconds
+                }
                 context.insert(setPrescription)
                 prescription.addSetPrescription(setPrescription)
             }

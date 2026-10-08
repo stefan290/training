@@ -328,12 +328,25 @@ final class RunningAthleteJourneyCompletionScenarioTests: XCTestCase {
         )
         XCTAssertFalse(RequiredRunningCalibrationUseCase.isThresholdCalibrationRequired(for: runningDefinition, instance: runningInstance))
 
-        let firstBlockWithIntensity = runningInstance.sessions
-            .flatMap(\.blocks)
-            .first { $0.steadyStatePrescription?.primaryIntensity != nil }
-        let intensity = try XCTUnwrap(firstBlockWithIntensity?.steadyStatePrescription?.primaryIntensity)
-        let resolved = try XCTUnwrap(IntensityPresentation.resolvedLabel(intensity, thresholdPaceSecondsPerKilometer: 300))
-        XCTAssertTrue(resolved.contains("/km"), "Running component must resolve to an actual pace within the hybrid mix — got: \(resolved)")
+        // SwiftData relationship arrays are unordered. Source warmup/cooldown
+        // blocks can legitimately use RPE, which calibration must not convert.
+        let intensities = runningInstance.sessions.flatMap(\.blocks)
+            .compactMap { $0.steadyStatePrescription?.primaryIntensity }
+        let paceTargets = intensities.filter {
+            if case .percentOfReference(_, metric: .thresholdPace) = $0 { return true }
+            return false
+        }
+        XCTAssertFalse(paceTargets.isEmpty, "Hybrid running must retain source threshold targets")
+        for intensity in paceTargets {
+            let resolved = try XCTUnwrap(IntensityPresentation.resolvedLabel(intensity, thresholdPaceSecondsPerKilometer: 300))
+            XCTAssertTrue(resolved.contains("/km"), "Every threshold target must resolve to pace — got: \(resolved)")
+        }
+        for intensity in intensities {
+            if case .rpe = intensity {
+                let resolved = try XCTUnwrap(IntensityPresentation.resolvedLabel(intensity, thresholdPaceSecondsPerKilometer: 300))
+                XCTAssertTrue(resolved.contains("RPE"), "Source RPE targets must remain RPE")
+            }
+        }
 
         // Exact mix still unchanged after resolving Running's own pace.
         XCTAssertEqual(mix.orderedComponents.count, componentCountBefore)

@@ -152,6 +152,16 @@ struct SessionDetailView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
             StatusPill(status: session.status)
+            if let budget = session.functionalStrengthBudget {
+                Text(budget.summary)
+                    .font(Theme.label)
+                    .foregroundStyle(Theme.textSecondary)
+                if !budget.meetsTimeTarget {
+                    Text("The available exercises do not fill the planned time range. Review this session before training.")
+                        .font(Theme.label)
+                        .foregroundStyle(Theme.attention)
+                }
+            }
             if let role = session.role {
                 Text(SessionPresentation.roleLabel(role))
                     .font(Theme.label)

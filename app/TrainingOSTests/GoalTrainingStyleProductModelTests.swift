@@ -144,7 +144,7 @@ final class GoalTrainingStyleProductModelTests: XCTestCase {
         for forbidden in ["Steady State", "Intervals", "Interval", "ProgrammingSystemKind"] {
             XCTAssertFalse(labels.contains(forbidden), "'\(forbidden)' must never be an athlete-facing Training Style label")
         }
-        XCTAssertEqual(labels, ["Hypertrophy", "Strength Training", "Functional Fitness", "Running", "Cycling"])
+        XCTAssertEqual(labels, ["Hypertrophy", "Strength Training", "Functional Fitness", "Functional Strength", "CrossFit", "Running", "Cycling"])
     }
 
     // MARK: 5 — THE CORE BUG FIX: General Strength + especially-want Hypertrophy/Functional Fitness

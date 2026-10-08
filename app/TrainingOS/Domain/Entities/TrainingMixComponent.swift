@@ -79,6 +79,8 @@ final class TrainingMixComponent {
     /// display `label` string (CLAUDE.md rule 16's general principle:
     /// business logic never string-parses display text).
     var strengthContentSelector: StrengthContentSelector?
+    var functionalTrainingStyle: FunctionalTrainingStyle?
+    var functionalStrengthIncludesConditioning: Bool?
 
     init(
         id: UUID = UUID(),
@@ -91,7 +93,9 @@ final class TrainingMixComponent {
         allowsDoubleSessionPairing: Bool = true,
         preferredDays: [Weekday] = [],
         requiredSpacingDays: Int? = nil,
-        strengthContentSelector: StrengthContentSelector? = nil
+        strengthContentSelector: StrengthContentSelector? = nil,
+        functionalTrainingStyle: FunctionalTrainingStyle? = nil,
+        functionalStrengthIncludesConditioning: Bool? = nil
     ) {
         self.id = id
         self.label = label
@@ -105,6 +109,8 @@ final class TrainingMixComponent {
         self.requiredSpacingDays = requiredSpacingDays
         self.sortIndex = 0
         self.strengthContentSelector = strengthContentSelector
+        self.functionalTrainingStyle = functionalTrainingStyle
+        self.functionalStrengthIncludesConditioning = functionalStrengthIncludesConditioning
     }
 }
 

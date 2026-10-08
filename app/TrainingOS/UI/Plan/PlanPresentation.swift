@@ -73,6 +73,8 @@ enum PlanPresentation {
         case .hypertrophy: "Hypertrophy"
         case .strengthTraining: "Strength Training"
         case .functionalFitness: "Functional Fitness"
+        case .functionalStrength: "Functional Strength"
+        case .crossFit: "CrossFit"
         case .running: "Running"
         case .cycling: "Cycling"
         }

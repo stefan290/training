@@ -164,8 +164,8 @@ struct StrategicPlanSelectionView: View {
                 capacity: viewModel.weeklyCapacity,
                 cyclingAvailable: viewModel.cyclingSupported,
                 onCancel: { showingCompositionEditor = false },
-                onUse: { selections in
-                    let succeeded = viewModel.buildCustomMix(selections: selections)
+                onUse: { selections, includesConditioning in
+                    let succeeded = viewModel.buildCustomMix(selections: selections, functionalStrengthIncludesConditioning: includesConditioning)
                     if succeeded { showingCompositionEditor = false }
                     return succeeded
                 }
