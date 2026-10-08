@@ -1,0 +1,29 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild test-without-building -xctestrun /private/tmp/claude-501/-Users-stefankedling-Desktop-training-app/a1012e0e-bdc0-46f2-b5c9-ec2bb523c776/scratchpad/codex-verify-pr4e-derived-data/Build/Products/TrainingOS_iphonesimulator26.5-arm64.xctestrun -destination "platform=iOS Simulator,name=iPhone 17" -derivedDataPath /private/tmp/claude-501/-Users-stefankedling-Desktop-training-app/a1012e0e-bdc0-46f2-b5c9-ec2bb523c776/scratchpad/codex-verify-pr4e-derived-data "-only-testing:TrainingOSTests/DogfoodRound2CompletionTests/testFindingQ_AllCalibrationsResolveIntoRealReachableSetExecutionNeverALoop" -parallel-testing-enabled NO
+
+2026-10-08 09:28:45.935 xcodebuild[23071:80817594] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+2026-10-08 09:28:45.975 xcodebuild[23071:80817594] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+2026-10-08 09:28:46.614 xcodebuild[23071:80817594] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+2026-10-08 09:28:46.885 xcodebuild[23071:80817594] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+Test Suite 'Selected tests' started at 2026-10-08 09:28:48.861.
+Test Suite 'TrainingOSTests.xctest' started at 2026-10-08 09:28:48.861.
+Test Suite 'DogfoodRound2CompletionTests' started at 2026-10-08 09:28:48.862.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFindingQ_AllCalibrationsResolveIntoRealReachableSetExecutionNeverALoop]' started.
+objc[23079]: Class UIAccessibilityLoaderWebShared is implemented in both /Library/Developer/CoreSimulator/Volumes/iOS_23F77/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.5.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebCore.axbundle/WebCore (0x117d9c310) and /Library/Developer/CoreSimulator/Volumes/iOS_23F77/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.5.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebKit.axbundle/WebKit (0x117e58398). This may cause spurious casting failures and mysterious crashes. One of the duplicates must be removed or renamed.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFindingQ_AllCalibrationsResolveIntoRealReachableSetExecutionNeverALoop]' passed (0.809 seconds).
+Test Suite 'DogfoodRound2CompletionTests' passed at 2026-10-08 09:28:49.673.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.809 (0.812) seconds
+Test Suite 'TrainingOSTests.xctest' passed at 2026-10-08 09:28:49.673.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.809 (0.812) seconds
+Test Suite 'Selected tests' passed at 2026-10-08 09:28:49.673.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.809 (0.812) seconds
+2026-10-08 09:28:49.966 xcodebuild[23071:80817594] [MT] IDETestOperationsObserverDebug: 3.341 elapsed -- Testing started completed.
+2026-10-08 09:28:49.966 xcodebuild[23071:80817594] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-08 09:28:49.966 xcodebuild[23071:80817594] [MT] IDETestOperationsObserverDebug: 3.341 sec, +3.341 sec -- end
+
+Test session results, code coverage, and logs:
+	/tmp/claude-501/-Users-stefankedling-Desktop-training-app/a1012e0e-bdc0-46f2-b5c9-ec2bb523c776/scratchpad/codex-verify-pr4e-derived-data/Logs/Test/Test-TrainingOS-2026.10.08_09-28-45-+0200.xcresult
+
+** TEST EXECUTE SUCCEEDED **
+
+Testing started

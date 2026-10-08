@@ -1,0 +1,28 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild test-without-building -xctestrun /private/tmp/claude-501/-Users-stefankedling-Desktop-training-app/a1012e0e-bdc0-46f2-b5c9-ec2bb523c776/scratchpad/codex-verify-pr4e-derived-data/Build/Products/TrainingOS_iphonesimulator26.5-arm64.xctestrun -destination "platform=iOS Simulator,name=iPhone 17" -derivedDataPath /private/tmp/claude-501/-Users-stefankedling-Desktop-training-app/a1012e0e-bdc0-46f2-b5c9-ec2bb523c776/scratchpad/codex-verify-pr4e-derived-data "-only-testing:TrainingOSTests/RunningAthleteJourneyCompletionScenarioTests/testJ3_BuildMusclePlusExactTwoRunningSessionsBecomesExecutable" -parallel-testing-enabled NO
+
+2026-10-08 09:29:05.082 xcodebuild[23140:80818340] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+2026-10-08 09:29:05.109 xcodebuild[23140:80818340] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+2026-10-08 09:29:05.570 xcodebuild[23140:80818340] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+2026-10-08 09:29:05.839 xcodebuild[23140:80818340] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+Test Suite 'Selected tests' started at 2026-10-08 09:29:07.626.
+Test Suite 'TrainingOSTests.xctest' started at 2026-10-08 09:29:07.626.
+Test Suite 'RunningAthleteJourneyCompletionScenarioTests' started at 2026-10-08 09:29:07.626.
+Test Case '-[TrainingOSTests.RunningAthleteJourneyCompletionScenarioTests testJ3_BuildMusclePlusExactTwoRunningSessionsBecomesExecutable]' started.
+Test Case '-[TrainingOSTests.RunningAthleteJourneyCompletionScenarioTests testJ3_BuildMusclePlusExactTwoRunningSessionsBecomesExecutable]' passed (0.773 seconds).
+Test Suite 'RunningAthleteJourneyCompletionScenarioTests' passed at 2026-10-08 09:29:08.400.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.773 (0.774) seconds
+Test Suite 'TrainingOSTests.xctest' passed at 2026-10-08 09:29:08.400.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.773 (0.774) seconds
+Test Suite 'Selected tests' passed at 2026-10-08 09:29:08.400.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.773 (0.774) seconds
+2026-10-08 09:29:08.680 xcodebuild[23140:80818340] [MT] IDETestOperationsObserverDebug: 3.100 elapsed -- Testing started completed.
+2026-10-08 09:29:08.680 xcodebuild[23140:80818340] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-08 09:29:08.680 xcodebuild[23140:80818340] [MT] IDETestOperationsObserverDebug: 3.100 sec, +3.100 sec -- end
+
+Test session results, code coverage, and logs:
+	/tmp/claude-501/-Users-stefankedling-Desktop-training-app/a1012e0e-bdc0-46f2-b5c9-ec2bb523c776/scratchpad/codex-verify-pr4e-derived-data/Logs/Test/Test-TrainingOS-2026.10.08_09-29-05-+0200.xcresult
+
+** TEST EXECUTE SUCCEEDED **
+
+Testing started
