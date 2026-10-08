@@ -1,0 +1,35 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild test-without-building -xctestrun /private/tmp/claude-501/-Users-stefankedling-Desktop-training-app/a1012e0e-bdc0-46f2-b5c9-ec2bb523c776/scratchpad/codex-verify-pr4d-derived-data/Build/Products/TrainingOS_iphonesimulator26.5-arm64.xctestrun -destination "platform=iOS Simulator,name=iPhone 17" -derivedDataPath /private/tmp/claude-501/-Users-stefankedling-Desktop-training-app/a1012e0e-bdc0-46f2-b5c9-ec2bb523c776/scratchpad/codex-verify-pr4d-derived-data "-only-testing:TrainingOSTests/RunningAthleteJourneyCompletionScenarioTests/testJ3_BuildMusclePlusExactTwoRunningSessionsBecomesExecutable" -parallel-testing-enabled NO
+
+2026-10-07 16:38:14.257 xcodebuild[11618:80568794] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+2026-10-07 16:38:14.285 xcodebuild[11618:80568794] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+2026-10-07 16:38:14.757 xcodebuild[11618:80568794] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+2026-10-07 16:38:15.015 xcodebuild[11618:80568794] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+Test Suite 'Selected tests' started at 2026-10-07 16:38:16.836.
+Test Suite 'TrainingOSTests.xctest' started at 2026-10-07 16:38:16.836.
+Test Suite 'RunningAthleteJourneyCompletionScenarioTests' started at 2026-10-07 16:38:16.836.
+Test Case '-[TrainingOSTests.RunningAthleteJourneyCompletionScenarioTests testJ3_BuildMusclePlusExactTwoRunningSessionsBecomesExecutable]' started.
+objc[11631]: Class UIAccessibilityLoaderWebShared is implemented in both /Library/Developer/CoreSimulator/Volumes/iOS_23F77/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.5.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebCore.axbundle/WebCore (0x10ccd8310) and /Library/Developer/CoreSimulator/Volumes/iOS_23F77/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.5.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebKit.axbundle/WebKit (0x10c3fc398). This may cause spurious casting failures and mysterious crashes. One of the duplicates must be removed or renamed.
+/tmp/claude-501/-Users-stefankedling-Desktop-training-app/a1012e0e-bdc0-46f2-b5c9-ec2bb523c776/scratchpad/codex-verify-pr4d/training/app/TrainingOSTests/RunningAthleteJourneyCompletionTests.swift:285: error: -[TrainingOSTests.RunningAthleteJourneyCompletionScenarioTests testJ3_BuildMusclePlusExactTwoRunningSessionsBecomesExecutable] : XCTAssertFalse failed
+/tmp/claude-501/-Users-stefankedling-Desktop-training-app/a1012e0e-bdc0-46f2-b5c9-ec2bb523c776/scratchpad/codex-verify-pr4d/training/app/TrainingOSTests/RunningAthleteJourneyCompletionTests.swift:294: error: -[TrainingOSTests.RunningAthleteJourneyCompletionScenarioTests testJ3_BuildMusclePlusExactTwoRunningSessionsBecomesExecutable] : XCTAssertTrue failed - must contain an actual resolved pace, not only a raw percentage — got: 80-80% Threshold Pace
+Test Case '-[TrainingOSTests.RunningAthleteJourneyCompletionScenarioTests testJ3_BuildMusclePlusExactTwoRunningSessionsBecomesExecutable]' failed (1.006 seconds).
+Test Suite 'RunningAthleteJourneyCompletionScenarioTests' failed at 2026-10-07 16:38:17.845.
+	 Executed 1 test, with 2 failures (0 unexpected) in 1.006 (1.008) seconds
+Test Suite 'TrainingOSTests.xctest' failed at 2026-10-07 16:38:17.845.
+	 Executed 1 test, with 2 failures (0 unexpected) in 1.006 (1.008) seconds
+Test Suite 'Selected tests' failed at 2026-10-07 16:38:17.845.
+	 Executed 1 test, with 2 failures (0 unexpected) in 1.006 (1.009) seconds
+2026-10-07 16:38:26.197 xcodebuild[11618:80568794] [MT] IDETestOperationsObserverDebug: 11.430 elapsed -- Testing started completed.
+2026-10-07 16:38:26.197 xcodebuild[11618:80568794] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-07 16:38:26.197 xcodebuild[11618:80568794] [MT] IDETestOperationsObserverDebug: 11.430 sec, +11.430 sec -- end
+
+Test session results, code coverage, and logs:
+	/tmp/claude-501/-Users-stefankedling-Desktop-training-app/a1012e0e-bdc0-46f2-b5c9-ec2bb523c776/scratchpad/codex-verify-pr4d-derived-data/Logs/Test/Test-TrainingOS-2026.10.07_16-38-14-+0200.xcresult
+
+Failing tests:
+	RunningAthleteJourneyCompletionScenarioTests.testJ3_BuildMusclePlusExactTwoRunningSessionsBecomesExecutable()
+	RunningAthleteJourneyCompletionScenarioTests.testJ3_BuildMusclePlusExactTwoRunningSessionsBecomesExecutable()
+
+** TEST EXECUTE FAILED **
+
+Testing started

@@ -1,0 +1,42 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild test-without-building -xctestrun /private/tmp/claude-501/-Users-stefankedling-Desktop-training-app/a1012e0e-bdc0-46f2-b5c9-ec2bb523c776/scratchpad/codex-verify-pr4d-derived-data/Build/Products/TrainingOS_iphonesimulator26.5-arm64.xctestrun -destination "platform=iOS Simulator,name=iPhone 17" -derivedDataPath /private/tmp/claude-501/-Users-stefankedling-Desktop-training-app/a1012e0e-bdc0-46f2-b5c9-ec2bb523c776/scratchpad/codex-verify-pr4d-derived-data "-only-testing:TrainingOSTests/DogfoodRound2CompletionTests/testFindingQ_AllCalibrationsResolveIntoRealReachableSetExecutionNeverALoop" -parallel-testing-enabled NO
+
+2026-10-07 16:34:04.593 xcodebuild[10959:80556037] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+2026-10-07 16:34:04.624 xcodebuild[10959:80556037] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+2026-10-07 16:34:05.196 xcodebuild[10959:80556037] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+2026-10-07 16:34:05.462 xcodebuild[10959:80556037] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+2026-10-07 16:34:07.258347+0200 TrainingOS[10968:80556326] [General] Failed to send CA Event for app launch measurements for ca_event_type: 0 event_name: com.apple.app_launch_measurement.FirstFramePresentationMetric
+Test Suite 'Selected tests' started at 2026-10-07 16:34:07.330.
+Test Suite 'TrainingOSTests.xctest' started at 2026-10-07 16:34:07.330.
+Test Suite 'DogfoodRound2CompletionTests' started at 2026-10-07 16:34:07.330.
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFindingQ_AllCalibrationsResolveIntoRealReachableSetExecutionNeverALoop]' started.
+2026-10-07 16:34:07.782010+0200 TrainingOS[10968:80556269] [ModelContext] Illegal attempt to insert a model in to a different model context. Model PersistentIdentifier(id: SwiftData.PersistentIdentifier.ID(backing: SwiftData.PersistentIdentifier.PersistentIdentifierBacking.managedObjectID(0x8a30cd5cae1c344a <x-coredata://CD5929A7-0D87-4B25-BB07-02AC9A9C9B31/Exercise/p8>))) is already bound to SwiftData.ModelContext but insert was called on SwiftData.ModelContext
+2026-10-07 16:34:07.786338+0200 TrainingOS[10968:80556269] [ModelContext] Illegal attempt to insert a model in to a different model context. Model PersistentIdentifier(id: SwiftData.PersistentIdentifier.ID(backing: SwiftData.PersistentIdentifier.PersistentIdentifierBacking.managedObjectID(0x8a30cd5ca91c344a <x-coredata://CD5929A7-0D87-4B25-BB07-02AC9A9C9B31/Exercise/p48>))) is already bound to SwiftData.ModelContext but insert was called on SwiftData.ModelContext
+2026-10-07 16:34:07.791394+0200 TrainingOS[10968:80556269] [ModelContext] Illegal attempt to insert a model in to a different model context. Model PersistentIdentifier(id: SwiftData.PersistentIdentifier.ID(backing: SwiftData.PersistentIdentifier.PersistentIdentifierBacking.temporaryIdentifier(SwiftData.TemporaryPersistentIdentifierImplementation))) is already bound to SwiftData.ModelContext but insert was called on SwiftData.ModelContext
+SwiftData.DefaultStore save failed with error: Error Domain=NSCocoaErrorDomain Code=1560 "Multiple validation errors occurred." UserInfo={NSDetailedErrors=(
+    "Error Domain=NSCocoaErrorDomain Code=1570 \"%{PROPERTY}@ is a required value.\" UserInfo={NSValidationErrorObject=<NSManagedObject: 0x115a39450> (entity: ExercisePerformanceProfile; id: 0x115ac6a80 <x-coredata:///ExercisePerformanceProfile/t96628DD1-D162-4043-94AF-83FDAF8910ED367>; data: {\n    confidence = nil;\n    estimatedOneRepMax = nil;\n    exercise = nil;\n    id = nil;\n    lastPerformedAt = nil;\n    performanceProfile = \"0x8a30cd5caf3c34aa <x-coredata://CD5929A7-0D87-4B25-BB07-02AC9A9C9B31/PerformanceProfile/p1>\";\n    personalRecords =     (\n        \"0x115ac69e0 <x-coredata://CD5929A7-0D87-4B25-BB07-02AC9A9C9B31/PersonalRecord/t96628DD1-D162-4043-94AF-83FDAF8910ED366>\"\n    );\n    setResults =     (\n        \"0x115ac46e0 <x-coredata:///SetResult/t96628DD1-D162-4043-94AF-83FDAF8910ED368>\"\n    );\n}), NSLocalizedDescription=%{PROPERTY}@ is a required value., NSValidationErrorKey=confidence, NSValidationErrorValue=null}",
+    "Error Domain=NSCocoaErrorDomain Code=1570 \"%{PROPERTY}@ is a required value.\" UserInfo={NSValidationErrorObject=<NSManagedObject: 0x115a39450> (entity: ExercisePerformanceProfile; id: 0x115ac6a80 <x-coredata:///ExercisePerformanceProfile/t96628DD1-D162-4043-94AF-83FDAF8910ED367>; data: {\n    confidence = nil;\n    estimatedOneRepMax = nil;\n    exercise = nil;\n    id = nil;\n    lastPerformedAt = nil;\n    performanceProfile = \"0x8a30cd5caf3c34aa <x-coredata://CD5929A7-0D87-4B25-BB07-02AC9A9C9B31/PerformanceProfile/p1>\";\n    personalRecords =     (\n        \"0x115ac69e0 <x-coredata://CD5929A7-0D87-4B25-BB07-02AC9A9C9B31/PersonalRecord/t96628DD1-D162-4043-94AF-83FDAF8910ED366>\"\n    );\n    setResults =     (\n        \"0x115ac46e0 <x-coredata:///SetResult/t96628DD1-D162-4043-94AF-83FDAF8910ED368>\"\n    );\n}), NSLocalizedDescription=%{PROPERTY}@ is a required value., NSValidationErrorKey=id, NSValidationErrorValue=null}"
+)}
+/tmp/claude-501/-Users-stefankedling-Desktop-training-app/a1012e0e-bdc0-46f2-b5c9-ec2bb523c776/scratchpad/codex-verify-pr4d/training/app/TrainingOSTests/DogfoodRound2CompletionTests.swift:1216: error: -[TrainingOSTests.DogfoodRound2CompletionTests testFindingQ_AllCalibrationsResolveIntoRealReachableSetExecutionNeverALoop] : XCTAssertNotNil failed - a real result must be logged and returned for the completion summary
+/tmp/claude-501/-Users-stefankedling-Desktop-training-app/a1012e0e-bdc0-46f2-b5c9-ec2bb523c776/scratchpad/codex-verify-pr4d/training/app/TrainingOSTests/DogfoodRound2CompletionTests.swift:1218: error: -[TrainingOSTests.DogfoodRound2CompletionTests testFindingQ_AllCalibrationsResolveIntoRealReachableSetExecutionNeverALoop] : XCTAssertEqual failed: ("pending") is not equal to ("active") - logging a real set — never merely resolving calibration — is what starts the block (Finding O)
+Test Case '-[TrainingOSTests.DogfoodRound2CompletionTests testFindingQ_AllCalibrationsResolveIntoRealReachableSetExecutionNeverALoop]' failed (0.524 seconds).
+Test Suite 'DogfoodRound2CompletionTests' failed at 2026-10-07 16:34:07.854.
+	 Executed 1 test, with 2 failures (0 unexpected) in 0.524 (0.524) seconds
+Test Suite 'TrainingOSTests.xctest' failed at 2026-10-07 16:34:07.855.
+	 Executed 1 test, with 2 failures (0 unexpected) in 0.524 (0.525) seconds
+Test Suite 'Selected tests' failed at 2026-10-07 16:34:07.855.
+	 Executed 1 test, with 2 failures (0 unexpected) in 0.524 (0.525) seconds
+2026-10-07 16:34:16.263 xcodebuild[10959:80556037] [MT] IDETestOperationsObserverDebug: 11.058 elapsed -- Testing started completed.
+2026-10-07 16:34:16.264 xcodebuild[10959:80556037] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-07 16:34:16.264 xcodebuild[10959:80556037] [MT] IDETestOperationsObserverDebug: 11.058 sec, +11.058 sec -- end
+
+Test session results, code coverage, and logs:
+	/tmp/claude-501/-Users-stefankedling-Desktop-training-app/a1012e0e-bdc0-46f2-b5c9-ec2bb523c776/scratchpad/codex-verify-pr4d-derived-data/Logs/Test/Test-TrainingOS-2026.10.07_16-34-04-+0200.xcresult
+
+Failing tests:
+	DogfoodRound2CompletionTests.testFindingQ_AllCalibrationsResolveIntoRealReachableSetExecutionNeverALoop()
+	DogfoodRound2CompletionTests.testFindingQ_AllCalibrationsResolveIntoRealReachableSetExecutionNeverALoop()
+
+** TEST EXECUTE FAILED **
+
+Testing started
