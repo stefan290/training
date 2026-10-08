@@ -1,0 +1,4 @@
+=== PrescriptionTemplates for the 3 Functional Strength exercises ===
+13|rmBased|rm10
+14|rmBased|rm10
+26|rmBased|rm10

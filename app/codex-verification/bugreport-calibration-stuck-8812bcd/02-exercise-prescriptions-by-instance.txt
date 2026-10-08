@@ -1,0 +1,14 @@
+=== ExercisePrescriptions in Functional Strength instance (ProgramInstance=2), all 3 sessions ===
+1|Flat Dumbbell Bench Press|35|rmBasedLoad|1|Week 1 — Session 3
+5|Bulgarian Split Squat|6|rmBasedLoad|1|Week 1 — Session 3
+11|Chest-to-Bar Pull-up|5|rmBasedLoad|1|Week 1 — Session 3
+3|Clean|25|rmBasedLoad|2|Week 1 — Session 2
+4|Dumbbell Snatch|16|rmBasedLoad|2|Week 1 — Session 2
+8|Barbell Row|22|rmBasedLoad|2|Week 1 — Session 2
+2|Barbell Hip Thrust|13|calibrationRequired|4|Week 1 — Session 1
+9|Barbell Bench Press|14|calibrationRequired|4|Week 1 — Session 1
+10|Back Squat|26|calibrationRequired|4|Week 1 — Session 1
+
+=== ExercisePrescriptions in CrossFit instance (ProgramInstance=1) ===
+6|Barbell Bench Press|37|rmBasedLoad|3|Week 1 — Session 1
+7|Back Squat|2|rmBasedLoad|3|Week 1 — Session 1

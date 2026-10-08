@@ -1,0 +1,9 @@
+=== ProgramInstance start dates ===
+1|813448800|2026-10-11 22:00:00
+2|813448800|2026-10-11 22:00:00
+
+=== Session day dates for all 4 materialized sessions ===
+1|Week 1 — Session 3|2|813621600|2026-10-13 22:00:00
+2|Week 1 — Session 2|2|813535200|2026-10-12 22:00:00
+3|Week 1 — Session 1|1|813708000|2026-10-14 22:00:00
+4|Week 1 — Session 1|2|813103200|2026-10-07 22:00:00

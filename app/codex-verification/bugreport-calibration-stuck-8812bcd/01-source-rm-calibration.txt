@@ -1,0 +1,16 @@
+=== ZSOURCERMCALIBRATION (all rows, with exercise name) ===
+2|1|Back Squat|1|80.0|rm10|813157880.999267
+3|1|Barbell Bench Press|1|55.0|rm10|813157881.053521
+4|1|Barbell Hip Thrust|1|70.0|rm10|813157881.058552
+5|1|Barbell Row|1|40.0|rm10|813157881.06201
+7|1|Barbell Bench Press|2|55.0|rm10|813157932.13812
+8|1|Clean|2|45.0|rm10|813157932.147536
+9|1|Dumbbell Snatch|2|18.0|rm10|813157932.156237
+10|1|Barbell Row|2|40.0|rm10|813157932.163673
+11|1|Flat Dumbbell Bench Press|2|24.0|rm10|813157932.171045
+12|1|Bulgarian Split Squat|2|20.0|rm10|813157932.177513
+13|1|Lat Pulldown|2|50.0|rm10|813157932.183459
+14|1|Conventional Deadlift|2|80.0|rm10|813157932.188421
+15|1|Chest-to-Bar Pull-up|2|5.0|rm10|813157939.811138
+6|3|Barbell Hip Thrust|2|50.0|rm10|813158056.920769
+1|7|Back Squat|2|65.0|rm10|813158585.814755

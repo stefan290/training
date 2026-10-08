@@ -1,0 +1,4 @@
+=== Overall data integrity (sessions, instances, plans unchanged throughout investigation) ===
+4
+2
+1
