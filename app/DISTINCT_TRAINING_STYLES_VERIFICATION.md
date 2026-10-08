@@ -252,3 +252,35 @@ The existing application's authored prescriptions supply all numeric dosing.
 6. Publish exact commands, raw logs, screenshots and an honest report on a
    verification branch. If host automation blocks the UI, disclose it and stop
    retrying indefinitely. Do not change application code to manufacture a pass.
+
+
+## Round 6: manually confirmed Start Today calibration loop
+
+Round 5's accessibility-only explanation was incorrect. A real session moved
+before ProgramInstance.startDate was excluded from week-zero backfill. Calibration
+rows saved, but the active prescriptions stayed unresolved.
+
+The resolver now includes the explicitly supplied execution session (only if it
+belongs to the same instance), alongside the ordinary week-zero batch. Calendar
+week grouping is unchanged. Submission checks that the original movement really
+resolved, exposes a visible error on failure, and emits calibration diagnostics.
+
+Use a separate worktree and DerivedData, with explicit absolute -project paths
+(except commands using -xctestrun, which disallow -project).
+
+1. Run DogfoodRound2CompletionTests/testStartTodayBeforeProgramStartCalibrationReachesExecutionAndPersists
+   first. It moves the real session four days before instance.startDate using
+   StartSessionOnDifferentDayUseCase, resolves all calibrations, logs a real set,
+   and reads the saved state through a fresh context. It also checks visible error
+   state for invalid input and clearing that error after success.
+2. Run Finding Q, the failed-acceptance/retry test, J3 and J5; then all previous
+   focused classes and the full suite. Expected total: 1915, report actual counts.
+3. Upgrade the existing simulator installation WITHOUT deleting app or data.
+   Reproduce on the previously stuck Functional Strength session. Enter each RM,
+   confirm the prompt advances and disappears, and log a real set. Restart the
+   app and directly confirm the saved set and resolved prescriptions remain.
+4. Also check a session left at its original date and real CrossFit WOD content.
+   Capture simulator ID, installed SHA, screenshots, database evidence and logs.
+   Do not claim accessibility automation is the cause merely because entry fails.
+5. Publish raw evidence and report, no code changes or merge. A passing suite is
+   not a replacement for manually completing the previously blocked live flow.

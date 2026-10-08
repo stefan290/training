@@ -327,6 +327,12 @@ struct StrengthExecutionView: View {
                     .font(Theme.body)
                     .foregroundStyle(Theme.textSecondary)
             }
+            if let error = viewModel.calibrationErrorMessage {
+                Text(error)
+                    .font(Theme.body)
+                    .foregroundStyle(Theme.textPrimary)
+                    .accessibilityIdentifier("calibrationErrorMessage")
+            }
             Button("Confirm & Continue") {
                 guard let value = Double(calibrationText), value > 0 else { return }
                 guard viewModel.submitCalibration(kilograms: value, modelContext: modelContext) else { return }

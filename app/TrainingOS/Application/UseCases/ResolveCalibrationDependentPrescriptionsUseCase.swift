@@ -38,14 +38,21 @@ enum ResolveCalibrationDependentPrescriptionsUseCase {
     /// one blanket profile for the whole batch.
     static func resolve(
         exercise: Exercise, rmType: RMType, kilograms: Double,
-        instance: ProgramInstance, userProfile: UserProfile?, enteredAt: Date = Date(), modelContext: ModelContext
+        instance: ProgramInstance, userProfile: UserProfile?, executionSession: Session? = nil, enteredAt: Date = Date(), modelContext: ModelContext
     ) throws {
         RecordSourceRMCalibrationUseCase.record(
             exercise: exercise, rmType: rmType, kilograms: kilograms, for: instance, enteredAt: enteredAt, modelContext: modelContext
         )
         try modelContext.save()
 
-        let prescriptions = ProgramWeekGrouping.realSessions(in: instance, forWeek: 0)
+        // Scheduling can move the active session outside the program's date window.
+        // Always resolve that session as well; do not redefine planning weeks.
+        var sessions = ProgramWeekGrouping.realSessions(in: instance, forWeek: 0)
+        if let executionSession, executionSession.programInstance?.id == instance.id,
+           !sessions.contains(where: { $0.id == executionSession.id }) {
+            sessions.append(executionSession)
+        }
+        let prescriptions = sessions
             .flatMap(\.orderedBlocks).flatMap(\.orderedPrescriptions)
 
         // Seed with whatever's already resolved (e.g. a sibling exercise

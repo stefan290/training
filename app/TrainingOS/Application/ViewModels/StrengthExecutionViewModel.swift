@@ -1,6 +1,7 @@
 import Foundation
 import SwiftData
 import Observation
+import OSLog
 
 /// Drives Strength/Hypertrophy/Accessory execution for one `WorkoutBlock`,
 /// one movement (`ExercisePrescription`) at a time — `STRENGTH_EXECUTION_
@@ -9,8 +10,10 @@ import Observation
 /// prescription/result shapes every strength movement already has.
 @Observable
 final class StrengthExecutionViewModel {
+    private static let calibrationLogger = Logger(subsystem: "TrainingOS", category: "Calibration")
     let block: WorkoutBlock
     private(set) var movementIndex: Int
+    private(set) var calibrationErrorMessage: String?
     /// Captured once when a movement loads — what the user did last time,
     /// never recomputed as new sets are logged this same visit (a "you
     /// just did this a second ago" previous-performance line would be
@@ -276,9 +279,16 @@ final class StrengthExecutionViewModel {
     /// refresh its own cached display state.
     @discardableResult
     func submitCalibration(kilograms: Double, modelContext: ModelContext) -> Bool {
-        guard kilograms > 0, let requirement = currentMovementCalibrationRequirement,
-              let instance = currentMovement?.workoutBlock?.session?.programInstance
-        else { return false }
+        calibrationErrorMessage = nil
+        guard kilograms.isFinite, kilograms > 0, let requirement = currentMovementCalibrationRequirement,
+              let session = currentMovement?.workoutBlock?.session,
+              let instance = session.programInstance,
+              let calibratedMovement = currentMovement
+        else {
+            Self.calibrationLogger.error("Calibration submission rejected: invalid weight or missing execution context")
+            calibrationErrorMessage = "Could not calibrate this exercise. Enter a valid weight and try again."
+            return false
+        }
         do {
             // Dogfood Round 1 — Final Close (Finding 1 correction): the
             // real per-exercise equipment/increment authority
@@ -290,12 +300,20 @@ final class StrengthExecutionViewModel {
             let users = (try? modelContext.fetch(FetchDescriptor<User>())) ?? []
             try ResolveCalibrationDependentPrescriptionsUseCase.resolve(
                 exercise: requirement.exercise, rmType: requirement.rmType, kilograms: kilograms, instance: instance,
-                userProfile: users.first?.profile,
+                userProfile: users.first?.profile, executionSession: session,
                 modelContext: modelContext
             )
+            guard calibratedMovement.appliedLoadReasonCode != .calibrationRequired,
+                  calibratedMovement.orderedSetPrescriptions.allSatisfy({ $0.targetWeight != nil }) else {
+                Self.calibrationLogger.error("Calibration saved but active prescription remained unresolved")
+                calibrationErrorMessage = "Your starting weight was saved, but this exercise could not be prepared. Try again."
+                return false
+            }
             recomputeMovementIndexAfterCalibration(modelContext: modelContext)
             return true
         } catch {
+            Self.calibrationLogger.error("Calibration resolution failed: \(error.localizedDescription, privacy: .public)")
+            calibrationErrorMessage = "Could not save your starting weight. Try again. (\(error.localizedDescription))"
             return false
         }
     }

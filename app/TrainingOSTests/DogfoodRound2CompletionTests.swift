@@ -1149,6 +1149,14 @@ final class DogfoodRound2CompletionTests: XCTestCase {
     /// correct. This test asserts they agree, then drives an actual
     /// Log Set and one real exercise transition through to completion.
     func testFindingQ_AllCalibrationsResolveIntoRealReachableSetExecutionNeverALoop() throws {
+        try assertCalibrationReachesExecution(moveBeforeProgramStart: false)
+    }
+
+    func testStartTodayBeforeProgramStartCalibrationReachesExecutionAndPersists() throws {
+        try assertCalibrationReachesExecution(moveBeforeProgramStart: true)
+    }
+
+    private func assertCalibrationReachesExecution(moveBeforeProgramStart: Bool) throws {
         let monday = date(2026, 1, 5)
         try makeOnboardedAthlete(goalType: .muscleGain, trainingDays: 5, allowsDoubles: false)
         let viewModel = loadedViewModel(referenceDate: monday)
@@ -1164,7 +1172,19 @@ final class DogfoodRound2CompletionTests: XCTestCase {
         let loadedRolesNeedingCalibration = strengthBlock.orderedPrescriptions.filter { $0.appliedLoadReasonCode == .calibrationRequired }
         XCTAssertGreaterThanOrEqual(loadedRolesNeedingCalibration.count, 2, "the real Muscle Gain FBB main body authors 2 loaded-pattern roles, both RM-based")
 
+        if moveBeforeProgramStart {
+            let instance = try XCTUnwrap(ffInstance)
+            let session = try XCTUnwrap(strengthBlock.session)
+            let originalStart = instance.startDate
+            let earlyDate = Calendar.current.date(byAdding: .day, value: -4, to: originalStart)!
+            try StartSessionOnDifferentDayUseCase.startToday(session, asOf: earlyDate, modelContext: context)
+            XCTAssertEqual(instance.startDate, originalStart)
+            XCTAssertFalse(ProgramWeekGrouping.realSessions(in: instance, forWeek: 0).contains { $0.id == session.id })
+        }
         let execVM = StrengthExecutionViewModel(block: strengthBlock)
+        XCTAssertFalse(execVM.submitCalibration(kilograms: 0, modelContext: context))
+        XCTAssertNotNil(execVM.calibrationErrorMessage)
+        XCTAssertTrue(execVM.currentMovementNeedsCalibration)
 
         // Submit EVERY required RM, driven purely by the ViewModel's own
         // real "what needs calibration right now" state — never a
@@ -1174,7 +1194,11 @@ final class DogfoodRound2CompletionTests: XCTestCase {
             submissions += 1
             XCTAssertLessThanOrEqual(submissions, loadedRolesNeedingCalibration.count, "must never re-request a calibration that was already resolved — a repeat request here IS Finding Q's reported loop")
             XCTAssertNotNil(execVM.currentMovementCalibrationRequirement, "the athlete must always see a real (exercise, RM type) requirement while a calibration prompt is showing")
-            XCTAssertTrue(execVM.submitCalibration(kilograms: 100, modelContext: context))
+            guard execVM.submitCalibration(kilograms: 100, modelContext: context) else {
+                XCTFail(execVM.calibrationErrorMessage ?? "Calibration failed")
+                return
+            }
+            XCTAssertNil(execVM.calibrationErrorMessage)
         }
         XCTAssertEqual(submissions, loadedRolesNeedingCalibration.count, "exactly the real number of required calibrations were submitted — never more (a loop), never fewer")
 
@@ -1216,6 +1240,12 @@ final class DogfoodRound2CompletionTests: XCTestCase {
         XCTAssertNotNil(highlight, "a real result must be logged and returned for the completion summary")
         XCTAssertEqual(firstMovement.loggedSetResults.count, loggedCountBefore + 1, "the set result must actually persist onto the real ExercisePrescription")
         XCTAssertEqual(execVM.block.status, .active, "logging a real set — never merely resolving calibration — is what starts the block (Finding O)")
+        try context.save()
+        let blockID = strengthBlock.id
+        let freshContext = ModelContext(container)
+        let persistedBlock = try XCTUnwrap(freshContext.fetch(FetchDescriptor<WorkoutBlock>()).first { $0.id == blockID })
+        XCTAssertFalse(StrengthExecutionViewModel(block: persistedBlock).currentMovementNeedsCalibration)
+        XCTAssertEqual(persistedBlock.orderedPrescriptions.flatMap(\.loggedSetResults).count, 1)
 
         // Advance through one real exercise transition and confirm
         // execution mode, not calibration mode, on the far side.
